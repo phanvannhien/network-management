@@ -12,9 +12,14 @@ export interface DeviceNodeData extends Record<string, unknown> {
 }
 
 /** Builds React Flow nodes for one page, one per device node on that page. */
-export function buildNodes(data: NtbData, pageId: string): Node<DeviceNodeData>[] {
+export function buildNodes(
+  data: NtbData,
+  pageId: string,
+  selection: string[] = [],
+): Node<DeviceNodeData>[] {
   const page = data.pages[pageId]
   if (!page) return []
+  const selected = new Set(selection)
   return page.nodes
     .filter((n) => data.devices[n.refId] !== undefined)
     .map((n) => {
@@ -23,7 +28,7 @@ export function buildNodes(data: NtbData, pageId: string): Node<DeviceNodeData>[
         id: n.refId,
         type: 'device',
         position: { x: n.x, y: n.y },
-        selected: false,
+        selected: selected.has(n.refId),
         data: { deviceId: device.id },
         // Positions live in the store; React Flow reports changes, it doesn't own them.
         draggable: !n.locked,

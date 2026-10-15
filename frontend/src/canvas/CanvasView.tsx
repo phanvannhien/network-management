@@ -11,12 +11,14 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { DeviceType } from '../types/ntb'
+import { compound, setNodeLocked } from '../model/commands'
 import { newId } from '../model/factory'
 import { addPage, setNodePosition } from '../model/commands'
 import { useAppStore } from '../model/store'
 import { buildEdges, buildNodes, firstPageId } from './adapters'
 import { DeviceNode } from './DeviceNode'
 import { deviceDropCommand } from './dropDevice'
+import { useCanvasShortcuts } from './useCanvasShortcuts'
 import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
@@ -33,14 +35,48 @@ function useEnsurePage() {
   return pageId
 }
 
+/** Toolbar button toggling lock on the current selection (Ctrl+L). */
+function LockButton({ pageId }: { pageId: string }) {
+  const selection = useAppStore((s) => s.selection)
+  const nodes = useAppStore((s) => s.data.pages[pageId]?.nodes)
+
+  const locked = useMemo(
+    () => selection.some((id) => nodes?.find((n) => n.refId === id)?.locked ?? false),
+    [selection, nodes],
+  )
+
+  const onClick = () => {
+    const s = useAppStore.getState()
+    if (s.selection.length === 0) return
+    s.dispatch(compound(...s.selection.map((id) => setNodeLocked(pageId, id, !locked))))
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={selection.length === 0}
+      className="rounded border border-border px-2 py-0.5 hover:bg-accent disabled:opacity-40"
+      title="Lock/unlock selection (Ctrl+L)"
+    >
+      {locked ? 'Unlock' : 'Lock'}
+    </button>
+  )
+}
+
 function CanvasInner() {
   const pageId = useEnsurePage()
   const data = useAppStore((s) => s.data)
+  const selection = useAppStore((s) => s.selection)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [gridSize, setGridSize] = useState<number>(20)
   const { fitView, screenToFlowPosition } = useReactFlow()
+  useCanvasShortcuts(pageId)
 
-  const nodes = useMemo(() => (pageId ? buildNodes(data, pageId) : []), [data, pageId])
+  const nodes = useMemo(
+    () => (pageId ? buildNodes(data, pageId, selection) : []),
+    [data, pageId, selection],
+  )
   const edges = useMemo(() => (pageId ? buildEdges(data, pageId) : []), [data, pageId])
 
   // Shift+1 → Fit to screen (SRS §3)
@@ -58,19 +94,31 @@ function CanvasInner() {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       if (!pageId) return
-      const { dispatch } = useAppStore.getState()
+      const { dispatch, setSelection, selection: current } = useAppStore.getState()
+      const selectionChanges = new Map<string, boolean>()
       for (const change of changes) {
-        if (change.type !== 'position' || !change.position) continue
-        // Consecutive drag moves share a mergeKey → one undo step per drag (SRS §3).
-        dispatch(
-          setNodePosition(
-            pageId,
-            change.id,
-            change.position.x,
-            change.position.y,
-            `drag:${change.id}`,
-          ),
-        )
+        if (change.type === 'position' && change.position) {
+          // Consecutive drag moves share a mergeKey → one undo step per drag (SRS §3).
+          dispatch(
+            setNodePosition(
+              pageId,
+              change.id,
+              change.position.x,
+              change.position.y,
+              `drag:${change.id}`,
+            ),
+          )
+        } else if (change.type === 'select') {
+          selectionChanges.set(change.id, change.selected)
+        }
+      }
+      if (selectionChanges.size > 0) {
+        const next = new Set(current)
+        for (const [id, selected] of selectionChanges) {
+          if (selected) next.add(id)
+          else next.delete(id)
+        }
+        setSelection([...next])
       }
     },
     [pageId],
@@ -126,6 +174,7 @@ function CanvasInner() {
         >
           Fit
         </button>
+        <LockButton pageId={pageId} />
       </div>
 
       <ReactFlow

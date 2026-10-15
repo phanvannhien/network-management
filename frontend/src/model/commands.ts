@@ -1,6 +1,8 @@
 import type { Draft } from 'immer'
 import type { Device, Interface, Link, Page, Vlan } from '../types/ntb'
 import type { NtbData } from './types'
+import { newId } from './factory'
+import { nextHostname } from '../catalog/hostname'
 
 /**
  * A command mutates the model draft inside dispatch(). Undo/redo works by
@@ -153,4 +155,119 @@ function assertPortsFree(data: Draft<NtbData>, link: Link): void {
       }
     }
   }
+}
+
+/** Combines several commands into one undo step. */
+export function compound(...commands: Command[]): Command {
+  return {
+    apply(draft) {
+      for (const command of commands) command.apply(draft)
+    },
+  }
+}
+
+/** Deletes several devices (cascade links) in a single undo step. */
+export function deleteDevices(ids: string[]): Command {
+  return {
+    apply(draft) {
+      for (const id of ids) {
+        if (draft.devices[id]) deleteDevice(id).apply(draft)
+      }
+    },
+  }
+}
+
+export function setNodeLocked(pageId: string, refId: string, locked: boolean): Command {
+  return {
+    apply(draft) {
+      const node = draft.pages[pageId]?.nodes.find((n) => n.refId === refId)
+      if (!node) throw new Error(`node not found: ${refId} on page ${pageId}`)
+      node.locked = locked
+    },
+  }
+}
+
+export interface PasteResult {
+  command: Command
+  newDeviceIds: string[]
+}
+
+/**
+ * Builds a paste/duplicate command: copies the given devices with fresh ids,
+ * renames conflicting hostnames, offsets their nodes, and re-creates internal
+ * links (both endpoints inside the selection) with remapped interfaces.
+ * Everything lands in a single undo step.
+ */
+export function buildPasteCommand(
+  data: NtbData,
+  pageId: string,
+  deviceIds: string[],
+  dx: number,
+  dy: number,
+): PasteResult {
+  const sources = deviceIds.map((id) => data.devices[id]).filter((d) => d !== undefined)
+  const copies = sources.map((device) => ({
+    ...device,
+    id: newId(),
+    // Hostname is assigned inside apply() so consecutive copies don't collide.
+    hostname: device.hostname,
+    interfaces: device.interfaces.map((iface) => ({ ...iface, id: newId() })),
+  }))
+  const deviceIdMap = new Map(sources.map((d, i) => [d.id, copies[i].id]))
+  const interfaceIdMap = new Map<string, string>()
+  for (let i = 0; i < sources.length; i++) {
+    for (let j = 0; j < sources[i].interfaces.length; j++) {
+      interfaceIdMap.set(sources[i].interfaces[j].id, copies[i].interfaces[j].id)
+    }
+  }
+
+  const internalLinks = Object.values(data.links).filter(
+    (l) => deviceIdMap.has(l.a.deviceId) && deviceIdMap.has(l.b.deviceId),
+  )
+  const linkCopies = internalLinks.map((link) => ({
+    ...link,
+    id: newId(),
+    a: remap(link.a),
+    b: remap(link.b),
+  }))
+
+  function remap(end: { deviceId: string; interfaceId: string }) {
+    return {
+      deviceId: deviceIdMap.get(end.deviceId)!,
+      interfaceId: interfaceIdMap.get(end.interfaceId)!,
+    }
+  }
+
+  const nodePositions = new Map(
+    (data.pages[pageId]?.nodes ?? [])
+      .filter((n) => deviceIdMap.has(n.refId))
+      .map((n) => [n.refId, { x: n.x + dx, y: n.y + dy }]),
+  )
+
+  const command: Command = {
+    apply(draft) {
+      for (let i = 0; i < copies.length; i++) {
+        const copy = {
+          ...copies[i],
+          // The original keeps its hostname, so the copy always conflicts → rename.
+          hostname: nextHostname(draft, sources[i].type),
+        }
+        draft.devices[copy.id] = copy as Draft<Device>
+        const position = nodePositions.get(sources[i].id) ?? { x: 0, y: 0 }
+        draft.pages[pageId].nodes.push({
+          refId: copy.id,
+          x: position.x,
+          y: position.y,
+          iconAssetId: null,
+          locked: false,
+        })
+      }
+      for (const link of linkCopies) {
+        draft.links[link.id] = link as Draft<Link>
+        draft.pages[pageId].edges.push({ refId: link.id, routing: 'orthogonal', waypoints: [] })
+      }
+    },
+  }
+
+  return { command, newDeviceIds: copies.map((c) => c.id) }
 }

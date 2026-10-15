@@ -26,7 +26,7 @@ Phase hiện tại: **Phase 0**
   Done khi: tạo device từ template sinh đúng danh sách interface.
 - [x] **P1-03 Palette**: danh sách theo nhóm, ô tìm kiếm, kéo thả vào canvas.
 - [x] **P1-04 Canvas cơ bản**: React Flow, zoom 10–400%, pan (Space + kéo), grid snap bật/tắt, minimap, Fit to screen.
-- [ ] **P1-05 Thao tác chọn & sửa**: multi-select (Shift, rubber-band, Ctrl+A), copy/paste giữ link nội bộ và tự đổi hostname trùng, duplicate, delete (xóa kèm link), lock, phím tắt theo SRS §3.
+- [x] **P1-05 Thao tác chọn & sửa**: multi-select (Shift, rubber-band, Ctrl+A), copy/paste giữ link nội bộ và tự đổi hostname trùng, duplicate, delete (xóa kèm link), lock, phím tắt theo SRS §3.
 - [ ] **P1-06 Nối dây port → port**: kéo từ thiết bị, popup chọn cổng trống hợp lệ, auto-assign, chặn 2 link vào 1 cổng, loại link (Ethernet/Fiber/Wireless/Serial/Logical) với kiểu nét theo SRS §4, nhiều link song song không đè nhau.
 - [ ] **P1-07 Sidebar thuộc tính**: tab General / Interfaces / Links / Notes cho Device; form Link; nhập IP dạng CIDR; sửa hàng loạt khi chọn nhiều.
 - [ ] **P1-08 Label & tooltip**: label template `{hostname}\n{mgmtIp}`, label cổng hai đầu link + tốc độ; ẩn label phụ khi zoom < 50%; tooltip khi hover.
