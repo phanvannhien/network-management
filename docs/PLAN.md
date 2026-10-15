@@ -22,7 +22,7 @@ Phase hiện tại: **Phase 0**
 
 - [x] **P1-01 Store & command**: Network model + View model (SRS §7) trong Zustand + Immer; command pattern; undo/redo ≥ 100 bước, gộp thao tác kéo liên tục.
   Done khi: unit test thêm/sửa/xóa device, link + undo/redo pass.
-- [ ] **P1-02 Device catalog**: template cho 5 nhóm thiết bị gốc (SRS §2) gồm icon SVG, loại, port layout mặc định (vd switch 24×RJ45 + 4×SFP+).
+- [x] **P1-02 Device catalog**: template cho 5 nhóm thiết bị gốc (SRS §2) gồm icon SVG, loại, port layout mặc định (vd switch 24×RJ45 + 4×SFP+).
   Done khi: tạo device từ template sinh đúng danh sách interface.
 - [ ] **P1-03 Palette**: danh sách theo nhóm, ô tìm kiếm, kéo thả vào canvas.
 - [ ] **P1-04 Canvas cơ bản**: React Flow, zoom 10–400%, pan (Space + kéo), grid snap bật/tắt, minimap, Fit to screen.
