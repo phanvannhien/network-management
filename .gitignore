@@ -1,0 +1,36 @@
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Go / backend
+backend/bin/
+backend/ntb
+*.test
+*.out
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Database (local dev)
+*.db
+*.sqlite
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build artifacts
+dist/
+coverage/
