@@ -1,7 +1,9 @@
+import { CanvasView } from './canvas/CanvasView'
+
 function App() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
-      <h1 className="text-2xl font-semibold">Network Topology Builder</h1>
+    <main className="h-screen w-screen overflow-hidden bg-background text-foreground">
+      <CanvasView />
     </main>
   )
 }
