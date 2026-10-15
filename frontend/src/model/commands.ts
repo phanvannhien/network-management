@@ -1,0 +1,156 @@
+import type { Draft } from 'immer'
+import type { Device, Interface, Link, Page, Vlan } from '../types/ntb'
+import type { NtbData } from './types'
+
+/**
+ * A command mutates the model draft inside dispatch(). Undo/redo works by
+ * snapshotting the previous immutable state, so a command does not need its
+ * own inverse. Commands that repeat rapidly (e.g. dragging) share a mergeKey:
+ * consecutive dispatches with the same mergeKey collapse into one undo step.
+ */
+export interface Command {
+  apply(draft: Draft<NtbData>): void
+  mergeKey?: string
+}
+
+export function addPage(page: Page): Command {
+  return {
+    apply(draft) {
+      if (draft.pages[page.id]) throw new Error(`page already exists: ${page.id}`)
+      draft.pages[page.id] = page
+      draft.pageOrder.push(page.id)
+    },
+  }
+}
+
+export function addDevice(device: Device, pageId: string, x: number, y: number): Command {
+  return {
+    apply(draft) {
+      if (draft.devices[device.id]) throw new Error(`device already exists: ${device.id}`)
+      draft.devices[device.id] = device
+      const page = draft.pages[pageId]
+      if (!page) throw new Error(`page not found: ${pageId}`)
+      page.nodes.push({ refId: device.id, x, y, iconAssetId: null, locked: false })
+    },
+  }
+}
+
+export function updateDevice(
+  id: string,
+  patch: Partial<Omit<Device, 'id' | 'interfaces'>>,
+): Command {
+  return {
+    apply(draft) {
+      const device = draft.devices[id]
+      if (!device) throw new Error(`device not found: ${id}`)
+      Object.assign(device, patch)
+    },
+  }
+}
+
+export function updateInterface(
+  deviceId: string,
+  interfaceId: string,
+  patch: Partial<Omit<Interface, 'id'>>,
+): Command {
+  return {
+    apply(draft) {
+      const iface = draft.devices[deviceId]?.interfaces.find((i) => i.id === interfaceId)
+      if (!iface) throw new Error(`interface not found: ${interfaceId} on ${deviceId}`)
+      Object.assign(iface, patch)
+    },
+  }
+}
+
+/** Deletes a device, its view nodes on every page, and every link attached to it. */
+export function deleteDevice(id: string): Command {
+  return {
+    apply(draft) {
+      if (!draft.devices[id]) throw new Error(`device not found: ${id}`)
+      const attachedLinks = Object.values(draft.links).filter(
+        (l) => l.a.deviceId === id || l.b.deviceId === id,
+      )
+      for (const link of attachedLinks) deleteLink(link.id).apply(draft)
+      delete draft.devices[id]
+      for (const page of Object.values(draft.pages)) {
+        page.nodes = page.nodes.filter((n) => n.refId !== id)
+      }
+    },
+  }
+}
+
+export function addLink(link: Link): Command {
+  return {
+    apply(draft) {
+      assertPortsFree(draft, link)
+      draft.links[link.id] = link
+    },
+  }
+}
+
+export function deleteLink(id: string): Command {
+  return {
+    apply(draft) {
+      const link = draft.links[id]
+      if (!link) throw new Error(`link not found: ${id}`)
+      delete draft.links[id]
+      for (const page of Object.values(draft.pages)) {
+        page.edges = page.edges.filter((e) => e.refId !== id)
+      }
+    },
+  }
+}
+
+export function setNodePosition(
+  pageId: string,
+  refId: string,
+  x: number,
+  y: number,
+  mergeKey?: string,
+): Command {
+  return {
+    mergeKey,
+    apply(draft) {
+      const node = draft.pages[pageId]?.nodes.find((n) => n.refId === refId)
+      if (!node) throw new Error(`node not found: ${refId} on page ${pageId}`)
+      node.x = x
+      node.y = y
+    },
+  }
+}
+
+export function addVlan(vlan: Vlan): Command {
+  return {
+    apply(draft) {
+      if (draft.vlans[vlan.id]) throw new Error(`vlan already exists: ${vlan.id}`)
+      if (Object.values(draft.vlans).some((v) => v.vlanId === vlan.vlanId)) {
+        throw new Error(`vlan id ${vlan.vlanId} already in use`)
+      }
+      draft.vlans[vlan.id] = vlan
+    },
+  }
+}
+
+export function deleteVlan(id: string): Command {
+  return {
+    apply(draft) {
+      if (!draft.vlans[id]) throw new Error(`vlan not found: ${id}`)
+      delete draft.vlans[id]
+    },
+  }
+}
+
+/** Throws when either endpoint interface is already occupied by another link. */
+function assertPortsFree(data: Draft<NtbData>, link: Link): void {
+  for (const existing of Object.values(data.links)) {
+    if (existing.id === link.id) continue
+    for (const end of [link.a, link.b]) {
+      const taken =
+        (existing.a.deviceId === end.deviceId && existing.a.interfaceId === end.interfaceId) ||
+        (existing.b.deviceId === end.deviceId && existing.b.interfaceId === end.interfaceId)
+      if (taken) {
+        throw new Error(`interface ${end.interfaceId} of device ${end.deviceId} is already linked`)
+      }
+    }
+  }
+}
