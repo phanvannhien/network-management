@@ -20,9 +20,13 @@ import { DeviceNode } from './DeviceNode'
 import { deviceDropCommand } from './dropDevice'
 import { useCanvasShortcuts } from './useCanvasShortcuts'
 import { LinkDialog, type PendingConnection } from './LinkDialog'
+import { LinkEdge } from './LinkEdge'
 import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
+
+// Stable edge/node type maps — recreating them per render triggers React Flow warnings.
+const EDGE_TYPES = { link: LinkEdge }
 
 /** Ensures the document always has at least one page to draw on. */
 function useEnsurePage() {
@@ -204,6 +208,7 @@ function CanvasInner() {
         nodes={nodes}
         edges={edges}
         nodeTypes={{ device: DeviceNode }}
+        edgeTypes={EDGE_TYPES}
         onNodesChange={onNodesChange}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}

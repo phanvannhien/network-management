@@ -1,6 +1,7 @@
 import type { Edge, Node } from '@xyflow/react'
 import type { NtbData } from '../model/types'
 import { edgeVisual, parallelCurvature } from './edges'
+import { renderLabelTemplate } from './labels'
 
 /**
  * Adapters from the NtbData model to React Flow's node/edge shape.
@@ -10,6 +11,7 @@ import { edgeVisual, parallelCurvature } from './edges'
 
 export interface DeviceNodeData extends Record<string, unknown> {
   deviceId: string
+  label: string
 }
 
 /** Builds React Flow nodes for one page, one per device node on that page. */
@@ -30,7 +32,7 @@ export function buildNodes(
         type: 'device',
         position: { x: n.x, y: n.y },
         selected: selected.has(n.refId),
-        data: { deviceId: device.id },
+        data: { deviceId: device.id, label: renderLabelTemplate(page.labelTemplate, device) },
         // Positions live in the store; React Flow reports changes, it doesn't own them.
         draggable: !n.locked,
       }
@@ -57,11 +59,20 @@ export function buildEdges(data: NtbData, pageId: string): Edge[] {
       target: link.b.deviceId,
       sourceHandle: null,
       targetHandle: null,
-      type: 'default',
+      type: 'link',
       pathOptions: { curvature: parallelCurvature(index) },
+      data: {
+        sourceLabel: interfaceName(data, link.a.deviceId, link.a.interfaceId),
+        targetLabel: interfaceName(data, link.b.deviceId, link.b.interfaceId),
+        speed: link.speed ?? '',
+      },
       ...edgeVisual(link),
     }
   })
+}
+
+function interfaceName(data: NtbData, deviceId: string, interfaceId: string): string {
+  return data.devices[deviceId]?.interfaces.find((i) => i.id === interfaceId)?.name ?? '?'
 }
 
 /** First page id by display order, or null when the document has no pages. */
