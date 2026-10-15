@@ -62,6 +62,7 @@ Phase hiện tại: **Phase 0**
 - [ ] **P3-04 Poller**: worker pool goroutine, chu kỳ cấu hình (mặc định 60 s), timeout/retry, giới hạn số request đồng thời; OID theo SRS §11.
   Done khi: poll 200 thiết bị giả lập trong < 1 chu kỳ, không rò goroutine (test).
 - [ ] **P3-05 Lưu trạng thái**: `device_status`, `interface_status` (giá trị mới nhất), `interface_metrics` (time series, giữ 7 ngày, job dọn dữ liệu).
+- [ ] **P3-05b Phụ thuộc theo site**: dùng `dependsOnDeviceId` để suy ra trạng thái "unknown"; UI chọn thiết bị cha (gợi ý gateway của site); test với snmpsim khi tắt thiết bị cha.
 - [ ] **P3-06 Đẩy live**: SSE `GET /api/projects/{id}/live` gửi thay đổi trạng thái.
 - [ ] **P3-07 UI live**: màu link theo ifOperStatus thật, % utilization trên link, badge thiết bị unreachable, "last seen"; công tắc Design ↔ Live.
 - [ ] **P3-08 Discovery LLDP (tùy chọn)**: walk LLDP-MIB → đề xuất link chưa vẽ và cảnh báo link vẽ sai cổng.
@@ -72,4 +73,5 @@ Phase hiện tại: **Phase 0**
 - [ ] Import draw.io / CSV
 - [ ] Path trace, phát hiện single point of failure, PoE budget
 - [ ] SNMP trap receiver
+- [ ] Remote poller: `ntb agent` chạy tại site, xác thực bằng token, đẩy kết quả poll về server qua HTTPS
 - [ ] Desktop app (Tauri)

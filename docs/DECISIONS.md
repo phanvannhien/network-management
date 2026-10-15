@@ -49,3 +49,11 @@ nếu đổi ý thì viết ADR mới ghi "Thay thế ADR-xxx".
 - **Quyết định:** dùng React 19 (19.2.x) thay cho React 18. Phần còn lại của ADR-002 (TypeScript strict, shadcn/ui + Tailwind) giữ nguyên.
 - **Lý do:** Vite template hiện tại cài sẵn React 19; React 19 stable từ cuối 2024 và `@xyflow/react` v12 hỗ trợ đầy đủ. Không có lý do kỹ thuật nào giữ 18.
 - **Chốt:** người dùng xác nhận ngày 2026-10-15.
+
+### ADR-011 — Giám sát là tùy chọn theo thiết bị; hỗ trợ nhiều site qua VPN
+- **Quyết định:** sơ đồ thiết kế là nguồn chính; SNMP chỉ bổ sung trạng thái khi thiết bị bật `monitoring.enabled`.
+  Phase 3 dùng poller trung tâm, đi tới các site qua VPN. Có quan hệ phụ thuộc theo site: gateway của site
+  không trả lời thì thiết bị phía sau là "unknown", không phải "down". Remote poller (binary `ntb` chạy chế độ agent
+  tại site, đẩy kết quả về qua HTTPS) để Phase 4.
+- **Lý do:** thiết bị phân tán nhiều nơi, không phải nơi nào cũng route được tới server; tránh báo động giả khi VPN rớt.
+- **Ràng buộc:** schema có sẵn `monitoring.pollerId` (mặc định "central") từ v1.0.0 để không phải migrate về sau.

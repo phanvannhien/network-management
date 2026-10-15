@@ -47,7 +47,7 @@
       "mgmtIp": "10.0.0.1/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0001" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000001", "name": "Gi0/0/0", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["203.0.113.2/30"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
         { "id": "e0000000-0000-4000-8000-000000000002", "name": "Gi0/0/1", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["10.0.0.1/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 }
@@ -64,7 +64,7 @@
       "mgmtIp": "10.0.0.2/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0002" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000011", "name": "wan1", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["10.0.0.2/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
         { "id": "e0000000-0000-4000-8000-000000000012", "name": "port1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
@@ -82,7 +82,7 @@
       "mgmtIp": "10.0.0.11/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0003" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000021", "name": "Te1/1/1", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 101 },
         { "id": "e0000000-0000-4000-8000-000000000022", "name": "Te1/1/2", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 102 },
@@ -101,7 +101,7 @@
       "mgmtIp": "10.0.0.12/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0004" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000031", "name": "Te1/1/1", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 101 },
         { "id": "e0000000-0000-4000-8000-000000000032", "name": "Te1/1/2", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 102 },
@@ -119,7 +119,7 @@
       "mgmtIp": "10.0.0.21/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0005" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000041", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
         { "id": "e0000000-0000-4000-8000-000000000042", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
@@ -138,7 +138,7 @@
       "mgmtIp": "10.0.0.22/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0006" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000051", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
         { "id": "e0000000-0000-4000-8000-000000000052", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 2 },
@@ -156,7 +156,7 @@
       "mgmtIp": "192.168.20.10/24",
       "site": "HQ",
       "customFields": { "assetTag": "A-0007" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000061", "name": "eno1", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": ["192.168.20.10/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
       ]
@@ -170,7 +170,7 @@
       "mgmtIp": "192.168.20.21/24",
       "site": "HQ",
       "customFields": {},
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000062", "name": "eth0", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": ["192.168.20.21/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
       ]
@@ -186,7 +186,7 @@
       "mgmtIp": "192.168.30.31/24",
       "site": "HQ",
       "customFields": {},
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000063", "name": "eth0", "media": "rj45", "speed": "100M", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": ["192.168.30.31/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
       ]
@@ -202,7 +202,7 @@
       "mgmtIp": "192.168.30.41/24",
       "site": "HQ",
       "customFields": {},
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000064", "name": "eth0", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": ["192.168.30.41/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
       ]

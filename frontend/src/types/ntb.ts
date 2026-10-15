@@ -133,6 +133,8 @@ export interface Device {
   monitoring?: {
     enabled?: boolean;
     snmpProfileId?: string | null;
+    pollerId?: string;
+    dependsOnDeviceId?: null | Uuid;
   };
   interfaces: Interface[];
 }

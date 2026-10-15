@@ -130,7 +130,7 @@ Schema chuẩn: `schema/ntb.schema.json`. Tách dữ liệu mạng khỏi dữ l
       "mgmtIp": "10.0.0.11/24", "site": "HQ",
       "rack": { "rackId": "uuid", "unit": 12, "height": 1 },
       "customFields": { "assetTag": "A-0012" },
-      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "uuid", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "access",
           "accessVlan": 10, "allowedVlans": [], "ipAddresses": [], "poe": true,
@@ -274,3 +274,8 @@ badge unreachable; "last seen"; panel Problems thêm cảnh báo lệch thiết 
 
 **An toàn:** chỉ đọc, không SET; không poll khi chưa bật `monitoring.enabled`; backend cần route tới mạng quản trị
 (cấu hình mạng Docker phù hợp, có thể dùng `network_mode: host`).
+
+**Nhiều site / VPN:** poller trung tâm cần route tới subnet quản trị của từng site (VPN site-to-site, mở UDP 161 từ server).
+Mỗi thiết bị có thể khai báo `dependsOnDeviceId` (thường là gateway/firewall đầu VPN của site); khi thiết bị cha unreachable,
+thiết bị con hiển thị "unknown" (xám, icon dấu hỏi) thay vì "down". Trạng thái hiển thị gồm: up / down / unreachable / unknown / not monitored.
+Dải IP quản trị trùng nhau giữa các site chưa hỗ trợ ở poller trung tâm — cần NAT hoặc remote poller (Phase 4).

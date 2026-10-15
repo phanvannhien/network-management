@@ -65,7 +65,9 @@ type RackPosition struct {
 
 type MonitoringConfig struct {
 	Enabled       bool    `json:"enabled"`
-	SnmpProfileID *string `json:"snmpProfileId"`
+	SnmpProfileID     *string `json:"snmpProfileId"`
+	PollerID          string  `json:"pollerId"`
+	DependsOnDeviceID *string `json:"dependsOnDeviceId"`
 }
 
 type Interface struct {

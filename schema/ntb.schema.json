@@ -99,7 +99,9 @@
           "additionalProperties": false,
           "properties": {
             "enabled": { "type": "boolean" },
-            "snmpProfileId": { "type": ["string", "null"] }
+            "snmpProfileId": { "type": ["string", "null"] },
+            "pollerId": { "type": "string", "default": "central" },
+            "dependsOnDeviceId": { "anyOf": [ { "type": "null" }, { "$ref": "#/$defs/uuid" } ] }
           }
         },
         "interfaces": { "type": "array", "items": { "$ref": "#/$defs/interface" } }
