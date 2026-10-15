@@ -10,11 +10,14 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { DeviceType } from '../types/ntb'
 import { newId } from '../model/factory'
 import { addPage, setNodePosition } from '../model/commands'
 import { useAppStore } from '../model/store'
 import { buildEdges, buildNodes, firstPageId } from './adapters'
 import { DeviceNode } from './DeviceNode'
+import { deviceDropCommand } from './dropDevice'
+import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
 
@@ -35,7 +38,7 @@ function CanvasInner() {
   const data = useAppStore((s) => s.data)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [gridSize, setGridSize] = useState<number>(20)
-  const { fitView } = useReactFlow()
+  const { fitView, screenToFlowPosition } = useReactFlow()
 
   const nodes = useMemo(() => (pageId ? buildNodes(data, pageId) : []), [data, pageId])
   const edges = useMemo(() => (pageId ? buildEdges(data, pageId) : []), [data, pageId])
@@ -74,6 +77,22 @@ function CanvasInner() {
   )
 
   if (!pageId) return null
+
+  const onDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes(DEVICE_MIME)) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const onDrop = (e: React.DragEvent) => {
+    const typeId = e.dataTransfer.getData(DEVICE_MIME)
+    if (!typeId || !pageId) return
+    e.preventDefault()
+    const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    const { data, dispatch } = useAppStore.getState()
+    dispatch(deviceDropCommand(data, pageId, typeId as DeviceType, position.x, position.y))
+  }
 
   return (
     <div className="relative h-full w-full">
@@ -114,6 +133,8 @@ function CanvasInner() {
         edges={edges}
         nodeTypes={{ device: DeviceNode }}
         onNodesChange={onNodesChange}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         minZoom={0.1}
         maxZoom={4}
         snapToGrid={snapEnabled}

@@ -24,7 +24,7 @@ Phase hiện tại: **Phase 0**
   Done khi: unit test thêm/sửa/xóa device, link + undo/redo pass.
 - [x] **P1-02 Device catalog**: template cho 5 nhóm thiết bị gốc (SRS §2) gồm icon SVG, loại, port layout mặc định (vd switch 24×RJ45 + 4×SFP+).
   Done khi: tạo device từ template sinh đúng danh sách interface.
-- [ ] **P1-03 Palette**: danh sách theo nhóm, ô tìm kiếm, kéo thả vào canvas.
+- [x] **P1-03 Palette**: danh sách theo nhóm, ô tìm kiếm, kéo thả vào canvas.
 - [x] **P1-04 Canvas cơ bản**: React Flow, zoom 10–400%, pan (Space + kéo), grid snap bật/tắt, minimap, Fit to screen.
 - [ ] **P1-05 Thao tác chọn & sửa**: multi-select (Shift, rubber-band, Ctrl+A), copy/paste giữ link nội bộ và tự đổi hostname trùng, duplicate, delete (xóa kèm link), lock, phím tắt theo SRS §3.
 - [ ] **P1-06 Nối dây port → port**: kéo từ thiết bị, popup chọn cổng trống hợp lệ, auto-assign, chặn 2 link vào 1 cổng, loại link (Ethernet/Fiber/Wireless/Serial/Logical) với kiểu nét theo SRS §4, nhiều link song song không đè nhau.
