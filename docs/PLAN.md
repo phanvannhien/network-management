@@ -15,7 +15,7 @@ Phase hiện tại: **Phase 0**
   Done khi: `make check` pass trên repo trống.
 - [x] **P0-03 Schema file dự án**: `schema/ntb.schema.json` v1.0.0 theo SRS §7; `testdata/sample-small.ntb.json` (~10 thiết bị, có VLAN, subnet, link); `make types` sinh TS types.
   Done khi: file mẫu validate pass bằng ajv; types sinh ra được import trong frontend.
-- [ ] **P0-04 Docker Compose dev**: `deploy/docker-compose.yml` gồm `web` (Nginx phục vụ build frontend) và `db` (Postgres 16, volume); `.env.example`.
+- [x] **P0-04 Docker Compose dev**: `deploy/docker-compose.yml` gồm `web` (Nginx phục vụ build frontend) và `db` (Postgres 16, volume); `.env.example`.
   Done khi: `docker compose up -d --build` mở được app ở http://localhost:8080.
 
 ## Phase 1 — MVP (chỉ frontend, chạy offline)
