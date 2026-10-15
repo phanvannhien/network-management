@@ -19,9 +19,9 @@ migrate-up:
 migrate-down:
 	cd backend && golang-migrate migrate -path db/migrations -database "$$DATABASE_URL" down 1
 
-# Generate TypeScript types from schema/ntb.schema.json (added in P0-03)
+# Generate TypeScript types from schema/ntb.schema.json into the frontend
 types:
-	@echo "TODO: implemented in P0-03"
+	cd frontend && npx json2ts --input ../schema/ntb.schema.json --output src/types/ntb.ts
 
 # Lint + typecheck + test for frontend and backend
 check:

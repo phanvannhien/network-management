@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networktopologybuilder.local/ntb.schema.json",
+  "title": "NtbProjectFile",
+  "description": "Định dạng file dự án .ntb.json — nguồn duy nhất cho FE + BE (xem SRS §7).",
+  "type": "object",
+  "required": ["schemaVersion", "project", "devices", "links", "pages"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "project": { "$ref": "#/$defs/project" },
+    "vlans": { "type": "array", "items": { "$ref": "#/$defs/vlan" } },
+    "subnets": { "type": "array", "items": { "$ref": "#/$defs/subnet" } },
+    "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } },
+    "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+    "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
+    "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
+    "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } }
+  },
+  "$defs": {
+    "uuid": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+    "ipv4Cidr": { "type": "string", "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$" },
+    "ipv4": { "type": "string", "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$" },
+    "project": {
+      "type": "object",
+      "required": ["id", "name", "createdAt", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "author": { "type": "string" },
+        "createdAt": { "$ref": "#/$defs/iso8601" },
+        "updatedAt": { "$ref": "#/$defs/iso8601" }
+      }
+    },
+    "iso8601": { "type": "string", "format": "date-time" },
+    "vlan": {
+      "type": "object",
+      "required": ["id", "vlanId", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "vlanId": { "type": "integer", "minimum": 1, "maximum": 4094 },
+        "name": { "type": "string", "minLength": 1 },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "subnetIds": { "type": "array", "items": { "$ref": "#/$defs/uuid" } }
+      }
+    },
+    "subnet": {
+      "type": "object",
+      "required": ["id", "cidr"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "cidr": { "$ref": "#/$defs/ipv4Cidr" },
+        "gateway": { "$ref": "#/$defs/ipv4" },
+        "vrf": { "type": "string" }
+      }
+    },
+    "deviceType": {
+      "enum": [
+        "router", "l3_switch", "load_balancer", "wireless_controller",
+        "l2_switch", "poe_switch", "hub", "access_point", "media_converter", "patch_panel",
+        "firewall", "ids_ips", "vpn_gateway", "waf", "nac", "proxy",
+        "pc", "laptop", "server", "ip_camera", "nvr_dvr", "printer", "nas", "ip_phone", "iot", "vm",
+        "cloud", "internet_gateway", "modem", "isp", "mpls_cloud", "sdwan_edge", "ont_olt",
+        "text_note", "zone", "rack", "ups_pdu"
+      ]
+    },
+    "deviceRole": { "enum": ["core", "distribution", "access", "edge", "dmz", "oob", "none"] },
+    "lifecycle": { "enum": ["existing", "planned", "to_be_removed"] },
+    "device": {
+      "type": "object",
+      "required": ["id", "type", "hostname", "interfaces"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "type": { "$ref": "#/$defs/deviceType" },
+        "hostname": { "type": "string", "minLength": 1 },
+        "vendor": { "type": "string" },
+        "model": { "type": "string" },
+        "role": { "$ref": "#/$defs/deviceRole" },
+        "lifecycle": { "$ref": "#/$defs/lifecycle" },
+        "mgmtIp": { "$ref": "#/$defs/ipv4Cidr" },
+        "site": { "type": "string" },
+        "rack": {
+          "type": "object",
+          "required": ["rackId", "unit"],
+          "additionalProperties": false,
+          "properties": {
+            "rackId": { "$ref": "#/$defs/uuid" },
+            "unit": { "type": "integer", "minimum": 1, "maximum": 42 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "customFields": { "type": "object" },
+        "monitoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "snmpProfileId": { "type": ["string", "null"] }
+          }
+        },
+        "interfaces": { "type": "array", "items": { "$ref": "#/$defs/interface" } }
+      }
+    },
+    "media": { "enum": ["rj45", "sfp", "sfp_plus", "sfp28", "qsfp", "fiber_sm", "fiber_mm", "serial", "console", "radio", "logical"] },
+    "ifMode": { "enum": ["access", "trunk", "routed", "lag_member"] },
+    "ifSpeed": { "enum": ["10M", "100M", "1G", "2.5G", "5G", "10G", "25G", "40G", "100G", "auto"] },
+    "interface": {
+      "type": "object",
+      "required": ["id", "name", "media", "speed"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "media": { "$ref": "#/$defs/media" },
+        "speed": { "$ref": "#/$defs/ifSpeed" },
+        "mode": { "$ref": "#/$defs/ifMode" },
+        "accessVlan": { "type": "integer", "minimum": 1, "maximum": 4094 },
+        "allowedVlans": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 4094 } },
+        "ipAddresses": { "type": "array", "items": { "$ref": "#/$defs/ipv4Cidr" } },
+        "poe": { "type": "boolean" },
+        "lagId": { "type": ["string", "null"] },
+        "adminUp": { "type": "boolean" },
+        "ifIndex": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "linkKind": { "enum": ["ethernet", "fiber", "wireless", "serial", "logical", "console"] },
+    "linkMedium": { "enum": ["cat5e", "cat6", "cat6a", "sm", "mm_om3", "mm_om4", "dac", "wifi5", "wifi6", "wifi7", "p2p_bridge", "v35", "rs232", "vpn_ipsec", "gre", "mpls", "lag", "console"] },
+    "linkStatus": { "enum": ["up", "down", "admin_down", "planned"] },
+    "endpoint": {
+      "type": "object",
+      "required": ["deviceId", "interfaceId"],
+      "additionalProperties": false,
+      "properties": {
+        "deviceId": { "$ref": "#/$defs/uuid" },
+        "interfaceId": { "$ref": "#/$defs/uuid" }
+      }
+    },
+    "link": {
+      "type": "object",
+      "required": ["id", "kind", "a", "b"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "kind": { "$ref": "#/$defs/linkKind" },
+        "medium": { "$ref": "#/$defs/linkMedium" },
+        "speed": { "$ref": "#/$defs/ifSpeed" },
+        "status": { "$ref": "#/$defs/linkStatus" },
+        "a": { "$ref": "#/$defs/endpoint" },
+        "b": { "$ref": "#/$defs/endpoint" },
+        "lengthM": { "type": "number", "minimum": 0 },
+        "cableId": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "groupKind": { "enum": ["zone", "subnet", "rack"] },
+    "group": {
+      "type": "object",
+      "required": ["id", "kind", "name", "memberIds"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "kind": { "$ref": "#/$defs/groupKind" },
+        "name": { "type": "string", "minLength": 1 },
+        "memberIds": { "type": "array", "items": { "$ref": "#/$defs/uuid" } },
+        "parentId": { "type": ["string", "null"] }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["id", "kind", "mime", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "kind": { "enum": ["icon", "image"] },
+        "mime": { "type": "string" },
+        "data": { "type": "string", "contentEncoding": "base64" }
+      }
+    },
+    "pageLayer": { "enum": ["physical", "l2", "l3"] },
+    "edgeRouting": { "enum": ["straight", "orthogonal", "curved", "manual"] },
+    "node": {
+      "type": "object",
+      "required": ["refId", "x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "refId": { "$ref": "#/$defs/uuid" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "iconAssetId": { "type": ["string", "null"] },
+        "locked": { "type": "boolean" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["refId", "routing"],
+      "additionalProperties": false,
+      "properties": {
+        "refId": { "$ref": "#/$defs/uuid" },
+        "routing": { "$ref": "#/$defs/edgeRouting" },
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["x", "y"],
+            "additionalProperties": false,
+            "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "required": ["id", "name", "layer", "nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "layer": { "$ref": "#/$defs/pageLayer" },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "viewport": {
+          "type": "object",
+          "required": ["x", "y", "zoom"],
+          "additionalProperties": false,
+          "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "zoom": { "type": "number", "minimum": 0.1, "maximum": 4 } }
+        },
+        "labelTemplate": { "type": "string" }
+      }
+    }
+  }
+}

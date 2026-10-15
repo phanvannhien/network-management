@@ -1,0 +1,379 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "id": "a0000000-0000-4000-8000-000000000001",
+    "name": "HQ Network (mẫu nhỏ)",
+    "author": "ntb",
+    "createdAt": "2026-10-15T00:00:00Z",
+    "updatedAt": "2026-10-15T00:00:00Z"
+  },
+  "vlans": [
+    {
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "vlanId": 10,
+      "name": "MGMT",
+      "color": "#3B82F6",
+      "subnetIds": ["c0000000-0000-4000-8000-000000000001"]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000002",
+      "vlanId": 20,
+      "name": "STAFF",
+      "color": "#22C55E",
+      "subnetIds": ["c0000000-0000-4000-8000-000000000002"]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000003",
+      "vlanId": 30,
+      "name": "CCTV",
+      "color": "#F59E0B",
+      "subnetIds": ["c0000000-0000-4000-8000-000000000003"]
+    }
+  ],
+  "subnets": [
+    { "id": "c0000000-0000-4000-8000-000000000001", "cidr": "10.0.0.0/24", "gateway": "10.0.0.1", "vrf": "default" },
+    { "id": "c0000000-0000-4000-8000-000000000002", "cidr": "192.168.20.0/24", "gateway": "192.168.20.1", "vrf": "default" },
+    { "id": "c0000000-0000-4000-8000-000000000003", "cidr": "192.168.30.0/24", "gateway": "192.168.30.1", "vrf": "default" }
+  ],
+  "devices": [
+    {
+      "id": "d0000000-0000-4000-8000-000000000001",
+      "type": "router",
+      "hostname": "RTR-EDGE-01",
+      "vendor": "Cisco",
+      "model": "ISR4331",
+      "role": "edge",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.1/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0001" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000001", "name": "Gi0/0/0", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["203.0.113.2/30"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000002", "name": "Gi0/0/1", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["10.0.0.1/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000002",
+      "type": "firewall",
+      "hostname": "FW-01",
+      "vendor": "Fortinet",
+      "model": "FG-100F",
+      "role": "edge",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.2/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0002" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000011", "name": "wan1", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["10.0.0.2/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000012", "name": "port1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
+        { "id": "e0000000-0000-4000-8000-000000000013", "name": "port2", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 3 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000003",
+      "type": "l3_switch",
+      "hostname": "SW-CORE-01",
+      "vendor": "Cisco",
+      "model": "C9300-24P",
+      "role": "core",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.11/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0003" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000021", "name": "Te1/1/1", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 101 },
+        { "id": "e0000000-0000-4000-8000-000000000022", "name": "Te1/1/2", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 102 },
+        { "id": "e0000000-0000-4000-8000-000000000023", "name": "Te1/1/3", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 103 },
+        { "id": "e0000000-0000-4000-8000-000000000024", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 10, "allowedVlans": [], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": false, "ifIndex": 1 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000004",
+      "type": "l3_switch",
+      "hostname": "SW-CORE-02",
+      "vendor": "Cisco",
+      "model": "C9300-24P",
+      "role": "core",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.12/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0004" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000031", "name": "Te1/1/1", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 101 },
+        { "id": "e0000000-0000-4000-8000-000000000032", "name": "Te1/1/2", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 102 },
+        { "id": "e0000000-0000-4000-8000-000000000033", "name": "Te1/1/3", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 103 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000005",
+      "type": "l2_switch",
+      "hostname": "SW-ACC-01",
+      "vendor": "Cisco",
+      "model": "C9200-24P",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.21/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0005" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000041", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000042", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
+        { "id": "e0000000-0000-4000-8000-000000000043", "name": "Gi1/0/3", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 3 },
+        { "id": "e0000000-0000-4000-8000-000000000044", "name": "Gi1/0/24", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": false, "ifIndex": 24 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000006",
+      "type": "poe_switch",
+      "hostname": "SW-ACC-02",
+      "vendor": "Cisco",
+      "model": "C9200-24P",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "10.0.0.22/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0006" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000051", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000052", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 2 },
+        { "id": "e0000000-0000-4000-8000-000000000053", "name": "Gi1/0/3", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 3 }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000007",
+      "type": "server",
+      "hostname": "SRV-DC-01",
+      "vendor": "Dell",
+      "model": "PowerEdge R450",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "192.168.20.10/24",
+      "site": "HQ",
+      "customFields": { "assetTag": "A-0007" },
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000061", "name": "eno1", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": ["192.168.20.10/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000008",
+      "type": "pc",
+      "hostname": "PC-ACC-01",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "192.168.20.21/24",
+      "site": "HQ",
+      "customFields": {},
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000062", "name": "eth0", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": ["192.168.20.21/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000009",
+      "type": "ip_camera",
+      "hostname": "CAM-01",
+      "vendor": "Hikvision",
+      "model": "DS-2CD2143G2",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "192.168.30.31/24",
+      "site": "HQ",
+      "customFields": {},
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000063", "name": "eth0", "media": "rj45", "speed": "100M", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": ["192.168.30.31/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
+      ]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000010",
+      "type": "access_point",
+      "hostname": "AP-01",
+      "vendor": "Ubiquiti",
+      "model": "U6-Pro",
+      "role": "access",
+      "lifecycle": "existing",
+      "mgmtIp": "192.168.30.41/24",
+      "site": "HQ",
+      "customFields": {},
+      "monitoring": { "enabled": false, "snmpProfileId": null },
+      "interfaces": [
+        { "id": "e0000000-0000-4000-8000-000000000064", "name": "eth0", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": ["192.168.30.41/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": null }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "f0000000-0000-4000-8000-000000000001",
+      "kind": "ethernet",
+      "medium": "cat6",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000001", "interfaceId": "e0000000-0000-4000-8000-000000000002" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000011" },
+      "lengthM": 1,
+      "cableId": "C-001",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000002",
+      "kind": "ethernet",
+      "medium": "cat6a",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000012" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000003", "interfaceId": "e0000000-0000-4000-8000-000000000021" },
+      "lengthM": 2,
+      "cableId": "C-002",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000003",
+      "kind": "ethernet",
+      "medium": "cat6a",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000013" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000004", "interfaceId": "e0000000-0000-4000-8000-000000000031" },
+      "lengthM": 2,
+      "cableId": "C-003",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000004",
+      "kind": "fiber",
+      "medium": "mm_om3",
+      "speed": "10G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000003", "interfaceId": "e0000000-0000-4000-8000-000000000022" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000004", "interfaceId": "e0000000-0000-4000-8000-000000000032" },
+      "lengthM": 5,
+      "cableId": "C-004",
+      "notes": "Core interlink"
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000005",
+      "kind": "fiber",
+      "medium": "mm_om3",
+      "speed": "10G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000003", "interfaceId": "e0000000-0000-4000-8000-000000000023" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000005", "interfaceId": "e0000000-0000-4000-8000-000000000041" },
+      "lengthM": 15,
+      "cableId": "C-005",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000006",
+      "kind": "fiber",
+      "medium": "mm_om3",
+      "speed": "10G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000004", "interfaceId": "e0000000-0000-4000-8000-000000000033" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000006", "interfaceId": "e0000000-0000-4000-8000-000000000051" },
+      "lengthM": 15,
+      "cableId": "C-006",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000007",
+      "kind": "ethernet",
+      "medium": "cat6",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000005", "interfaceId": "e0000000-0000-4000-8000-000000000042" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000007", "interfaceId": "e0000000-0000-4000-8000-000000000061" },
+      "lengthM": 20,
+      "cableId": "C-007",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000008",
+      "kind": "ethernet",
+      "medium": "cat6",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000005", "interfaceId": "e0000000-0000-4000-8000-000000000043" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000008", "interfaceId": "e0000000-0000-4000-8000-000000000062" },
+      "lengthM": 25,
+      "cableId": "C-008",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000009",
+      "kind": "ethernet",
+      "medium": "cat6",
+      "speed": "100M",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000006", "interfaceId": "e0000000-0000-4000-8000-000000000052" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000009", "interfaceId": "e0000000-0000-4000-8000-000000000063" },
+      "lengthM": 30,
+      "cableId": "C-009",
+      "notes": ""
+    },
+    {
+      "id": "f0000000-0000-4000-8000-000000000010",
+      "kind": "ethernet",
+      "medium": "cat6",
+      "speed": "1G",
+      "status": "up",
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000006", "interfaceId": "e0000000-0000-4000-8000-000000000053" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000010", "interfaceId": "e0000000-0000-4000-8000-000000000064" },
+      "lengthM": 30,
+      "cableId": "C-010",
+      "notes": ""
+    }
+  ],
+  "groups": [
+    {
+      "id": "11000000-0000-4000-8000-000000000001",
+      "kind": "zone",
+      "name": "HQ Core",
+      "memberIds": [
+        "d0000000-0000-4000-8000-000000000003",
+        "d0000000-0000-4000-8000-000000000004"
+      ],
+      "parentId": null
+    }
+  ],
+  "assets": [],
+  "pages": [
+    {
+      "id": "12000000-0000-4000-8000-000000000001",
+      "name": "HQ - Physical",
+      "layer": "physical",
+      "nodes": [
+        { "refId": "d0000000-0000-4000-8000-000000000001", "x": 480, "y": 40, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000002", "x": 480, "y": 180, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000003", "x": 280, "y": 340, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000004", "x": 680, "y": 340, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000005", "x": 280, "y": 500, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000006", "x": 680, "y": 500, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000007", "x": 120, "y": 640, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000008", "x": 320, "y": 640, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000009", "x": 520, "y": 640, "iconAssetId": null, "locked": false },
+        { "refId": "d0000000-0000-4000-8000-000000000010", "x": 720, "y": 640, "iconAssetId": null, "locked": false }
+      ],
+      "edges": [
+        { "refId": "f0000000-0000-4000-8000-000000000001", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000002", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000003", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000004", "routing": "straight", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000005", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000006", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000007", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000008", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000009", "routing": "orthogonal", "waypoints": [] },
+        { "refId": "f0000000-0000-4000-8000-000000000010", "routing": "orthogonal", "waypoints": [] }
+      ],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 },
+      "labelTemplate": "{hostname}\n{mgmtIp}"
+    }
+  ]
+}
