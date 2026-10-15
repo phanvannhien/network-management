@@ -205,7 +205,7 @@ Nginx ── Go binary `ntb`
 
 | Thành phần | Lựa chọn |
 | --- | --- |
-| Frontend | React 18 + TypeScript + Vite |
+| Frontend | React 19 + TypeScript + Vite |
 | Canvas | @xyflow/react (xem lại nếu không đạt 2.000 node — Konva/PixiJS) |
 | State | Zustand + Immer |
 | UI | shadcn/ui + Tailwind CSS |

@@ -44,3 +44,8 @@ nếu đổi ý thì viết ADR mới ghi "Thay thế ADR-xxx".
 ### ADR-009 — Hoãn cộng tác realtime
 - **Quyết định:** chưa làm ở Phase 1–3. Trước mắt dùng optimistic lock khi lưu (P2-04).
 - **Khi làm:** cân nhắc Yjs với một sidecar Node chạy y-websocket bên cạnh API Go.
+
+### ADR-010 — Dùng React 19 (thay thế ADR-002 ở phần phiên bản)
+- **Quyết định:** dùng React 19 (19.2.x) thay cho React 18. Phần còn lại của ADR-002 (TypeScript strict, shadcn/ui + Tailwind) giữ nguyên.
+- **Lý do:** Vite template hiện tại cài sẵn React 19; React 19 stable từ cuối 2024 và `@xyflow/react` v12 hỗ trợ đầy đủ. Không có lý do kỹ thuật nào giữ 18.
+- **Chốt:** người dùng xác nhận ngày 2026-10-15.

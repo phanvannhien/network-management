@@ -22,7 +22,7 @@ Tài liệu nguồn (đọc khi cần, không cần đọc hết mỗi phiên):
 7. Commit nhỏ theo từng task, Conventional Commits: `feat(canvas): port-to-port linking (P1-06)`.
 
 ## Stack (đã chốt — xem ADR)
-- **Frontend:** React 18, TypeScript (strict), Vite, @xyflow/react (React Flow), Zustand + Immer,
+- **Frontend:** React 19, TypeScript (strict), Vite, @xyflow/react (React Flow), Zustand + Immer,
   shadcn/ui + Tailwind CSS, ajv (validate JSON Schema), ipaddr.js, Dexie (IndexedDB),
   html-to-image, react-i18next, Vitest, Playwright.
 - **Backend:** Go (bản stable mới nhất), chi (router), pgx v5, sqlc, golang-migrate, gosnmp, log/slog.
