@@ -1,4 +1,4 @@
-.PHONY: dev-web dev-api sqlc migrate-up migrate-down types test check
+.PHONY: dev-web dev-api sqlc migrate-up migrate-down types test check format
 
 # Frontend dev server (Vite)
 dev-web:
@@ -23,10 +23,20 @@ migrate-down:
 types:
 	@echo "TODO: implemented in P0-03"
 
-# Lint + typecheck + test for frontend and backend (added in P0-02)
+# Lint + typecheck + test for frontend and backend
 check:
-	@echo "TODO: implemented in P0-02"
+	cd frontend && npm run lint
+	cd frontend && npm run format:check
+	cd frontend && npx tsc -b
+	cd frontend && npm run test
+	cd backend && go vet ./...
+	cd backend && golangci-lint run
+	cd backend && go test ./...
+
+# Rewrite frontend code formatting
+format:
+	cd frontend && npm run format
 
 test:
-	cd frontend && npm run test --if-present
+	cd frontend && npm run test
 	cd backend && go test ./...

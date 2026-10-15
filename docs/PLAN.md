@@ -11,7 +11,7 @@ Phase hiện tại: **Phase 0**
 
 - [x] **P0-01 Khung monorepo**: tạo `/frontend` (Vite + React + TS strict + Tailwind + shadcn/ui), `/backend` (Go module, `cmd/ntb/main.go` in "ok"), `Makefile`, `.editorconfig`, `.gitignore`, `README.md`.
   Done khi: `make dev-web` mở trang trống; `cd backend && go build ./...` thành công.
-- [ ] **P0-02 Lint & test**: ESLint + Prettier, Vitest; golangci-lint, `go test`; target `make check`.
+- [x] **P0-02 Lint & test**: oxlint + Prettier, Vitest; golangci-lint, `go test`; target `make check`.
   Done khi: `make check` pass trên repo trống.
 - [ ] **P0-03 Schema file dự án**: `schema/ntb.schema.json` v1.0.0 theo SRS §7; `testdata/sample-small.ntb.json` (~10 thiết bị, có VLAN, subnet, link); `make types` sinh TS types.
   Done khi: file mẫu validate pass bằng ajv; types sinh ra được import trong frontend.
