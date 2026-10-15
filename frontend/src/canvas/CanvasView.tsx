@@ -9,7 +9,7 @@ import {
   type NodeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DeviceType } from '../types/ntb'
 import { compound, setNodeLocked } from '../model/commands'
 import { newId } from '../model/factory'
@@ -19,6 +19,7 @@ import { buildEdges, buildNodes, firstPageId } from './adapters'
 import { DeviceNode } from './DeviceNode'
 import { deviceDropCommand } from './dropDevice'
 import { useCanvasShortcuts } from './useCanvasShortcuts'
+import { LinkDialog, type PendingConnection } from './LinkDialog'
 import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
@@ -70,6 +71,8 @@ function CanvasInner() {
   const selection = useAppStore((s) => s.selection)
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [gridSize, setGridSize] = useState<number>(20)
+  const [pending, setPending] = useState<PendingConnection | null>(null)
+  const connectionSource = useRef<string | null>(null)
   const { fitView, screenToFlowPosition } = useReactFlow()
   useCanvasShortcuts(pageId)
 
@@ -120,6 +123,26 @@ function CanvasInner() {
         }
         setSelection([...next])
       }
+    },
+    [pageId],
+  )
+
+  const onConnectStart = useCallback((_event: unknown, params: { nodeId?: string | null }) => {
+    connectionSource.current = params.nodeId ?? null
+  }, [])
+
+  const onConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const sourceId = connectionSource.current
+      connectionSource.current = null
+      if (!sourceId || !pageId) return
+      const point = 'changedTouches' in event ? event.changedTouches[0] : event
+      const element = document.elementFromPoint(point.clientX, point.clientY)
+      const nodeElement = element?.closest('.react-flow__node')
+      const targetId = nodeElement?.getAttribute('data-id')
+      if (!targetId || targetId === sourceId) return
+      if (!useAppStore.getState().data.devices[targetId]) return
+      setPending({ sourceId, targetId })
     },
     [pageId],
   )
@@ -182,6 +205,8 @@ function CanvasInner() {
         edges={edges}
         nodeTypes={{ device: DeviceNode }}
         onNodesChange={onNodesChange}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onDragOver={onDragOver}
         onDrop={onDrop}
         minZoom={0.1}
@@ -200,6 +225,7 @@ function CanvasInner() {
         <Controls showInteractive={false} />
         <MiniMap pannable zoomable className="!bg-background" />
       </ReactFlow>
+      {pending && <LinkDialog pending={pending} pageId={pageId} onClose={() => setPending(null)} />}
     </div>
   )
 }

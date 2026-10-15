@@ -18,7 +18,7 @@ function DeviceNodeImpl({ id, selected }: NodeProps) {
         selected ? 'border-primary ring-2 ring-primary' : 'border-border'
       }`}
     >
-      {/* Ports become real handles in P1-06; placeholders keep the layout ready. */}
+      {/* Single connection point per device; the exact port is picked in the LinkDialog popup. */}
       <Handle
         type="target"
         position={Position.Top}
@@ -31,7 +31,7 @@ function DeviceNodeImpl({ id, selected }: NodeProps) {
         type="source"
         position={Position.Bottom}
         className="!size-2 !border !bg-muted"
-        isConnectable={false}
+        isConnectable={true}
       />
     </div>
   )

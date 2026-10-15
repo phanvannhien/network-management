@@ -271,3 +271,36 @@ export function buildPasteCommand(
 
   return { command, newDeviceIds: copies.map((c) => c.id) }
 }
+
+/** Registers a link on a page so the canvas draws it. */
+export function addPageEdge(pageId: string, linkId: string): Command {
+  return {
+    apply(draft) {
+      const page = draft.pages[pageId]
+      if (!page) throw new Error(`page not found: ${pageId}`)
+      if (!draft.links[linkId]) throw new Error(`link not found: ${linkId}`)
+      page.edges.push({ refId: linkId, routing: 'orthogonal', waypoints: [] })
+    },
+  }
+}
+
+/**
+ * Full "connect two ports" action: creates the link (port-conflict checked)
+ * and registers the view edge — a single undo step.
+ */
+export function connectPorts(
+  pageId: string,
+  a: { deviceId: string; interfaceId: string },
+  b: { deviceId: string; interfaceId: string },
+  kind: Link['kind'],
+): Command {
+  const link: Link = {
+    id: newId(),
+    kind,
+    status: 'planned',
+    notes: '',
+    a,
+    b,
+  }
+  return compound(addLink(link), addPageEdge(pageId, link.id))
+}

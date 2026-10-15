@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
 import type { NtbData } from '../model/types'
+import { edgeVisual, parallelCurvature } from './edges'
 
 /**
  * Adapters from the NtbData model to React Flow's node/edge shape.
@@ -40,19 +41,27 @@ export function buildNodes(
 export function buildEdges(data: NtbData, pageId: string): Edge[] {
   const page = data.pages[pageId]
   if (!page) return []
-  return page.edges
+  const drawn = page.edges
     .filter((e) => data.links[e.refId] !== undefined)
-    .map((e) => {
-      const link = data.links[e.refId]
-      return {
-        id: link.id,
-        source: link.a.deviceId,
-        target: link.b.deviceId,
-        // Port-to-port handles arrive with P1-06; straight lines for now.
-        sourceHandle: null,
-        targetHandle: null,
-      }
-    })
+    .map((e) => data.links[e.refId])
+
+  // Group by unordered endpoint pair to spread parallel links apart.
+  const parallelIndex = new Map<string, number>()
+  return drawn.map((link) => {
+    const pairKey = [link.a.deviceId, link.b.deviceId].sort().join('|')
+    const index = parallelIndex.get(pairKey) ?? 0
+    parallelIndex.set(pairKey, index + 1)
+    return {
+      id: link.id,
+      source: link.a.deviceId,
+      target: link.b.deviceId,
+      sourceHandle: null,
+      targetHandle: null,
+      type: 'default',
+      pathOptions: { curvature: parallelCurvature(index) },
+      ...edgeVisual(link),
+    }
+  })
 }
 
 /** First page id by display order, or null when the document has no pages. */
