@@ -32,7 +32,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-08 Label & tooltip**: label template `{hostname}\n{mgmtIp}`, label cổng hai đầu link + tốc độ; ẩn label phụ khi zoom < 50%; tooltip khi hover.
 - [x] **P1-09 Validation**: rule engine trong Web Worker, debounce 300 ms, các rule MVP ở SRS §6; panel Problems, click lỗi → zoom tới đối tượng, badge cảnh báo trên node.
   Done khi: mỗi rule có unit test (trường hợp đúng + sai).
-- [ ] **P1-10 Lưu trữ**: autosave IndexedDB (30 s + khi đổi), khôi phục phiên; Save/Load file `.ntb.json` có validate schema; cảnh báo rời trang khi chưa lưu.
+- [x] **P1-10 Lưu trữ**: autosave IndexedDB (30 s + khi đổi), khôi phục phiên; Save/Load file `.ntb.json` có validate schema; cảnh báo rời trang khi chưa lưu.
   Done khi: Save → Load cho model giống hệt (deep equal).
 - [ ] **P1-11 Export**: PNG (1x–4x, nền trong suốt/trắng) và SVG, có legend.
 - [ ] **P1-12 Theme & i18n**: Dark/Light/System; tiếng Việt + tiếng Anh.

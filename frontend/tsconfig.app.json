@@ -6,7 +6,9 @@
     "module": "esnext",
     "types": ["vite/client"],
     "strict": true,
+    "resolveJsonModule": true,
     "paths": {
+      "@schema/*": ["../schema/*"],
       "@/*": ["./src/*"]
     },
     "allowArbitraryExtensions": true,

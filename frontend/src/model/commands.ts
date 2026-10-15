@@ -330,3 +330,20 @@ export function updateDevicesBulk(
     },
   }
 }
+
+/** Replaces the whole document (Load file / restore session) in one undo step. */
+export function replaceDocument(next: NtbData): Command {
+  return {
+    apply(draft) {
+      draft.project = next.project
+      draft.vlans = next.vlans
+      draft.subnets = next.subnets
+      draft.devices = next.devices
+      draft.links = next.links
+      draft.groups = next.groups
+      draft.assets = next.assets
+      draft.pages = next.pages
+      draft.pageOrder = [...next.pageOrder]
+    },
+  }
+}

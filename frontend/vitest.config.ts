@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@schema': path.resolve(import.meta.dirname, '../schema'),
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
