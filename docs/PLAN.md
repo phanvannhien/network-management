@@ -28,7 +28,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-04 Canvas cơ bản**: React Flow, zoom 10–400%, pan (Space + kéo), grid snap bật/tắt, minimap, Fit to screen.
 - [x] **P1-05 Thao tác chọn & sửa**: multi-select (Shift, rubber-band, Ctrl+A), copy/paste giữ link nội bộ và tự đổi hostname trùng, duplicate, delete (xóa kèm link), lock, phím tắt theo SRS §3.
 - [x] **P1-06 Nối dây port → port**: kéo từ thiết bị, popup chọn cổng trống hợp lệ, auto-assign, chặn 2 link vào 1 cổng, loại link (Ethernet/Fiber/Wireless/Serial/Logical) với kiểu nét theo SRS §4, nhiều link song song không đè nhau.
-- [ ] **P1-07 Sidebar thuộc tính**: tab General / Interfaces / Links / Notes cho Device; form Link; nhập IP dạng CIDR; sửa hàng loạt khi chọn nhiều.
+- [x] **P1-07 Sidebar thuộc tính**: tab General / Interfaces / Links / Notes cho Device; form Link; nhập IP dạng CIDR; sửa hàng loạt khi chọn nhiều.
 - [ ] **P1-08 Label & tooltip**: label template `{hostname}\n{mgmtIp}`, label cổng hai đầu link + tốc độ; ẩn label phụ khi zoom < 50%; tooltip khi hover.
 - [ ] **P1-09 Validation**: rule engine trong Web Worker, debounce 300 ms, các rule MVP ở SRS §6; panel Problems, click lỗi → zoom tới đối tượng, badge cảnh báo trên node.
   Done khi: mỗi rule có unit test (trường hợp đúng + sai).

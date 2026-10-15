@@ -304,3 +304,29 @@ export function connectPorts(
   }
   return compound(addLink(link), addPageEdge(pageId, link.id))
 }
+
+export function updateLink(id: string, patch: Partial<Omit<Link, 'id' | 'a' | 'b'>>): Command {
+  return {
+    apply(draft) {
+      const link = draft.links[id]
+      if (!link) throw new Error(`link not found: ${id}`)
+      Object.assign(link, patch)
+    },
+  }
+}
+
+/** Applies the same device patch to many devices in one undo step (bulk edit). */
+export function updateDevicesBulk(
+  ids: string[],
+  patch: Partial<Omit<Device, 'id' | 'interfaces'>>,
+): Command {
+  return {
+    apply(draft) {
+      for (const id of ids) {
+        const device = draft.devices[id]
+        if (!device) throw new Error(`device not found: ${id}`)
+        Object.assign(device, patch)
+      }
+    },
+  }
+}

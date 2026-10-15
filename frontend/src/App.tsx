@@ -1,5 +1,6 @@
 import { CanvasView } from './canvas/CanvasView'
 import { Palette } from './panels/Palette'
+import { Sidebar } from './panels/Sidebar'
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <div className="flex-1">
         <CanvasView />
       </div>
+      <Sidebar />
     </main>
   )
 }
