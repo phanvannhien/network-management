@@ -68,7 +68,9 @@
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000011", "name": "wan1", "media": "rj45", "speed": "1G", "mode": "routed", "ipAddresses": ["10.0.0.2/24"], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
         { "id": "e0000000-0000-4000-8000-000000000012", "name": "port1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
-        { "id": "e0000000-0000-4000-8000-000000000013", "name": "port2", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 3 }
+        { "id": "e0000000-0000-4000-8000-000000000013", "name": "port2", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 3 },
+        { "id": "e0000000-0000-4000-8000-000000000014", "name": "X1", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 4 },
+        { "id": "e0000000-0000-4000-8000-000000000015", "name": "X2", "media": "sfp_plus", "speed": "10G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 5 }
       ]
     },
     {
@@ -122,6 +124,7 @@
       "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000041", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000045", "name": "Gi1/1/1", "media": "sfp", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 25 },
         { "id": "e0000000-0000-4000-8000-000000000042", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 2 },
         { "id": "e0000000-0000-4000-8000-000000000043", "name": "Gi1/0/3", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 3 },
         { "id": "e0000000-0000-4000-8000-000000000044", "name": "Gi1/0/24", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 20, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": false, "ifIndex": 24 }
@@ -141,6 +144,7 @@
       "monitoring": { "enabled": false, "snmpProfileId": null, "pollerId": "central", "dependsOnDeviceId": null },
       "interfaces": [
         { "id": "e0000000-0000-4000-8000-000000000051", "name": "Gi1/0/1", "media": "rj45", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 1 },
+        { "id": "e0000000-0000-4000-8000-000000000055", "name": "Gi1/1/1", "media": "sfp", "speed": "1G", "mode": "trunk", "allowedVlans": [10, 20, 30], "ipAddresses": [], "poe": false, "lagId": null, "adminUp": true, "ifIndex": 25 },
         { "id": "e0000000-0000-4000-8000-000000000052", "name": "Gi1/0/2", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 2 },
         { "id": "e0000000-0000-4000-8000-000000000053", "name": "Gi1/0/3", "media": "rj45", "speed": "1G", "mode": "access", "accessVlan": 30, "allowedVlans": [], "ipAddresses": [], "poe": true, "lagId": null, "adminUp": true, "ifIndex": 3 }
       ]
@@ -227,7 +231,7 @@
       "medium": "cat6a",
       "speed": "1G",
       "status": "up",
-      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000012" },
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000014" },
       "b": { "deviceId": "d0000000-0000-4000-8000-000000000003", "interfaceId": "e0000000-0000-4000-8000-000000000021" },
       "lengthM": 2,
       "cableId": "C-002",
@@ -239,7 +243,7 @@
       "medium": "cat6a",
       "speed": "1G",
       "status": "up",
-      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000013" },
+      "a": { "deviceId": "d0000000-0000-4000-8000-000000000002", "interfaceId": "e0000000-0000-4000-8000-000000000015" },
       "b": { "deviceId": "d0000000-0000-4000-8000-000000000004", "interfaceId": "e0000000-0000-4000-8000-000000000031" },
       "lengthM": 2,
       "cableId": "C-003",
@@ -264,7 +268,7 @@
       "speed": "10G",
       "status": "up",
       "a": { "deviceId": "d0000000-0000-4000-8000-000000000003", "interfaceId": "e0000000-0000-4000-8000-000000000023" },
-      "b": { "deviceId": "d0000000-0000-4000-8000-000000000005", "interfaceId": "e0000000-0000-4000-8000-000000000041" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000005", "interfaceId": "e0000000-0000-4000-8000-000000000045" },
       "lengthM": 15,
       "cableId": "C-005",
       "notes": ""
@@ -276,7 +280,7 @@
       "speed": "10G",
       "status": "up",
       "a": { "deviceId": "d0000000-0000-4000-8000-000000000004", "interfaceId": "e0000000-0000-4000-8000-000000000033" },
-      "b": { "deviceId": "d0000000-0000-4000-8000-000000000006", "interfaceId": "e0000000-0000-4000-8000-000000000051" },
+      "b": { "deviceId": "d0000000-0000-4000-8000-000000000006", "interfaceId": "e0000000-0000-4000-8000-000000000055" },
       "lengthM": 15,
       "cableId": "C-006",
       "notes": ""

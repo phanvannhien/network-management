@@ -21,6 +21,8 @@ import { deviceDropCommand } from './dropDevice'
 import { useCanvasShortcuts } from './useCanvasShortcuts'
 import { LinkDialog, type PendingConnection } from './LinkDialog'
 import { LinkEdge } from './LinkEdge'
+import { useValidation } from '../validation/useValidation'
+import { Problems } from '../panels/Problems'
 import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
@@ -77,8 +79,30 @@ function CanvasInner() {
   const [gridSize, setGridSize] = useState<number>(20)
   const [pending, setPending] = useState<PendingConnection | null>(null)
   const connectionSource = useRef<string | null>(null)
-  const { fitView, screenToFlowPosition } = useReactFlow()
+  const { fitView, screenToFlowPosition, setCenter } = useReactFlow()
   useCanvasShortcuts(pageId)
+  useValidation()
+  const focusTarget = useAppStore((s) => s.focusTarget)
+
+  // Problem panel click → zoom to the object (SRS §6).
+  useEffect(() => {
+    if (!focusTarget || !pageId) return
+    const { data } = useAppStore.getState()
+    if (focusTarget.kind === 'device') {
+      const node = data.pages[pageId]?.nodes.find((n) => n.refId === focusTarget.id)
+      if (node) void setCenter(node.x + 56, node.y + 60, { zoom: 1, duration: 300 })
+    } else {
+      const link = data.links[focusTarget.id]
+      if (link) {
+        void fitView({
+          nodes: [{ id: link.a.deviceId }, { id: link.b.deviceId }],
+          duration: 300,
+          maxZoom: 1.5,
+          padding: 0.4,
+        })
+      }
+    }
+  }, [focusTarget, pageId, setCenter, fitView])
 
   const nodes = useMemo(
     () => (pageId ? buildNodes(data, pageId, selection) : []),
@@ -231,6 +255,7 @@ function CanvasInner() {
         <MiniMap pannable zoomable className="!bg-background" />
       </ReactFlow>
       {pending && <LinkDialog pending={pending} pageId={pageId} onClose={() => setPending(null)} />}
+      <Problems />
     </div>
   )
 }

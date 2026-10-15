@@ -2,6 +2,13 @@ import { Handle, Position, useStore, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
 import { DeviceIcon } from '../catalog/icons'
 import { useAppStore } from '../model/store'
+import { severityForDevice } from '../validation/rules'
+
+const BADGE_STYLE: Record<string, string> = {
+  error: 'bg-red-500',
+  warning: 'bg-amber-500',
+  info: 'bg-blue-500',
+}
 
 /**
  * Custom React Flow node rendering one device. Subscribes only to its own
@@ -12,6 +19,7 @@ import { useAppStore } from '../model/store'
 function DeviceNodeImpl({ id, data, selected }: NodeProps) {
   const device = useAppStore((s) => s.data.devices[id])
   const zoom = useStore((s) => s.transform[2])
+  const severity = useAppStore((s) => severityForDevice(s.problems, id))
   if (!device) return null
 
   const labelLines = (data.label as string | undefined) ?? device.hostname
@@ -33,7 +41,15 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps) {
         className="!size-2 !border !bg-muted"
         isConnectable={false}
       />
-      <DeviceIcon typeId={device.type} size={32} />
+      <div className="relative">
+        <DeviceIcon typeId={device.type} size={32} />
+        {severity !== null && (
+          <span
+            className={`absolute -top-1 -right-2 inline-block size-2.5 rounded-full ${BADGE_STYLE[severity]}`}
+            title={`Validation: ${severity}`}
+          />
+        )}
+      </div>
       <span className="w-full truncate text-center text-xs font-medium">{primary}</span>
       {zoom >= 0.5 &&
         secondary

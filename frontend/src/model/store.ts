@@ -2,8 +2,16 @@ import { produce } from 'immer'
 import { create } from 'zustand'
 import type { Command } from './commands'
 import { emptyData, type NtbData } from './types'
+import type { Problem } from '../validation/rules'
 
 export const UNDO_LIMIT = 200 // SRS §3 requires ≥ 100
+
+export interface FocusTarget {
+  kind: 'device' | 'link'
+  id: string
+  /** Increments per request so repeated clicks on one problem re-focus. */
+  nonce: number
+}
 
 interface PastEntry {
   data: NtbData
@@ -16,6 +24,10 @@ export interface AppStore {
   selection: string[]
   /** Copied device ids (Ctrl+C). UI state — not undoable. */
   clipboard: string[]
+  /** Latest validation problems (from the Web Worker). */
+  problems: Problem[]
+  /** Panel click → canvas zooms to this object. */
+  focusTarget: FocusTarget | null
   past: PastEntry[]
   future: NtbData[]
   dispatch(command: Command): void
@@ -23,6 +35,8 @@ export interface AppStore {
   redo(): void
   setSelection(ids: string[]): void
   setClipboard(ids: string[]): void
+  setProblems(problems: Problem[]): void
+  setFocusTarget(target: FocusTarget): void
 }
 
 export type AppStoreApi = ReturnType<typeof createAppStore>
@@ -32,6 +46,8 @@ export function createAppStore() {
     data: emptyData(),
     selection: [],
     clipboard: [],
+    problems: [],
+    focusTarget: null,
     past: [],
     future: [],
 
@@ -71,6 +87,8 @@ export function createAppStore() {
 
     setSelection: (ids) => set({ selection: ids }),
     setClipboard: (ids) => set({ clipboard: ids }),
+    setProblems: (problems) => set({ problems }),
+    setFocusTarget: (target) => set({ focusTarget: target }),
   }))
 }
 
