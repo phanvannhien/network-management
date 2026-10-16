@@ -159,3 +159,28 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** MSP quản lý nhiều khách hàng, mỗi khách hàng nhiều chi nhánh; kỹ sư hiện trường chỉ cần (và chỉ nên) thấy site
   mình phụ trách; cây location chuẩn hóa thay ô gõ tự do (SRS §3); sơ đồ một site giữ phân quyền theo site đơn giản.
 - **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-026 — Cấp Đơn vị giữa Tổ chức và Site
+- **Quyết định:** phân cấp: Tổ chức → Đơn vị (business unit) → Site → Location → Rack → Thiết bị.
+  Tổ chức = bên ký hợp đồng với đơn vị vận hành (vd CJ). Đơn vị = công ty con / đối tác / khách hàng của tổ chức (vd CJ Foodville).
+  Site = địa điểm vật lý có địa chỉ, có `kind`: office | factory | datacenter | warehouse | store | other.
+  Site có `business_unit_id` hoặc null (= site dùng chung của tổ chức, vd IDC). Thiết bị có `business_unit_id` riêng
+  (mặc định lấy theo site; bắt buộc chọn khi site dùng chung). Location (tòa/tầng/phòng) và Rack không bắt buộc.
+  Phân quyền: membership có thể giới hạn theo danh sách đơn vị và/hoặc site.
+- **Lý do:** Excel thực tế của khách dùng "Site" = công ty và "Location" = địa điểm; một công ty có nhiều địa điểm và một địa điểm
+  (IDC) có thể phục vụ nhiều công ty — phải tách thành hai cấp.
+
+### ADR-027 — Cụm thiết bị (HA, stack)
+- **Quyết định:** bảng `device_clusters`: kind (ha_active_passive | ha_active_active | stack | vpc | vss | other), tên, hostname cụm (tùy chọn),
+  IP quản trị cụm (gắn interface ảo của cụm hoặc IP riêng). Thiết bị thành viên giữ S/N, part number, bảo hành riêng; có
+  `cluster_id`, `cluster_role` (primary | secondary | member), `cluster_member_no`.
+  Validation: IP trùng và hostname trùng được bỏ qua khi các thiết bị cùng một cụm. Trên sơ đồ, cụm hiển thị gộp thành 1 node
+  (badge "HA" / "Stack ×3") hoặc mở rộng từng thành viên.
+- **Lý do:** cặp FortiGate HA dùng chung IP quản trị; switch stack nhiều S/N chung một hostname/IP.
+
+### ADR-028 — Sơ đồ nhiều cấp và đi sâu (drill-down)
+- **Quyết định:** sơ đồ thuộc tổ chức, có `scope`: organization | business_unit | site (kèm id tương ứng). Ba loại:
+  tổng quan tổ chức (trung tâm + đơn vị + WAN/VPN), tổng quan đơn vị (các site dạng khối nối về trung tâm), chi tiết site (LAN).
+  Node "site" trên sơ đồ tổng quan: double-click mở sơ đồ chi tiết của site đó. Sơ đồ tổng quan có thể tự sinh từ dữ liệu
+  (sites + link WAN/VPN), người dùng chỉnh bố cục sau. Một site có thể có nhiều sơ đồ chi tiết (vật lý, L2, L3).
+- **Lý do:** khách nhiều đơn vị × nhiều site; một sơ đồ cho cả đơn vị sẽ quá rối, kỹ sư cần nhìn tổng quan rồi đi sâu.

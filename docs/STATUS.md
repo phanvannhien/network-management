@@ -5,6 +5,47 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Mô hình Tổ chức → Đơn vị → Site; cụm HA; sơ đồ nhiều cấp
+- Đã làm (chỉ tài liệu, chưa code):
+  - `docs/DECISIONS.md`: **ADR-026** Cấp Đơn vị giữa Tổ chức và Site, **ADR-027** Cụm thiết bị (HA, stack),
+    **ADR-028** Sơ đồ nhiều cấp và drill-down (số ADR lớn nhất trước đó là 025).
+  - `docs/SRS.md`: §1 phân cấp; §2 menu "Đơn vị & Sites"; §3 Đơn vị + Site có loại/đơn vị/dùng chung/nhà mạng; §4.1 thêm Đơn vị,
+    dòng Cụm, End-of-Sale/End-of-Support; §4.5 Cụm thiết bị; §6.1 sơ đồ có phạm vi tổ chức/đơn vị/site + sơ đồ nhiều cấp;
+    §7 trùng IP/hostname bỏ qua trong cụm + rule quá End-of-Support; §10 giới hạn theo đơn vị và/hoặc site; §12 import ánh xạ
+    Site→Đơn vị, Location→Site, gộp tên gần giống, đề xuất cụm HA, Person in charge; §13 business_units, device_clusters,
+    diagrams.scope; §16 checklist import file mẫu khách.
+  - `docs/PLAN.md`: P1-03, P1-07 (đổi tên + mở lại), P1-08, **P1-09b** mới, P1-13, P1-21, P1-25 (seed "Tập đoàn Mẫu"),
+    **P2-21**, **P2-22** mới.
+- Ảnh hưởng tới phần ĐÃ CODE (chưa sửa — chờ duyệt):
+  1. **P1-07 (đã làm site/location/rack + site_scope)** — đã bỏ tick trong PLAN vì định nghĩa mới có thêm đơn vị:
+     - Migration 000008: bảng `business_units` (organization_id, code duy nhất trong tổ chức, name, relation:
+       subsidiary/partner/customer, liên hệ, ghi chú, version, deleted_at, UNIQUE(id, organization_id));
+       `sites.kind` (office/factory/datacenter/warehouse/store/other, site hiện có → `office`);
+       `sites.business_unit_id` null được, khóa ngoại kép `(business_unit_id, organization_id)`; `sites.isp` (nhà mạng chính).
+       Site hiện có giữ `business_unit_id = NULL` (= dùng chung) — không mất dữ liệu.
+     - API: CRUD `/orgs/{orgId}/business-units` (+ test chéo tổ chức, vai trò, audit); `SiteInput` thêm `kind`,
+       `businessUnitId`, `isp`; danh sách site lọc theo đơn vị.
+     - Giao diện: trang Đơn vị (danh sách + chi tiết với các site của đơn vị), form site chọn loại + đơn vị/"dùng chung",
+       bảng site nhóm/lọc theo đơn vị, menu đổi thành "Đơn vị & Sites", Ctrl+K tìm đơn vị.
+     - Ước lượng: ~2,5–3 ngày (DB + API + test ~1,5; giao diện ~1–1,5).
+  2. **P1-03/P1-04 (membership)** — thêm `memberships.business_unit_scope uuid[]`; `PATCH members` nhận `businessUnitScope`;
+     `tenant.Membership` lọc site theo cả đơn vị và site; sheet Thành viên thêm "Giới hạn đơn vị". Ước lượng ~1 ngày.
+  3. **ADR-025** mâu thuẫn một phần với ADR-028: "mỗi sơ đồ thuộc đúng một site" đã được thay bằng phạm vi
+     tổ chức/đơn vị/site (SRS §6.1 đã sửa theo ADR-028). Các ý khác của ADR-025 (cây location, rack, site_scope chỉ cho
+     editor/viewer, xóa mềm) vẫn đúng. Chưa sửa ADR-025 vì ngoài phạm vi yêu cầu.
+  4. Chưa code nên không ảnh hưởng: P1-08 (thiết bị, `business_unit_id`), P1-09b (cụm), P1-13 (diagram scope), P1-21, P1-25.
+     Dữ liệu mẫu ở trang Thiết bị (frontend) sẽ bị thay ở P1-08 như kế hoạch.
+  - Tổng ước lượng phần sửa lại: **~3,5–4 ngày**, nên làm trước P1-08 vì thiết bị cần `business_unit_id`.
+- Câu hỏi cho người dùng (cần chốt trước khi sửa code):
+  1. Thành viên có cả giới hạn đơn vị và giới hạn site: lấy **hợp** (thấy site của đơn vị được giao + các site được giao lẻ)
+     hay **giao** (chỉ site vừa thuộc đơn vị vừa nằm trong danh sách)? Đề xuất: hợp.
+  2. Thành viên bị giới hạn theo đơn vị có thấy **site dùng chung** (vd IDC HCM) không, và thấy những gì trong đó?
+     Đề xuất: thấy site dùng chung nhưng chỉ thấy thiết bị có `business_unit_id` thuộc đơn vị của mình (P1-08).
+  3. Mã đơn vị có bắt buộc và duy nhất trong tổ chức như mã site không? Đề xuất: có.
+  4. Thêm ghi chú "ý sơ đồ một site đã thay bởi ADR-028" vào ADR-025 không? Đề xuất: có (một dòng).
+- Đề xuất quyết định cần chốt: 4 câu trên.
+- Task tiếp theo đề xuất: sau khi duyệt — sửa P1-07 (đơn vị) + giới hạn đơn vị, rồi P1-08.
+
 ## 2026-10-16 — P1-07 Sites / Location / Rack
 - Đã làm:
   - **ADR-025** (đã chốt): tổ chức (khách hàng) → nhiều site → cây location → rack; mỗi site nhiều thiết bị (P1-08) và nhiều

@@ -21,6 +21,9 @@ nối với nhau thế nào, mua của ai, còn bảo hành không, đăng nhậ
 **Nguyên tắc dữ liệu (ADR-015):** database là nguồn sự thật. Thiết bị, interface, IP, link tồn tại độc lập; sơ đồ là góc nhìn
 lên dữ liệu đó. Sửa IP ở sơ đồ hay ở danh sách thiết bị đều là sửa cùng một bản ghi.
 
+**Phân cấp:** Tổ chức → Đơn vị → Site → Location → Rack → Thiết bị (ADR-026). Ví dụ: Tổ chức CJ → Đơn vị CJ Agri Deheus →
+Site Nhà máy Bình Định → (Location) Phòng server → Rack R1.
+
 ## §2. Giao diện tổng & điều hướng (ADR-020)
 
 **Thanh trên cùng:** bộ chọn tổ chức (khi user thuộc nhiều tổ chức), tìm kiếm toàn cục (Ctrl+K: hostname, IP, MAC, S/N,
@@ -34,7 +37,7 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 | Sơ đồ | Danh sách sơ đồ theo site, mở màn hình vẽ | 1 |
 | Thiết bị | Bảng kho thiết bị, lọc/sắp xếp/cột tùy chọn, chi tiết thiết bị | 1 |
 | IPAM | VLAN, Subnet, dải IP, mức sử dụng | 1 |
-| Sites | Site → tòa nhà → tầng → phòng → rack | 1 |
+| Đơn vị & Sites | Đơn vị → Site → tòa nhà → tầng → phòng → rack | 1 |
 | Đối tác | Nhà cung cấp, hãng, ISP, đơn vị bảo trì; liên hệ; hợp đồng | 2 |
 | Kho mật khẩu & Cloud | Credential thiết bị, tài khoản cloud | 2 |
 | Giám sát | Trạng thái live, SNMP profile | 3 |
@@ -48,10 +51,12 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 - **Thêm nhanh:** nhấn `/` hoặc double-click canvas → ô tìm kiếm → Enter để đặt thiết bị.
 - **Panel thuộc tính** bên phải; **panel Problems** phía dưới (thu gọn được).
 
-## §3. Tổ chức, Site, Location
+## §3. Tổ chức, Đơn vị, Site, Location
 
 - **Organization:** tên, loại (internal/customer), logo, ghi chú, cấu hình riêng (SMTP nhận cảnh báo, chu kỳ SNMP).
-- **Site:** mã site, tên, địa chỉ, múi giờ, người liên hệ tại chỗ, ghi chú.
+- **Đơn vị:** tên, mã, loại quan hệ (công ty con / đối tác / khách hàng của tổ chức), người liên hệ, ghi chú. Mỗi đơn vị có nhiều site.
+- **Site:** mã, tên, loại (văn phòng / nhà máy / trung tâm dữ liệu / kho / cửa hàng / khác), đơn vị (hoặc 'dùng chung' cho cả tổ chức),
+  địa chỉ, múi giờ, người liên hệ tại chỗ, nhà mạng/đường truyền chính, ghi chú.
 - **Location:** cây phân cấp trong site: tòa nhà → tầng → phòng/tủ. Không dùng ô gõ tự do để tránh "Tầng 3"/"T3"/"Floor 3".
 - **Rack:** thuộc location, số U (mặc định 42), view mặt trước với thiết bị chiếm U.
 
@@ -62,10 +67,11 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 | Nhóm | Trường |
 | --- | --- |
 | Nhận dạng | Hostname (bắt buộc, duy nhất trong tổ chức), loại, hãng, model, **Part Number**, **Serial Number**, asset tag, firmware/OS version |
-| Vị trí | **Site**, **Location**, rack + vị trí U + chiều cao U |
+| Vị trí | **Đơn vị**, **Site**, **Location**, rack + vị trí U + chiều cao U |
+| Cụm | Cụm HA/stack, vai trò trong cụm, số thứ tự thành viên |
 | Quản trị | Interface quản trị (IP quản trị suy ra từ đây), IP NAT/public, gateway, DNS, `poll_address` |
 | Mua sắm | Nhà cung cấp (→ Đối tác), ngày mua, số PO/hóa đơn |
-| Hỗ trợ | Hợp đồng support (→ Hợp đồng), ngày hết bảo hành, ngày hết license, ngày End-of-Life/End-of-Support của hãng |
+| Hỗ trợ | Hợp đồng support (→ Hợp đồng), ngày hết bảo hành, ngày hết license, ngày End-of-Life/End-of-Support của hãng, ngày End-of-Sale / End-of-Support của hãng (tự điền từ model library nếu có) |
 | Truy cập | Credential đăng nhập (SSH/HTTPS/console/enable… → Kho mật khẩu), tài khoản cloud quản lý (→ Tài khoản cloud) |
 | Vận hành | Vai trò (core/distribution/access/edge…), trạng thái vòng đời, `managed` (của mình / bên ngoài), người phụ trách, ghi chú |
 | Giám sát (P3) | Bật giám sát, SNMP profile, poller, thiết bị phụ thuộc |
@@ -102,6 +108,10 @@ Ubiquiti, TP-Link, Hikvision, Dahua…) ở Phase 2; người dùng tự tạo t
 `endpoint_group`: loại, tên, site, dải IP (→ ip_range), số lượng dự kiến; thành viên: tên, IP, MAC, cổng switch đang cắm, ghi chú.
 Hiển thị một icon với badge "đã dùng/tổng" (vd 3/20). Thành viên có thể tách thành thiết bị riêng.
 
+### 4.5 Cụm thiết bị (ADR-027)
+HA active-passive / active-active, switch stack, vPC/VSS. Cụm có tên, hostname cụm, IP quản trị cụm; thành viên giữ S/N, part number,
+bảo hành riêng. Trên sơ đồ hiển thị gộp (badge HA / Stack ×N) hoặc mở rộng.
+
 ## §5. IPAM (ADR-014)
 
 - **VLAN:** ID, tên, màu, site/phạm vi, subnet gắn kèm. Màu VLAN dùng chung cho mọi sơ đồ.
@@ -118,7 +128,9 @@ Hiển thị một icon với badge "đã dùng/tổng" (vd 3/20). Thành viên 
 - Chọn: click, Shift + click, rubber-band, Ctrl+A; duplicate, lock, sửa hàng loạt; copy/paste giữ link nội bộ, tự đổi hostname trùng.
 - Undo/redo ≥ 100 bước (gộp thao tác kéo). Auto-layout phân tầng. Tìm thiết bị trên sơ đồ (Ctrl+F).
 - Layer: Physical / Logical L2 / Logical L3 (P2). Nhiều trang + off-page connector (P2).
-- Một sơ đồ thuộc đúng một site (ADR-025; sơ đồ WAN/VPN đặt ở site chính). Một thiết bị có thể nằm trên nhiều sơ đồ.
+- Sơ đồ có phạm vi: tổ chức, đơn vị hoặc site. Một thiết bị có thể nằm trên nhiều sơ đồ.
+- **Sơ đồ nhiều cấp (ADR-028):** tổng quan tổ chức, tổng quan đơn vị, chi tiết site. Node site trên sơ đồ tổng quan double-click → mở
+  sơ đồ chi tiết. Nút 'Tạo sơ đồ tổng quan từ dữ liệu' sinh bố cục hình sao từ sites + link WAN/VPN.
 
 ### 6.2 Kết nối
 
@@ -172,8 +184,8 @@ click → zoom tới đối tượng; badge trên node.
 | Quy tắc | Mức | Phase |
 | --- | --- | --- |
 | IP sai định dạng / là network hoặc broadcast | Error | 1 |
-| Trùng IP trong cùng VRF (mọi interface + IP NAT/public + thành viên nhóm) | Error | 1 |
-| Trùng hostname trong tổ chức; trùng serial number | Error | 1 |
+| Trùng IP trong cùng VRF (mọi interface + IP NAT/public + thành viên nhóm) (bỏ qua nếu cùng cụm HA/stack) | Error | 1 |
+| Trùng hostname trong tổ chức (bỏ qua nếu cùng cụm); trùng serial number | Error | 1 |
 | Một cổng vật lý có > 1 link | Error | 1 |
 | Link vật lý nối vào interface ảo | Error | 1 |
 | Nối sai loại cổng (RJ45 ↔ SFP) | Warning | 1 |
@@ -184,6 +196,7 @@ click → zoom tới đối tượng; badge trên node.
 | Access VLAN hai đầu khác nhau; VLAN thiếu trong trunk; speed/duplex mismatch | Warning | 2 |
 | Subnet chồng lấn; dải IP chồng nhau; IP tĩnh nằm trong dải DHCP | Warning | 2 |
 | Thiết bị active nhưng thiếu S/N, part number, site hoặc location | Info | 2 |
+| Thiết bị active đã quá ngày End-of-Support | Warning | 2 |
 | Nhiều thiết bị dùng chung một credential | Warning | 2 |
 | Lệch thiết kế ↔ thực tế (cổng down, sai cổng theo LLDP, IP chạy thật chưa khai báo) | Warning | 3 |
 | Vượt PoE budget; vòng lặp L2 | Warning / Info | 4 |
@@ -218,6 +231,7 @@ username, credential (local/external), người giữ thiết bị MFA, gói d�
   khóa tạm sau nhiều lần sai; đặt lại mật khẩu qua email (khi có SMTP). SSO OIDC (Entra ID, Google Workspace, Keycloak) ở Phase 2.
 - **Vai trò theo tổ chức:** owner (toàn quyền, quản lý thanh toán/cài đặt), admin (quản lý user, dữ liệu), editor (sửa dữ liệu), viewer (chỉ xem).
   Quyền bổ sung: `credential.reveal`, `credential.manage`, `user.manage`. Giới hạn phạm vi theo site (tùy chọn).
+  Giới hạn phạm vi theo đơn vị và/hoặc site (vd IT của CJ Foodville chỉ thấy đơn vị Foodville).
 - **System admin:** quản trị toàn hệ thống (tạo tổ chức, sao lưu, cài đặt chung); dành cho bên vận hành hệ thống/MSP.
 - **Link chia sẻ chỉ xem (P2):** cho một sơ đồ, token có hạn, tùy chọn mật khẩu, tùy chọn ẩn IP; thu hồi được.
 - **Audit log:** mọi thao tác ghi (trước/sau), đăng nhập, xem mật khẩu, export; lọc theo người/thời gian/đối tượng; giữ tối thiểu 1 năm.
@@ -258,6 +272,11 @@ panel "IP thực tế" so với khai báo; Dashboard có danh sách thiết bị
 **Import (Phase 1):** Excel/CSV thiết bị (site, location, hostname, loại, hãng, model, part number, S/N, IP quản trị, ngày bảo hành…)
 với bước ánh xạ cột, xem trước, báo lỗi từng dòng, chế độ tạo mới/cập nhật theo hostname hoặc S/N. File mẫu Excel tải về được.
 Import subnet/dải IP từ Excel (P2). Import `.ntb.json` (P1). Import draw.io (P4).
+- Ánh xạ cột linh hoạt: cột 'Site' của file có thể ánh xạ vào Đơn vị, cột 'Location' vào Site (đúng với file khách đang dùng).
+- Chuẩn hóa tên khi import: phát hiện tên gần giống (khác hoa/thường, dấu, khoảng trắng, gạch dưới — vd 'Hochiminh', 'HoChiMinh', 'Ho Chi Minh')
+  và đề xuất gộp; người dùng xác nhận trước khi tạo.
+- Thiết bị cùng IP + cùng site + cùng loại firewall/switch: đề xuất tạo cụm HA/stack thay vì báo lỗi.
+- Cột 'Person in charge': ánh xạ vào người phụ trách hoặc đối tác bảo trì.
 
 **Export:** PNG/SVG sơ đồ có legend (P1); `.ntb.json` một site/sơ đồ, không có bí mật (P1); Excel danh sách thiết bị (P1);
 PDF sơ đồ A4/A3 có title block (P2); Excel IP plan, port map, BOQ, VLAN (P2); Design Document tổng hợp (P4).
@@ -273,11 +292,11 @@ PostgreSQL, dữ liệu quan hệ. Mọi bảng nghiệp vụ có `id` (UUID), `
 | Nhóm | Bảng chính |
 | --- | --- |
 | Hệ thống & người dùng | organizations, users, memberships (user, org, role, permissions, site_scope), sessions, mfa_totp, sso_providers (P2), share_links (P2), audit_log |
-| Vị trí | sites, locations (parent_id, kind: building/floor/room), racks |
-| Kho | device_types/templates, devices, interfaces, ip_addresses (interface_id hoặc device_id, address, vrf, role: primary/secondary/nat/public), custom_field_defs, tags |
+| Vị trí | business_units, sites (business_unit_id null được, kind), locations (parent_id, kind: building/floor/room), racks |
+| Kho | device_types/templates, devices, device_clusters, interfaces, ip_addresses (interface_id hoặc device_id, address, vrf, role: primary/secondary/nat/public), custom_field_defs, tags |
 | IPAM | vlans, subnets, ip_ranges |
 | Sơ đồ logic | endpoint_groups, endpoint_members, segments (P2), links (a_kind, a_id, a_interface_id null được; b_…; kind, medium, speed, status…) |
-| Sơ đồ hiển thị | diagrams (site_id, name, layer, view JSONB: nodes {refKind, refId, x, y, labelStyle, locked}, edges {linkId, routing, waypoints}, annotations, viewport, labelTemplate) |
+| Sơ đồ hiển thị | diagrams (scope: organization / business_unit / site + scope_id, name, layer, view JSONB: nodes {refKind, refId, x, y, labelStyle, locked}, edges {linkId, routing, waypoints}, annotations, viewport, labelTemplate) |
 | Đối tác (P2) | partners, partner_contacts, contracts, contract_items (device/link) |
 | Kho mật khẩu (P2) | credentials (storage: local/external, ciphertext, wrapped_dek, external_provider, external_ref), device_credentials, cloud_accounts, device_cloud_accounts |
 | Cảnh báo (P2) | notifications, notification_rules |
@@ -356,6 +375,8 @@ PostgreSQL 16
 - [ ] Owner/admin bật MFA; viewer không sửa được gì (kiểm tra ở API, không chỉ ở giao diện)
 - [ ] Tạo site → location → rack; thêm thiết bị đủ Site, Location, Hostname, Part Number, S/N
 - [ ] Import file Excel 500 thiết bị, có báo lỗi từng dòng
+- [ ] Import file thiết bị mẫu dạng 'Site=công ty, Location=địa điểm' → tạo đúng Đơn vị và Site, gộp được tên site viết khác nhau,
+  nhận ra cặp HA chung IP mà không báo lỗi trùng IP
 - [ ] Vẽ lại được sơ đồ mẫu văn phòng (FortiGate, VPN tới 3 site đối tác, 5 switch, nhóm IP Phone 3/20, chú thích)
 - [ ] Sửa IP ở danh sách thiết bị → sơ đồ cập nhật; sửa trên sơ đồ → danh sách cập nhật
 - [ ] Phát hiện trùng IP, trùng hostname/S/N, gateway sai subnet, sai loại cổng, IP ngoài dải
