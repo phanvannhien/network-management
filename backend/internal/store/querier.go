@@ -50,13 +50,16 @@ type Querier interface {
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreatePartner(ctx context.Context, arg CreatePartnerParams) (Partner, error)
 	CreateRack(ctx context.Context, arg CreateRackParams) (Rack, error)
+	CreateRange(ctx context.Context, arg CreateRangeParams) (IpRange, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error)
 	CreateSiteShare(ctx context.Context, arg CreateSiteShareParams) (pgtype.UUID, error)
+	CreateSubnet(ctx context.Context, arg CreateSubnetParams) (pgtype.UUID, error)
 	// Users and sessions are global (not tenant-scoped): a user can belong to several organizations.
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
+	CreateVlan(ctx context.Context, arg CreateVlanParams) (pgtype.UUID, error)
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
@@ -67,12 +70,15 @@ type Querier interface {
 	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
 	DeletePartnerMember(ctx context.Context, arg DeletePartnerMemberParams) (int64, error)
 	DeleteRack(ctx context.Context, arg DeleteRackParams) (int64, error)
+	DeleteRange(ctx context.Context, arg DeleteRangeParams) (int64, error)
 	DeleteRecoveryCodes(ctx context.Context, userID pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteSiteShare(ctx context.Context, arg DeleteSiteShareParams) (int64, error)
+	DeleteSubnet(ctx context.Context, arg DeleteSubnetParams) (int64, error)
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
 	DeleteUnitMember(ctx context.Context, arg DeleteUnitMemberParams) (int64, error)
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
+	DeleteVlan(ctx context.Context, arg DeleteVlanParams) (int64, error)
 	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
@@ -96,15 +102,18 @@ type Querier interface {
 	GetPartner(ctx context.Context, arg GetPartnerParams) (GetPartnerRow, error)
 	GetPartnerMember(ctx context.Context, arg GetPartnerMemberParams) (GetPartnerMemberRow, error)
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
+	GetRange(ctx context.Context, arg GetRangeParams) (IpRange, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
 	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
+	GetSubnet(ctx context.Context, arg GetSubnetParams) (GetSubnetRow, error)
 	// MFA data is per user (global, not tenant-scoped).
 	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
 	GetUnitMember(ctx context.Context, arg GetUnitMemberParams) (GetUnitMemberRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
+	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
@@ -140,6 +149,7 @@ type Querier interface {
 	// Partners (P1-07b, ADR-031): the organization's subsidiaries / partners / customers. Every query takes organization_id.
 	ListPartners(ctx context.Context, organizationID pgtype.UUID) ([]ListPartnersRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
+	ListRanges(ctx context.Context, arg ListRangesParams) ([]IpRange, error)
 	// Shares of the given sites with the target's partner, to compute the caller's access on a site list.
 	ListSharesForSites(ctx context.Context, arg ListSharesForSitesParams) ([]ListSharesForSitesRow, error)
 	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
@@ -150,12 +160,23 @@ type Querier interface {
 	// site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
 	// @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 	ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error)
+	// Addresses in use inside a subnet (same VRF), with whether the caller may see the device / cluster.
+	ListSubnetIPs(ctx context.Context, arg ListSubnetIPsParams) ([]ListSubnetIPsRow, error)
+	ListSubnets(ctx context.Context, arg ListSubnetsParams) ([]ListSubnetsRow, error)
 	// System-level events only (no organization): sign-ins, MFA, user administration (ADR-023).
 	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
 	ListUnitMembers(ctx context.Context, arg ListUnitMembersParams) ([]ListUnitMembersRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
+	// IPAM (P1-10, SRS §5, ADR-014). Every query takes organization_id. VLANs and subnets of a site follow the site's
+	// visibility (ADR-031); site-less ones are for organization-wide roles. Interface IPs carry a `visible` flag so callers
+	// can count addresses of devices they may not see without showing them.
+	ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVlansRow, error)
 	// Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
 	LockHostname(ctx context.Context, lockKey string) error
+	// Interfaces and clusters holding the address (any VRF).
+	LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error)
+	// Subnets containing the address (any VRF), most specific first.
+	LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([]LookupSubnetsRow, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	MaxInterfaceSort(ctx context.Context, arg MaxInterfaceSortParams) (int32, error)
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
@@ -193,9 +214,12 @@ type Querier interface {
 	UpdatePartner(ctx context.Context, arg UpdatePartnerParams) (Partner, error)
 	UpdatePartnerMember(ctx context.Context, arg UpdatePartnerMemberParams) (int64, error)
 	UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, error)
+	UpdateRange(ctx context.Context, arg UpdateRangeParams) (IpRange, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)
 	UpdateSiteShare(ctx context.Context, arg UpdateSiteShareParams) (int64, error)
+	UpdateSubnet(ctx context.Context, arg UpdateSubnetParams) (int64, error)
 	UpdateUnitMember(ctx context.Context, arg UpdateUnitMemberParams) (int64, error)
+	UpdateVlan(ctx context.Context, arg UpdateVlanParams) (int64, error)
 	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.
 	UpsertPendingTOTP(ctx context.Context, arg UpsertPendingTOTPParams) (int64, error)
 	UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams) (int64, error)

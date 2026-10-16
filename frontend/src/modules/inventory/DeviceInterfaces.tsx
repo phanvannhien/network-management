@@ -45,6 +45,7 @@ import {
   type IpAddress,
   type IpRole,
 } from './devices'
+import { SuggestFreeIp } from '@/modules/ipam/SuggestFreeIp'
 
 /** Read-only table styled like DataTable, for per-device lists. */
 export function PlainTable({
@@ -607,6 +608,13 @@ function IpDialog({
               {ip ? t('devices.ipEdit', { address: ip.address }) : t('devices.ipAdd')}
             </DialogTitle>
           </DialogHeader>
+          {!ip && (
+            <SuggestFreeIp
+              orgId={orgId}
+              siteId={device.siteId}
+              onPick={(address, subnet) => setF((cur) => ({ ...cur, address, vrf: subnet.vrf }))}
+            />
+          )}
           <div className="grid grid-cols-2 gap-3">
             <FormField label={t('devices.address')} help="cidr" required guide={t('hints.cidr')}>
               {(p) => (

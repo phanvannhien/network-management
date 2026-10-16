@@ -51,7 +51,11 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | --- | --- | --- |
 | **IP** | Địa chỉ của thiết bị trên mạng | `10.72.114.2` |
 | **CIDR / prefix (/24…)** | Số bit phần mạng; `/24` = mạng 256 địa chỉ (255.255.255.0) | `10.72.114.2/24` thuộc mạng `10.72.114.0/24` |
-| **Subnet** | Một dải mạng | `10.72.114.0/24` (IPAM, P1-10) |
+| **Subnet** | Một dải mạng; IPAM tính số IP đang dùng / còn trống | `10.72.114.0/24` — menu IPAM |
+| **IPAM** | Sổ quy hoạch IP: mạng nào cho việc gì, còn bao nhiêu IP trống, IP nào thuộc thiết bị nào — tránh gán trùng | Trước khi lắp camera: mở subnet camera → "Tìm IP trống" |
+| **Dải IP (quy hoạch)** | Chia subnet thành khúc theo mục đích: **DHCP** (máy chủ DHCP tự cấp), **IP tĩnh** (đặt tay), **dành riêng** (giữ lại) | `.2–.49` tĩnh, `.100–.200` DHCP, `.250–.254` dành riêng |
+| **DHCP** | Dịch vụ tự cấp IP cho máy tính/điện thoại khi vào mạng; IP trong dải DHCP không gán tay | Firewall cấp `.100–.200` cho laptop |
+| **IP trống kế tiếp** | IP đầu tiên chưa ai dùng: bỏ qua gateway, IP của mọi thiết bị (cùng VRF), IP quản trị cụm, dải DHCP và dành riêng | Subnet → "Tìm IP trống"; form IP thiết bị → "Lấy IP trống từ subnet" |
 | **Địa chỉ mạng / broadcast** | Địa chỉ đầu và cuối của subnet IPv4, không gán cho thiết bị (trừ /31, /32) | `.0` và `.255` của một /24 |
 | **Gateway** | Thiết bị chuyển gói ra mạng khác, thường là `.1` | Firewall `10.72.114.1` |
 | **IP chính / phụ** | Mỗi interface có 1 IP chính (mỗi IPv4/IPv6), có thể thêm IP phụ | |
@@ -72,6 +76,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **Stack** | Nhiều switch nối cáp stack, cấu hình như 1 switch: chung hostname/IP; cổng đánh số theo thành viên (`Gi1/0/x`, `Gi2/0/x`) | 3 × Cisco C9300 thành 1 switch 144 cổng |
 | **vPC** (Cisco Nexus) | 2 switch riêng (mỗi con IP riêng) nhưng thiết bị bên dưới cắm LAG sang cả hai | Core Nexus |
 | **VSS** (Cisco Catalyst) | 2 switch gộp thành 1 switch logic | Core Catalyst |
+| **IP quản trị cụm** | IP chung của cả cụm (vd IP của cặp HA), không nằm trên interface nào; IPAM vẫn tính là đang dùng | `10.72.114.3` của stack core |
 
 Quy định trong hệ thống (ADR-027): HA cho firewall/router/VPN/LB/WLC/WAF/proxy/IDS-IPS/SD-WAN/server/NAS; Stack cho switch;
 vPC/VSS cho switch L2/L3; kiểu "Khác" không giới hạn. Thành viên cùng cụm phải cùng loại thiết bị.

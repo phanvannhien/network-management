@@ -36,6 +36,12 @@ const DeviceDetailPage = lazy(() =>
 const DeviceListPage = lazy(() =>
   import('./modules/inventory/DeviceListPage').then((m) => ({ default: m.DeviceListPage })),
 )
+const IpamPage = lazy(() =>
+  import('./modules/ipam/IpamPage').then((m) => ({ default: m.IpamPage })),
+)
+const SubnetDetailPage = lazy(() =>
+  import('./modules/ipam/SubnetDetailPage').then((m) => ({ default: m.SubnetDetailPage })),
+)
 const GlossaryPage = lazy(() =>
   import('./help/GlossaryPage').then((m) => ({ default: m.GlossaryPage })),
 )
@@ -88,6 +94,8 @@ export function AppRoutes() {
         <Route index element={<OrgHomePage />} />
         <Route path="devices" element={<DeviceListPage />} />
         <Route path="devices/:deviceId" element={<DeviceDetailPage />} />
+        <Route path="ipam" element={<IpamPage />} />
+        <Route path="ipam/subnets/:subnetId" element={<SubnetDetailPage />} />
         <Route path="sites" element={<SiteListPage />} />
         <Route path="sites/:siteId" element={<SiteDetailPage />} />
         <Route path="partners/:partnerId" element={<PartnerDetailPage />} />

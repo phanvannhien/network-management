@@ -379,6 +379,58 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['10.72.114.1 trên firewall.', '10.72.114.1 on the firewall.'],
   ),
   e(
+    'ipam',
+    'ip',
+    ['IPAM', 'IPAM'],
+    [
+      'IP Address Management — sổ quy hoạch địa chỉ IP: mạng nào dùng cho việc gì, còn bao nhiêu IP trống, IP nào đang thuộc thiết bị nào. Giúp tránh gán trùng IP.',
+      'IP Address Management — the address plan: which network is for what, how many addresses are free, which device holds which IP. Prevents duplicate assignments.',
+    ],
+    [
+      'Trước khi lắp camera mới, mở subnet camera → "Tìm IP trống" → được 10.72.120.15.',
+      'Before installing a camera, open the camera subnet → "Find a free IP" → 10.72.120.15.',
+    ],
+  ),
+  e(
+    'ip-range',
+    'ip',
+    ['Dải IP (quy hoạch)', 'IP range (plan)'],
+    [
+      'Chia một subnet thành các khúc theo mục đích: DHCP (máy chủ DHCP tự cấp), IP tĩnh (đặt tay cho server, camera…), dành riêng (giữ lại, không cấp).',
+      'Splits a subnet into blocks by purpose: DHCP (handed out by the DHCP server), static (set by hand for servers, cameras…), reserved (kept back).',
+    ],
+    [
+      '10.72.114.0/24: .2–.49 tĩnh cho thiết bị mạng, .100–.200 DHCP cho máy trạm, .250–.254 dành riêng.',
+      '10.72.114.0/24: .2–.49 static for network gear, .100–.200 DHCP for clients, .250–.254 reserved.',
+    ],
+  ),
+  e(
+    'next-free',
+    'ip',
+    ['IP trống kế tiếp', 'Next free IP'],
+    [
+      'IP đầu tiên trong subnet chưa ai dùng: bỏ qua gateway, IP của mọi thiết bị (cùng VRF), IP quản trị cụm, dải DHCP và dải dành riêng.',
+      'The first unused address of a subnet: skips the gateway, every device address (same VRF), cluster management IPs, DHCP and reserved ranges.',
+    ],
+    [
+      'Form IP thiết bị → "Lấy IP trống từ subnet" → tự điền 10.72.114.11/24.',
+      'Device IP form → "Take a free IP from subnet" → fills in 10.72.114.11/24.',
+    ],
+  ),
+  e(
+    'dhcp',
+    'ip',
+    ['DHCP', 'DHCP'],
+    [
+      'Dịch vụ tự cấp IP cho máy tính, điện thoại khi cắm mạng / vào Wi-Fi, thường chạy trên firewall hoặc server. IP trong dải DHCP không nên gán tay để tránh trùng.',
+      'The service that hands out IPs automatically to PCs and phones joining the network, usually on the firewall or a server. Do not hand-assign addresses inside a DHCP pool.',
+    ],
+    [
+      'Firewall cấp 10.72.114.100–200 cho laptop nhân viên.',
+      'The firewall hands 10.72.114.100–200 to staff laptops.',
+    ],
+  ),
+  e(
     'ip-role',
     'ip',
     ['Vai trò IP', 'IP role'],
@@ -473,6 +525,16 @@ export const GLOSSARY: GlossaryEntry[] = [
       'Cách ghép 2 switch core của Cisco: vPC (Nexus) — 2 switch riêng, thiết bị bên dưới cắm LAG sang cả hai; VSS (Catalyst) — 2 switch gộp thành 1 switch logic.',
       'Cisco ways to pair two core switches: vPC (Nexus) — two separate switches with LAGs to both; VSS (Catalyst) — two switches merged into one logical switch.',
     ],
+  ),
+  e(
+    'cluster-ip',
+    'cluster',
+    ['IP quản trị cụm', 'Cluster management IP'],
+    [
+      'IP chung của cả cụm (vd IP của cặp HA hoặc của stack), không nằm trên interface nào của một thành viên; IPAM vẫn tính là đang dùng.',
+      "The cluster's shared address (an HA pair's or a stack's IP), on no single member's interface; IPAM still counts it as used.",
+    ],
+    ['Stack core BD dùng 10.72.114.3.', 'The BD core stack uses 10.72.114.3.'],
   ),
   e(
     'member-no',

@@ -5,6 +5,43 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-10 IPAM cơ bản
+- Đã làm:
+  - **Migration 000015:** `vlans` (số 1–4094, tên, màu, site hoặc toàn tổ chức; không trùng số trong một phạm vi), `subnets`
+    (CIDR, VRF, gateway, site, VLAN, mô tả; không trùng CIDR trong một VRF, cho phép lồng nhau vd /16 chứa /24), `ip_ranges`
+    (từ–đến, loại DHCP / IP tĩnh / dành riêng, mục đích), view **`ipam_addresses`** = IP của interface thiết bị **+ IP quản trị
+    cụm** (IP chung của cặp HA/stack không nằm trên interface nào nhưng không được cấp lại).
+  - **API** (`api/openapi.yaml`): VLAN CRUD, subnet CRUD + chi tiết (dải, IP đang dùng, số IP bị ẩn), dải IP CRUD,
+    `GET …/subnets/{id}/next-free`, `GET …/ipam/lookup?ip=`. Quy tắc: gateway phải là địa chỉ dùng được trong subnet (không phải
+    địa chỉ mạng/broadcast; /31 dùng cả 2 địa chỉ), VLAN của subnet phải cùng site hoặc toàn tổ chức, không dời VLAN sang site
+    khác khi subnet site khác đang dùng, dải nằm trong địa chỉ dùng được và không chồng nhau, thu nhỏ subnet không được làm dải
+    rơi ra ngoài, optimistic lock + audit (`vlan.*`, `subnet.*`, `ip_range.*`).
+  - **Quyền:** theo site (ADR-031); VLAN/subnet "toàn tổ chức" chỉ vai trò cấp tổ chức thấy/sửa. **Mức sử dụng và "IP trống kế
+    tiếp" tính trên mọi thiết bị** (cùng VRF) để không cấp trùng, nhưng danh sách IP chỉ hiện thiết bị người xem được thấy — phần
+    còn lại hiện "N IP khác đang được thiết bị ngoài phạm vi bạn được xem sử dụng" (không lộ hostname).
+  - **"IP trống kế tiếp"** bỏ qua gateway, IP đang dùng, IP cụm, dải DHCP và dải dành riêng; IPv6 quét tối đa 65.536 địa chỉ đầu.
+  - **Giao diện:** menu **IPAM** (icon ⌗ theo DESIGN.md §6): ô **Tra IP** (thuộc subnet nào, đang gán cho thiết bị/cụm nào),
+    tab Subnet (thanh sử dụng, ≥75% vàng, ≥90% đỏ + chữ "Gần đầy"/"Đầy"; vài IP trong /24 hiện "<1%" chứ không "0%") và tab
+    VLAN (màu dùng chung cho sơ đồ). Trang subnet: nút "Tìm IP trống" (copy được), bảng dải IP, bảng IP đang dùng (link thiết bị;
+    dòng "IP quản trị cụm"). Form subnet có **xem trước trực tiếp** "Mạng … · dùng được … – … (254 địa chỉ) · mặt nạ …".
+    Form IP của thiết bị có **"Lấy IP trống từ subnet"** (subnet của site thiết bị + toàn tổ chức) → tự điền IP và VRF.
+  - Hướng dẫn trên form cho mọi trường (hint/guide/(?)); thuật ngữ mới: IPAM, Dải IP, DHCP, IP trống kế tiếp, IP quản trị cụm
+    (`glossary.ts` + `docs/GLOSSARY.md`).
+- Test / cách kiểm tra: Go 5 test mới với DB thật (cách ly tổ chức cho mọi endpoint, quy tắc VLAN/subnet/dải, mức sử dụng, IP
+  trống, IP cụm, tra cứu, phân quyền theo đơn vị/IP bị ẩn); 10 mutation trên các quy tắc chính đều bị test bắt. Vitest 179 pass
+  (thêm: phép tính subnet, trang IPAM + tra IP, tạo subnet có xem trước và VLAN lọc theo site, trang subnet + thêm dải, viewer
+  không có nút sửa, lấy IP trống trong form IP thiết bị). Ảnh chụp 8 màn × sáng/tối + axe: 0 lỗi. `make check` pass.
+  **Cần chạy `make migrate-up` (000015) rồi khởi động lại `make dev-api`.**
+- Còn dở / lỗi đã biết:
+  - IP quản trị cụm coi như VRF mặc định (cụm chưa có trường VRF).
+  - "Bảng IP plan đặt lên sơ đồ" và "switch hiển thị dải/VLAN nó phục vụ" (SRS §5) làm cùng editor (P1-13+) và link (P1-12).
+  - IP thành viên nhóm đầu cuối sẽ được thêm vào `ipam_addresses` ở P1-11 (đã ghi vào PLAN).
+- Câu hỏi cho người dùng: ADR-014 ghi dải IP có trường **VLAN** riêng. Về mạng, một subnet chạy trên đúng một VLAN nên mọi dải
+  trong subnet thuộc VLAN của subnet — hiện tại dải **dùng VLAN của subnet**, không có trường riêng (tránh dữ liệu mâu thuẫn).
+  Đồng ý thì ghi chú vào ADR-014.
+- Đề xuất quyết định cần chốt: như câu hỏi trên.
+- Task tiếp theo đề xuất: **P1-11** Nhóm thiết bị đầu cuối.
+
 ## 2026-10-16 — Hướng dẫn trên form: gợi ý, nút (?), trang Thuật ngữ (DESIGN.md §4a)
 - Đã làm (người dùng đồng ý đề xuất):
   - **3 tầng hướng dẫn** trong `FormField`: `hint` (quy tắc bắt buộc, luôn hiện), `guide` (giải thích bằng lời thường, ẩn được),

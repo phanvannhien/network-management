@@ -503,6 +503,27 @@ func (e InterfaceUpdateDuplex) Valid() bool {
 	}
 }
 
+// Defines values for IpRangeKind.
+const (
+	Dhcp     IpRangeKind = "dhcp"
+	Reserved IpRangeKind = "reserved"
+	Static   IpRangeKind = "static"
+)
+
+// Valid indicates whether the value is a known member of the IpRangeKind enum.
+func (e IpRangeKind) Valid() bool {
+	switch e {
+	case Dhcp:
+		return true
+	case Reserved:
+		return true
+	case Static:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IpRole.
 const (
 	IpRoleNat       IpRole = "nat"
@@ -1672,6 +1693,60 @@ type IpAddressUpdate struct {
 	Vrf         *string             `json:"vrf,omitempty"`
 }
 
+// IpAssignment An address in use, either on a device interface or as the management IP of a device cluster (clusterId set, deviceId null, role primary, VRF empty).
+type IpAssignment struct {
+	Address   string              `json:"address"`
+	ClusterId *openapi_types.UUID `json:"clusterId"`
+	DeviceId  *openapi_types.UUID `json:"deviceId"`
+	Host      string              `json:"host"`
+
+	// Hostname device hostname, or the cluster hostname (its name when no hostname is set)
+	Hostname      string `json:"hostname"`
+	InterfaceName string `json:"interfaceName"`
+	Role          IpRole `json:"role"`
+	Vrf           string `json:"vrf"`
+}
+
+// IpLookup defines model for IpLookup.
+type IpLookup struct {
+	Assignments []IpAssignment `json:"assignments"`
+	HiddenCount int64          `json:"hiddenCount"`
+	Ip          string         `json:"ip"`
+	Subnets     []Subnet       `json:"subnets"`
+}
+
+// IpRange defines model for IpRange.
+type IpRange struct {
+	EndIp     string             `json:"endIp"`
+	Id        openapi_types.UUID `json:"id"`
+	Kind      IpRangeKind        `json:"kind"`
+	Purpose   string             `json:"purpose"`
+	Size      int64              `json:"size"`
+	StartIp   string             `json:"startIp"`
+	UsedCount int64              `json:"usedCount"`
+	Version   int32              `json:"version"`
+}
+
+// IpRangeInput defines model for IpRangeInput.
+type IpRangeInput struct {
+	EndIp   string      `json:"endIp"`
+	Kind    IpRangeKind `json:"kind"`
+	Purpose *string     `json:"purpose,omitempty"`
+	StartIp string      `json:"startIp"`
+}
+
+// IpRangeKind defines model for IpRangeKind.
+type IpRangeKind string
+
+// IpRangeUpdate defines model for IpRangeUpdate.
+type IpRangeUpdate struct {
+	EndIp   string      `json:"endIp"`
+	Kind    IpRangeKind `json:"kind"`
+	Purpose *string     `json:"purpose,omitempty"`
+	StartIp string      `json:"startIp"`
+	Version int32       `json:"version"`
+}
+
 // IpRole defines model for IpRole.
 type IpRole string
 
@@ -1795,6 +1870,13 @@ type MfaVerifyRequest struct {
 // MyOrganizations defines model for MyOrganizations.
 type MyOrganizations struct {
 	Organizations []OrganizationSummary `json:"organizations"`
+}
+
+// NextFreeIp defines model for NextFreeIp.
+type NextFreeIp struct {
+	// Address The free address with the subnet prefix (e.g. 10.72.114.38/24); null when the subnet is full
+	Address *string `json:"address"`
+	Host    *string `json:"host"`
 }
 
 // Organization defines model for Organization.
@@ -2073,6 +2155,101 @@ type SiteUpdate struct {
 	Version  int32   `json:"version"`
 }
 
+// Subnet defines model for Subnet.
+type Subnet struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access AccessLevel `json:"access"`
+
+	// Cidr Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+	Cidr        string `json:"cidr"`
+	Description string `json:"description"`
+
+	// Gateway Gateway address inside the subnet, e.g. 10.72.114.1
+	Gateway    *string             `json:"gateway"`
+	Id         openapi_types.UUID  `json:"id"`
+	RangeCount int64               `json:"rangeCount"`
+	SiteCode   string              `json:"siteCode"`
+	SiteId     *openapi_types.UUID `json:"siteId"`
+
+	// Size Usable host addresses (IPv4 without network/broadcast; capped for huge IPv6 prefixes)
+	Size int64 `json:"size"`
+
+	// UsedCount Distinct addresses used by interfaces (all devices, same VRF)
+	UsedCount int64               `json:"usedCount"`
+	Version   int32               `json:"version"`
+	VlanColor string              `json:"vlanColor"`
+	VlanId    *openapi_types.UUID `json:"vlanId"`
+	VlanName  string              `json:"vlanName"`
+	VlanVid   *int32              `json:"vlanVid"`
+	Vrf       string              `json:"vrf"`
+}
+
+// SubnetDetail defines model for SubnetDetail.
+type SubnetDetail struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access AccessLevel `json:"access"`
+
+	// Cidr Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+	Cidr        string `json:"cidr"`
+	Description string `json:"description"`
+
+	// Gateway Gateway address inside the subnet, e.g. 10.72.114.1
+	Gateway *string `json:"gateway"`
+
+	// HiddenCount Addresses used by devices the caller may not see
+	HiddenCount int64               `json:"hiddenCount"`
+	Id          openapi_types.UUID  `json:"id"`
+	Ips         []IpAssignment      `json:"ips"`
+	RangeCount  int64               `json:"rangeCount"`
+	Ranges      []IpRange           `json:"ranges"`
+	SiteCode    string              `json:"siteCode"`
+	SiteId      *openapi_types.UUID `json:"siteId"`
+
+	// Size Usable host addresses (IPv4 without network/broadcast; capped for huge IPv6 prefixes)
+	Size int64 `json:"size"`
+
+	// UsedCount Distinct addresses used by interfaces (all devices, same VRF)
+	UsedCount int64               `json:"usedCount"`
+	Version   int32               `json:"version"`
+	VlanColor string              `json:"vlanColor"`
+	VlanId    *openapi_types.UUID `json:"vlanId"`
+	VlanName  string              `json:"vlanName"`
+	VlanVid   *int32              `json:"vlanVid"`
+	Vrf       string              `json:"vrf"`
+}
+
+// SubnetInput defines model for SubnetInput.
+type SubnetInput struct {
+	// Cidr Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+	Cidr        string  `json:"cidr"`
+	Description *string `json:"description,omitempty"`
+
+	// Gateway Gateway address inside the subnet, e.g. 10.72.114.1
+	Gateway *string             `json:"gateway,omitempty"`
+	SiteId  *openapi_types.UUID `json:"siteId,omitempty"`
+	VlanId  *openapi_types.UUID `json:"vlanId,omitempty"`
+	Vrf     *string             `json:"vrf,omitempty"`
+}
+
+// SubnetList defines model for SubnetList.
+type SubnetList struct {
+	Subnets []Subnet `json:"subnets"`
+}
+
+// SubnetUpdate defines model for SubnetUpdate.
+type SubnetUpdate struct {
+	// Cidr Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+	Cidr        string  `json:"cidr"`
+	Description *string `json:"description,omitempty"`
+
+	// Gateway Gateway address inside the subnet, e.g. 10.72.114.1
+	Gateway *string             `json:"gateway,omitempty"`
+	SiteId  *openapi_types.UUID `json:"siteId,omitempty"`
+	Version int32               `json:"version"`
+	VlanId  *openapi_types.UUID `json:"vlanId,omitempty"`
+	Vrf     *string             `json:"vrf,omitempty"`
+}
+
 // UnitGrantInput defines model for UnitGrantInput.
 type UnitGrantInput struct {
 	Email openapi_types.Email `json:"email"`
@@ -2104,6 +2281,55 @@ type UpdateOrganizationRequest struct {
 
 	// Version Version the client last saw; mismatch → 409
 	Version int32 `json:"version"`
+}
+
+// Vlan defines model for Vlan.
+type Vlan struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access AccessLevel `json:"access"`
+
+	// Color Shown on every diagram
+	Color       string             `json:"color"`
+	Description string             `json:"description"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	SiteCode    string             `json:"siteCode"`
+
+	// SiteId null = an organization-wide standard VLAN
+	SiteId      *openapi_types.UUID `json:"siteId"`
+	SubnetCount int64               `json:"subnetCount"`
+	Version     int32               `json:"version"`
+	Vid         int32               `json:"vid"`
+}
+
+// VlanInput defines model for VlanInput.
+type VlanInput struct {
+	// Color Shown on every diagram
+	Color       *string `json:"color,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+
+	// SiteId null = an organization-wide standard VLAN
+	SiteId *openapi_types.UUID `json:"siteId,omitempty"`
+	Vid    int32               `json:"vid"`
+}
+
+// VlanList defines model for VlanList.
+type VlanList struct {
+	Vlans []Vlan `json:"vlans"`
+}
+
+// VlanUpdate defines model for VlanUpdate.
+type VlanUpdate struct {
+	// Color Shown on every diagram
+	Color       *string `json:"color,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+
+	// SiteId null = an organization-wide standard VLAN
+	SiteId  *openapi_types.UUID `json:"siteId,omitempty"`
+	Version int32               `json:"version"`
+	Vid     int32               `json:"vid"`
 }
 
 // AuditActor defines model for AuditActor.
@@ -2196,17 +2422,26 @@ type PartnerId = openapi_types.UUID
 // RackId defines model for RackId.
 type RackId = openapi_types.UUID
 
+// RangeId defines model for RangeId.
+type RangeId = openapi_types.UUID
+
 // ShareId defines model for ShareId.
 type ShareId = openapi_types.UUID
 
 // SiteId defines model for SiteId.
 type SiteId = openapi_types.UUID
 
+// SubnetId defines model for SubnetId.
+type SubnetId = openapi_types.UUID
+
 // TemplateId defines model for TemplateId.
 type TemplateId = openapi_types.UUID
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
+
+// VlanId defines model for VlanId.
+type VlanId = openapi_types.UUID
 
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
@@ -2504,6 +2739,11 @@ type UpdateDeviceIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// LookupIpParams defines parameters for LookupIp.
+type LookupIpParams struct {
+	Ip string `form:"ip" json:"ip"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -2635,6 +2875,65 @@ type UpdateSiteShareParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ListSubnetsParams defines parameters for ListSubnets.
+type ListSubnetsParams struct {
+	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
+	VlanId *openapi_types.UUID `form:"vlanId,omitempty" json:"vlanId,omitempty"`
+
+	// Q CIDR prefix or description text
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
+}
+
+// CreateSubnetParams defines parameters for CreateSubnet.
+type CreateSubnetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteSubnetParams defines parameters for DeleteSubnet.
+type DeleteSubnetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateSubnetParams defines parameters for UpdateSubnet.
+type UpdateSubnetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateIpRangeParams defines parameters for CreateIpRange.
+type CreateIpRangeParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteIpRangeParams defines parameters for DeleteIpRange.
+type DeleteIpRangeParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateIpRangeParams defines parameters for UpdateIpRange.
+type UpdateIpRangeParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ListVlansParams defines parameters for ListVlans.
+type ListVlansParams struct {
+	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// CreateVlanParams defines parameters for CreateVlan.
+type CreateVlanParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteVlanParams defines parameters for DeleteVlan.
+type DeleteVlanParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateVlanParams defines parameters for UpdateVlan.
+type UpdateVlanParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AcceptAccountTokenJSONRequestBody defines body for AcceptAccountToken for application/json ContentType.
 type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
 
@@ -2754,6 +3053,24 @@ type CreateSiteShareJSONRequestBody = SiteShareInput
 
 // UpdateSiteShareJSONRequestBody defines body for UpdateSiteShare for application/json ContentType.
 type UpdateSiteShareJSONRequestBody = SiteShareUpdate
+
+// CreateSubnetJSONRequestBody defines body for CreateSubnet for application/json ContentType.
+type CreateSubnetJSONRequestBody = SubnetInput
+
+// UpdateSubnetJSONRequestBody defines body for UpdateSubnet for application/json ContentType.
+type UpdateSubnetJSONRequestBody = SubnetUpdate
+
+// CreateIpRangeJSONRequestBody defines body for CreateIpRange for application/json ContentType.
+type CreateIpRangeJSONRequestBody = IpRangeInput
+
+// UpdateIpRangeJSONRequestBody defines body for UpdateIpRange for application/json ContentType.
+type UpdateIpRangeJSONRequestBody = IpRangeUpdate
+
+// CreateVlanJSONRequestBody defines body for CreateVlan for application/json ContentType.
+type CreateVlanJSONRequestBody = VlanInput
+
+// UpdateVlanJSONRequestBody defines body for UpdateVlan for application/json ContentType.
+type UpdateVlanJSONRequestBody = VlanUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -2949,6 +3266,9 @@ type ServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams)
+	// LookupIp Which subnets contain an IP and which interfaces carry it
+	// (GET /orgs/{orgId}/ipam/lookup)
+	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -3045,6 +3365,45 @@ type ServerInterface interface {
 	// UpdateSiteShare Change a share (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
 	UpdateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params UpdateSiteShareParams)
+	// ListSubnets Subnets visible to the caller with usage
+	// (GET /orgs/{orgId}/subnets)
+	ListSubnets(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSubnetsParams)
+	// CreateSubnet Create a subnet
+	// (POST /orgs/{orgId}/subnets)
+	CreateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSubnetParams)
+	// DeleteSubnet Delete a subnet and its ranges (device IPs stay)
+	// (DELETE /orgs/{orgId}/subnets/{subnetId})
+	DeleteSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params DeleteSubnetParams)
+	// GetSubnet A subnet with its ranges and the interface IPs inside it
+	// (GET /orgs/{orgId}/subnets/{subnetId})
+	GetSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId)
+	// UpdateSubnet Update a subnet
+	// (PATCH /orgs/{orgId}/subnets/{subnetId})
+	UpdateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params UpdateSubnetParams)
+	// NextFreeIp First free address (unused by interfaces, not the gateway, outside DHCP or reserved ranges)
+	// (GET /orgs/{orgId}/subnets/{subnetId}/next-free)
+	NextFreeIp(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId)
+	// CreateIpRange Add an IP range to the subnet
+	// (POST /orgs/{orgId}/subnets/{subnetId}/ranges)
+	CreateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params CreateIpRangeParams)
+	// DeleteIpRange Delete an IP range
+	// (DELETE /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+	DeleteIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params DeleteIpRangeParams)
+	// UpdateIpRange Update an IP range
+	// (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+	UpdateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params UpdateIpRangeParams)
+	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
+	// (GET /orgs/{orgId}/vlans)
+	ListVlans(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVlansParams)
+	// CreateVlan Create a VLAN (site editors, or organization editors for organization-wide VLANs)
+	// (POST /orgs/{orgId}/vlans)
+	CreateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVlanParams)
+	// DeleteVlan Delete a VLAN (its subnets keep existing without a VLAN)
+	// (DELETE /orgs/{orgId}/vlans/{vlanId})
+	DeleteVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params DeleteVlanParams)
+	// UpdateVlan Update a VLAN
+	// (PATCH /orgs/{orgId}/vlans/{vlanId})
+	UpdateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params UpdateVlanParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -3435,6 +3794,12 @@ func (_ Unimplemented) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, or
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// LookupIp Which subnets contain an IP and which interfaces carry it
+// (GET /orgs/{orgId}/ipam/lookup)
+func (_ Unimplemented) LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMembers Members of the organization (not for grant-only members)
 // (GET /orgs/{orgId}/members)
 func (_ Unimplemented) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
@@ -3624,6 +3989,84 @@ func (_ Unimplemented) DeleteSiteShare(w http.ResponseWriter, r *http.Request, o
 // UpdateSiteShare Change a share (optimistic lock on version)
 // (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
 func (_ Unimplemented) UpdateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params UpdateSiteShareParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSubnets Subnets visible to the caller with usage
+// (GET /orgs/{orgId}/subnets)
+func (_ Unimplemented) ListSubnets(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSubnetsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateSubnet Create a subnet
+// (POST /orgs/{orgId}/subnets)
+func (_ Unimplemented) CreateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSubnetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteSubnet Delete a subnet and its ranges (device IPs stay)
+// (DELETE /orgs/{orgId}/subnets/{subnetId})
+func (_ Unimplemented) DeleteSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params DeleteSubnetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetSubnet A subnet with its ranges and the interface IPs inside it
+// (GET /orgs/{orgId}/subnets/{subnetId})
+func (_ Unimplemented) GetSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateSubnet Update a subnet
+// (PATCH /orgs/{orgId}/subnets/{subnetId})
+func (_ Unimplemented) UpdateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params UpdateSubnetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// NextFreeIp First free address (unused by interfaces, not the gateway, outside DHCP or reserved ranges)
+// (GET /orgs/{orgId}/subnets/{subnetId}/next-free)
+func (_ Unimplemented) NextFreeIp(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateIpRange Add an IP range to the subnet
+// (POST /orgs/{orgId}/subnets/{subnetId}/ranges)
+func (_ Unimplemented) CreateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params CreateIpRangeParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteIpRange Delete an IP range
+// (DELETE /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+func (_ Unimplemented) DeleteIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params DeleteIpRangeParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateIpRange Update an IP range
+// (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+func (_ Unimplemented) UpdateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params UpdateIpRangeParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
+// (GET /orgs/{orgId}/vlans)
+func (_ Unimplemented) ListVlans(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVlansParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateVlan Create a VLAN (site editors, or organization editors for organization-wide VLANs)
+// (POST /orgs/{orgId}/vlans)
+func (_ Unimplemented) CreateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVlanParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteVlan Delete a VLAN (its subnets keep existing without a VLAN)
+// (DELETE /orgs/{orgId}/vlans/{vlanId})
+func (_ Unimplemented) DeleteVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params DeleteVlanParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateVlan Update a VLAN
+// (PATCH /orgs/{orgId}/vlans/{vlanId})
+func (_ Unimplemented) UpdateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params UpdateVlanParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6996,6 +7439,48 @@ func (siw *ServerInterfaceWrapper) UpdateDeviceIp(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// LookupIp operation middleware
+func (siw *ServerInterfaceWrapper) LookupIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LookupIpParams
+
+	// ------------- Required query parameter "ip" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "ip", r.URL.Query(), &params.Ip, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ip"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ip", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LookupIp(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -8812,6 +9297,753 @@ func (siw *ServerInterfaceWrapper) UpdateSiteShare(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListSubnets operation middleware
+func (siw *ServerInterfaceWrapper) ListSubnets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSubnetsParams
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "vlanId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "vlanId", r.URL.Query(), &params.VlanId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "vlanId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vlanId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSubnets(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateSubnet operation middleware
+func (siw *ServerInterfaceWrapper) CreateSubnet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSubnetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateSubnet(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteSubnet operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSubnet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSubnetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteSubnet(w, r, orgId, subnetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSubnet operation middleware
+func (siw *ServerInterfaceWrapper) GetSubnet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSubnet(w, r, orgId, subnetId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSubnet operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSubnet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSubnetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSubnet(w, r, orgId, subnetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// NextFreeIp operation middleware
+func (siw *ServerInterfaceWrapper) NextFreeIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.NextFreeIp(w, r, orgId, subnetId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateIpRange operation middleware
+func (siw *ServerInterfaceWrapper) CreateIpRange(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateIpRangeParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateIpRange(w, r, orgId, subnetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteIpRange operation middleware
+func (siw *ServerInterfaceWrapper) DeleteIpRange(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "rangeId" -------------
+	var rangeId RangeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rangeId", chi.URLParam(r, "rangeId"), &rangeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "rangeId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteIpRangeParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteIpRange(w, r, orgId, subnetId, rangeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateIpRange operation middleware
+func (siw *ServerInterfaceWrapper) UpdateIpRange(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subnetId" -------------
+	var subnetId SubnetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subnetId", chi.URLParam(r, "subnetId"), &subnetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subnetId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "rangeId" -------------
+	var rangeId RangeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rangeId", chi.URLParam(r, "rangeId"), &rangeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "rangeId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateIpRangeParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateIpRange(w, r, orgId, subnetId, rangeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListVlans operation middleware
+func (siw *ServerInterfaceWrapper) ListVlans(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListVlansParams
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListVlans(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateVlan operation middleware
+func (siw *ServerInterfaceWrapper) CreateVlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateVlanParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateVlan(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteVlan operation middleware
+func (siw *ServerInterfaceWrapper) DeleteVlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vlanId" -------------
+	var vlanId VlanId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vlanId", chi.URLParam(r, "vlanId"), &vlanId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vlanId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteVlanParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteVlan(w, r, orgId, vlanId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateVlan operation middleware
+func (siw *ServerInterfaceWrapper) UpdateVlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vlanId" -------------
+	var vlanId VlanId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vlanId", chi.URLParam(r, "vlanId"), &vlanId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vlanId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateVlanParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateVlan(w, r, orgId, vlanId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -9179,6 +10411,48 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/clusters/{clusterId}", wrapper.UpdateCluster)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/vlans", wrapper.ListVlans)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/vlans", wrapper.CreateVlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/vlans/{vlanId}", wrapper.DeleteVlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/vlans/{vlanId}", wrapper.UpdateVlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/subnets", wrapper.ListSubnets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/subnets", wrapper.CreateSubnet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}", wrapper.DeleteSubnet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}", wrapper.GetSubnet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}", wrapper.UpdateSubnet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}/next-free", wrapper.NextFreeIp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}/ranges", wrapper.CreateIpRange)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId}", wrapper.DeleteIpRange)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId}", wrapper.UpdateIpRange)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/ipam/lookup", wrapper.LookupIp)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/custom-fields", wrapper.ListCustomFields)
@@ -13871,6 +15145,71 @@ func (response UpdateDeviceIp409JSONResponse) VisitUpdateDeviceIpResponse(w http
 	return err
 }
 
+type LookupIpRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params LookupIpParams
+}
+
+type LookupIpResponseObject interface {
+	VisitLookupIpResponse(w http.ResponseWriter) error
+}
+
+type LookupIp200JSONResponse IpLookup
+
+func (response LookupIp200JSONResponse) VisitLookupIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response LookupIp400JSONResponse) VisitLookupIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response LookupIp401JSONResponse) VisitLookupIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response LookupIp404JSONResponse) VisitLookupIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMembersRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -16676,6 +18015,1100 @@ func (response UpdateSiteShare409JSONResponse) VisitUpdateSiteShareResponse(w ht
 	return err
 }
 
+type ListSubnetsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListSubnetsParams
+}
+
+type ListSubnetsResponseObject interface {
+	VisitListSubnetsResponse(w http.ResponseWriter) error
+}
+
+type ListSubnets200JSONResponse SubnetList
+
+func (response ListSubnets200JSONResponse) VisitListSubnetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSubnets400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListSubnets400JSONResponse) VisitListSubnetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSubnets401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSubnets401JSONResponse) VisitListSubnetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSubnets404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListSubnets404JSONResponse) VisitListSubnetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnetRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateSubnetParams
+	Body   *CreateSubnetJSONRequestBody
+}
+
+type CreateSubnetResponseObject interface {
+	VisitCreateSubnetResponse(w http.ResponseWriter) error
+}
+
+type CreateSubnet201JSONResponse SubnetDetail
+
+func (response CreateSubnet201JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnet400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateSubnet400JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnet401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateSubnet401JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnet403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateSubnet403JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnet404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateSubnet404JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSubnet409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateSubnet409JSONResponse) VisitCreateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSubnetRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+	Params   DeleteSubnetParams
+}
+
+type DeleteSubnetResponseObject interface {
+	VisitDeleteSubnetResponse(w http.ResponseWriter) error
+}
+
+type DeleteSubnet204Response struct {
+}
+
+func (response DeleteSubnet204Response) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteSubnet400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteSubnet400JSONResponse) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSubnet401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteSubnet401JSONResponse) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSubnet403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteSubnet403JSONResponse) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSubnet404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteSubnet404JSONResponse) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSubnet409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteSubnet409JSONResponse) VisitDeleteSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSubnetRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+}
+
+type GetSubnetResponseObject interface {
+	VisitGetSubnetResponse(w http.ResponseWriter) error
+}
+
+type GetSubnet200JSONResponse SubnetDetail
+
+func (response GetSubnet200JSONResponse) VisitGetSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSubnet400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetSubnet400JSONResponse) VisitGetSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSubnet401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetSubnet401JSONResponse) VisitGetSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSubnet404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSubnet404JSONResponse) VisitGetSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnetRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+	Params   UpdateSubnetParams
+	Body     *UpdateSubnetJSONRequestBody
+}
+
+type UpdateSubnetResponseObject interface {
+	VisitUpdateSubnetResponse(w http.ResponseWriter) error
+}
+
+type UpdateSubnet200JSONResponse SubnetDetail
+
+func (response UpdateSubnet200JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnet400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSubnet400JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnet401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateSubnet401JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnet403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateSubnet403JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnet404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateSubnet404JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSubnet409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateSubnet409JSONResponse) VisitUpdateSubnetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NextFreeIpRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+}
+
+type NextFreeIpResponseObject interface {
+	VisitNextFreeIpResponse(w http.ResponseWriter) error
+}
+
+type NextFreeIp200JSONResponse NextFreeIp
+
+func (response NextFreeIp200JSONResponse) VisitNextFreeIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NextFreeIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response NextFreeIp400JSONResponse) VisitNextFreeIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NextFreeIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response NextFreeIp401JSONResponse) VisitNextFreeIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type NextFreeIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response NextFreeIp404JSONResponse) VisitNextFreeIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRangeRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+	Params   CreateIpRangeParams
+	Body     *CreateIpRangeJSONRequestBody
+}
+
+type CreateIpRangeResponseObject interface {
+	VisitCreateIpRangeResponse(w http.ResponseWriter) error
+}
+
+type CreateIpRange201JSONResponse IpRange
+
+func (response CreateIpRange201JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRange400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateIpRange400JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRange401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateIpRange401JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRange403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateIpRange403JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRange404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateIpRange404JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIpRange409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateIpRange409JSONResponse) VisitCreateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIpRangeRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+	RangeId  RangeId  `json:"rangeId"`
+	Params   DeleteIpRangeParams
+}
+
+type DeleteIpRangeResponseObject interface {
+	VisitDeleteIpRangeResponse(w http.ResponseWriter) error
+}
+
+type DeleteIpRange204Response struct {
+}
+
+func (response DeleteIpRange204Response) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteIpRange400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteIpRange400JSONResponse) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIpRange401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteIpRange401JSONResponse) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIpRange403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteIpRange403JSONResponse) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIpRange404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteIpRange404JSONResponse) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIpRange409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteIpRange409JSONResponse) VisitDeleteIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRangeRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	SubnetId SubnetId `json:"subnetId"`
+	RangeId  RangeId  `json:"rangeId"`
+	Params   UpdateIpRangeParams
+	Body     *UpdateIpRangeJSONRequestBody
+}
+
+type UpdateIpRangeResponseObject interface {
+	VisitUpdateIpRangeResponse(w http.ResponseWriter) error
+}
+
+type UpdateIpRange200JSONResponse IpRange
+
+func (response UpdateIpRange200JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRange400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateIpRange400JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRange401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateIpRange401JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRange403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateIpRange403JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRange404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateIpRange404JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIpRange409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateIpRange409JSONResponse) VisitUpdateIpRangeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVlansRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListVlansParams
+}
+
+type ListVlansResponseObject interface {
+	VisitListVlansResponse(w http.ResponseWriter) error
+}
+
+type ListVlans200JSONResponse VlanList
+
+func (response ListVlans200JSONResponse) VisitListVlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVlans400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListVlans400JSONResponse) VisitListVlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVlans401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListVlans401JSONResponse) VisitListVlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVlans404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListVlans404JSONResponse) VisitListVlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlanRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateVlanParams
+	Body   *CreateVlanJSONRequestBody
+}
+
+type CreateVlanResponseObject interface {
+	VisitCreateVlanResponse(w http.ResponseWriter) error
+}
+
+type CreateVlan201JSONResponse Vlan
+
+func (response CreateVlan201JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlan400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateVlan400JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlan401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateVlan401JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlan403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateVlan403JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlan404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateVlan404JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVlan409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateVlan409JSONResponse) VisitCreateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVlanRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	VlanId VlanId `json:"vlanId"`
+	Params DeleteVlanParams
+}
+
+type DeleteVlanResponseObject interface {
+	VisitDeleteVlanResponse(w http.ResponseWriter) error
+}
+
+type DeleteVlan204Response struct {
+}
+
+func (response DeleteVlan204Response) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteVlan400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteVlan400JSONResponse) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVlan401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteVlan401JSONResponse) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVlan403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteVlan403JSONResponse) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVlan404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteVlan404JSONResponse) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVlan409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteVlan409JSONResponse) VisitDeleteVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlanRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	VlanId VlanId `json:"vlanId"`
+	Params UpdateVlanParams
+	Body   *UpdateVlanJSONRequestBody
+}
+
+type UpdateVlanResponseObject interface {
+	VisitUpdateVlanResponse(w http.ResponseWriter) error
+}
+
+type UpdateVlan200JSONResponse Vlan
+
+func (response UpdateVlan200JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlan400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateVlan400JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlan401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateVlan401JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlan403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateVlan403JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlan404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateVlan404JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVlan409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateVlan409JSONResponse) VisitUpdateVlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
@@ -16870,6 +19303,9 @@ type StrictServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(ctx context.Context, request UpdateDeviceIpRequestObject) (UpdateDeviceIpResponseObject, error)
+	// LookupIp Which subnets contain an IP and which interfaces carry it
+	// (GET /orgs/{orgId}/ipam/lookup)
+	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -16966,6 +19402,45 @@ type StrictServerInterface interface {
 	// UpdateSiteShare Change a share (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
 	UpdateSiteShare(ctx context.Context, request UpdateSiteShareRequestObject) (UpdateSiteShareResponseObject, error)
+	// ListSubnets Subnets visible to the caller with usage
+	// (GET /orgs/{orgId}/subnets)
+	ListSubnets(ctx context.Context, request ListSubnetsRequestObject) (ListSubnetsResponseObject, error)
+	// CreateSubnet Create a subnet
+	// (POST /orgs/{orgId}/subnets)
+	CreateSubnet(ctx context.Context, request CreateSubnetRequestObject) (CreateSubnetResponseObject, error)
+	// DeleteSubnet Delete a subnet and its ranges (device IPs stay)
+	// (DELETE /orgs/{orgId}/subnets/{subnetId})
+	DeleteSubnet(ctx context.Context, request DeleteSubnetRequestObject) (DeleteSubnetResponseObject, error)
+	// GetSubnet A subnet with its ranges and the interface IPs inside it
+	// (GET /orgs/{orgId}/subnets/{subnetId})
+	GetSubnet(ctx context.Context, request GetSubnetRequestObject) (GetSubnetResponseObject, error)
+	// UpdateSubnet Update a subnet
+	// (PATCH /orgs/{orgId}/subnets/{subnetId})
+	UpdateSubnet(ctx context.Context, request UpdateSubnetRequestObject) (UpdateSubnetResponseObject, error)
+	// NextFreeIp First free address (unused by interfaces, not the gateway, outside DHCP or reserved ranges)
+	// (GET /orgs/{orgId}/subnets/{subnetId}/next-free)
+	NextFreeIp(ctx context.Context, request NextFreeIpRequestObject) (NextFreeIpResponseObject, error)
+	// CreateIpRange Add an IP range to the subnet
+	// (POST /orgs/{orgId}/subnets/{subnetId}/ranges)
+	CreateIpRange(ctx context.Context, request CreateIpRangeRequestObject) (CreateIpRangeResponseObject, error)
+	// DeleteIpRange Delete an IP range
+	// (DELETE /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+	DeleteIpRange(ctx context.Context, request DeleteIpRangeRequestObject) (DeleteIpRangeResponseObject, error)
+	// UpdateIpRange Update an IP range
+	// (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
+	UpdateIpRange(ctx context.Context, request UpdateIpRangeRequestObject) (UpdateIpRangeResponseObject, error)
+	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
+	// (GET /orgs/{orgId}/vlans)
+	ListVlans(ctx context.Context, request ListVlansRequestObject) (ListVlansResponseObject, error)
+	// CreateVlan Create a VLAN (site editors, or organization editors for organization-wide VLANs)
+	// (POST /orgs/{orgId}/vlans)
+	CreateVlan(ctx context.Context, request CreateVlanRequestObject) (CreateVlanResponseObject, error)
+	// DeleteVlan Delete a VLAN (its subnets keep existing without a VLAN)
+	// (DELETE /orgs/{orgId}/vlans/{vlanId})
+	DeleteVlan(ctx context.Context, request DeleteVlanRequestObject) (DeleteVlanResponseObject, error)
+	// UpdateVlan Update a VLAN
+	// (PATCH /orgs/{orgId}/vlans/{vlanId})
+	UpdateVlan(ctx context.Context, request UpdateVlanRequestObject) (UpdateVlanResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -18913,6 +21388,33 @@ func (sh *strictHandler) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// LookupIp operation middleware
+func (sh *strictHandler) LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams) {
+	var request LookupIpRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LookupIp(ctx, request.(LookupIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LookupIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LookupIpResponseObject); ok {
+		if err := validResponse.VisitLookupIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMembers operation middleware
 func (sh *strictHandler) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	var request ListMembersRequestObject
@@ -19893,6 +22395,408 @@ func (sh *strictHandler) UpdateSiteShare(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateSiteShareResponseObject); ok {
 		if err := validResponse.VisitUpdateSiteShareResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSubnets operation middleware
+func (sh *strictHandler) ListSubnets(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSubnetsParams) {
+	var request ListSubnetsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSubnets(ctx, request.(ListSubnetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSubnets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSubnetsResponseObject); ok {
+		if err := validResponse.VisitListSubnetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateSubnet operation middleware
+func (sh *strictHandler) CreateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSubnetParams) {
+	var request CreateSubnetRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateSubnetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateSubnet(ctx, request.(CreateSubnetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateSubnet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateSubnetResponseObject); ok {
+		if err := validResponse.VisitCreateSubnetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteSubnet operation middleware
+func (sh *strictHandler) DeleteSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params DeleteSubnetParams) {
+	var request DeleteSubnetRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteSubnet(ctx, request.(DeleteSubnetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteSubnet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteSubnetResponseObject); ok {
+		if err := validResponse.VisitDeleteSubnetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSubnet operation middleware
+func (sh *strictHandler) GetSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId) {
+	var request GetSubnetRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSubnet(ctx, request.(GetSubnetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSubnet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSubnetResponseObject); ok {
+		if err := validResponse.VisitGetSubnetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateSubnet operation middleware
+func (sh *strictHandler) UpdateSubnet(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params UpdateSubnetParams) {
+	var request UpdateSubnetRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+	request.Params = params
+
+	var body UpdateSubnetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateSubnet(ctx, request.(UpdateSubnetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateSubnet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateSubnetResponseObject); ok {
+		if err := validResponse.VisitUpdateSubnetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// NextFreeIp operation middleware
+func (sh *strictHandler) NextFreeIp(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId) {
+	var request NextFreeIpRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.NextFreeIp(ctx, request.(NextFreeIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "NextFreeIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(NextFreeIpResponseObject); ok {
+		if err := validResponse.VisitNextFreeIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateIpRange operation middleware
+func (sh *strictHandler) CreateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, params CreateIpRangeParams) {
+	var request CreateIpRangeRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+	request.Params = params
+
+	var body CreateIpRangeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateIpRange(ctx, request.(CreateIpRangeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateIpRange")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateIpRangeResponseObject); ok {
+		if err := validResponse.VisitCreateIpRangeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteIpRange operation middleware
+func (sh *strictHandler) DeleteIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params DeleteIpRangeParams) {
+	var request DeleteIpRangeRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+	request.RangeId = rangeId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteIpRange(ctx, request.(DeleteIpRangeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteIpRange")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteIpRangeResponseObject); ok {
+		if err := validResponse.VisitDeleteIpRangeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateIpRange operation middleware
+func (sh *strictHandler) UpdateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params UpdateIpRangeParams) {
+	var request UpdateIpRangeRequestObject
+
+	request.OrgId = orgId
+	request.SubnetId = subnetId
+	request.RangeId = rangeId
+	request.Params = params
+
+	var body UpdateIpRangeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateIpRange(ctx, request.(UpdateIpRangeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateIpRange")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateIpRangeResponseObject); ok {
+		if err := validResponse.VisitUpdateIpRangeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListVlans operation middleware
+func (sh *strictHandler) ListVlans(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVlansParams) {
+	var request ListVlansRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListVlans(ctx, request.(ListVlansRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListVlans")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListVlansResponseObject); ok {
+		if err := validResponse.VisitListVlansResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateVlan operation middleware
+func (sh *strictHandler) CreateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVlanParams) {
+	var request CreateVlanRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateVlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateVlan(ctx, request.(CreateVlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateVlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateVlanResponseObject); ok {
+		if err := validResponse.VisitCreateVlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteVlan operation middleware
+func (sh *strictHandler) DeleteVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params DeleteVlanParams) {
+	var request DeleteVlanRequestObject
+
+	request.OrgId = orgId
+	request.VlanId = vlanId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteVlan(ctx, request.(DeleteVlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteVlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteVlanResponseObject); ok {
+		if err := validResponse.VisitDeleteVlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateVlan operation middleware
+func (sh *strictHandler) UpdateVlan(w http.ResponseWriter, r *http.Request, orgId OrgId, vlanId VlanId, params UpdateVlanParams) {
+	var request UpdateVlanRequestObject
+
+	request.OrgId = orgId
+	request.VlanId = vlanId
+	request.Params = params
+
+	var body UpdateVlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateVlan(ctx, request.(UpdateVlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateVlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateVlanResponseObject); ok {
+		if err := validResponse.VisitUpdateVlanResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -1001,6 +1001,178 @@ export interface paths {
         patch: operations["updateCluster"];
         trace?: never;
     };
+    "/orgs/{orgId}/vlans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones */
+        get: operations["listVlans"];
+        put?: never;
+        /** Create a VLAN (site editors, or organization editors for organization-wide VLANs) */
+        post: operations["createVlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/vlans/{vlanId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vlanId: components["parameters"]["VlanId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a VLAN (its subnets keep existing without a VLAN) */
+        delete: operations["deleteVlan"];
+        options?: never;
+        head?: never;
+        /** Update a VLAN */
+        patch: operations["updateVlan"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/subnets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Subnets visible to the caller with usage */
+        get: operations["listSubnets"];
+        put?: never;
+        /** Create a subnet */
+        post: operations["createSubnet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/subnets/{subnetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        /** A subnet with its ranges and the interface IPs inside it */
+        get: operations["getSubnet"];
+        put?: never;
+        post?: never;
+        /** Delete a subnet and its ranges (device IPs stay) */
+        delete: operations["deleteSubnet"];
+        options?: never;
+        head?: never;
+        /** Update a subnet */
+        patch: operations["updateSubnet"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/subnets/{subnetId}/next-free": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        /** First free address (unused by interfaces, not the gateway, outside DHCP or reserved ranges) */
+        get: operations["nextFreeIp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/subnets/{subnetId}/ranges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an IP range to the subnet */
+        post: operations["createIpRange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+                rangeId: components["parameters"]["RangeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an IP range */
+        delete: operations["deleteIpRange"];
+        options?: never;
+        head?: never;
+        /** Update an IP range */
+        patch: operations["updateIpRange"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/ipam/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Which subnets contain an IP and which interfaces carry it */
+        get: operations["lookupIp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/custom-fields": {
         parameters: {
             query?: never;
@@ -2300,6 +2472,186 @@ export interface components {
         ClusterList: {
             clusters: components["schemas"]["Cluster"][];
         };
+        VlanInput: {
+            /**
+             * Format: uuid
+             * @description null = an organization-wide standard VLAN
+             */
+            siteId?: string | null;
+            /** Format: int32 */
+            vid: number;
+            name: string;
+            /** @description Shown on every diagram */
+            color?: string;
+            description?: string;
+        };
+        VlanUpdate: {
+            /**
+             * Format: uuid
+             * @description null = an organization-wide standard VLAN
+             */
+            siteId?: string | null;
+            /** Format: int32 */
+            vid: number;
+            name: string;
+            /** @description Shown on every diagram */
+            color?: string;
+            description?: string;
+            /** Format: int32 */
+            version: number;
+        };
+        Vlan: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description null = an organization-wide standard VLAN
+             */
+            siteId: string | null;
+            /** Format: int32 */
+            vid: number;
+            name: string;
+            /** @description Shown on every diagram */
+            color: string;
+            description: string;
+            siteCode: string;
+            /** Format: int64 */
+            subnetCount: number;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        VlanList: {
+            vlans: components["schemas"]["Vlan"][];
+        };
+        SubnetInput: {
+            /** @description Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared) */
+            cidr: string;
+            vrf?: string;
+            /** @description Gateway address inside the subnet, e.g. 10.72.114.1 */
+            gateway?: string | null;
+            description?: string;
+            /** Format: uuid */
+            siteId?: string | null;
+            /** Format: uuid */
+            vlanId?: string | null;
+        };
+        SubnetUpdate: {
+            /** @description Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared) */
+            cidr: string;
+            vrf?: string;
+            /** @description Gateway address inside the subnet, e.g. 10.72.114.1 */
+            gateway?: string | null;
+            description?: string;
+            /** Format: uuid */
+            siteId?: string | null;
+            /** Format: uuid */
+            vlanId?: string | null;
+            /** Format: int32 */
+            version: number;
+        };
+        Subnet: {
+            /** Format: uuid */
+            id: string;
+            /** @description Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared) */
+            cidr: string;
+            vrf: string;
+            /** @description Gateway address inside the subnet, e.g. 10.72.114.1 */
+            gateway: string | null;
+            description: string;
+            /** Format: uuid */
+            siteId: string | null;
+            /** Format: uuid */
+            vlanId: string | null;
+            siteCode: string;
+            /** Format: int32 */
+            vlanVid: number | null;
+            vlanName: string;
+            vlanColor: string;
+            /**
+             * Format: int64
+             * @description Usable host addresses (IPv4 without network/broadcast; capped for huge IPv6 prefixes)
+             */
+            size: number;
+            /**
+             * Format: int64
+             * @description Distinct addresses used by interfaces (all devices, same VRF)
+             */
+            usedCount: number;
+            /** Format: int64 */
+            rangeCount: number;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        SubnetList: {
+            subnets: components["schemas"]["Subnet"][];
+        };
+        /** @description An address in use, either on a device interface or as the management IP of a device cluster (clusterId set, deviceId null, role primary, VRF empty). */
+        IpAssignment: {
+            address: string;
+            host: string;
+            role: components["schemas"]["IpRole"];
+            vrf: string;
+            /** Format: uuid */
+            deviceId: string | null;
+            /** Format: uuid */
+            clusterId: string | null;
+            /** @description device hostname, or the cluster hostname (its name when no hostname is set) */
+            hostname: string;
+            interfaceName: string;
+        };
+        SubnetDetail: components["schemas"]["Subnet"] & {
+            ranges: components["schemas"]["IpRange"][];
+            ips: components["schemas"]["IpAssignment"][];
+            /**
+             * Format: int64
+             * @description Addresses used by devices the caller may not see
+             */
+            hiddenCount: number;
+        };
+        /** @enum {string} */
+        IpRangeKind: "dhcp" | "static" | "reserved";
+        IpRangeInput: {
+            startIp: string;
+            endIp: string;
+            kind: components["schemas"]["IpRangeKind"];
+            purpose?: string;
+        };
+        IpRangeUpdate: {
+            startIp: string;
+            endIp: string;
+            kind: components["schemas"]["IpRangeKind"];
+            purpose?: string;
+            /** Format: int32 */
+            version: number;
+        };
+        IpRange: {
+            /** Format: uuid */
+            id: string;
+            startIp: string;
+            endIp: string;
+            kind: components["schemas"]["IpRangeKind"];
+            purpose: string;
+            /** Format: int64 */
+            size: number;
+            /** Format: int64 */
+            usedCount: number;
+            /** Format: int32 */
+            version: number;
+        };
+        NextFreeIp: {
+            /** @description The free address with the subnet prefix (e.g. 10.72.114.38/24); null when the subnet is full */
+            address: string | null;
+            host: string | null;
+        };
+        IpLookup: {
+            ip: string;
+            subnets: components["schemas"]["Subnet"][];
+            assignments: components["schemas"]["IpAssignment"][];
+            /** Format: int64 */
+            hiddenCount: number;
+        };
     };
     responses: {
         /** @description Not found (also returned for organizations the caller does not belong to) */
@@ -2383,6 +2735,9 @@ export interface components {
         InterfaceId: string;
         IpId: string;
         ClusterId: string;
+        VlanId: string;
+        SubnetId: string;
+        RangeId: string;
         FieldId: string;
         AuditPageSize: number;
         /** @description Case-insensitive text in action, object id or actor email */
@@ -5022,6 +5377,444 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listVlans: {
+        parameters: {
+            query?: {
+                siteId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VlanList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createVlan: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VlanInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteVlan: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vlanId: components["parameters"]["VlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateVlan: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vlanId: components["parameters"]["VlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VlanUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listSubnets: {
+        parameters: {
+            query?: {
+                siteId?: string;
+                vlanId?: string;
+                /** @description CIDR prefix or description text */
+                q?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubnetList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createSubnet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubnetInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubnetDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getSubnet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubnetDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteSubnet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateSubnet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubnetUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubnetDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    nextFreeIp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextFreeIp"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createIpRange: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IpRangeInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpRange"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteIpRange: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+                rangeId: components["parameters"]["RangeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateIpRange: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                subnetId: components["parameters"]["SubnetId"];
+                rangeId: components["parameters"]["RangeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IpRangeUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpRange"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    lookupIp: {
+        parameters: {
+            query: {
+                ip: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpLookup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     listCustomFields: {

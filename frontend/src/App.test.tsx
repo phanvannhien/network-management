@@ -1337,6 +1337,50 @@ describe('partner / unit permissions and sharing (P1-07c, ADR-031)', () => {
   })
 })
 
+const VLAN = {
+  id: 'vl-1',
+  siteId: '66666666-6666-4666-8666-666666666666',
+  siteCode: 'AGRI-BD01',
+  vid: 10,
+  name: 'MGMT',
+  color: '#0ea5e9',
+  description: '',
+  subnetCount: 1,
+  access: 'edit',
+  version: 1,
+}
+const SUBNET = {
+  id: 'sn-1',
+  cidr: '10.72.114.0/24',
+  vrf: '',
+  gateway: '10.72.114.1',
+  description: 'Quản trị',
+  siteId: '66666666-6666-4666-8666-666666666666',
+  siteCode: 'AGRI-BD01',
+  vlanId: 'vl-1',
+  vlanVid: 10,
+  vlanName: 'MGMT',
+  vlanColor: '#0ea5e9',
+  size: 254,
+  usedCount: 240,
+  rangeCount: 1,
+  access: 'edit',
+  version: 1,
+}
+const OTHER_SITE_SUBNET = {
+  ...SUBNET,
+  id: 'sn-2',
+  cidr: '10.80.0.0/24',
+  siteId: SITE_ID,
+  siteCode: 'SHARED-HN01',
+  vlanId: null,
+  vlanVid: null,
+  vlanName: '',
+  vlanColor: '',
+  usedCount: 3,
+  description: '',
+}
+
 describe('device inventory (P1-08)', () => {
   const DEVICE = {
     id: 'dev-1',
@@ -1603,6 +1647,38 @@ describe('device inventory (P1-08)', () => {
     })
   })
 
+  it('takes the next free address of a site subnet for a new IP', async () => {
+    const calls = fakeApi(
+      ifaceRoutes({
+        [`GET /api/orgs/${ORG_ID}/subnets`]: () =>
+          json({
+            subnets: [{ ...SUBNET, siteId: AGRI_SITE.id, vrf: 'CUST-B' }, OTHER_SITE_SUBNET],
+          }),
+        [`GET /api/orgs/${ORG_ID}/subnets/sn-1/next-free`]: () =>
+          json({ address: '10.72.114.10/24', host: '10.72.114.10' }),
+        [`POST /api/orgs/${ORG_ID}/devices/dev-1/ips`]: () => json(IP, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=ips`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm IP' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm IP' })
+    const pick = await within(dialog).findByLabelText(/Lấy IP trống từ subnet/)
+    // Only the device's site's subnets (and organization-wide ones) are offered.
+    expect(within(pick).queryByText(/10\.80\.0\.0/)).not.toBeInTheDocument()
+    fireEvent.change(pick, { target: { value: 'sn-1' } })
+    await waitFor(() =>
+      expect(within(dialog).getByLabelText(/Địa chỉ/)).toHaveValue('10.72.114.10/24'),
+    )
+    expect(within(dialog).getByText('Đã điền IP trống 10.72.114.10/24')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/ips')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
+      address: '10.72.114.10/24',
+      vrf: 'CUST-B',
+    })
+  })
+
   it('a template preset fills the form and its ports are previewed', async () => {
     const calls = fakeApi(
       ifaceRoutes({
@@ -1802,5 +1878,190 @@ describe('device inventory (P1-08)', () => {
     })
     expect(screen.getByText('Cổng trunk')).toBeInTheDocument()
     expect(screen.queryByText('VRF')).not.toBeInTheDocument()
+  })
+})
+
+describe('IPAM (P1-10)', () => {
+  const DETAIL = {
+    ...SUBNET,
+    ranges: [
+      {
+        id: 'rg-1',
+        startIp: '10.72.114.100',
+        endIp: '10.72.114.200',
+        kind: 'dhcp',
+        purpose: 'Wi-Fi khách',
+        size: 101,
+        usedCount: 0,
+        version: 1,
+      },
+    ],
+    ips: [
+      {
+        address: '10.72.114.2/24',
+        host: '10.72.114.2',
+        role: 'primary',
+        vrf: '',
+        deviceId: 'dev-1',
+        clusterId: null,
+        hostname: 'AGRI-BD-SW01',
+        interfaceName: 'Vlan10',
+      },
+      {
+        address: '10.72.114.3/24',
+        host: '10.72.114.3',
+        role: 'primary',
+        vrf: '',
+        deviceId: null,
+        clusterId: 'cl-1',
+        hostname: 'BD-CORE-STACK',
+        interfaceName: '',
+      },
+    ],
+    hiddenCount: 2,
+  }
+  const ipamRoutes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/subnets`]: () => json({ subnets: [SUBNET, OTHER_SITE_SUBNET] }),
+      [`GET /api/orgs/${ORG_ID}/vlans`]: () =>
+        json({
+          vlans: [VLAN, { ...VLAN, id: 'vl-2', siteId: SITE_ID, siteCode: 'SHARED-HN01', vid: 20 }],
+        }),
+      [`GET /api/orgs/${ORG_ID}/subnets/sn-1`]: () => json(DETAIL),
+      ...extra,
+    })
+
+  it('lists subnets with usage, VLANs, and looks up who uses an IP', async () => {
+    fakeApi(
+      ipamRoutes({
+        [`GET /api/orgs/${ORG_ID}/ipam/lookup`]: () =>
+          json({
+            ip: '10.72.114.2',
+            subnets: [SUBNET],
+            assignments: [
+              {
+                address: '10.72.114.2/24',
+                host: '10.72.114.2',
+                role: 'primary',
+                vrf: '',
+                deviceId: 'dev-1',
+                clusterId: null,
+                hostname: 'AGRI-BD-SW01',
+                interfaceName: 'Vlan10',
+              },
+            ],
+            hiddenCount: 1,
+          }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/ipam`)
+    expect(await screen.findByRole('link', { name: '10.72.114.0/24' })).toBeInTheDocument()
+    // 240 / 254 = 94%: nearly full is said in words, not only colour.
+    expect(screen.getByRole('meter', { name: 'Sử dụng 10.72.114.0/24' })).toHaveAttribute(
+      'aria-valuenow',
+      '94',
+    )
+    expect(screen.getByText('Gần đầy')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Địa chỉ IP cần tra'), {
+      target: { value: '10.72.114.2' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Tra' }))
+    const lookup = await screen.findByRole('region', { name: 'Tra IP' })
+    expect(await within(lookup).findByRole('link', { name: 'AGRI-BD-SW01' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/devices/dev-1`,
+    )
+    expect(within(lookup).getByText(/1 thiết bị ngoài phạm vi/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'VLAN' }))
+    expect(await screen.findByText('MGMT')).toBeInTheDocument()
+  })
+
+  it('creates a subnet with a live preview; the VLAN list follows the site', async () => {
+    const calls = fakeApi(
+      ipamRoutes({
+        [`POST /api/orgs/${ORG_ID}/subnets`]: () => json(DETAIL, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/ipam`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm subnet' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm subnet' })
+    fireEvent.change(within(dialog).getByLabelText(/Subnet \(CIDR\)/), {
+      target: { value: '10.72.114.7/24' },
+    })
+    expect(
+      within(dialog).getByText(
+        'Mạng 10.72.114.0/24 · dùng được 10.72.114.1 – 10.72.114.254 (254 địa chỉ) · mặt nạ 255.255.255.0',
+      ),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(within(dialog).getByLabelText('Site')).toContainHTML('AGRI-BD01'))
+    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: AGRI_SITE.id } })
+    const vlanSelect = within(dialog).getByLabelText('VLAN')
+    // VLAN 20 belongs to another site.
+    expect(within(vlanSelect).queryByText(/^20/)).not.toBeInTheDocument()
+    fireEvent.change(vlanSelect, { target: { value: 'vl-1' } })
+    fireEvent.change(within(dialog).getByLabelText('Gateway'), { target: { value: '10.72.114.1' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/subnets')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      cidr: '10.72.114.7/24',
+      gateway: '10.72.114.1',
+      vrf: '',
+      description: '',
+      siteId: AGRI_SITE.id,
+      vlanId: 'vl-1',
+    })
+  })
+
+  it('subnet page: next free address, ranges and hidden addresses', async () => {
+    const calls = fakeApi(
+      ipamRoutes({
+        [`GET /api/orgs/${ORG_ID}/subnets/sn-1/next-free`]: () =>
+          json({ address: '10.72.114.10/24', host: '10.72.114.10' }),
+        [`POST /api/orgs/${ORG_ID}/subnets/sn-1/ranges`]: () => json(DETAIL.ranges[0], 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/ipam/subnets/sn-1`)
+    expect(await screen.findByRole('heading', { name: '10.72.114.0/24' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'AGRI-BD-SW01' })).toBeInTheDocument()
+    // A cluster's shared IP is listed without a device link.
+    expect(screen.getByText('BD-CORE-STACK')).not.toHaveAttribute('href')
+    expect(screen.getByText('IP quản trị cụm')).toBeInTheDocument()
+    expect(screen.getByText(/2 IP khác đang được thiết bị ngoài phạm vi/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm IP trống' }))
+    expect(await screen.findByText('10.72.114.10/24')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm dải IP' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm dải IP' })
+    fireEvent.change(within(dialog).getByLabelText(/Loại dải/), { target: { value: 'reserved' } })
+    expect(within(dialog).getByText(/Giữ lại, không cấp cho ai/)).toBeInTheDocument()
+    fireEvent.change(within(dialog).getByLabelText(/Từ địa chỉ/), {
+      target: { value: '10.72.114.250' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/Đến địa chỉ/), {
+      target: { value: '10.72.114.254' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/ranges')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      startIp: '10.72.114.250',
+      endIp: '10.72.114.254',
+      kind: 'reserved',
+      purpose: '',
+    })
+  })
+
+  it('a viewer sees the subnet without edit actions', async () => {
+    fakeApi(
+      ipamRoutes({
+        [`GET /api/orgs/${ORG_ID}/subnets/sn-1`]: () => json({ ...DETAIL, access: 'view' }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/ipam/subnets/sn-1`)
+    expect(await screen.findByRole('heading', { name: '10.72.114.0/24' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sửa subnet' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Thêm dải IP' })).not.toBeInTheDocument()
   })
 })

@@ -2096,6 +2096,376 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/vlans:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listVlans
+      summary: VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VlanList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createVlan
+      summary: Create a VLAN (site editors, or organization editors for organization-wide VLANs)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VlanInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/vlans/{vlanId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/VlanId'
+    patch:
+      operationId: updateVlan
+      summary: Update a VLAN
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VlanUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteVlan
+      summary: Delete a VLAN (its subnets keep existing without a VLAN)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/subnets:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listSubnets
+      summary: Subnets visible to the caller with usage
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: vlanId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: q
+          in: query
+          description: CIDR prefix or description text
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubnetList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createSubnet
+      summary: Create a subnet
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubnetInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubnetDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/subnets/{subnetId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SubnetId'
+    get:
+      operationId: getSubnet
+      summary: A subnet with its ranges and the interface IPs inside it
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubnetDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateSubnet
+      summary: Update a subnet
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubnetUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubnetDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteSubnet
+      summary: Delete a subnet and its ranges (device IPs stay)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/subnets/{subnetId}/next-free:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SubnetId'
+    get:
+      operationId: nextFreeIp
+      summary: First free address (unused by interfaces, not the gateway, outside DHCP or reserved ranges)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NextFreeIp'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/subnets/{subnetId}/ranges:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SubnetId'
+    post:
+      operationId: createIpRange
+      summary: Add an IP range to the subnet
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpRangeInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpRange'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SubnetId'
+      - $ref: '#/components/parameters/RangeId'
+    patch:
+      operationId: updateIpRange
+      summary: Update an IP range
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpRangeUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpRange'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteIpRange
+      summary: Delete an IP range
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/ipam/lookup:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: lookupIp
+      summary: Which subnets contain an IP and which interfaces carry it
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpLookup'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/custom-fields:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -2511,6 +2881,27 @@ components:
         format: uuid
     ClusterId:
       name: clusterId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VlanId:
+      name: vlanId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SubnetId:
+      name: subnetId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RangeId:
+      name: rangeId
       in: path
       required: true
       schema:
@@ -4883,3 +5274,347 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cluster'
+
+    VlanInput:
+      type: object
+      required: [vid, name]
+      properties:
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: null = an organization-wide standard VLAN
+        vid:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4094
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          description: Shown on every diagram
+        description:
+          type: string
+          maxLength: 500
+
+    VlanUpdate:
+      type: object
+      required: [vid, name, version]
+      properties:
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: null = an organization-wide standard VLAN
+        vid:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4094
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          description: Shown on every diagram
+        description:
+          type: string
+          maxLength: 500
+        version:
+          type: integer
+          format: int32
+
+    Vlan:
+      type: object
+      required: [id, siteId, siteCode, vid, name, color, description, subnetCount, access, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: null = an organization-wide standard VLAN
+        vid:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4094
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          description: Shown on every diagram
+        description:
+          type: string
+          maxLength: 500
+        siteCode:
+          type: string
+        subnetCount:
+          type: integer
+          format: int64
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    VlanList:
+      type: object
+      required: [vlans]
+      properties:
+        vlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vlan'
+
+    SubnetInput:
+      type: object
+      required: [cidr]
+      properties:
+        cidr:
+          type: string
+          description: Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+        vrf:
+          type: string
+          maxLength: 64
+        gateway:
+          type: [string, 'null']
+          description: Gateway address inside the subnet, e.g. 10.72.114.1
+        description:
+          type: string
+          maxLength: 500
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        vlanId:
+          type: [string, 'null']
+          format: uuid
+
+    SubnetUpdate:
+      type: object
+      required: [cidr, version]
+      properties:
+        cidr:
+          type: string
+          description: Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+        vrf:
+          type: string
+          maxLength: 64
+        gateway:
+          type: [string, 'null']
+          description: Gateway address inside the subnet, e.g. 10.72.114.1
+        description:
+          type: string
+          maxLength: 500
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        vlanId:
+          type: [string, 'null']
+          format: uuid
+        version:
+          type: integer
+          format: int32
+
+    Subnet:
+      type: object
+      required: [id, cidr, vrf, gateway, description, siteId, siteCode, vlanId, vlanVid, vlanName, vlanColor, size, usedCount, rangeCount, access, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cidr:
+          type: string
+          description: Network in CIDR form, e.g. 10.72.114.0/24 (host bits are cleared)
+        vrf:
+          type: string
+          maxLength: 64
+        gateway:
+          type: [string, 'null']
+          description: Gateway address inside the subnet, e.g. 10.72.114.1
+        description:
+          type: string
+          maxLength: 500
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        vlanId:
+          type: [string, 'null']
+          format: uuid
+        siteCode:
+          type: string
+        vlanVid:
+          type: [integer, 'null']
+          format: int32
+        vlanName:
+          type: string
+        vlanColor:
+          type: string
+        size:
+          type: integer
+          format: int64
+          description: Usable host addresses (IPv4 without network/broadcast; capped for huge IPv6 prefixes)
+        usedCount:
+          type: integer
+          format: int64
+          description: Distinct addresses used by interfaces (all devices, same VRF)
+        rangeCount:
+          type: integer
+          format: int64
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    SubnetList:
+      type: object
+      required: [subnets]
+      properties:
+        subnets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subnet'
+
+    IpAssignment:
+      type: object
+      description: >-
+        An address in use, either on a device interface or as the management IP of a device cluster
+        (clusterId set, deviceId null, role primary, VRF empty).
+      required: [address, host, role, vrf, deviceId, clusterId, hostname, interfaceName]
+      properties:
+        address:
+          type: string
+        host:
+          type: string
+        role:
+          $ref: '#/components/schemas/IpRole'
+        vrf:
+          type: string
+        deviceId:
+          type: [string, 'null']
+          format: uuid
+        clusterId:
+          type: [string, 'null']
+          format: uuid
+        hostname:
+          type: string
+          description: device hostname, or the cluster hostname (its name when no hostname is set)
+        interfaceName:
+          type: string
+
+    SubnetDetail:
+      allOf:
+        - $ref: '#/components/schemas/Subnet'
+        - type: object
+          required: [ranges, ips, hiddenCount]
+          properties:
+            ranges:
+              type: array
+              items:
+                $ref: '#/components/schemas/IpRange'
+            ips:
+              type: array
+              items:
+                $ref: '#/components/schemas/IpAssignment'
+            hiddenCount:
+              type: integer
+              format: int64
+              description: Addresses used by devices the caller may not see
+
+    IpRangeKind:
+      type: string
+      enum: [dhcp, static, reserved]
+
+    IpRangeInput:
+      type: object
+      required: [startIp, endIp, kind]
+      properties:
+        startIp:
+          type: string
+        endIp:
+          type: string
+        kind:
+          $ref: '#/components/schemas/IpRangeKind'
+        purpose:
+          type: string
+          maxLength: 200
+
+    IpRangeUpdate:
+      type: object
+      required: [startIp, endIp, kind, version]
+      properties:
+        startIp:
+          type: string
+        endIp:
+          type: string
+        kind:
+          $ref: '#/components/schemas/IpRangeKind'
+        purpose:
+          type: string
+          maxLength: 200
+        version:
+          type: integer
+          format: int32
+
+    IpRange:
+      type: object
+      required: [id, startIp, endIp, kind, purpose, size, usedCount, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        startIp:
+          type: string
+        endIp:
+          type: string
+        kind:
+          $ref: '#/components/schemas/IpRangeKind'
+        purpose:
+          type: string
+          maxLength: 200
+        size:
+          type: integer
+          format: int64
+        usedCount:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+
+    NextFreeIp:
+      type: object
+      required: [address, host]
+      properties:
+        address:
+          type: [string, 'null']
+          description: The free address with the subnet prefix (e.g. 10.72.114.38/24); null when the subnet is full
+        host:
+          type: [string, 'null']
+
+    IpLookup:
+      type: object
+      required: [ip, subnets, assignments, hiddenCount]
+      properties:
+        ip:
+          type: string
+        subnets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subnet'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpAssignment'
+        hiddenCount:
+          type: integer
+          format: int64

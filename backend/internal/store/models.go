@@ -179,6 +179,33 @@ type IpAddress struct {
 	Version        int32
 }
 
+type IpRange struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	SubnetID       pgtype.UUID
+	StartIp        netip.Addr
+	EndIp          netip.Addr
+	Kind           string
+	Purpose        string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
+type IpamAddress struct {
+	OrganizationID pgtype.UUID
+	Vrf            string
+	Host           netip.Addr
+	Address        string
+	Role           string
+	DeviceID       pgtype.UUID
+	ClusterID      pgtype.UUID
+	Hostname       string
+	InterfaceName  string
+	UnitID         pgtype.UUID
+	SiteID         pgtype.UUID
+}
+
 type Location struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -320,6 +347,20 @@ type Site struct {
 	Isp            string
 }
 
+type Subnet struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	SiteID         pgtype.UUID
+	VlanID         pgtype.UUID
+	Cidr           netip.Prefix
+	Vrf            string
+	Gateway        *netip.Addr
+	Description    string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type User struct {
 	ID               pgtype.UUID
 	Email            string
@@ -342,4 +383,17 @@ type UserToken struct {
 	ExpiresAt pgtype.Timestamptz
 	UsedAt    pgtype.Timestamptz
 	CreatedAt pgtype.Timestamptz
+}
+
+type Vlan struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	SiteID         pgtype.UUID
+	Vid            int32
+	Name           string
+	Color          string
+	Description    string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
 }
