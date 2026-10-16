@@ -9,6 +9,7 @@ import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { Button } from '@/components/ui/button'
+import { inScope, useScope } from './access'
 import { SITE_KINDS, useBusinessUnits, usePartners, useSites, type Site } from './sites'
 
 const SITE_SORT: Record<string, (s: Site) => string | number> = {
@@ -41,6 +42,7 @@ export function SitesTable({
   const partners = usePartners(orgId)
   const units = useBusinessUnits(orgId)
   const scope = unitId ? 'unit-sites' : partnerId ? 'partner-sites' : 'sites'
+  const topScope = useScope(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
 
   const rows = useMemo(() => {
@@ -52,12 +54,16 @@ export function SitesTable({
       (s) =>
         (!unitId || s.businessUnitId === unitId) &&
         (!partnerId || s.partnerId === partnerId) &&
+        // The topbar filter applies to the hub; detail pages are already limited.
+        (unitId ||
+          partnerId ||
+          inScope(topScope, { partnerId: s.partnerId, unitId: s.businessUnitId })) &&
         (partnerF.length === 0 || partnerF.includes(s.partnerId ?? 'shared')) &&
         (!q || [s.code, s.name, s.address].some((v) => v.toLowerCase().includes(q))) &&
         (unitF.length === 0 || unitF.includes(s.businessUnitId ?? 'shared')) &&
         (kindF.length === 0 || kindF.includes(s.kind)),
     )
-  }, [sites.data, filter, unitId, partnerId])
+  }, [sites.data, filter, unitId, partnerId, topScope])
   const table = useLocalTable(rows, SITE_SORT, [{ id: 'code', desc: false }])
 
   const count = (pred: (s: Site) => boolean) => sites.data?.filter(pred).length ?? 0

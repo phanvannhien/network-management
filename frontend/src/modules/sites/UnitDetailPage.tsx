@@ -1,10 +1,10 @@
+import { GrantMembersPanel } from './GrantMembersPanel'
 import { Building2, MoreHorizontal, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { NotFoundPage } from '@/app/NotFoundPage'
-import { useOrganization } from '@/app/orgs'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { KeyValueList } from '@/components/KeyValueList'
@@ -18,6 +18,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { SiteFormDialog } from './SiteFormDialog'
 import { SitesTable } from './SitesTable'
+import { atLeast, useOrgAccess } from './access'
 import { useBusinessUnit, useDeleteUnit } from './sites'
 import { UnitFormDialog } from './UnitFormDialog'
 
@@ -26,7 +27,6 @@ export function UnitDetailPage() {
   const { t } = useTranslation()
   const { orgId = '', unitId = '' } = useParams()
   const navigate = useNavigate()
-  const org = useOrganization(orgId)
   const unit = useBusinessUnit(orgId, unitId)
   const del = useDeleteUnit(orgId)
   const [editing, setEditing] = useState(false)
@@ -39,9 +39,11 @@ export function UnitDetailPage() {
     { label: u?.code ?? '…' },
   ])
 
-  const role = org.data?.membership.role
-  const canAdmin = role === 'owner' || role === 'admin'
-  const canEdit = canAdmin || role === 'editor'
+  // unit_admins edit the unit; deleting it is for organization / partner admins.
+  const access = useOrgAccess(orgId)
+  const canAdmin = atLeast(u?.access, 'admin')
+  const canEdit = atLeast(u?.access, 'edit')
+  const canDelete = u ? access.partnerAdminOf(u.partnerId) : false
 
   if (unit.isPending) return <Skeleton className="m-4 h-64" />
   if (!u) return <NotFoundPage inShell />
@@ -79,18 +81,20 @@ export function UnitDetailPage() {
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Pencil aria-hidden /> {t('units.edit')}
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
-                >
-                  <MoreHorizontal aria-hidden />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
-                    {t('units.delete')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canDelete && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
+                  >
+                    <MoreHorizontal aria-hidden />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
+                      {t('units.delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </>
           )}
         </div>
@@ -111,6 +115,16 @@ export function UnitDetailPage() {
           ]}
         />
       </section>
+
+      {canAdmin && (
+        <div className="max-w-4xl">
+          <GrantMembersPanel
+            orgId={orgId}
+            scope={{ kind: 'unit', id: u.id }}
+            code={`${u.partnerCode} › ${u.code}`}
+          />
+        </div>
+      )}
 
       <h2 className="text-sm font-semibold">
         {t('units.sitesOf', { code: u.code })}{' '}

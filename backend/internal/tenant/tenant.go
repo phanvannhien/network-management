@@ -36,36 +36,18 @@ type Membership struct {
 	UserID      pgtype.UUID
 	Role        string
 	Permissions []string
-	SiteScope   []pgtype.UUID // nil = all sites
+	Grants      Grants
 	OrgName     string
 	OrgKind     string
 }
 
-// CanEdit: owner, admin, editor may change business data.
+// CanEdit: owner, admin, editor may change business data anywhere in the organization (grants: UnitLevel).
 func (m Membership) CanEdit() bool {
 	return m.Role == RoleOwner || m.Role == RoleAdmin || m.Role == RoleEditor
 }
 
 // CanAdmin: owner and admin manage the organization itself (settings, users).
 func (m Membership) CanAdmin() bool { return m.Role == RoleOwner || m.Role == RoleAdmin }
-
-// SiteFilter is the site restriction to apply to queries (ADR-025): nil = every site. Owner/admin are never
-// restricted; for editors/viewers a non-nil scope (even empty) limits them to exactly those sites.
-func (m Membership) SiteFilter() []pgtype.UUID {
-	if m.CanAdmin() || m.SiteScope == nil {
-		return nil
-	}
-	return m.SiteScope
-}
-
-// Scoped reports whether the member is limited to some sites (and so may not create new ones).
-func (m Membership) Scoped() bool { return m.SiteFilter() != nil }
-
-// SiteAllowed reports whether the member may see the site.
-func (m Membership) SiteAllowed(site pgtype.UUID) bool {
-	f := m.SiteFilter()
-	return f == nil || slices.Contains(f, site)
-}
 
 // Has reports an extra permission (credential.reveal, credential.manage, user.manage).
 func (m Membership) Has(permission string) bool { return slices.Contains(m.Permissions, permission) }
@@ -86,6 +68,24 @@ func WithMembership(ctx context.Context, m Membership) context.Context {
 // MembershipLoader is the slice of store.Querier the middleware needs.
 type MembershipLoader interface {
 	GetMembership(ctx context.Context, arg store.GetMembershipParams) (store.GetMembershipRow, error)
+	ListAccessGrants(ctx context.Context, arg store.ListAccessGrantsParams) ([]store.ListAccessGrantsRow, error)
+}
+
+// LoadGrants reads the caller's partner and unit grants.
+func LoadGrants(ctx context.Context, q MembershipLoader, org, user pgtype.UUID) (Grants, error) {
+	rows, err := q.ListAccessGrants(ctx, store.ListAccessGrantsParams{OrganizationID: org, UserID: user})
+	if err != nil {
+		return Grants{}, fmt.Errorf("load grants: %w", err)
+	}
+	g := Grants{Partners: map[pgtype.UUID]string{}, Units: map[pgtype.UUID]UnitGrant{}}
+	for _, r := range rows {
+		if r.BusinessUnitID.Valid {
+			g.Units[r.BusinessUnitID] = UnitGrant{Partner: r.PartnerID, Role: r.Role}
+		} else {
+			g.Partners[r.PartnerID] = r.Role
+		}
+	}
+	return g, nil
 }
 
 // UserFunc returns the signed-in user for a request (false = not signed in).
@@ -119,9 +119,14 @@ func Middleware(q MembershipLoader, user UserFunc) func(http.Handler) http.Handl
 				writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
 				return
 			}
+			grants, err := LoadGrants(r.Context(), q, row.OrganizationID, row.UserID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
+				return
+			}
 			m := Membership{
 				OrgID: row.OrganizationID, UserID: row.UserID, Role: row.Role, Permissions: row.Permissions,
-				SiteScope: row.SiteScope, OrgName: row.OrganizationName, OrgKind: row.OrganizationKind,
+				Grants: grants, OrgName: row.OrganizationName, OrgKind: row.OrganizationKind,
 			}
 			next.ServeHTTP(w, r.WithContext(WithMembership(r.Context(), m)))
 		})

@@ -12,7 +12,7 @@ import (
 )
 
 const addMembership = `-- name: AddMembership :one
-INSERT INTO memberships (organization_id, user_id, role) VALUES ($1, $2, $3) RETURNING id, organization_id, user_id, role, permissions, site_scope, created_at, updated_at, version
+INSERT INTO memberships (organization_id, user_id, role) VALUES ($1, $2, $3) RETURNING id, organization_id, user_id, role, permissions, created_at, updated_at, version
 `
 
 type AddMembershipParams struct {
@@ -30,7 +30,6 @@ func (q *Queries) AddMembership(ctx context.Context, arg AddMembershipParams) (M
 		&i.UserID,
 		&i.Role,
 		&i.Permissions,
-		&i.SiteScope,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
@@ -126,7 +125,7 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 
 const getMembership = `-- name: GetMembership :one
 
-SELECT m.organization_id, m.user_id, m.role, m.permissions, m.site_scope,
+SELECT m.organization_id, m.user_id, m.role, m.permissions,
        o.name AS organization_name, o.kind AS organization_kind
 FROM memberships m
 JOIN organizations o ON o.id = m.organization_id
@@ -143,7 +142,6 @@ type GetMembershipRow struct {
 	UserID           pgtype.UUID
 	Role             string
 	Permissions      []string
-	SiteScope        []pgtype.UUID
 	OrganizationName string
 	OrganizationKind string
 }
@@ -159,7 +157,6 @@ func (q *Queries) GetMembership(ctx context.Context, arg GetMembershipParams) (G
 		&i.UserID,
 		&i.Role,
 		&i.Permissions,
-		&i.SiteScope,
 		&i.OrganizationName,
 		&i.OrganizationKind,
 	)

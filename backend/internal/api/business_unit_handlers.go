@@ -17,11 +17,13 @@ import (
 )
 
 // Business units (P1-07b, ADR-031): units belong to exactly one partner of the organization (fixed after
-// creation) and own the sites. Managed by organization owners/admins (unit/partner admins arrive with P1-07c).
+// creation) and own the sites. Organization owners/admins and the partner's partner_admins create and delete
+// units; unit_admins edit their own (P1-07c). Units the caller has no access to answer 404.
 
 const (
 	msgUnitNotFound  = "Không tìm thấy đơn vị"
-	msgUnitForbidden = "Chỉ owner/admin được quản lý đơn vị"
+	msgUnitForbidden = "Chỉ owner/admin tổ chức hoặc admin của đối tác được tạo/xóa đơn vị"
+	msgUnitEdit      = "Chỉ admin của tổ chức, đối tác hoặc đơn vị được sửa đơn vị"
 	msgUnitDuplicate = "Mã đơn vị đã tồn tại trong đối tác"
 )
 
@@ -72,11 +74,11 @@ func unitFromRow(r store.GetBusinessUnitRow) store.BusinessUnit {
 	}
 }
 
-func toUnit(u store.BusinessUnit, partnerCode, partnerName string, sites int64) apigen.BusinessUnit {
+func toUnit(u store.BusinessUnit, partnerCode, partnerName string, sites int64, level int) apigen.BusinessUnit {
 	return apigen.BusinessUnit{
 		Id: uuid.UUID(u.ID.Bytes), PartnerId: uuid.UUID(u.PartnerID.Bytes), PartnerCode: partnerCode, PartnerName: partnerName,
 		Code: u.Code, Name: u.Name, ContactName: u.ContactName, ContactPhone: u.ContactPhone, ContactEmail: u.ContactEmail,
-		Notes: u.Notes, SiteCount: sites, Version: u.Version, CreatedAt: u.CreatedAt.Time,
+		Notes: u.Notes, SiteCount: sites, Access: levelName(level), Version: u.Version, CreatedAt: u.CreatedAt.Time,
 	}
 }
 
@@ -95,7 +97,9 @@ func (s *Server) ListBusinessUnits(ctx context.Context, req apigen.ListBusinessU
 	}
 	out := apigen.BusinessUnitList{BusinessUnits: make([]apigen.BusinessUnit, 0, len(rows))}
 	for _, r := range rows {
-		out.BusinessUnits = append(out.BusinessUnits, toUnit(unitFromRow(store.GetBusinessUnitRow(r)), r.PartnerCode, r.PartnerName, r.SiteCount))
+		if level := m.UnitLevel(r.ID, r.PartnerID); level > tenant.LevelNone {
+			out.BusinessUnits = append(out.BusinessUnits, toUnit(unitFromRow(store.GetBusinessUnitRow(r)), r.PartnerCode, r.PartnerName, r.SiteCount, level))
+		}
 	}
 	return apigen.ListBusinessUnits200JSONResponse(out), nil
 }
@@ -106,22 +110,19 @@ func (s *Server) GetBusinessUnit(ctx context.Context, req apigen.GetBusinessUnit
 		return nil, err
 	}
 	r, err := s.q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(req.BusinessUnitId), OrganizationID: m.OrgID})
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && m.UnitLevel(r.ID, r.PartnerID) == tenant.LevelNone) {
 		return apigen.GetBusinessUnit404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgUnitNotFound}}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get business unit: %w", err)
 	}
-	return apigen.GetBusinessUnit200JSONResponse(toUnit(unitFromRow(r), r.PartnerCode, r.PartnerName, r.SiteCount)), nil
+	return apigen.GetBusinessUnit200JSONResponse(toUnit(unitFromRow(r), r.PartnerCode, r.PartnerName, r.SiteCount, m.UnitLevel(r.ID, r.PartnerID))), nil
 }
 
 func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusinessUnitRequestObject) (apigen.CreateBusinessUnitResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
 		return nil, err
-	}
-	if !m.CanAdmin() {
-		return apigen.CreateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
 	}
 	if req.Body == nil {
 		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
@@ -132,19 +133,23 @@ func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusine
 		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
 	var (
-		unit                 store.BusinessUnit
-		partner              store.GetPartnerRow
-		duplicate, noPartner bool
+		unit                            store.BusinessUnit
+		partner                         store.GetPartnerRow
+		duplicate, noPartner, forbidden bool
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		// The partner must be a live partner of this organization (the composite FK backs this up).
 		partner, err = q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(b.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(partner.ID)) {
 			noPartner = true
 			return errRollback
 		}
 		if err != nil {
 			return fmt.Errorf("load partner: %w", err)
+		}
+		if m.PartnerLevel(partner.ID) < tenant.LevelAdmin {
+			forbidden = true
+			return errRollback
 		}
 		unit, err = q.CreateBusinessUnit(ctx, store.CreateBusinessUnitParams{
 			OrganizationID: m.OrgID, PartnerID: partner.ID, Code: f.code, Name: f.name,
@@ -165,12 +170,14 @@ func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusine
 	switch {
 	case noPartner:
 		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msgPartnerNotFound}}, nil
+	case forbidden:
+		return apigen.CreateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
 	case duplicate:
 		return apigen.CreateBusinessUnit409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: msgUnitDuplicate}}, nil
 	case err != nil:
 		return nil, err
 	}
-	return apigen.CreateBusinessUnit201JSONResponse(toUnit(unit, partner.Code, partner.Name, 0)), nil
+	return apigen.CreateBusinessUnit201JSONResponse(toUnit(unit, partner.Code, partner.Name, 0, m.UnitLevel(unit.ID, unit.PartnerID))), nil
 }
 
 func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusinessUnitRequestObject) (apigen.UpdateBusinessUnitResponseObject, error) {
@@ -191,14 +198,14 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err = q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(req.BusinessUnitId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && m.UnitLevel(before.ID, before.PartnerID) == tenant.LevelNone) {
 			notFound = true
 			return errRollback
 		}
 		if err != nil {
 			return fmt.Errorf("load business unit: %w", err)
 		}
-		if !m.CanAdmin() {
+		if m.UnitLevel(before.ID, before.PartnerID) < tenant.LevelAdmin {
 			forbidden = true
 			return errRollback
 		}
@@ -229,7 +236,7 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 	case notFound:
 		return apigen.UpdateBusinessUnit404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgUnitNotFound}}, nil
 	case forbidden:
-		return apigen.UpdateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
+		return apigen.UpdateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitEdit}}, nil
 	case msg != "":
 		return apigen.UpdateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	case conflict != "":
@@ -237,7 +244,7 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 	case err != nil:
 		return nil, err
 	}
-	return apigen.UpdateBusinessUnit200JSONResponse(toUnit(updated, before.PartnerCode, before.PartnerName, before.SiteCount)), nil
+	return apigen.UpdateBusinessUnit200JSONResponse(toUnit(updated, before.PartnerCode, before.PartnerName, before.SiteCount, m.UnitLevel(updated.ID, updated.PartnerID))), nil
 }
 
 func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusinessUnitRequestObject) (apigen.DeleteBusinessUnitResponseObject, error) {
@@ -251,14 +258,14 @@ func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusine
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(req.BusinessUnitId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && m.UnitLevel(before.ID, before.PartnerID) == tenant.LevelNone) {
 			notFound = true
 			return errRollback
 		}
 		if err != nil {
 			return fmt.Errorf("load business unit: %w", err)
 		}
-		if !m.CanAdmin() {
+		if m.PartnerLevel(before.PartnerID) < tenant.LevelAdmin {
 			forbidden = true
 			return errRollback
 		}

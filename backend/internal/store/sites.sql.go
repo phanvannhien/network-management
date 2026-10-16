@@ -11,24 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countLiveSitesIn = `-- name: CountLiveSitesIn :one
-SELECT count(*) FROM sites
-WHERE organization_id = $1 AND deleted_at IS NULL AND id = ANY ($2::uuid[])
-`
-
-type CountLiveSitesInParams struct {
-	OrganizationID pgtype.UUID
-	Ids            []pgtype.UUID
-}
-
-// Validates a site_scope: how many of the ids are live sites of the organization.
-func (q *Queries) CountLiveSitesIn(ctx context.Context, arg CountLiveSitesInParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countLiveSitesIn, arg.OrganizationID, arg.Ids)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countLocationChildren = `-- name: CountLocationChildren :one
 SELECT (SELECT count(*) FROM locations c WHERE c.parent_id = $1 AND c.organization_id = $2)::bigint AS children,
        (SELECT count(*) FROM racks r WHERE r.location_id = $1 AND r.organization_id = $2)::bigint AS racks
@@ -291,13 +273,23 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = $1 AND s.organization_id = $2 AND s.deleted_at IS NULL
-  AND ($3::uuid[] IS NULL OR s.id = ANY ($3::uuid[]))
+  AND (NOT $3::boolean
+       OR b.id = ANY ($4::uuid[]) OR b.partner_id = ANY ($5::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY ($6::uuid[])
+                         OR rs.target_unit_id = ANY ($4::uuid[])
+                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type GetSiteParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Scope          []pgtype.UUID
+	Restricted     bool
+	GrantUnits     []pgtype.UUID
+	GrantPartners  []pgtype.UUID
+	SharePartners  []pgtype.UUID
 }
 
 type GetSiteRow struct {
@@ -326,7 +318,14 @@ type GetSiteRow struct {
 }
 
 func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error) {
-	row := q.db.QueryRow(ctx, getSite, arg.ID, arg.OrganizationID, arg.Scope)
+	row := q.db.QueryRow(ctx, getSite,
+		arg.ID,
+		arg.OrganizationID,
+		arg.Restricted,
+		arg.GrantUnits,
+		arg.GrantPartners,
+		arg.SharePartners,
+	)
 	var i GetSiteRow
 	err := row.Scan(
 		&i.ID,
@@ -481,16 +480,28 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = $1 AND s.deleted_at IS NULL
-  AND ($2::uuid[] IS NULL OR s.id = ANY ($2::uuid[]))
-  AND ($3::uuid IS NULL OR s.business_unit_id = $3)
-  AND ($4::uuid IS NULL OR b.partner_id = $4)
-  AND (NOT $5::boolean OR s.business_unit_id IS NULL)
+  AND (NOT $2::boolean
+       OR b.id = ANY ($3::uuid[]) OR b.partner_id = ANY ($4::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY ($5::uuid[])
+                         OR rs.target_unit_id = ANY ($3::uuid[])
+                         OR tu.partner_id = ANY ($4::uuid[]))))
+  AND ($6::uuid IS NULL OR s.id = $6)
+  AND ($7::uuid IS NULL OR s.business_unit_id = $7)
+  AND ($8::uuid IS NULL OR b.partner_id = $8)
+  AND (NOT $9::boolean OR s.business_unit_id IS NULL)
 ORDER BY s.code
 `
 
 type ListSitesParams struct {
 	OrganizationID pgtype.UUID
-	Scope          []pgtype.UUID
+	Restricted     bool
+	GrantUnits     []pgtype.UUID
+	GrantPartners  []pgtype.UUID
+	SharePartners  []pgtype.UUID
+	IDFilter       pgtype.UUID
 	BuFilter       pgtype.UUID
 	PartnerFilter  pgtype.UUID
 	OnlyShared     bool
@@ -523,13 +534,18 @@ type ListSitesRow struct {
 	RackCount        int64
 }
 
-// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id; @scope (NULL = all sites)
-// applies the member's site_scope.
+// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id. Restricted callers (role
+// 'member', ADR-031) see a site when its unit is granted (directly or through the unit's partner) or when the
+// site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
 // @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error) {
 	rows, err := q.db.Query(ctx, listSites,
 		arg.OrganizationID,
-		arg.Scope,
+		arg.Restricted,
+		arg.GrantUnits,
+		arg.GrantPartners,
+		arg.SharePartners,
+		arg.IDFilter,
 		arg.BuFilter,
 		arg.PartnerFilter,
 		arg.OnlyShared,

@@ -1,5 +1,6 @@
--- Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id; @scope (NULL = all sites)
--- applies the member's site_scope.
+-- Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id. Restricted callers (role
+-- 'member', ADR-031) see a site when its unit is granted (directly or through the unit's partner) or when the
+-- site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
 
 -- name: ListSites :many
 -- @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
@@ -12,7 +13,15 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = @organization_id AND s.deleted_at IS NULL
-  AND (sqlc.narg('scope')::uuid[] IS NULL OR s.id = ANY (sqlc.narg('scope')::uuid[]))
+  AND (NOT @restricted::boolean
+       OR b.id = ANY (@grant_units::uuid[]) OR b.partner_id = ANY (@grant_partners::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
+                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
+                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
+  AND (sqlc.narg('id_filter')::uuid IS NULL OR s.id = sqlc.narg('id_filter'))
   AND (sqlc.narg('bu_filter')::uuid IS NULL OR s.business_unit_id = sqlc.narg('bu_filter'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR b.partner_id = sqlc.narg('partner_filter'))
   AND (NOT @only_shared::boolean OR s.business_unit_id IS NULL)
@@ -25,7 +34,14 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = @id AND s.organization_id = @organization_id AND s.deleted_at IS NULL
-  AND (sqlc.narg('scope')::uuid[] IS NULL OR s.id = ANY (sqlc.narg('scope')::uuid[]));
+  AND (NOT @restricted::boolean
+       OR b.id = ANY (@grant_units::uuid[]) OR b.partner_id = ANY (@grant_partners::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
+                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
+                         OR tu.partner_id = ANY (@grant_partners::uuid[]))));
 
 -- name: CreateSite :one
 INSERT INTO sites (organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes,
@@ -46,11 +62,6 @@ RETURNING *;
 UPDATE sites SET deleted_at = now(), version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
 RETURNING *;
-
--- name: CountLiveSitesIn :one
--- Validates a site_scope: how many of the ids are live sites of the organization.
-SELECT count(*) FROM sites
-WHERE organization_id = @organization_id AND deleted_at IS NULL AND id = ANY (@ids::uuid[]);
 
 -- name: ListLocations :many
 SELECT * FROM locations

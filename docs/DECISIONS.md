@@ -246,3 +246,16 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** một đối tác của khách hàng (vd Deheus) có nhiều công ty/bộ phận; IT của đối tác cần quản lý tất cả cùng lúc, còn
   từng bộ phận chỉ cần thấy phần của mình.
 - **Chốt:** người dùng xác nhận 2026-10-16.
+- **Chi tiết triển khai (P1-07c, 2026-10-16):**
+  - Vai trò tổ chức mới **`member`**: thuộc tổ chức nhưng không có quyền chung — chỉ thấy theo giao quyền đối tác/đơn vị và
+    share. Người được partner_admin/unit_admin mời vào nhận vai trò này; owner/admin/editor/viewer tổ chức giữ quyền toàn tổ chức
+    như trước (editor tổ chức sửa mọi site nhưng không quản lý người dùng đối tác/đơn vị).
+  - Mức quyền trên một đơn vị = cao nhất giữa vai trò tổ chức, quyền ở đối tác và quyền ở đơn vị (xem < sửa < admin).
+    Admin (owner/admin tổ chức, partner_admin, unit_admin) mới được xóa site và quản lý share của site.
+  - Share cho **xem**; share **sửa** chỉ cho người là editor trở lên ở bên nhận. Share không bao giờ cho xóa, chia sẻ lại,
+    hay chuyển site sang đơn vị khác (chuyển site cần quyền sửa trực tiếp ở cả đơn vị cũ và mới).
+  - partner_admin sửa được thông tin đối tác của mình, tạo/xóa đơn vị của đối tác; tạo/xóa đối tác chỉ owner/admin tổ chức.
+    unit_admin sửa đơn vị và quản lý người dùng của đơn vị.
+  - User `member` không xem được danh sách thành viên tổ chức (tránh lộ người dùng của đối tác khác).
+  - Gỡ thành viên khỏi tổ chức xóa mọi quyền đối tác/đơn vị của người đó; thu hồi quyền cuối cùng thì vẫn là `member`
+    nhưng không thấy gì.

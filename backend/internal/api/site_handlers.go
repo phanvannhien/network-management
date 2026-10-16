@@ -104,27 +104,29 @@ func validateSite(code, name string, kind *apigen.SiteKind, bu *uuid.UUID, isp, 
 	return f, ""
 }
 
-// resolveUnit loads the owning unit and checks the code prefix against it (ADR-030). Message = 400.
-func resolveUnit(ctx context.Context, q store.Querier, m tenant.Membership, f siteFields) (pgtype.UUID, string, error) {
+// resolveUnit loads the owning unit and checks the code prefix against it (ADR-030/031). Message = 400.
+// A unit the caller cannot see is reported like a missing one, except the site's current unit (`current`),
+// which share editors keep without seeing it. The zero row means a shared site.
+func resolveUnit(ctx context.Context, q store.Querier, m tenant.Membership, f siteFields, current pgtype.UUID) (store.GetBusinessUnitRow, string, error) {
 	prefix := siteCodeRe.FindStringSubmatch(f.code)[1]
 	if f.businessUnit == nil {
 		if prefix != sharedPrefix {
-			return pgtype.UUID{}, "Site dùng chung phải có mã bắt đầu bằng SHARED-", nil
+			return store.GetBusinessUnitRow{}, "Site dùng chung phải có mã bắt đầu bằng SHARED-", nil
 		}
-		return pgtype.UUID{}, "", nil
+		return store.GetBusinessUnitRow{}, "", nil
 	}
 	unit, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*f.businessUnit), OrganizationID: m.OrgID})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return pgtype.UUID{}, "Đơn vị không tồn tại trong tổ chức", nil
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && unit.ID != current && m.UnitLevel(unit.ID, unit.PartnerID) == tenant.LevelNone) {
+		return store.GetBusinessUnitRow{}, msgUnitMissing, nil
 	}
 	if err != nil {
-		return pgtype.UUID{}, "", fmt.Errorf("load business unit: %w", err)
+		return store.GetBusinessUnitRow{}, "", fmt.Errorf("load business unit: %w", err)
 	}
 	// ADR-031: the prefix is the code of the unit's partner (sites can move between a partner's units).
 	if prefix != unit.PartnerCode {
-		return pgtype.UUID{}, fmt.Sprintf("Mã site của đối tác %s phải bắt đầu bằng %s-", unit.PartnerName, unit.PartnerCode), nil
+		return store.GetBusinessUnitRow{}, fmt.Sprintf("Mã site của đối tác %s phải bắt đầu bằng %s-", unit.PartnerName, unit.PartnerCode), nil
 	}
-	return unit.ID, "", nil
+	return unit, "", nil
 }
 
 // siteSnapshot is what the audit log records for a site (no counts, no secrets).
@@ -150,7 +152,7 @@ func snapSite(s store.GetSiteRow) siteSnapshot {
 	return siteSnapshot{s.Code, s.Name, s.Kind, bu, s.Isp, s.Address, s.Timezone, s.ContactName, s.ContactPhone, s.ContactEmail, s.Notes}
 }
 
-func toSite(s store.GetSiteRow, locations, racks int64) apigen.Site {
+func toSite(s store.GetSiteRow, locations, racks int64, level int) apigen.Site {
 	var bu *uuid.UUID
 	if s.BusinessUnitID.Valid {
 		id := uuid.UUID(s.BusinessUnitID.Bytes)
@@ -162,21 +164,26 @@ func toSite(s store.GetSiteRow, locations, racks int64) apigen.Site {
 		PartnerId: optUUID(s.PartnerID), PartnerCode: s.PartnerCode, PartnerName: s.PartnerName,
 		Address: s.Address, Timezone: s.Timezone,
 		ContactName: s.ContactName, ContactPhone: s.ContactPhone, ContactEmail: s.ContactEmail, Notes: s.Notes,
-		LocationCount: locations, RackCount: racks, Version: s.Version, CreatedAt: s.CreatedAt.Time, UpdatedAt: s.UpdatedAt.Time,
+		LocationCount: locations, RackCount: racks, Access: levelName(level), Version: s.Version, CreatedAt: s.CreatedAt.Time, UpdatedAt: s.UpdatedAt.Time,
 	}
 }
 
 func (s *Server) siteCounts(ctx context.Context, m tenant.Membership, site store.GetSiteRow) (int64, int64, error) {
-	rows, err := s.q.ListSites(ctx, store.ListSitesParams{OrganizationID: m.OrgID, Scope: []pgtype.UUID{site.ID}})
+	// The site was already loaded with the caller's visibility; this only reads its counts.
+	rows, err := s.q.ListSites(ctx, store.ListSitesParams{OrganizationID: m.OrgID, IDFilter: site.ID})
 	if err != nil || len(rows) == 0 {
 		return 0, 0, err
 	}
 	return rows[0].LocationCount, rows[0].RackCount, nil
 }
 
-// loadSite returns the site if it is live, in the organization and inside the member's scope.
+// loadSite returns the site if it is live, in the organization and visible to the caller (ADR-031).
 func loadSite(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetSiteRow, bool, error) {
-	site, err := q.GetSite(ctx, store.GetSiteParams{ID: pgUUID(id), OrganizationID: m.OrgID, Scope: m.SiteFilter()})
+	v := visibilityOf(m)
+	site, err := q.GetSite(ctx, store.GetSiteParams{
+		ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: v.restricted,
+		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return store.GetSiteRow{}, false, nil
 	}
@@ -191,7 +198,11 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 	if err != nil {
 		return nil, err
 	}
-	params := store.ListSitesParams{OrganizationID: m.OrgID, Scope: m.SiteFilter()}
+	v := visibilityOf(m)
+	params := store.ListSitesParams{
+		OrganizationID: m.OrgID, Restricted: v.restricted,
+		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+	}
 	if req.Params.BusinessUnitId != nil {
 		params.BuFilter = pgUUID(*req.Params.BusinessUnitId)
 	}
@@ -205,6 +216,14 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 	if err != nil {
 		return nil, fmt.Errorf("list sites: %w", err)
 	}
+	refs := make([]siteRef, len(rows))
+	for i, r := range rows {
+		refs[i] = siteRef{r.ID, r.BusinessUnitID, r.PartnerID}
+	}
+	levels, err := siteLevels(ctx, s.q, m, refs)
+	if err != nil {
+		return nil, err
+	}
 	out := apigen.SiteList{Sites: make([]apigen.Site, 0, len(rows))}
 	for _, r := range rows {
 		out.Sites = append(out.Sites, toSite(store.GetSiteRow{
@@ -213,7 +232,7 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt, Version: r.Version, Kind: r.Kind, BusinessUnitID: r.BusinessUnitID,
 			Isp: r.Isp, BusinessUnitCode: r.BusinessUnitCode, BusinessUnitName: r.BusinessUnitName,
 			PartnerID: r.PartnerID, PartnerCode: r.PartnerCode, PartnerName: r.PartnerName,
-		}, r.LocationCount, r.RackCount))
+		}, r.LocationCount, r.RackCount, levels[r.ID]))
 	}
 	return apigen.ListSites200JSONResponse(out), nil
 }
@@ -234,7 +253,11 @@ func (s *Server) GetSite(ctx context.Context, req apigen.GetSiteRequestObject) (
 	if err != nil {
 		return nil, fmt.Errorf("site counts: %w", err)
 	}
-	return apigen.GetSite200JSONResponse(toSite(site, locs, racks)), nil
+	level, err := siteLevel(ctx, s.q, m, site)
+	if err != nil {
+		return nil, err
+	}
+	return apigen.GetSite200JSONResponse(toSite(site, locs, racks, level)), nil
 }
 
 // SuggestSiteCode returns the next free <UNIT|SHARED>-<PLACE><NN> code (ADR-030).
@@ -250,7 +273,7 @@ func (s *Server) SuggestSiteCode(ctx context.Context, req apigen.SuggestSiteCode
 	prefix := sharedPrefix
 	if req.Params.PartnerId != nil {
 		partner, err := s.q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(*req.Params.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(partner.ID)) {
 			return apigen.SuggestSiteCode404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy đối tác"}}, nil
 		}
 		if err != nil {
@@ -280,12 +303,6 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 	if err != nil {
 		return nil, err
 	}
-	if !m.CanEdit() {
-		return apigen.CreateSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
-	}
-	if m.Scoped() {
-		return apigen.CreateSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Tài khoản bị giới hạn theo site không tạo được site mới"}}, nil
-	}
 	if req.Body == nil {
 		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
@@ -295,12 +312,12 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
 	var (
-		site      store.GetSiteRow
-		duplicate bool
-		bad       string
+		site                 store.GetSiteRow
+		duplicate, forbidden bool
+		bad                  string
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
-		unit, msg, err := resolveUnit(ctx, q, m, f)
+		unit, msg, err := resolveUnit(ctx, q, m, f, pgtype.UUID{})
 		if err != nil {
 			return err
 		}
@@ -308,10 +325,16 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 			bad = msg
 			return errRollback
 		}
+		// Editors of the unit (organization role, partner or unit grant) add its sites; shared sites need an
+		// organization-wide editor.
+		if m.UnitLevel(unit.ID, unit.PartnerID) < tenant.LevelEdit {
+			forbidden = true
+			return errRollback
+		}
 		created, err := q.CreateSite(ctx, store.CreateSiteParams{
 			OrganizationID: m.OrgID, Code: f.code, Name: f.name, Address: f.address, Timezone: f.timezone,
 			ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
-			Kind: f.kind, BusinessUnitID: unit, Isp: f.isp,
+			Kind: f.kind, BusinessUnitID: unit.ID, Isp: f.isp,
 		})
 		if isUniqueViolation(err) {
 			duplicate = true
@@ -331,12 +354,18 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 	switch {
 	case bad != "":
 		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: bad}}, nil
+	case forbidden:
+		return apigen.CreateSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
 	case duplicate:
 		return apigen.CreateSite409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: "Mã site đã tồn tại trong tổ chức"}}, nil
 	case err != nil:
 		return nil, err
 	}
-	return apigen.CreateSite201JSONResponse(toSite(site, 0, 0)), nil
+	level, err := siteLevel(ctx, s.q, m, site)
+	if err != nil {
+		return nil, err
+	}
+	return apigen.CreateSite201JSONResponse(toSite(site, 0, 0, level)), nil
 }
 
 func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObject) (apigen.UpdateSiteResponseObject, error) {
@@ -363,14 +392,18 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 			notFound = true
 			return errRollback
 		}
-		if !m.CanEdit() {
+		level, err := siteLevel(ctx, q, m, before)
+		if err != nil {
+			return err
+		}
+		if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
 		if msg != "" {
 			return errRollback
 		}
-		unit, bad, err := resolveUnit(ctx, q, m, f)
+		unit, bad, err := resolveUnit(ctx, q, m, f, before.BusinessUnitID)
 		if err != nil {
 			return err
 		}
@@ -378,10 +411,16 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 			msg = bad
 			return errRollback
 		}
+		// Moving a site needs edit rights on the units themselves (not through a share) on both sides.
+		if unit.ID != before.BusinessUnitID &&
+			(m.UnitLevel(before.BusinessUnitID, before.PartnerID) < tenant.LevelEdit || m.UnitLevel(unit.ID, unit.PartnerID) < tenant.LevelEdit) {
+			readOnly = true
+			return errRollback
+		}
 		_, err = q.UpdateSite(ctx, store.UpdateSiteParams{
 			ID: before.ID, OrganizationID: m.OrgID, Version: b.Version, Code: f.code, Name: f.name, Address: f.address,
 			Timezone: f.timezone, ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
-			Kind: f.kind, BusinessUnitID: unit, Isp: f.isp,
+			Kind: f.kind, BusinessUnitID: unit.ID, Isp: f.isp,
 		})
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -417,7 +456,11 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 	if err != nil {
 		return nil, fmt.Errorf("site counts: %w", err)
 	}
-	return apigen.UpdateSite200JSONResponse(toSite(updated, locs, racks)), nil
+	level, err := siteLevel(ctx, s.q, m, updated)
+	if err != nil {
+		return nil, err
+	}
+	return apigen.UpdateSite200JSONResponse(toSite(updated, locs, racks, level)), nil
 }
 
 func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObject) (apigen.DeleteSiteResponseObject, error) {
@@ -435,7 +478,9 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 			notFound = true
 			return errRollback
 		}
-		if !m.CanAdmin() {
+		if level, err := siteLevel(ctx, q, m, before); err != nil {
+			return err
+		} else if level < tenant.LevelAdmin {
 			forbidden = true
 			return errRollback
 		}
@@ -451,7 +496,7 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 	case notFound:
 		return apigen.DeleteSite404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgSiteNotFound}}, nil
 	case forbidden:
-		return apigen.DeleteSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được xóa site"}}, nil
+		return apigen.DeleteSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin tổ chức hoặc admin của đối tác/đơn vị được xóa site"}}, nil
 	case err != nil:
 		return nil, err
 	}
@@ -557,7 +602,9 @@ func (s *Server) CreateLocation(ctx context.Context, req apigen.CreateLocationRe
 			notFound = true
 			return errRollback
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
@@ -644,7 +691,9 @@ func (s *Server) UpdateLocation(ctx context.Context, req apigen.UpdateLocationRe
 		if err != nil {
 			return fmt.Errorf("load location: %w", err)
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
@@ -716,7 +765,9 @@ func (s *Server) DeleteLocation(ctx context.Context, req apigen.DeleteLocationRe
 		if err != nil {
 			return fmt.Errorf("load location: %w", err)
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
@@ -839,7 +890,9 @@ func (s *Server) CreateRack(ctx context.Context, req apigen.CreateRackRequestObj
 			notFound = true
 			return errRollback
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
@@ -917,7 +970,9 @@ func (s *Server) UpdateRack(ctx context.Context, req apigen.UpdateRackRequestObj
 		if err != nil {
 			return fmt.Errorf("load rack: %w", err)
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}
@@ -994,7 +1049,9 @@ func (s *Server) DeleteRack(ctx context.Context, req apigen.DeleteRackRequestObj
 		if err != nil {
 			return fmt.Errorf("load rack: %w", err)
 		}
-		if !m.CanEdit() {
+		if level, err := siteLevel(ctx, q, m, site); err != nil {
+			return err
+		} else if level < tenant.LevelEdit {
 			readOnly = true
 			return errRollback
 		}

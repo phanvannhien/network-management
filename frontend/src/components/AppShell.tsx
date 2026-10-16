@@ -17,6 +17,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { ScopeSelector } from '@/modules/sites/ScopeSelector'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
@@ -431,7 +432,10 @@ export function OrgShell() {
     {
       label: t('nav.admin'),
       items: [
-        { to: `${base}/members`, label: t('nav.members'), icon: Users },
+        // Grant-only members (ADR-031) do not see the organization's member list.
+        ...(role && role !== 'member'
+          ? [{ to: `${base}/members`, label: t('nav.members'), icon: Users }]
+          : []),
         ...(isAdmin ? [{ to: `${base}/audit`, label: t('nav.audit'), icon: ScrollText }] : []),
         ...(session.data?.user.isSystemAdmin
           ? [{ to: '/admin/organizations', label: t('nav.system'), icon: ShieldCheck }]
@@ -445,7 +449,16 @@ export function OrgShell() {
   }, [orgId, org.data])
 
   return (
-    <Shell area={<OrgSwitcher orgId={orgId} />} nav={nav}>
+    <Shell
+      area={
+        <span className="flex items-center gap-3">
+          <OrgSwitcher orgId={orgId} />
+          <ScopeSelector orgId={orgId} />
+        </span>
+      }
+      // Groups left without items (grant-only members have no admin pages) are not shown.
+      nav={nav.filter((g) => g.items.length > 0)}
+    >
       <Suspense fallback={<PageSkeleton />}>
         <Outlet />
       </Suspense>

@@ -9,6 +9,7 @@ import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { Button } from '@/components/ui/button'
+import { inScope, useScope } from './access'
 import { useBusinessUnits, usePartners, type BusinessUnit } from './sites'
 
 const UNIT_SORT: Record<string, (u: BusinessUnit) => string | number> = {
@@ -35,17 +36,20 @@ export function UnitsTable({
   const units = useBusinessUnits(orgId)
   const partners = usePartners(orgId, !partnerId)
   const scope = partnerId ? 'partner-units' : 'units'
+  const topScope = useScope(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
     const pf = filter.facets.partner ?? []
     return units.data?.filter(
       (u) =>
-        (!partnerId || u.partnerId === partnerId) &&
+        (partnerId
+          ? u.partnerId === partnerId
+          : inScope(topScope, { partnerId: u.partnerId, unitId: u.id })) &&
         (!q || [u.code, u.name, u.partnerCode].some((v) => v.toLowerCase().includes(q))) &&
         (pf.length === 0 || pf.includes(u.partnerId)),
     )
-  }, [units.data, filter, partnerId])
+  }, [units.data, filter, partnerId, topScope])
   const table = useLocalTable(rows, UNIT_SORT, [
     { id: partnerId ? 'code' : 'partner', desc: false },
   ])

@@ -103,11 +103,14 @@ export function UnitFormDialog({
                 ) : (
                   <>
                     <option value="">{t('units.choosePartner')}</option>
-                    {(partners.data ?? []).map((pt) => (
-                      <option key={pt.id} value={pt.id}>
-                        {pt.code} · {pt.name}
-                      </option>
-                    ))}
+                    {/* Units are added to partners the caller administers (ADR-031). */}
+                    {(partners.data ?? [])
+                      .filter((pt) => pt.access === 'admin')
+                      .map((pt) => (
+                        <option key={pt.id} value={pt.id}>
+                          {pt.code} · {pt.name}
+                        </option>
+                      ))}
                   </>
                 )}
               </NativeSelect>

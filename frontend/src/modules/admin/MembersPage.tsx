@@ -5,7 +5,6 @@ import { useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useSession } from '@/app/auth'
 import { useOrganization } from '@/app/orgs'
-import { useSites } from '@/modules/sites/sites'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DataTable, type DataColumn } from '@/components/DataTable'
@@ -99,11 +98,7 @@ function EditMemberSheet({
   const update = useUpdateMember(orgId)
   const [role, setRole] = useState<Role>(member?.role ?? 'viewer')
   const [permissions, setPermissions] = useState<Permission[]>(member?.permissions ?? [])
-  const [scopeAll, setScopeAll] = useState(member?.siteScope == null)
-  const [scopeIds, setScopeIds] = useState<string[]>(member?.siteScope ?? [])
-  const sites = useSites(orgId, abilities.canAdmin && member !== null)
   const name = member ? member.displayName || member.email : ''
-  const scopeApplies = role === 'editor' || role === 'viewer'
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -114,10 +109,6 @@ function EditMemberSheet({
         role,
         permissions,
         version: member.version,
-        // Only owner/admin may change the site restriction (ADR-025); others leave it untouched.
-        siteScope: abilities.canAdmin
-          ? { all: scopeAll, siteIds: scopeAll ? [] : scopeIds }
-          : undefined,
       },
       {
         onSuccess: () => {
@@ -169,40 +160,8 @@ function EditMemberSheet({
               ))}
               <p className="text-label text-muted-foreground">{t('members.editHint')}</p>
             </fieldset>
-            {abilities.canAdmin && (
-              <fieldset className="space-y-2" disabled={!scopeApplies}>
-                <legend className="mb-1 font-medium">{t('sites.scope')}</legend>
-                <label className="flex items-center gap-2">
-                  <Checkbox
-                    checked={scopeAll}
-                    onCheckedChange={(on) => setScopeAll(!!on)}
-                    disabled={!scopeApplies}
-                  />
-                  {t('sites.scopeAll')}
-                </label>
-                {!scopeAll && (
-                  <div className="ml-6 max-h-48 space-y-1.5 overflow-y-auto">
-                    {(sites.data ?? []).map((st) => (
-                      <label key={st.id} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={scopeIds.includes(st.id)}
-                          disabled={!scopeApplies}
-                          onCheckedChange={(on) =>
-                            setScopeIds(
-                              on ? [...scopeIds, st.id] : scopeIds.filter((x) => x !== st.id),
-                            )
-                          }
-                        />
-                        <span className="font-medium">{st.code}</span>
-                        <span className="text-muted-foreground">{st.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                <p className="text-label text-muted-foreground">
-                  {scopeApplies ? t('sites.scopeHint') : t('sites.scopeIgnored')}
-                </p>
-              </fieldset>
+            {role === 'member' && (
+              <p className="text-label text-muted-foreground">{t('members.memberRoleHint')}</p>
             )}
             {update.isError && (
               <p role="alert" className="text-destructive">
@@ -411,18 +370,6 @@ export function MembersPage() {
           row.original.permissions.map((p) => t(PERMISSION_KEYS[p])).join(', ')
         ) : (
           <span className="text-muted-foreground">{t('common.none')}</span>
-        ),
-    },
-    {
-      id: 'siteScope',
-      header: t('sites.scope'),
-      enableSorting: false,
-      meta: { label: t('sites.scope'), width: 120 },
-      cell: ({ row: { original: m } }) =>
-        m.siteScope == null || m.role === 'owner' || m.role === 'admin' ? (
-          <span className="text-muted-foreground">{t('sites.scopeAll')}</span>
-        ) : (
-          t('sites.scopeSome', { count: m.siteScope.length })
         ),
     },
     {

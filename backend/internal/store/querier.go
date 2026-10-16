@@ -13,6 +13,8 @@ import (
 type Querier interface {
 	AddMembership(ctx context.Context, arg AddMembershipParams) (Membership, error)
 	AddMembershipWithPermissions(ctx context.Context, arg AddMembershipWithPermissionsParams) (Membership, error)
+	AddPartnerMember(ctx context.Context, arg AddPartnerMemberParams) error
+	AddUnitMember(ctx context.Context, arg AddUnitMemberParams) error
 	// System admin (not tenant-scoped by design: managing the list of organizations).
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
 	// System admin: user management (global by design).
@@ -20,8 +22,6 @@ type Querier interface {
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
-	// Validates a site_scope: how many of the ids are live sites of the organization.
-	CountLiveSitesIn(ctx context.Context, arg CountLiveSitesInParams) (int64, error)
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
@@ -36,6 +36,7 @@ type Querier interface {
 	CreateRack(ctx context.Context, arg CreateRackParams) (Rack, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error)
+	CreateSiteShare(ctx context.Context, arg CreateSiteShareParams) (pgtype.UUID, error)
 	// Users and sessions are global (not tenant-scoped): a user can belong to several organizations.
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Account tokens (invite / password reset).
@@ -43,12 +44,18 @@ type Querier interface {
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
 	DeleteLocation(ctx context.Context, arg DeleteLocationParams) (int64, error)
 	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
+	DeletePartnerMember(ctx context.Context, arg DeletePartnerMemberParams) (int64, error)
 	DeleteRack(ctx context.Context, arg DeleteRackParams) (int64, error)
 	DeleteRecoveryCodes(ctx context.Context, userID pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
+	DeleteSiteShare(ctx context.Context, arg DeleteSiteShareParams) (int64, error)
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
+	DeleteUnitMember(ctx context.Context, arg DeleteUnitMemberParams) (int64, error)
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	// Grant-only users join the organization with role 'member'; existing memberships are kept as they are.
+	// Returns true when the membership was created by this call.
+	EnsureMembership(ctx context.Context, arg EnsureMembershipParams) (bool, error)
 	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
 	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
@@ -58,12 +65,14 @@ type Querier interface {
 	GetMembership(ctx context.Context, arg GetMembershipParams) (GetMembershipRow, error)
 	GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	GetPartner(ctx context.Context, arg GetPartnerParams) (GetPartnerRow, error)
+	GetPartnerMember(ctx context.Context, arg GetPartnerMemberParams) (GetPartnerMemberRow, error)
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
 	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
 	// MFA data is per user (global, not tenant-scoped).
 	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
+	GetUnitMember(ctx context.Context, arg GetUnitMemberParams) (GetUnitMemberRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
@@ -71,6 +80,9 @@ type Querier interface {
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
+	// Partner / unit grants and record shares (P1-07c, ADR-029, ADR-031). Every query takes organization_id.
+	// The caller's grants on live partners/units; business_unit_id is NULL for a partner grant.
+	ListAccessGrants(ctx context.Context, arg ListAccessGrantsParams) ([]ListAccessGrantsRow, error)
 	// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
 	ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
@@ -80,17 +92,23 @@ type Querier interface {
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
+	ListPartnerMembers(ctx context.Context, arg ListPartnerMembersParams) ([]ListPartnerMembersRow, error)
 	// Partners (P1-07b, ADR-031): the organization's subsidiaries / partners / customers. Every query takes organization_id.
 	ListPartners(ctx context.Context, organizationID pgtype.UUID) ([]ListPartnersRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
+	// Shares of the given sites with the target's partner, to compute the caller's access on a site list.
+	ListSharesForSites(ctx context.Context, arg ListSharesForSitesParams) ([]ListSharesForSitesRow, error)
 	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
 	ListSiteCodesWithPrefix(ctx context.Context, arg ListSiteCodesWithPrefixParams) ([]string, error)
-	// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id; @scope (NULL = all sites)
-	// applies the member's site_scope.
+	ListSiteShares(ctx context.Context, arg ListSiteSharesParams) ([]ListSiteSharesRow, error)
+	// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id. Restricted callers (role
+	// 'member', ADR-031) see a site when its unit is granted (directly or through the unit's partner) or when the
+	// site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
 	// @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 	ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error)
 	// System-level events only (no organization): sign-ins, MFA, user administration (ADR-023).
 	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
+	ListUnitMembers(ctx context.Context, arg ListUnitMembersParams) ([]ListUnitMembersRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
@@ -115,8 +133,11 @@ type Querier interface {
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
 	UpdatePartner(ctx context.Context, arg UpdatePartnerParams) (Partner, error)
+	UpdatePartnerMember(ctx context.Context, arg UpdatePartnerMemberParams) (int64, error)
 	UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)
+	UpdateSiteShare(ctx context.Context, arg UpdateSiteShareParams) (int64, error)
+	UpdateUnitMember(ctx context.Context, arg UpdateUnitMemberParams) (int64, error)
 	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.
 	UpsertPendingTOTP(ctx context.Context, arg UpsertPendingTOTPParams) (int64, error)
 	UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams) (int64, error)

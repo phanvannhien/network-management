@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useOrganization } from '@/app/orgs'
 import { placeCode } from '@/lib/placeCode'
+import { atLeast, useOrgAccess } from './access'
 import {
   SITE_KINDS,
   siteCodeError,
@@ -61,6 +62,7 @@ export function SiteFormDialog({
   const save = useSaveSite(orgId)
   const units = useBusinessUnits(orgId)
   const partners = usePartners(orgId)
+  const access = useOrgAccess(orgId)
   const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const [f, setF] = useState({
     code: site?.code ?? '',
@@ -139,11 +141,25 @@ export function SiteFormDialog({
                   value={f.businessUnitId ?? ''}
                   onChange={(e) => setF({ ...f, businessUnitId: e.target.value || null })}
                 >
-                  <option value="">{t('units.shared')}</option>
+                  {/* Shared sites need an organization-wide editor; units need edit access (ADR-031).
+                      The site's current owner stays listed so editing through a share keeps it. */}
+                  {(access.orgEdit || (site && !site.businessUnitId)) && (
+                    <option value="">{t('units.shared')}</option>
+                  )}
+                  {site?.businessUnitId &&
+                    !units.data?.some((u) => u.id === site.businessUnitId) && (
+                      <option value={site.businessUnitId}>
+                        {site.partnerCode} › {site.businessUnitCode} · {site.businessUnitName}
+                      </option>
+                    )}
                   {(partners.data ?? []).map((pt) => (
                     <optgroup key={pt.id} label={`${pt.code} · ${pt.name}`}>
                       {(units.data ?? [])
-                        .filter((u) => u.partnerId === pt.id)
+                        .filter(
+                          (u) =>
+                            u.partnerId === pt.id &&
+                            (atLeast(u.access, 'edit') || u.id === site?.businessUnitId),
+                        )
                         .map((u) => (
                           <option key={u.id} value={u.id}>
                             {pt.code} › {u.code} · {u.name}

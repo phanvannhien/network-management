@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-07c Phân quyền theo đối tác/đơn vị & chia sẻ (ADR-029, ADR-031)
+- Đã làm:
+  - **Migration 000010:** `partner_members` (partner_admin/editor/viewer), `business_unit_members` (unit_admin/editor/viewer),
+    `resource_shares` (site → đối tác hoặc đơn vị, xem/sửa); FK ghép theo tổ chức, gỡ khỏi tổ chức thì xóa luôn quyền;
+    thêm vai trò tổ chức `member`; **bỏ `site_scope`**.
+  - **Quyền (backend):** middleware nạp quyền đối tác/đơn vị của người gọi; site lọc ngay trong SQL (đơn vị được giao, trực tiếp
+    hoặc qua đối tác, hoặc site được share tới); đối tác/đơn vị ngoài quyền → 404. Mức quyền = cao nhất giữa tổ chức / đối tác /
+    đơn vị, share nâng tối đa tới "sửa". Chi tiết các quy tắc ghi vào ADR-031 (mục "Chi tiết triển khai").
+  - **API:** `/partners/{id}/members`, `/business-units/{id}/members` (mời email — email mới nhận link một lần, đổi quyền có
+    khóa version, thu hồi); `/sites/{id}/shares` (tạo/đổi/thu hồi); membership trả `partnerGrants`/`unitGrants`; đối tác, đơn
+    vị, site trả `access` (view/edit/admin). Audit `grant.*`, `share.*`, `member.add` khi mời người mới.
+  - **Giao diện:** bộ chọn "Tất cả đối tác / đối tác / đơn vị" trên topbar (chỉ lọc hiển thị, nhớ theo tổ chức); khối "Người
+    dùng của …" ở trang đối tác và đơn vị cho admin; tab "Chia sẻ" ở trang site cho admin; nút sửa/xóa/thêm theo `access`;
+    form chỉ liệt kê đối tác/đơn vị được phép thêm vào; user `member` không thấy menu/lệnh Thành viên; trang Thành viên bỏ
+    phần giới hạn site, thêm vai trò "Chỉ theo đối tác/đơn vị".
+- Test / cách kiểm tra:
+  - Go `permission_test.go`: hiển thị theo quyền (partner_admin, editor đơn vị, viewer đối tác khác, owner); 404 cho mọi thứ
+    ngoài quyền; ghi trong phạm vi (thêm/sửa/xóa site, chuyển site, đơn vị, đối tác); mời/đổi/thu hồi quyền, chống trùng, khóa
+    version, unit_admin không đụng đơn vị khác; share xem/sửa, không xóa/không chiếm site qua share, thu hồi share → 404;
+    test chéo tổ chức cho mọi endpoint mới; số dòng audit.
+  - Mutation check backend 15 điểm (bỏ lọc SQL, share bỏ qua quyền bên nhận, bỏ kiểm admin khi cấp quyền/share/xóa, chuyển
+    site không cần quyền hai bên…) — đều có test fail. Frontend: 4 mutation (xóa đối tác, tab chia sẻ, menu Thành viên, bộ lọc
+    topbar) — đều bị bắt.
+  - Vitest 160 test pass (4 test mới). Ảnh chụp giao diện thật (partner_admin, owner): đúng. axe 7 trang × sáng/tối: 0 lỗi.
+    `make check` pass (test Go chạy lại không cache trên DB thật).
+  - Dev DB: đã chạy `make migrate-up` (000008–000010); khởi động lại `make dev-api` để dùng code mới.
+- Còn dở / lỗi đã biết:
+  - partner_admin/unit_admin chưa cấp lại được link mời đã mất (chỉ owner/admin tổ chức qua trang Thành viên).
+  - Share mới áp cho site; thiết bị lẻ/sơ đồ tổng quan dùng cùng bảng ở task sau (ADR-029).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không (các chi tiết suy ra từ ADR-029/031 đã ghi vào ADR-031).
+- Task tiếp theo đề xuất: **P1-08** Kho thiết bị.
+
 ## 2026-10-16 — P1-07b Cấp Đối tác (ADR-031)
 - Đã làm:
   - **Migration 000009:** bảng `business_units` cũ đổi tên thành `partners` (giữ id, mã, quan hệ, liên hệ); bảng

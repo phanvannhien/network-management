@@ -1,10 +1,11 @@
+import { SiteSharesPanel } from './SiteSharesPanel'
+import { atLeast } from './access'
 import { MapPin, MoreHorizontal, Network, Pencil, Plus, Server, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { NotFoundPage } from '@/app/NotFoundPage'
-import { useOrganization } from '@/app/orgs'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
@@ -42,7 +43,7 @@ import {
   type Rack,
 } from './sites'
 
-const TABS = ['locations', 'racks', 'info', 'devices', 'diagrams'] as const
+const TABS = ['locations', 'racks', 'info', 'devices', 'diagrams', 'shares'] as const
 type Tab = (typeof TABS)[number]
 
 function RackDialog({
@@ -315,7 +316,6 @@ export function SiteDetailPage() {
   const { orgId = '', siteId = '' } = useParams()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const org = useOrganization(orgId)
   const site = useSite(orgId, siteId)
   const locations = useLocations(orgId, siteId)
   const del = useDeleteSite(orgId)
@@ -336,9 +336,9 @@ export function SiteDetailPage() {
     { label: s?.code ?? '…' },
   ])
 
-  const role = org.data?.membership.role
-  const canEdit = role === 'owner' || role === 'admin' || role === 'editor'
-  const canAdmin = role === 'owner' || role === 'admin'
+  // Access on this site (ADR-031): its unit's grants, the organization role, or a share.
+  const canEdit = atLeast(s?.access, 'edit')
+  const canAdmin = atLeast(s?.access, 'admin')
 
   if (site.isPending) {
     return (
@@ -413,6 +413,7 @@ export function SiteDetailPage() {
           <TabsTrigger value="info">{t('sites.tabInfo')}</TabsTrigger>
           <TabsTrigger value="devices">{t('sites.tabDevices')}</TabsTrigger>
           <TabsTrigger value="diagrams">{t('sites.tabDiagrams')}</TabsTrigger>
+          {canAdmin && <TabsTrigger value="shares">{t('shares.tab')}</TabsTrigger>}
         </TabsList>
         <TabsContent value="locations" className="pt-3">
           {locations.isPending ? (
@@ -463,6 +464,11 @@ export function SiteDetailPage() {
             <EmptyState icon={<Server />} title={t('sites.devicesSoon')} />
           </div>
         </TabsContent>
+        {canAdmin && (
+          <TabsContent value="shares" className="pt-3">
+            <SiteSharesPanel orgId={orgId} site={s} />
+          </TabsContent>
+        )}
         <TabsContent value="diagrams" className="pt-3">
           <div className="rounded-lg border border-border bg-card">
             <EmptyState icon={<Network />} title={t('sites.diagramsSoon')} />

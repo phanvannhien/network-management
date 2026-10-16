@@ -19,7 +19,8 @@ import (
 )
 
 // Partners (P1-07b, ADR-031): the organization's subsidiaries / partners / customers; each has business units,
-// which own the sites. Managed by organization owners/admins (partner admins arrive with P1-07c).
+// which own the sites. Organization owners/admins create and delete partners; partner_admins edit their own
+// (P1-07c). Grant-only members see the partners they hold a grant in.
 
 var (
 	entityCodeRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,7}$`)
@@ -82,11 +83,11 @@ func partnerFromRow(r store.GetPartnerRow) store.Partner {
 	}
 }
 
-func toPartner(u store.Partner, units, sites int64) apigen.Partner {
+func toPartner(u store.Partner, units, sites int64, level int) apigen.Partner {
 	return apigen.Partner{
 		Id: uuid.UUID(u.ID.Bytes), Code: u.Code, Name: u.Name, Relation: apigen.PartnerRelation(u.Relation),
 		ContactName: u.ContactName, ContactPhone: u.ContactPhone, ContactEmail: u.ContactEmail, Notes: u.Notes,
-		UnitCount: units, SiteCount: sites, Version: u.Version, CreatedAt: u.CreatedAt.Time,
+		UnitCount: units, SiteCount: sites, Access: levelName(level), Version: u.Version, CreatedAt: u.CreatedAt.Time,
 	}
 }
 
@@ -101,7 +102,9 @@ func (s *Server) ListPartners(ctx context.Context, req apigen.ListPartnersReques
 	}
 	out := apigen.PartnerList{Partners: make([]apigen.Partner, 0, len(rows))}
 	for _, r := range rows {
-		out.Partners = append(out.Partners, toPartner(partnerFromRow(store.GetPartnerRow(r)), r.UnitCount, r.SiteCount))
+		if m.SeesPartner(r.ID) {
+			out.Partners = append(out.Partners, toPartner(partnerFromRow(store.GetPartnerRow(r)), r.UnitCount, r.SiteCount, m.PartnerLevel(r.ID)))
+		}
 	}
 	return apigen.ListPartners200JSONResponse(out), nil
 }
@@ -112,13 +115,13 @@ func (s *Server) GetPartner(ctx context.Context, req apigen.GetPartnerRequestObj
 		return nil, err
 	}
 	r, err := s.q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(r.ID)) {
 		return apigen.GetPartner404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgPartnerNotFound}}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get partner: %w", err)
 	}
-	return apigen.GetPartner200JSONResponse(toPartner(partnerFromRow(r), r.UnitCount, r.SiteCount)), nil
+	return apigen.GetPartner200JSONResponse(toPartner(partnerFromRow(r), r.UnitCount, r.SiteCount, m.PartnerLevel(r.ID))), nil
 }
 
 func (s *Server) CreatePartner(ctx context.Context, req apigen.CreatePartnerRequestObject) (apigen.CreatePartnerResponseObject, error) {
@@ -164,7 +167,7 @@ func (s *Server) CreatePartner(ctx context.Context, req apigen.CreatePartnerRequ
 	if err != nil {
 		return nil, err
 	}
-	return apigen.CreatePartner201JSONResponse(toPartner(unit, 0, 0)), nil
+	return apigen.CreatePartner201JSONResponse(toPartner(unit, 0, 0, m.PartnerLevel(unit.ID))), nil
 }
 
 func (s *Server) UpdatePartner(ctx context.Context, req apigen.UpdatePartnerRequestObject) (apigen.UpdatePartnerResponseObject, error) {
@@ -185,14 +188,14 @@ func (s *Server) UpdatePartner(ctx context.Context, req apigen.UpdatePartnerRequ
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err := q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(before.ID)) {
 			notFound = true
 			return errRollback
 		}
 		if err != nil {
 			return fmt.Errorf("load partner: %w", err)
 		}
-		if !m.CanAdmin() {
+		if m.PartnerLevel(before.ID) < tenant.LevelAdmin {
 			forbidden = true
 			return errRollback
 		}
@@ -238,7 +241,7 @@ func (s *Server) UpdatePartner(ctx context.Context, req apigen.UpdatePartnerRequ
 	case notFound:
 		return apigen.UpdatePartner404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgPartnerNotFound}}, nil
 	case forbidden:
-		return apigen.UpdatePartner403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được quản lý đối tác"}}, nil
+		return apigen.UpdatePartner403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin tổ chức hoặc admin của đối tác được sửa đối tác"}}, nil
 	case msg != "":
 		return apigen.UpdatePartner400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	case conflict != "":
@@ -246,7 +249,7 @@ func (s *Server) UpdatePartner(ctx context.Context, req apigen.UpdatePartnerRequ
 	case err != nil:
 		return nil, err
 	}
-	return apigen.UpdatePartner200JSONResponse(toPartner(updated, units, sites)), nil
+	return apigen.UpdatePartner200JSONResponse(toPartner(updated, units, sites, m.PartnerLevel(updated.ID))), nil
 }
 
 func (s *Server) DeletePartner(ctx context.Context, req apigen.DeletePartnerRequestObject) (apigen.DeletePartnerResponseObject, error) {
@@ -260,7 +263,7 @@ func (s *Server) DeletePartner(ctx context.Context, req apigen.DeletePartnerRequ
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err := q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(before.ID)) {
 			notFound = true
 			return errRollback
 		}
@@ -287,7 +290,7 @@ func (s *Server) DeletePartner(ctx context.Context, req apigen.DeletePartnerRequ
 	case notFound:
 		return apigen.DeletePartner404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgPartnerNotFound}}, nil
 	case forbidden:
-		return apigen.DeletePartner403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được quản lý đối tác"}}, nil
+		return apigen.DeletePartner403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgOrgWideAdmin}}, nil
 	case conflict != "":
 		return apigen.DeletePartner409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: conflict}}, nil
 	case err != nil:

@@ -26,30 +26,7 @@ type memberSnapshot struct {
 	Email       string   `json:"email"`
 	Role        string   `json:"role"`
 	Permissions []string `json:"permissions"`
-	SiteScope   []string `json:"siteScope,omitempty"` // site ids; absent = every site
 	Invited     bool     `json:"invited,omitempty"`
-}
-
-func scopeStrings(ids []pgtype.UUID) []string {
-	if ids == nil {
-		return nil
-	}
-	out := make([]string, len(ids))
-	for i, id := range ids {
-		out[i] = uuidStr(id)
-	}
-	return out
-}
-
-func scopeUUIDs(ids []pgtype.UUID) *[]uuid.UUID {
-	if ids == nil {
-		return nil
-	}
-	out := make([]uuid.UUID, len(ids))
-	for i, id := range ids {
-		out[i] = uuid.UUID(id.Bytes)
-	}
-	return &out
 }
 
 // canManageMembers: owner, admin, or anyone granted user.manage (ADR-019).
@@ -73,7 +50,7 @@ func checkRoleChange(actor tenant.Membership, from, to string, permsChanged bool
 	return ""
 }
 
-var validRoles = []string{tenant.RoleOwner, tenant.RoleAdmin, tenant.RoleEditor, tenant.RoleViewer}
+var validRoles = []string{tenant.RoleOwner, tenant.RoleAdmin, tenant.RoleEditor, tenant.RoleViewer, tenant.RoleMember}
 
 // normalizePermissions validates against the enum and removes duplicates (stable order).
 func normalizePermissions(in *[]apigen.Permission) ([]string, bool) {
@@ -101,7 +78,6 @@ func toMember(r store.GetMemberRow) apigen.Member {
 	return apigen.Member{
 		UserId: uuid.UUID(r.UserID.Bytes), Email: r.Email, DisplayName: r.DisplayName, Role: apigen.Role(r.Role),
 		Permissions: perms, MfaEnabled: r.MfaEnabled, Disabled: r.Disabled, PendingInvite: r.PendingInvite, Version: r.Version,
-		SiteScope: scopeUUIDs(r.SiteScope),
 	}
 }
 
@@ -114,11 +90,15 @@ func sameStrings(a, b []string) bool {
 	return slices.Equal(a, b)
 }
 
-// ListMembers: any member may see who belongs to the organization.
+// ListMembers: members with an organization role see who belongs to the organization; grant-only members
+// (role member, ADR-031) do not — they would see the users of other partners.
 func (s *Server) ListMembers(ctx context.Context, req apigen.ListMembersRequestObject) (apigen.ListMembersResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
 		return nil, err
+	}
+	if m.Restricted() {
+		return apigen.ListMembers403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgNoAccess}}, nil
 	}
 	rows, err := s.q.ListMembers(ctx, m.OrgID)
 	if err != nil {
@@ -233,32 +213,6 @@ func (s *Server) UpdateMember(ctx context.Context, req apigen.UpdateMemberReques
 	}
 	role := string(req.Body.Role)
 
-	// Site scope (ADR-025): only owner/admin may change it; ids must be live sites of this organization.
-	var scope []pgtype.UUID
-	setScope := req.Body.SiteScope != nil
-	if setScope {
-		if !m.CanAdmin() {
-			return apigen.UpdateMember403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được giới hạn site"}}, nil
-		}
-		if !req.Body.SiteScope.All {
-			seen := map[uuid.UUID]bool{}
-			scope = []pgtype.UUID{}
-			for _, id := range req.Body.SiteScope.SiteIds {
-				if !seen[id] {
-					seen[id] = true
-					scope = append(scope, pgUUID(id))
-				}
-			}
-			n, err := s.q.CountLiveSitesIn(ctx, store.CountLiveSitesInParams{OrganizationID: m.OrgID, Ids: scope})
-			if err != nil {
-				return nil, fmt.Errorf("check site scope: %w", err)
-			}
-			if int(n) != len(scope) {
-				return apigen.UpdateMember400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Site không tồn tại trong tổ chức"}}, nil
-			}
-		}
-	}
-
 	var (
 		updated             store.GetMemberRow
 		notFound            bool
@@ -286,7 +240,6 @@ func (s *Server) UpdateMember(ctx context.Context, req apigen.UpdateMemberReques
 		}
 		if _, err := q.UpdateMembership(ctx, store.UpdateMembershipParams{
 			OrganizationID: m.OrgID, UserID: before.UserID, Role: role, Permissions: perms, Version: req.Body.Version,
-			SetSiteScope: setScope, SiteScope: scope,
 		}); errors.Is(err, pgx.ErrNoRows) {
 			conflict = "Thành viên vừa được người khác sửa. Tải lại rồi thử lại."
 			return errRollback
@@ -298,8 +251,8 @@ func (s *Server) UpdateMember(ctx context.Context, req apigen.UpdateMemberReques
 		}
 		return audit.Write(ctx, q, audit.Entry{
 			OrganizationID: m.OrgID, Actor: m.UserID, Action: "member.update", ObjectType: "user", ObjectID: uuidStr(before.UserID),
-			Before: memberSnapshot{Email: before.Email, Role: before.Role, Permissions: before.Permissions, SiteScope: scopeStrings(before.SiteScope)},
-			After:  memberSnapshot{Email: before.Email, Role: role, Permissions: perms, SiteScope: scopeStrings(updated.SiteScope)},
+			Before: memberSnapshot{Email: before.Email, Role: before.Role, Permissions: before.Permissions},
+			After:  memberSnapshot{Email: before.Email, Role: role, Permissions: perms},
 			Meta:   infoFrom(ctx).meta,
 		})
 	})

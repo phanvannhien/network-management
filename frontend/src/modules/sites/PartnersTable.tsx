@@ -10,6 +10,7 @@ import { FilterBar } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { Button } from '@/components/ui/button'
+import { useScope } from './access'
 import { PARTNER_RELATIONS, usePartners, type Partner } from './sites'
 
 const PARTNER_SORT: Record<string, (p: Partner) => string | number> = {
@@ -34,16 +35,18 @@ export function PartnersTable({
   const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const userId = useSession().data?.user.id ?? ''
   const partners = usePartners(orgId)
+  const scope = useScope(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
     const rel = filter.facets.relation ?? []
     return partners.data?.filter(
       (p) =>
+        (!scope.partnerId || p.id === scope.partnerId) &&
         (!q || [p.code, p.name].some((v) => v.toLowerCase().includes(q))) &&
         (rel.length === 0 || rel.includes(p.relation)),
     )
-  }, [partners.data, filter])
+  }, [partners.data, filter, scope.partnerId])
   const table = useLocalTable(rows, PARTNER_SORT, [{ id: 'code', desc: false }])
 
   const columns: DataColumn<Partner>[] = [

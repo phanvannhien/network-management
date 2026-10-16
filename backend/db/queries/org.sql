@@ -3,7 +3,7 @@
 
 -- name: GetMembership :one
 -- The tenant middleware's single source of truth: does this user belong to this (live) organization?
-SELECT m.organization_id, m.user_id, m.role, m.permissions, m.site_scope,
+SELECT m.organization_id, m.user_id, m.role, m.permissions,
        o.name AS organization_name, o.kind AS organization_kind
 FROM memberships m
 JOIN organizations o ON o.id = m.organization_id

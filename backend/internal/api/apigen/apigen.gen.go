@@ -17,6 +17,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AccessLevel.
+const (
+	AccessLevelAdmin AccessLevel = "admin"
+	AccessLevelEdit  AccessLevel = "edit"
+	AccessLevelView  AccessLevel = "view"
+)
+
+// Valid indicates whether the value is a known member of the AccessLevel enum.
+func (e AccessLevel) Valid() bool {
+	switch e {
+	case AccessLevelAdmin:
+		return true
+	case AccessLevelEdit:
+		return true
+	case AccessLevelView:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AccountTokenInfoPurpose.
 const (
 	Invite        AccountTokenInfoPurpose = "invite"
@@ -110,6 +131,27 @@ func (e OrganizationKind) Valid() bool {
 	}
 }
 
+// Defines values for PartnerGrantRole.
+const (
+	PartnerGrantRoleEditor       PartnerGrantRole = "editor"
+	PartnerGrantRolePartnerAdmin PartnerGrantRole = "partner_admin"
+	PartnerGrantRoleViewer       PartnerGrantRole = "viewer"
+)
+
+// Valid indicates whether the value is a known member of the PartnerGrantRole enum.
+func (e PartnerGrantRole) Valid() bool {
+	switch e {
+	case PartnerGrantRoleEditor:
+		return true
+	case PartnerGrantRolePartnerAdmin:
+		return true
+	case PartnerGrantRoleViewer:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PartnerRelation.
 const (
 	PartnerRelationCustomer   PartnerRelation = "customer"
@@ -154,22 +196,61 @@ func (e Permission) Valid() bool {
 
 // Defines values for Role.
 const (
-	Admin  Role = "admin"
-	Editor Role = "editor"
-	Owner  Role = "owner"
-	Viewer Role = "viewer"
+	RoleAdmin  Role = "admin"
+	RoleEditor Role = "editor"
+	RoleMember Role = "member"
+	RoleOwner  Role = "owner"
+	RoleViewer Role = "viewer"
 )
 
 // Valid indicates whether the value is a known member of the Role enum.
 func (e Role) Valid() bool {
 	switch e {
-	case Admin:
+	case RoleAdmin:
 		return true
-	case Editor:
+	case RoleEditor:
 		return true
-	case Owner:
+	case RoleMember:
 		return true
-	case Viewer:
+	case RoleOwner:
+		return true
+	case RoleViewer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ShareAccess.
+const (
+	ShareAccessEdit ShareAccess = "edit"
+	ShareAccessView ShareAccess = "view"
+)
+
+// Valid indicates whether the value is a known member of the ShareAccess enum.
+func (e ShareAccess) Valid() bool {
+	switch e {
+	case ShareAccessEdit:
+		return true
+	case ShareAccessView:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ShareTargetType.
+const (
+	ShareTargetTypeBusinessUnit ShareTargetType = "business_unit"
+	ShareTargetTypePartner      ShareTargetType = "partner"
+)
+
+// Valid indicates whether the value is a known member of the ShareTargetType enum.
+func (e ShareTargetType) Valid() bool {
+	switch e {
+	case ShareTargetTypeBusinessUnit:
+		return true
+	case ShareTargetTypePartner:
 		return true
 	default:
 		return false
@@ -206,11 +287,35 @@ func (e SiteKind) Valid() bool {
 	}
 }
 
+// Defines values for UnitGrantRole.
+const (
+	UnitGrantRoleEditor    UnitGrantRole = "editor"
+	UnitGrantRoleUnitAdmin UnitGrantRole = "unit_admin"
+	UnitGrantRoleViewer    UnitGrantRole = "viewer"
+)
+
+// Valid indicates whether the value is a known member of the UnitGrantRole enum.
+func (e UnitGrantRole) Valid() bool {
+	switch e {
+	case UnitGrantRoleEditor:
+		return true
+	case UnitGrantRoleUnitAdmin:
+		return true
+	case UnitGrantRoleViewer:
+		return true
+	default:
+		return false
+	}
+}
+
 // AcceptAccountTokenRequest defines model for AcceptAccountTokenRequest.
 type AcceptAccountTokenRequest struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	Password    string  `json:"password"`
 }
+
+// AccessLevel The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+type AccessLevel string
 
 // AccountTokenInfo defines model for AccountTokenInfo.
 type AccountTokenInfo struct {
@@ -222,11 +327,20 @@ type AccountTokenInfo struct {
 // AccountTokenInfoPurpose defines model for AccountTokenInfo.Purpose.
 type AccountTokenInfoPurpose string
 
+// AddGrantResult defines model for AddGrantResult.
+type AddGrantResult struct {
+	// InviteToken One-time invite token for a new user (link /invite/{token}); null for existing users
+	InviteToken *string     `json:"inviteToken"`
+	Member      GrantMember `json:"member"`
+}
+
 // AddMemberRequest defines model for AddMemberRequest.
 type AddMemberRequest struct {
 	Email       openapi_types.Email `json:"email"`
 	Permissions *[]Permission       `json:"permissions,omitempty"`
-	Role        Role                `json:"role"`
+
+	// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+	Role Role `json:"role"`
 }
 
 // AddMemberResult defines model for AddMemberResult.
@@ -331,6 +445,8 @@ type AuthSession struct {
 
 // BusinessUnit defines model for BusinessUnit.
 type BusinessUnit struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access       AccessLevel        `json:"access"`
 	Code         string             `json:"code"`
 	ContactEmail string             `json:"contactEmail"`
 	ContactName  string             `json:"contactName"`
@@ -394,6 +510,24 @@ type CurrentUser struct {
 // Error defines model for Error.
 type Error struct {
 	Message string `json:"message"`
+}
+
+// GrantMember defines model for GrantMember.
+type GrantMember struct {
+	CreatedAt     time.Time `json:"createdAt"`
+	DisplayName   string    `json:"displayName"`
+	Email         string    `json:"email"`
+	PendingInvite bool      `json:"pendingInvite"`
+
+	// Role PartnerGrantRole or UnitGrantRole
+	Role    string             `json:"role"`
+	UserId  openapi_types.UUID `json:"userId"`
+	Version int32              `json:"version"`
+}
+
+// GrantMemberList defines model for GrantMemberList.
+type GrantMemberList struct {
+	Members []GrantMember `json:"members"`
 }
 
 // Health defines model for Health.
@@ -466,12 +600,11 @@ type Member struct {
 	// PendingInvite Invited but has not set a password yet
 	PendingInvite bool         `json:"pendingInvite"`
 	Permissions   []Permission `json:"permissions"`
-	Role          Role         `json:"role"`
 
-	// SiteScope Sites the member is limited to (null = every site; ignored for owner/admin, ADR-025)
-	SiteScope *[]openapi_types.UUID `json:"siteScope,omitempty"`
-	UserId    openapi_types.UUID    `json:"userId"`
-	Version   int32                 `json:"version"`
+	// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+	Role    Role               `json:"role"`
+	UserId  openapi_types.UUID `json:"userId"`
+	Version int32              `json:"version"`
 }
 
 // MemberList defines model for MemberList.
@@ -481,8 +614,19 @@ type MemberList struct {
 
 // MembershipInfo defines model for MembershipInfo.
 type MembershipInfo struct {
+	PartnerGrants []struct {
+		PartnerId openapi_types.UUID `json:"partnerId"`
+		Role      PartnerGrantRole   `json:"role"`
+	} `json:"partnerGrants"`
 	Permissions []string `json:"permissions"`
-	Role        Role     `json:"role"`
+
+	// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+	Role       Role `json:"role"`
+	UnitGrants []struct {
+		BusinessUnitId openapi_types.UUID `json:"businessUnitId"`
+		PartnerId      openapi_types.UUID `json:"partnerId"`
+		Role           UnitGrantRole      `json:"role"`
+	} `json:"unitGrants"`
 }
 
 // MfaCode defines model for MfaCode.
@@ -548,7 +692,9 @@ type OrganizationSummary struct {
 	Id   openapi_types.UUID `json:"id"`
 	Kind OrganizationKind   `json:"kind"`
 	Name string             `json:"name"`
-	Role Role               `json:"role"`
+
+	// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+	Role Role `json:"role"`
 }
 
 // OrganizationView defines model for OrganizationView.
@@ -559,6 +705,8 @@ type OrganizationView struct {
 
 // Partner defines model for Partner.
 type Partner struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access       AccessLevel        `json:"access"`
 	Code         string             `json:"code"`
 	ContactEmail string             `json:"contactEmail"`
 	ContactName  string             `json:"contactName"`
@@ -571,6 +719,21 @@ type Partner struct {
 	SiteCount    int64              `json:"siteCount"`
 	UnitCount    int64              `json:"unitCount"`
 	Version      int32              `json:"version"`
+}
+
+// PartnerGrantInput defines model for PartnerGrantInput.
+type PartnerGrantInput struct {
+	Email openapi_types.Email `json:"email"`
+	Role  PartnerGrantRole    `json:"role"`
+}
+
+// PartnerGrantRole defines model for PartnerGrantRole.
+type PartnerGrantRole string
+
+// PartnerGrantUpdate defines model for PartnerGrantUpdate.
+type PartnerGrantUpdate struct {
+	Role    PartnerGrantRole `json:"role"`
+	Version int32            `json:"version"`
 }
 
 // PartnerInput defines model for PartnerInput.
@@ -647,12 +810,20 @@ type RackUpdate struct {
 	Version    int32              `json:"version"`
 }
 
-// Role defines model for Role.
+// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
 type Role string
+
+// ShareAccess defines model for ShareAccess.
+type ShareAccess string
+
+// ShareTargetType defines model for ShareTargetType.
+type ShareTargetType string
 
 // Site defines model for Site.
 type Site struct {
-	Address string `json:"address"`
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access  AccessLevel `json:"access"`
+	Address string      `json:"address"`
 
 	// BusinessUnitCode Empty for shared sites
 	BusinessUnitCode string              `json:"businessUnitCode"`
@@ -714,10 +885,36 @@ type SiteList struct {
 	Sites []Site `json:"sites"`
 }
 
-// SiteScopeInput Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
-type SiteScopeInput struct {
-	All     bool                 `json:"all"`
-	SiteIds []openapi_types.UUID `json:"siteIds"`
+// SiteShare defines model for SiteShare.
+type SiteShare struct {
+	Access    ShareAccess        `json:"access"`
+	GrantedAt time.Time          `json:"grantedAt"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// TargetCode Partner code, or "PARTNER › UNIT" for a unit
+	TargetCode string             `json:"targetCode"`
+	TargetId   openapi_types.UUID `json:"targetId"`
+	TargetName string             `json:"targetName"`
+	TargetType ShareTargetType    `json:"targetType"`
+	Version    int32              `json:"version"`
+}
+
+// SiteShareInput defines model for SiteShareInput.
+type SiteShareInput struct {
+	Access     ShareAccess        `json:"access"`
+	TargetId   openapi_types.UUID `json:"targetId"`
+	TargetType ShareTargetType    `json:"targetType"`
+}
+
+// SiteShareList defines model for SiteShareList.
+type SiteShareList struct {
+	Shares []SiteShare `json:"shares"`
+}
+
+// SiteShareUpdate defines model for SiteShareUpdate.
+type SiteShareUpdate struct {
+	Access  ShareAccess `json:"access"`
+	Version int32       `json:"version"`
 }
 
 // SiteUpdate defines model for SiteUpdate.
@@ -742,14 +939,28 @@ type SiteUpdate struct {
 	Version  int32   `json:"version"`
 }
 
+// UnitGrantInput defines model for UnitGrantInput.
+type UnitGrantInput struct {
+	Email openapi_types.Email `json:"email"`
+	Role  UnitGrantRole       `json:"role"`
+}
+
+// UnitGrantRole defines model for UnitGrantRole.
+type UnitGrantRole string
+
+// UnitGrantUpdate defines model for UnitGrantUpdate.
+type UnitGrantUpdate struct {
+	Role    UnitGrantRole `json:"role"`
+	Version int32         `json:"version"`
+}
+
 // UpdateMemberRequest defines model for UpdateMemberRequest.
 type UpdateMemberRequest struct {
 	Permissions []Permission `json:"permissions"`
-	Role        Role         `json:"role"`
 
-	// SiteScope Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
-	SiteScope *SiteScopeInput `json:"siteScope,omitempty"`
-	Version   int32           `json:"version"`
+	// Role member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+	Role    Role  `json:"role"`
+	Version int32 `json:"version"`
 }
 
 // UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
@@ -799,6 +1010,9 @@ type PartnerId = openapi_types.UUID
 
 // RackId defines model for RackId.
 type RackId = openapi_types.UUID
+
+// ShareId defines model for ShareId.
+type ShareId = openapi_types.UUID
 
 // SiteId defines model for SiteId.
 type SiteId = openapi_types.UUID
@@ -949,6 +1163,21 @@ type UpdateBusinessUnitParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// AddUnitMemberParams defines parameters for AddUnitMember.
+type AddUnitMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RemoveUnitMemberParams defines parameters for RemoveUnitMember.
+type RemoveUnitMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateUnitMemberParams defines parameters for UpdateUnitMember.
+type UpdateUnitMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -981,6 +1210,21 @@ type DeletePartnerParams struct {
 
 // UpdatePartnerParams defines parameters for UpdatePartner.
 type UpdatePartnerParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AddPartnerMemberParams defines parameters for AddPartnerMember.
+type AddPartnerMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RemovePartnerMemberParams defines parameters for RemovePartnerMember.
+type RemovePartnerMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdatePartnerMemberParams defines parameters for UpdatePartnerMember.
+type UpdatePartnerMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -1050,6 +1294,21 @@ type UpdateRackParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateSiteShareParams defines parameters for CreateSiteShare.
+type CreateSiteShareParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteSiteShareParams defines parameters for DeleteSiteShare.
+type DeleteSiteShareParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateSiteShareParams defines parameters for UpdateSiteShare.
+type UpdateSiteShareParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AcceptAccountTokenJSONRequestBody defines body for AcceptAccountToken for application/json ContentType.
 type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
 
@@ -1077,6 +1336,12 @@ type CreateBusinessUnitJSONRequestBody = BusinessUnitInput
 // UpdateBusinessUnitJSONRequestBody defines body for UpdateBusinessUnit for application/json ContentType.
 type UpdateBusinessUnitJSONRequestBody = BusinessUnitUpdate
 
+// AddUnitMemberJSONRequestBody defines body for AddUnitMember for application/json ContentType.
+type AddUnitMemberJSONRequestBody = UnitGrantInput
+
+// UpdateUnitMemberJSONRequestBody defines body for UpdateUnitMember for application/json ContentType.
+type UpdateUnitMemberJSONRequestBody = UnitGrantUpdate
+
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
 
@@ -1088,6 +1353,12 @@ type CreatePartnerJSONRequestBody = PartnerInput
 
 // UpdatePartnerJSONRequestBody defines body for UpdatePartner for application/json ContentType.
 type UpdatePartnerJSONRequestBody = PartnerUpdate
+
+// AddPartnerMemberJSONRequestBody defines body for AddPartnerMember for application/json ContentType.
+type AddPartnerMemberJSONRequestBody = PartnerGrantInput
+
+// UpdatePartnerMemberJSONRequestBody defines body for UpdatePartnerMember for application/json ContentType.
+type UpdatePartnerMemberJSONRequestBody = PartnerGrantUpdate
 
 // CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
 type CreateSiteJSONRequestBody = SiteInput
@@ -1106,6 +1377,12 @@ type CreateRackJSONRequestBody = RackInput
 
 // UpdateRackJSONRequestBody defines body for UpdateRack for application/json ContentType.
 type UpdateRackJSONRequestBody = RackUpdate
+
+// CreateSiteShareJSONRequestBody defines body for CreateSiteShare for application/json ContentType.
+type CreateSiteShareJSONRequestBody = SiteShareInput
+
+// UpdateSiteShareJSONRequestBody defines body for UpdateSiteShare for application/json ContentType.
+type UpdateSiteShareJSONRequestBody = SiteShareUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -1196,7 +1473,19 @@ type ServerInterface interface {
 	// UpdateBusinessUnit Edit a unit (its partner cannot change)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
 	UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams)
-	// ListMembers Members of the organization
+	// ListUnitMembers Users granted on the unit (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+	// (GET /orgs/{orgId}/business-units/{businessUnitId}/members)
+	ListUnitMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId)
+	// AddUnitMember Add (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+	// (POST /orgs/{orgId}/business-units/{businessUnitId}/members)
+	AddUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params AddUnitMemberParams)
+	// RemoveUnitMember Revoke a unit grant
+	// (DELETE /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+	RemoveUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params RemoveUnitMemberParams)
+	// UpdateUnitMember Change a unit grant (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+	UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams)
+	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
 	// AddMember Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
@@ -1226,6 +1515,18 @@ type ServerInterface interface {
 	// UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
 	// (PATCH /orgs/{orgId}/partners/{partnerId})
 	UpdatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params UpdatePartnerParams)
+	// ListPartnerMembers Users granted on the partner (organization owner/admin or partner_admin; unknown emails get an invite link)
+	// (GET /orgs/{orgId}/partners/{partnerId}/members)
+	ListPartnerMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId)
+	// AddPartnerMember Add (organization owner/admin or partner_admin; unknown emails get an invite link)
+	// (POST /orgs/{orgId}/partners/{partnerId}/members)
+	AddPartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params AddPartnerMemberParams)
+	// RemovePartnerMember Revoke a partner grant
+	// (DELETE /orgs/{orgId}/partners/{partnerId}/members/{userId})
+	RemovePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params RemovePartnerMemberParams)
+	// UpdatePartnerMember Change a partner grant (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/partners/{partnerId}/members/{userId})
+	UpdatePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params UpdatePartnerMemberParams)
 	// ListSites Sites of the organization (filtered by the member site scope)
 	// (GET /orgs/{orgId}/sites)
 	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
@@ -1268,6 +1569,18 @@ type ServerInterface interface {
 	// UpdateRack Edit / move a rack within the site
 	// (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
 	UpdateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params UpdateRackParams)
+	// ListSiteShares Shares of the site (callers with admin access on the site)
+	// (GET /orgs/{orgId}/sites/{siteId}/shares)
+	ListSiteShares(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId)
+	// CreateSiteShare Add (callers with admin access on the site)
+	// (POST /orgs/{orgId}/sites/{siteId}/shares)
+	CreateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateSiteShareParams)
+	// DeleteSiteShare Revoke a share
+	// (DELETE /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+	DeleteSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params DeleteSiteShareParams)
+	// UpdateSiteShare Change a share (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+	UpdateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params UpdateSiteShareParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1448,7 +1761,31 @@ func (_ Unimplemented) UpdateBusinessUnit(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListMembers Members of the organization
+// ListUnitMembers Users granted on the unit (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+// (GET /orgs/{orgId}/business-units/{businessUnitId}/members)
+func (_ Unimplemented) ListUnitMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddUnitMember Add (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+// (POST /orgs/{orgId}/business-units/{businessUnitId}/members)
+func (_ Unimplemented) AddUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params AddUnitMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveUnitMember Revoke a unit grant
+// (DELETE /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+func (_ Unimplemented) RemoveUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params RemoveUnitMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateUnitMember Change a unit grant (optimistic lock on version)
+// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+func (_ Unimplemented) UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListMembers Members of the organization (not for grant-only members)
 // (GET /orgs/{orgId}/members)
 func (_ Unimplemented) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -1505,6 +1842,30 @@ func (_ Unimplemented) GetPartner(w http.ResponseWriter, r *http.Request, orgId 
 // UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
 // (PATCH /orgs/{orgId}/partners/{partnerId})
 func (_ Unimplemented) UpdatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params UpdatePartnerParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListPartnerMembers Users granted on the partner (organization owner/admin or partner_admin; unknown emails get an invite link)
+// (GET /orgs/{orgId}/partners/{partnerId}/members)
+func (_ Unimplemented) ListPartnerMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddPartnerMember Add (organization owner/admin or partner_admin; unknown emails get an invite link)
+// (POST /orgs/{orgId}/partners/{partnerId}/members)
+func (_ Unimplemented) AddPartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params AddPartnerMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemovePartnerMember Revoke a partner grant
+// (DELETE /orgs/{orgId}/partners/{partnerId}/members/{userId})
+func (_ Unimplemented) RemovePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params RemovePartnerMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdatePartnerMember Change a partner grant (optimistic lock on version)
+// (PATCH /orgs/{orgId}/partners/{partnerId}/members/{userId})
+func (_ Unimplemented) UpdatePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params UpdatePartnerMemberParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1589,6 +1950,30 @@ func (_ Unimplemented) DeleteRack(w http.ResponseWriter, r *http.Request, orgId 
 // UpdateRack Edit / move a rack within the site
 // (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
 func (_ Unimplemented) UpdateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params UpdateRackParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSiteShares Shares of the site (callers with admin access on the site)
+// (GET /orgs/{orgId}/sites/{siteId}/shares)
+func (_ Unimplemented) ListSiteShares(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateSiteShare Add (callers with admin access on the site)
+// (POST /orgs/{orgId}/sites/{siteId}/shares)
+func (_ Unimplemented) CreateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateSiteShareParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteSiteShare Revoke a share
+// (DELETE /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+func (_ Unimplemented) DeleteSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params DeleteSiteShareParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateSiteShare Change a share (optimistic lock on version)
+// (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+func (_ Unimplemented) UpdateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params UpdateSiteShareParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2899,6 +3284,248 @@ func (siw *ServerInterfaceWrapper) UpdateBusinessUnit(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListUnitMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListUnitMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUnitMembers(w, r, orgId, businessUnitId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddUnitMember operation middleware
+func (siw *ServerInterfaceWrapper) AddUnitMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddUnitMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddUnitMember(w, r, orgId, businessUnitId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveUnitMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveUnitMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveUnitMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveUnitMember(w, r, orgId, businessUnitId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateUnitMember operation middleware
+func (siw *ServerInterfaceWrapper) UpdateUnitMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateUnitMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateUnitMember(w, r, orgId, businessUnitId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -3400,6 +4027,248 @@ func (siw *ServerInterfaceWrapper) UpdatePartner(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdatePartner(w, r, orgId, partnerId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPartnerMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListPartnerMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPartnerMembers(w, r, orgId, partnerId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddPartnerMember operation middleware
+func (siw *ServerInterfaceWrapper) AddPartnerMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddPartnerMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddPartnerMember(w, r, orgId, partnerId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemovePartnerMember operation middleware
+func (siw *ServerInterfaceWrapper) RemovePartnerMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemovePartnerMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemovePartnerMember(w, r, orgId, partnerId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdatePartnerMember operation middleware
+func (siw *ServerInterfaceWrapper) UpdatePartnerMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdatePartnerMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdatePartnerMember(w, r, orgId, partnerId, userId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4231,6 +5100,248 @@ func (siw *ServerInterfaceWrapper) UpdateRack(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ListSiteShares operation middleware
+func (siw *ServerInterfaceWrapper) ListSiteShares(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSiteShares(w, r, orgId, siteId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateSiteShare operation middleware
+func (siw *ServerInterfaceWrapper) CreateSiteShare(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSiteShareParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateSiteShare(w, r, orgId, siteId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteSiteShare operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSiteShare(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shareId" -------------
+	var shareId ShareId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shareId", chi.URLParam(r, "shareId"), &shareId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shareId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSiteShareParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteSiteShare(w, r, orgId, siteId, shareId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSiteShare operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSiteShare(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shareId" -------------
+	var shareId ShareId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shareId", chi.URLParam(r, "shareId"), &shareId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shareId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSiteShareParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSiteShare(w, r, orgId, siteId, shareId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -4426,6 +5537,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}", wrapper.UpdatePartner)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}/members", wrapper.ListPartnerMembers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}/members", wrapper.AddPartnerMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}/members/{userId}", wrapper.RemovePartnerMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}/members/{userId}", wrapper.UpdatePartnerMember)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/business-units", wrapper.ListBusinessUnits)
 	})
 	r.Group(func(r chi.Router) {
@@ -4439,6 +5562,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}", wrapper.UpdateBusinessUnit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}/members", wrapper.ListUnitMembers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}/members", wrapper.AddUnitMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}/members/{userId}", wrapper.RemoveUnitMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}/members/{userId}", wrapper.UpdateUnitMember)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/sites/next-code", wrapper.SuggestSiteCode)
@@ -4457,6 +5592,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}", wrapper.UpdateSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/shares", wrapper.ListSiteShares)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/shares", wrapper.CreateSiteShare)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/shares/{shareId}", wrapper.DeleteSiteShare)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/shares/{shareId}", wrapper.UpdateSiteShare)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/locations", wrapper.ListLocations)
@@ -6329,6 +7476,323 @@ func (response UpdateBusinessUnit409JSONResponse) VisitUpdateBusinessUnitRespons
 	return err
 }
 
+type ListUnitMembersRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+}
+
+type ListUnitMembersResponseObject interface {
+	VisitListUnitMembersResponse(w http.ResponseWriter) error
+}
+
+type ListUnitMembers200JSONResponse GrantMemberList
+
+func (response ListUnitMembers200JSONResponse) VisitListUnitMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnitMembers401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListUnitMembers401JSONResponse) VisitListUnitMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnitMembers403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListUnitMembers403JSONResponse) VisitListUnitMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnitMembers404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListUnitMembers404JSONResponse) VisitListUnitMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMemberRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+	Params         AddUnitMemberParams
+	Body           *AddUnitMemberJSONRequestBody
+}
+
+type AddUnitMemberResponseObject interface {
+	VisitAddUnitMemberResponse(w http.ResponseWriter) error
+}
+
+type AddUnitMember201JSONResponse AddGrantResult
+
+func (response AddUnitMember201JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AddUnitMember400JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AddUnitMember401JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AddUnitMember403JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AddUnitMember404JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddUnitMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AddUnitMember409JSONResponse) VisitAddUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveUnitMemberRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+	UserId         UserId         `json:"userId"`
+	Params         RemoveUnitMemberParams
+}
+
+type RemoveUnitMemberResponseObject interface {
+	VisitRemoveUnitMemberResponse(w http.ResponseWriter) error
+}
+
+type RemoveUnitMember204Response struct {
+}
+
+func (response RemoveUnitMember204Response) VisitRemoveUnitMemberResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveUnitMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RemoveUnitMember401JSONResponse) VisitRemoveUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveUnitMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RemoveUnitMember403JSONResponse) VisitRemoveUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveUnitMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RemoveUnitMember404JSONResponse) VisitRemoveUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMemberRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+	UserId         UserId         `json:"userId"`
+	Params         UpdateUnitMemberParams
+	Body           *UpdateUnitMemberJSONRequestBody
+}
+
+type UpdateUnitMemberResponseObject interface {
+	VisitUpdateUnitMemberResponse(w http.ResponseWriter) error
+}
+
+type UpdateUnitMember200JSONResponse GrantMember
+
+func (response UpdateUnitMember200JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateUnitMember400JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateUnitMember401JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateUnitMember403JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateUnitMember404JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateUnitMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateUnitMember409JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMembersRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -6361,6 +7825,20 @@ func (response ListMembers401JSONResponse) VisitListMembersResponse(w http.Respo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMembers403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListMembers403JSONResponse) VisitListMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7173,6 +8651,323 @@ func (response UpdatePartner404JSONResponse) VisitUpdatePartnerResponse(w http.R
 type UpdatePartner409JSONResponse struct{ ConflictJSONResponse }
 
 func (response UpdatePartner409JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartnerMembersRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+}
+
+type ListPartnerMembersResponseObject interface {
+	VisitListPartnerMembersResponse(w http.ResponseWriter) error
+}
+
+type ListPartnerMembers200JSONResponse GrantMemberList
+
+func (response ListPartnerMembers200JSONResponse) VisitListPartnerMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartnerMembers401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListPartnerMembers401JSONResponse) VisitListPartnerMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartnerMembers403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListPartnerMembers403JSONResponse) VisitListPartnerMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartnerMembers404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListPartnerMembers404JSONResponse) VisitListPartnerMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMemberRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+	Params    AddPartnerMemberParams
+	Body      *AddPartnerMemberJSONRequestBody
+}
+
+type AddPartnerMemberResponseObject interface {
+	VisitAddPartnerMemberResponse(w http.ResponseWriter) error
+}
+
+type AddPartnerMember201JSONResponse AddGrantResult
+
+func (response AddPartnerMember201JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AddPartnerMember400JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AddPartnerMember401JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AddPartnerMember403JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AddPartnerMember404JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddPartnerMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AddPartnerMember409JSONResponse) VisitAddPartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemovePartnerMemberRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+	UserId    UserId    `json:"userId"`
+	Params    RemovePartnerMemberParams
+}
+
+type RemovePartnerMemberResponseObject interface {
+	VisitRemovePartnerMemberResponse(w http.ResponseWriter) error
+}
+
+type RemovePartnerMember204Response struct {
+}
+
+func (response RemovePartnerMember204Response) VisitRemovePartnerMemberResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemovePartnerMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RemovePartnerMember401JSONResponse) VisitRemovePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemovePartnerMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RemovePartnerMember403JSONResponse) VisitRemovePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemovePartnerMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RemovePartnerMember404JSONResponse) VisitRemovePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMemberRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+	UserId    UserId    `json:"userId"`
+	Params    UpdatePartnerMemberParams
+	Body      *UpdatePartnerMemberJSONRequestBody
+}
+
+type UpdatePartnerMemberResponseObject interface {
+	VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error
+}
+
+type UpdatePartnerMember200JSONResponse GrantMember
+
+func (response UpdatePartnerMember200JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdatePartnerMember400JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdatePartnerMember401JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdatePartnerMember403JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdatePartnerMember404JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdatePartnerMember409JSONResponse) VisitUpdatePartnerMemberResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -8486,6 +10281,323 @@ func (response UpdateRack409JSONResponse) VisitUpdateRackResponse(w http.Respons
 	return err
 }
 
+type ListSiteSharesRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+}
+
+type ListSiteSharesResponseObject interface {
+	VisitListSiteSharesResponse(w http.ResponseWriter) error
+}
+
+type ListSiteShares200JSONResponse SiteShareList
+
+func (response ListSiteShares200JSONResponse) VisitListSiteSharesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSiteShares401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSiteShares401JSONResponse) VisitListSiteSharesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSiteShares403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListSiteShares403JSONResponse) VisitListSiteSharesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSiteShares404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListSiteShares404JSONResponse) VisitListSiteSharesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShareRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	Params CreateSiteShareParams
+	Body   *CreateSiteShareJSONRequestBody
+}
+
+type CreateSiteShareResponseObject interface {
+	VisitCreateSiteShareResponse(w http.ResponseWriter) error
+}
+
+type CreateSiteShare201JSONResponse SiteShare
+
+func (response CreateSiteShare201JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShare400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateSiteShare400JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShare401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateSiteShare401JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShare403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateSiteShare403JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShare404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateSiteShare404JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteShare409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateSiteShare409JSONResponse) VisitCreateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSiteShareRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	SiteId  SiteId  `json:"siteId"`
+	ShareId ShareId `json:"shareId"`
+	Params  DeleteSiteShareParams
+}
+
+type DeleteSiteShareResponseObject interface {
+	VisitDeleteSiteShareResponse(w http.ResponseWriter) error
+}
+
+type DeleteSiteShare204Response struct {
+}
+
+func (response DeleteSiteShare204Response) VisitDeleteSiteShareResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteSiteShare401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteSiteShare401JSONResponse) VisitDeleteSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSiteShare403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteSiteShare403JSONResponse) VisitDeleteSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSiteShare404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteSiteShare404JSONResponse) VisitDeleteSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShareRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	SiteId  SiteId  `json:"siteId"`
+	ShareId ShareId `json:"shareId"`
+	Params  UpdateSiteShareParams
+	Body    *UpdateSiteShareJSONRequestBody
+}
+
+type UpdateSiteShareResponseObject interface {
+	VisitUpdateSiteShareResponse(w http.ResponseWriter) error
+}
+
+type UpdateSiteShare200JSONResponse SiteShare
+
+func (response UpdateSiteShare200JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShare400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSiteShare400JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShare401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateSiteShare401JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShare403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateSiteShare403JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShare404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateSiteShare404JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteShare409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateSiteShare409JSONResponse) VisitUpdateSiteShareResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
@@ -8575,7 +10687,19 @@ type StrictServerInterface interface {
 	// UpdateBusinessUnit Edit a unit (its partner cannot change)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
 	UpdateBusinessUnit(ctx context.Context, request UpdateBusinessUnitRequestObject) (UpdateBusinessUnitResponseObject, error)
-	// ListMembers Members of the organization
+	// ListUnitMembers Users granted on the unit (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+	// (GET /orgs/{orgId}/business-units/{businessUnitId}/members)
+	ListUnitMembers(ctx context.Context, request ListUnitMembersRequestObject) (ListUnitMembersResponseObject, error)
+	// AddUnitMember Add (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
+	// (POST /orgs/{orgId}/business-units/{businessUnitId}/members)
+	AddUnitMember(ctx context.Context, request AddUnitMemberRequestObject) (AddUnitMemberResponseObject, error)
+	// RemoveUnitMember Revoke a unit grant
+	// (DELETE /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+	RemoveUnitMember(ctx context.Context, request RemoveUnitMemberRequestObject) (RemoveUnitMemberResponseObject, error)
+	// UpdateUnitMember Change a unit grant (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
+	UpdateUnitMember(ctx context.Context, request UpdateUnitMemberRequestObject) (UpdateUnitMemberResponseObject, error)
+	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
 	// AddMember Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
@@ -8605,6 +10729,18 @@ type StrictServerInterface interface {
 	// UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
 	// (PATCH /orgs/{orgId}/partners/{partnerId})
 	UpdatePartner(ctx context.Context, request UpdatePartnerRequestObject) (UpdatePartnerResponseObject, error)
+	// ListPartnerMembers Users granted on the partner (organization owner/admin or partner_admin; unknown emails get an invite link)
+	// (GET /orgs/{orgId}/partners/{partnerId}/members)
+	ListPartnerMembers(ctx context.Context, request ListPartnerMembersRequestObject) (ListPartnerMembersResponseObject, error)
+	// AddPartnerMember Add (organization owner/admin or partner_admin; unknown emails get an invite link)
+	// (POST /orgs/{orgId}/partners/{partnerId}/members)
+	AddPartnerMember(ctx context.Context, request AddPartnerMemberRequestObject) (AddPartnerMemberResponseObject, error)
+	// RemovePartnerMember Revoke a partner grant
+	// (DELETE /orgs/{orgId}/partners/{partnerId}/members/{userId})
+	RemovePartnerMember(ctx context.Context, request RemovePartnerMemberRequestObject) (RemovePartnerMemberResponseObject, error)
+	// UpdatePartnerMember Change a partner grant (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/partners/{partnerId}/members/{userId})
+	UpdatePartnerMember(ctx context.Context, request UpdatePartnerMemberRequestObject) (UpdatePartnerMemberResponseObject, error)
 	// ListSites Sites of the organization (filtered by the member site scope)
 	// (GET /orgs/{orgId}/sites)
 	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
@@ -8647,6 +10783,18 @@ type StrictServerInterface interface {
 	// UpdateRack Edit / move a rack within the site
 	// (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
 	UpdateRack(ctx context.Context, request UpdateRackRequestObject) (UpdateRackResponseObject, error)
+	// ListSiteShares Shares of the site (callers with admin access on the site)
+	// (GET /orgs/{orgId}/sites/{siteId}/shares)
+	ListSiteShares(ctx context.Context, request ListSiteSharesRequestObject) (ListSiteSharesResponseObject, error)
+	// CreateSiteShare Add (callers with admin access on the site)
+	// (POST /orgs/{orgId}/sites/{siteId}/shares)
+	CreateSiteShare(ctx context.Context, request CreateSiteShareRequestObject) (CreateSiteShareResponseObject, error)
+	// DeleteSiteShare Revoke a share
+	// (DELETE /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+	DeleteSiteShare(ctx context.Context, request DeleteSiteShareRequestObject) (DeleteSiteShareResponseObject, error)
+	// UpdateSiteShare Change a share (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/sites/{siteId}/shares/{shareId})
+	UpdateSiteShare(ctx context.Context, request UpdateSiteShareRequestObject) (UpdateSiteShareResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -9508,6 +11656,133 @@ func (sh *strictHandler) UpdateBusinessUnit(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ListUnitMembers operation middleware
+func (sh *strictHandler) ListUnitMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId) {
+	var request ListUnitMembersRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUnitMembers(ctx, request.(ListUnitMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUnitMembers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUnitMembersResponseObject); ok {
+		if err := validResponse.VisitListUnitMembersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddUnitMember operation middleware
+func (sh *strictHandler) AddUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params AddUnitMemberParams) {
+	var request AddUnitMemberRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+	request.Params = params
+
+	var body AddUnitMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddUnitMember(ctx, request.(AddUnitMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddUnitMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddUnitMemberResponseObject); ok {
+		if err := validResponse.VisitAddUnitMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveUnitMember operation middleware
+func (sh *strictHandler) RemoveUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params RemoveUnitMemberParams) {
+	var request RemoveUnitMemberRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveUnitMember(ctx, request.(RemoveUnitMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveUnitMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveUnitMemberResponseObject); ok {
+		if err := validResponse.VisitRemoveUnitMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateUnitMember operation middleware
+func (sh *strictHandler) UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams) {
+	var request UpdateUnitMemberRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+	request.UserId = userId
+	request.Params = params
+
+	var body UpdateUnitMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateUnitMember(ctx, request.(UpdateUnitMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateUnitMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateUnitMemberResponseObject); ok {
+		if err := validResponse.VisitUpdateUnitMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMembers operation middleware
 func (sh *strictHandler) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	var request ListMembersRequestObject
@@ -9802,6 +12077,133 @@ func (sh *strictHandler) UpdatePartner(w http.ResponseWriter, r *http.Request, o
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdatePartnerResponseObject); ok {
 		if err := validResponse.VisitUpdatePartnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListPartnerMembers operation middleware
+func (sh *strictHandler) ListPartnerMembers(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId) {
+	var request ListPartnerMembersRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPartnerMembers(ctx, request.(ListPartnerMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPartnerMembers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPartnerMembersResponseObject); ok {
+		if err := validResponse.VisitListPartnerMembersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddPartnerMember operation middleware
+func (sh *strictHandler) AddPartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params AddPartnerMemberParams) {
+	var request AddPartnerMemberRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+	request.Params = params
+
+	var body AddPartnerMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddPartnerMember(ctx, request.(AddPartnerMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddPartnerMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddPartnerMemberResponseObject); ok {
+		if err := validResponse.VisitAddPartnerMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemovePartnerMember operation middleware
+func (sh *strictHandler) RemovePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params RemovePartnerMemberParams) {
+	var request RemovePartnerMemberRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemovePartnerMember(ctx, request.(RemovePartnerMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemovePartnerMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemovePartnerMemberResponseObject); ok {
+		if err := validResponse.VisitRemovePartnerMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdatePartnerMember operation middleware
+func (sh *strictHandler) UpdatePartnerMember(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, userId UserId, params UpdatePartnerMemberParams) {
+	var request UpdatePartnerMemberRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+	request.UserId = userId
+	request.Params = params
+
+	var body UpdatePartnerMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdatePartnerMember(ctx, request.(UpdatePartnerMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdatePartnerMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdatePartnerMemberResponseObject); ok {
+		if err := validResponse.VisitUpdatePartnerMemberResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -10234,6 +12636,133 @@ func (sh *strictHandler) UpdateRack(w http.ResponseWriter, r *http.Request, orgI
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateRackResponseObject); ok {
 		if err := validResponse.VisitUpdateRackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSiteShares operation middleware
+func (sh *strictHandler) ListSiteShares(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	var request ListSiteSharesRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSiteShares(ctx, request.(ListSiteSharesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSiteShares")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSiteSharesResponseObject); ok {
+		if err := validResponse.VisitListSiteSharesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateSiteShare operation middleware
+func (sh *strictHandler) CreateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateSiteShareParams) {
+	var request CreateSiteShareRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.Params = params
+
+	var body CreateSiteShareJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateSiteShare(ctx, request.(CreateSiteShareRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateSiteShare")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateSiteShareResponseObject); ok {
+		if err := validResponse.VisitCreateSiteShareResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteSiteShare operation middleware
+func (sh *strictHandler) DeleteSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params DeleteSiteShareParams) {
+	var request DeleteSiteShareRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.ShareId = shareId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteSiteShare(ctx, request.(DeleteSiteShareRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteSiteShare")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteSiteShareResponseObject); ok {
+		if err := validResponse.VisitDeleteSiteShareResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateSiteShare operation middleware
+func (sh *strictHandler) UpdateSiteShare(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, shareId ShareId, params UpdateSiteShareParams) {
+	var request UpdateSiteShareRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.ShareId = shareId
+	request.Params = params
+
+	var body UpdateSiteShareJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateSiteShare(ctx, request.(UpdateSiteShareRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateSiteShare")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateSiteShareResponseObject); ok {
+		if err := validResponse.VisitUpdateSiteShareResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

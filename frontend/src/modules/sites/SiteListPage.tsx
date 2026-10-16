@@ -11,6 +11,7 @@ import { PartnerFormDialog } from './PartnerFormDialog'
 import { PartnersTable } from './PartnersTable'
 import { SiteFormDialog } from './SiteFormDialog'
 import { SitesTable } from './SitesTable'
+import { useOrgAccess } from './access'
 import { useSites } from './sites'
 import { UnitFormDialog } from './UnitFormDialog'
 import { UnitsTable } from './UnitsTable'
@@ -33,9 +34,7 @@ export function SiteListPage() {
   const sharedCount = useSites(orgId).data?.filter((s) => s.businessUnitId === null).length ?? 0
   useBreadcrumbs([{ label: t('units.hub') }])
 
-  const role = org.data?.membership.role
-  const canAdmin = role === 'owner' || role === 'admin'
-  const canEdit = canAdmin || role === 'editor'
+  const access = useOrgAccess(orgId)
 
   return (
     <div className="space-y-3 p-4">
@@ -43,23 +42,23 @@ export function SiteListPage() {
         title={org.data ? t('units.hubOf', { org: org.data.organization.name }) : t('units.hub')}
         actions={
           <>
-            {canAdmin && (
-              <>
-                <Button
-                  variant={tab === 'partners' ? 'default' : 'outline'}
-                  onClick={() => setCreating('partners')}
-                >
-                  <Plus aria-hidden /> {t('partners.add')}
-                </Button>
-                <Button
-                  variant={tab === 'units' ? 'default' : 'outline'}
-                  onClick={() => setCreating('units')}
-                >
-                  <Plus aria-hidden /> {t('units.add')}
-                </Button>
-              </>
+            {access.orgAdmin && (
+              <Button
+                variant={tab === 'partners' ? 'default' : 'outline'}
+                onClick={() => setCreating('partners')}
+              >
+                <Plus aria-hidden /> {t('partners.add')}
+              </Button>
             )}
-            {canEdit && (
+            {access.canAddUnits && (
+              <Button
+                variant={tab === 'units' ? 'default' : 'outline'}
+                onClick={() => setCreating('units')}
+              >
+                <Plus aria-hidden /> {t('units.add')}
+              </Button>
+            )}
+            {access.canAddSites && (
               <Button
                 variant={tab === 'sites' ? 'default' : 'outline'}
                 onClick={() => setCreating('sites')}
@@ -77,7 +76,11 @@ export function SiteListPage() {
           <TabsTrigger value="sites">{t('units.tabSites')}</TabsTrigger>
         </TabsList>
         <TabsContent value="partners" className="space-y-2 pt-3">
-          <PartnersTable orgId={orgId} canAdmin={canAdmin} onAdd={() => setCreating('partners')} />
+          <PartnersTable
+            orgId={orgId}
+            canAdmin={access.orgAdmin}
+            onAdd={() => setCreating('partners')}
+          />
           <p className="text-muted-foreground">
             <Link
               to={`/o/${orgId}/sites?tab=sites`}
@@ -89,10 +92,18 @@ export function SiteListPage() {
           </p>
         </TabsContent>
         <TabsContent value="units" className="pt-3">
-          <UnitsTable orgId={orgId} canAdmin={canAdmin} onAdd={() => setCreating('units')} />
+          <UnitsTable
+            orgId={orgId}
+            canAdmin={access.canAddUnits}
+            onAdd={() => setCreating('units')}
+          />
         </TabsContent>
         <TabsContent value="sites" className="pt-3">
-          <SitesTable orgId={orgId} canEdit={canEdit} onAdd={() => setCreating('sites')} />
+          <SitesTable
+            orgId={orgId}
+            canEdit={access.canAddSites}
+            onAdd={() => setCreating('sites')}
+          />
         </TabsContent>
       </Tabs>
       {creating === 'partners' && (

@@ -49,6 +49,10 @@ func uuidUpper(id uuid.UUID) string {
 
 type fakeLoader map[[2][16]byte]store.GetMembershipRow
 
+func (f fakeLoader) ListAccessGrants(context.Context, store.ListAccessGrantsParams) ([]store.ListAccessGrantsRow, error) {
+	return nil, nil
+}
+
 func (f fakeLoader) GetMembership(_ context.Context, a store.GetMembershipParams) (store.GetMembershipRow, error) {
 	row, ok := f[[2][16]byte{a.OrganizationID.Bytes, a.UserID.Bytes}]
 	if !ok {

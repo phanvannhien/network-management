@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { useScopeStore } from './modules/sites/access'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
 import { setCsrfToken } from './api/client'
@@ -52,7 +53,7 @@ const ORG_VIEW = {
     createdAt: '2026-10-16T00:00:00Z',
     updatedAt: '2026-10-16T00:00:00Z',
   },
-  membership: { role: 'owner', permissions: [] },
+  membership: { role: 'owner', permissions: [], partnerGrants: [], unitGrants: [] },
 }
 
 /** Organization endpoints most pages need; individual tests override keys as required. */
@@ -542,7 +543,6 @@ describe('members', () => {
       role: 'editor',
       permissions: ['credential.reveal'],
       version: 1,
-      siteScope: { all: true, siteIds: [] },
     })
   })
 
@@ -569,7 +569,10 @@ describe('members', () => {
       'GET /api/auth/me': () =>
         json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
       [`GET /api/orgs/${ORG_ID}`]: () =>
-        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+        json({
+          ...ORG_VIEW,
+          membership: { role: 'viewer', permissions: [], partnerGrants: [], unitGrants: [] },
+        }),
       [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
     })
     renderAt(`/o/${ORG_ID}/members`)
@@ -845,7 +848,10 @@ describe('audit log', () => {
       'GET /api/auth/me': () =>
         json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
       [`GET /api/orgs/${ORG_ID}`]: () =>
-        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+        json({
+          ...ORG_VIEW,
+          membership: { role: 'viewer', permissions: [], partnerGrants: [], unitGrants: [] },
+        }),
     })
     renderAt(`/o/${ORG_ID}/audit`)
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
@@ -933,7 +939,10 @@ describe('app shell (P1-06)', () => {
         json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
       'GET /api/healthz': () => json(HEALTH),
       [`GET /api/orgs/${ORG_ID}`]: () =>
-        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+        json({
+          ...ORG_VIEW,
+          membership: { role: 'viewer', permissions: [], partnerGrants: [], unitGrants: [] },
+        }),
       [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [] }),
     })
     renderAt(`/o/${ORG_ID}`)
@@ -966,6 +975,7 @@ const SITE = {
   notes: '',
   locationCount: 2,
   rackCount: 1,
+  access: 'admin',
   version: 1,
   createdAt: '2026-10-16T00:00:00Z',
   updatedAt: '2026-10-16T00:00:00Z',
@@ -1051,7 +1061,12 @@ describe('sites (P1-07)', () => {
     fakeApi(
       siteRoutes({
         [`GET /api/orgs/${ORG_ID}`]: () =>
-          json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+          json({
+            ...ORG_VIEW,
+            membership: { role: 'viewer', permissions: [], partnerGrants: [], unitGrants: [] },
+          }),
+        // The server reports the caller's access on the site (ADR-031); the page follows it.
+        [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}`]: () => json({ ...SITE, access: 'view' }),
       }),
     )
     renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
@@ -1078,26 +1093,6 @@ describe('sites (P1-07)', () => {
     fireEvent.click(confirm)
     await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
   })
-
-  it('owners restrict an editor to some sites', async () => {
-    const editor = { ...MEMBER, role: 'editor' }
-    const calls = fakeApi(
-      siteRoutes({
-        [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [editor] }),
-        [`PATCH /api/orgs/${ORG_ID}/members/${MEMBER.userId}`]: () =>
-          json({ ...editor, siteScope: [SITE_ID], version: 2 }),
-      }),
-    )
-    renderAt(`/o/${ORG_ID}/members`)
-    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho viewer@example.com' }))
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa vai trò và quyền' }))
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Mọi site' }))
-    fireEvent.click(await screen.findByRole('checkbox', { name: /SHARED-HN01/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
-    await waitFor(() => expect(calls.some((r) => r.method === 'PATCH')).toBe(true))
-    const patch = calls.find((r) => r.method === 'PATCH')!
-    expect((await patch.clone().json()).siteScope).toEqual({ all: false, siteIds: [SITE_ID] })
-  })
 })
 
 const PARTNER_ID = '77777777-7777-4777-8777-777777777777'
@@ -1112,6 +1107,7 @@ const PARTNER = {
   notes: '',
   unitCount: 1,
   siteCount: 1,
+  access: 'admin',
   version: 1,
   createdAt: '2026-10-16T00:00:00Z',
 }
@@ -1128,6 +1124,7 @@ const UNIT = {
   contactEmail: '',
   notes: '',
   siteCount: 1,
+  access: 'admin',
   version: 1,
   createdAt: '2026-10-16T00:00:00Z',
 }
@@ -1253,5 +1250,127 @@ describe('partners and business units (P1-07b, ADR-031)', () => {
     // The unit code is not the prefix: MAIN-… is rejected client-side.
     fireEvent.change(within(dialog).getByLabelText('Mã site'), { target: { value: 'MAIN-BD01' } })
     expect(within(dialog).getByRole('button', { name: 'Lưu' })).toBeDisabled()
+  })
+})
+
+describe('partner / unit permissions and sharing (P1-07c, ADR-031)', () => {
+  // A grant-only member who is partner_admin of AGRI.
+  const memberView = {
+    ...ORG_VIEW,
+    membership: {
+      role: 'member',
+      permissions: [],
+      partnerGrants: [{ partnerId: PARTNER_ID, role: 'partner_admin' }],
+      unitGrants: [],
+    },
+  }
+  const routes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}`]: () => json(memberView),
+      [`GET /api/orgs/${ORG_ID}/partners`]: () => json({ partners: [PARTNER] }),
+      [`GET /api/orgs/${ORG_ID}/partners/${PARTNER_ID}`]: () => json(PARTNER),
+      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ businessUnits: [UNIT] }),
+      [`GET /api/orgs/${ORG_ID}/business-units/${UNIT_ID}`]: () => json(UNIT),
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/partners/${PARTNER_ID}/members`]: () => json({ members: [] }),
+      ...extra,
+    })
+
+  it('a partner admin manages the partner users but cannot delete the partner', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/partners/${PARTNER_ID}/members`]: () =>
+          json(
+            {
+              member: {
+                userId: 'u-new',
+                email: 'new@example.com',
+                displayName: '',
+                role: 'editor',
+                pendingInvite: true,
+                version: 1,
+                createdAt: '2026-10-16T00:00:00Z',
+              },
+              inviteToken: 'tok123',
+            },
+            201,
+          ),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/partners/${PARTNER_ID}`)
+    const panel = await screen.findByRole('region', { name: 'Người dùng của AGRI' })
+    expect(screen.queryByRole('button', { name: 'Thêm thao tác' })).not.toBeInTheDocument()
+    // No organization member list for grant-only members.
+    expect(screen.queryByRole('link', { name: 'Thành viên' })).not.toBeInTheDocument()
+    fireEvent.change(within(panel).getByLabelText('Email'), {
+      target: { value: 'new@example.com' },
+    })
+    fireEvent.change(within(panel).getByLabelText('Quyền'), { target: { value: 'editor' } })
+    fireEvent.click(within(panel).getByRole('button', { name: /Mời \/ cấp quyền/ }))
+    expect(await screen.findByText(/\/invite\/tok123/)).toBeInTheDocument()
+    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/members'))!
+    expect(await post.clone().json()).toEqual({ email: 'new@example.com', role: 'editor' })
+  })
+
+  it('site admins share a site; editors without admin see no sharing tab', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}/shares`]: () => json({ shares: [] }),
+        [`POST /api/orgs/${ORG_ID}/sites/${SITE_ID}/shares`]: () =>
+          json(
+            {
+              id: 'sh1',
+              targetType: 'partner',
+              targetId: PARTNER_ID,
+              targetCode: 'AGRI',
+              targetName: 'Mẫu Agri',
+              access: 'view',
+              grantedAt: '2026-10-16T00:00:00Z',
+              version: 1,
+            },
+            201,
+          ),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}?tab=shares`)
+    const target = await screen.findByLabelText('Chia sẻ cho')
+    fireEvent.change(target, { target: { value: `p:${PARTNER_ID}` } })
+    fireEvent.click(screen.getByRole('button', { name: /^Chia sẻ$/ }))
+    const isShare = (r: Request) => r.method === 'POST' && r.url.endsWith('/shares')
+    await waitFor(() => expect(calls.some(isShare)).toBe(true))
+    expect(await calls.find(isShare)!.clone().json()).toEqual({
+      targetType: 'partner',
+      targetId: PARTNER_ID,
+      access: 'view',
+    })
+  })
+
+  it('an editor through a share edits the site but cannot delete or share it', async () => {
+    fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}`]: () => json({ ...SITE, access: 'edit' }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
+    expect(await screen.findByRole('button', { name: 'Sửa site' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Chia sẻ' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Thêm thao tác' })).not.toBeInTheDocument()
+  })
+
+  it('the topbar selector filters the hub to one partner / unit', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/sites?tab=sites`)
+    expect(await screen.findByRole('link', { name: 'SHARED-HN01' })).toBeInTheDocument()
+    const selector = await screen.findByLabelText('Lọc theo đối tác / đơn vị')
+    fireEvent.change(selector, { target: { value: `u:${UNIT_ID}` } })
+    await waitFor(() =>
+      expect(screen.queryByRole('link', { name: 'SHARED-HN01' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('link', { name: 'AGRI-BD01' })).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('ntb-scope') ?? '{}')[ORG_ID]).toEqual({
+      partnerId: PARTNER_ID,
+      unitId: UNIT_ID,
+    })
+    act(() => useScopeStore.getState().set(ORG_ID, { partnerId: null, unitId: null }))
   })
 })

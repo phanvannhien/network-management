@@ -1,3 +1,4 @@
+import { GrantMembersPanel } from './GrantMembersPanel'
 import { Handshake, MoreHorizontal, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { PartnerFormDialog } from './PartnerFormDialog'
 import { SitesTable } from './SitesTable'
+import { atLeast, useOrgAccess } from './access'
 import { useDeletePartner, usePartner } from './sites'
 import { UnitFormDialog } from './UnitFormDialog'
 import { UnitsTable } from './UnitsTable'
@@ -36,8 +38,9 @@ export function PartnerDetailPage() {
   const u = partner.data
   useBreadcrumbs([{ label: t('units.hub'), to: `/o/${orgId}/sites` }, { label: u?.code ?? '…' }])
 
-  const role = org.data?.membership.role
-  const canAdmin = role === 'owner' || role === 'admin'
+  // partner_admins edit the partner and its units; only organization admins delete it.
+  const canAdmin = atLeast(u?.access, 'admin')
+  const canDelete = useOrgAccess(orgId).orgAdmin
 
   if (partner.isPending) return <Skeleton className="m-4 h-64" />
   if (!u) return <NotFoundPage inShell />
@@ -67,18 +70,20 @@ export function PartnerDetailPage() {
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Pencil aria-hidden /> {t('partners.edit')}
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
-                >
-                  <MoreHorizontal aria-hidden />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
-                    {t('partners.delete')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canDelete && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
+                  >
+                    <MoreHorizontal aria-hidden />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
+                      {t('partners.delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </>
           )}
         </div>
@@ -99,6 +104,12 @@ export function PartnerDetailPage() {
           ]}
         />
       </section>
+
+      {canAdmin && (
+        <div className="max-w-4xl">
+          <GrantMembersPanel orgId={orgId} scope={{ kind: 'partner', id: u.id }} code={u.code} />
+        </div>
+      )}
 
       <h2 className="text-sm font-semibold">
         {t('partners.unitsOf', { code: u.code })}{' '}

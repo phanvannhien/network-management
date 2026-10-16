@@ -62,13 +62,14 @@ export function CommandPalette({
   const session = useSession()
   const orgs = useMyOrganizations()
   const org = useOrganization(orgId)
-  const members = useMembers(open ? orgId : '')
   const sites = useSites(orgId, open)
   const partners = usePartners(orgId, open)
   const units = useBusinessUnits(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
   const role = org.data?.membership.role
+  // Grant-only members (ADR-031) have no organization member list.
+  const members = useMembers(open && role && role !== 'member' ? orgId : '')
   const isAdmin = role === 'owner' || role === 'admin'
 
   const go = (to: string) => () => {
@@ -84,7 +85,16 @@ export function CommandPalette({
           { key: 'devices', label: t('nav.devices'), icon: <Server />, run: go(`${base}/devices`) },
           { key: 'sites', label: t('nav.sites'), icon: <MapPin />, run: go(`${base}/sites`) },
           { key: 'diagrams', label: t('nav.diagrams'), icon: <Network />, run: go('/editor') },
-          { key: 'members', label: t('nav.members'), icon: <Users />, run: go(`${base}/members`) },
+          ...(role !== 'member'
+            ? [
+                {
+                  key: 'members',
+                  label: t('nav.members'),
+                  icon: <Users />,
+                  run: go(`${base}/members`),
+                },
+              ]
+            : []),
           ...(isAdmin
             ? [
                 {
