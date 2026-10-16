@@ -1,5 +1,5 @@
 import type { PaginationState, RowSelectionState, SortingState } from '@tanstack/react-table'
-import { Download, Info, MoreHorizontal, Plus, SearchX, TriangleAlert, Upload } from 'lucide-react'
+import { MoreHorizontal, Plus, SearchX, Server, TriangleAlert } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -12,9 +12,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { PageHeader } from '@/components/PageHeader'
-import { StatusBadge } from '@/components/StatusBadge'
 import { TechText } from '@/components/TechText'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -24,17 +22,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { daysUntil, formatDate } from '@/lib/format'
-import { useDeviceList } from './devices'
+import { atLeast, useOrgAccess, useScope } from '@/modules/sites/access'
+import { useSites } from '@/modules/sites/sites'
+import { BulkEditDialog } from './BulkEditDialog'
+import { DeviceFormDialog } from './DeviceFormDialog'
 import {
-  SAMPLE_DEVICES,
-  SITES,
-  TYPE_LABELS,
-  type DeviceType,
-  type SampleDevice,
-  type SortKey,
-} from './sampleDevices'
-
-const STATUS_VALUES = ['up', 'down', 'warning', 'unknown', 'planned', 'notMonitored'] as const
+  DEVICE_TYPES,
+  LIFECYCLES,
+  useDeleteDevices,
+  useDeviceList,
+  type Device,
+  type DeviceSort,
+} from './devices'
 
 /** Warranty date; amber icon within 90 days, red text once expired. */
 export function WarrantyText({ date }: { date: string | null }) {
@@ -56,9 +55,18 @@ export function WarrantyText({ date }: { date: string | null }) {
   )
 }
 
-function RowActions({ device, onDelete }: { device: SampleDevice; onDelete: () => void }) {
+function RowActions({
+  device,
+  onEdit,
+  onDelete,
+}: {
+  device: Device
+  onEdit: () => void
+  onDelete: () => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const canEdit = atLeast(device.access, 'edit')
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -74,86 +82,113 @@ function RowActions({ device, onDelete }: { device: SampleDevice; onDelete: () =
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => navigate(device.id)}>{t('devices.open')}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => toast(t('devices.sampleAction'))}>
-          {t('devices.edit')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/editor')}>
-          {t('devices.openDiagram')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={onDelete}>
-          {t('devices.delete')}
-        </DropdownMenuItem>
+        {canEdit && <DropdownMenuItem onClick={onEdit}>{t('devices.edit')}</DropdownMenuItem>}
+        {canEdit && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
+              {t('devices.delete')}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
 /**
- * Device list (DESIGN.md §7a) on sample data until P1-08: server-style pagination/sort/filter,
- * pinned checkbox + hostname, bulk actions, column chooser and saved filters per user.
+ * Device inventory (P1-08, DESIGN.md §7a): server-side filters / sort / pages, facet counts from the server,
+ * the topbar partner / unit filter, column chooser and saved filters per user, bulk edit and delete.
  */
 export function DeviceListPage() {
   const { t } = useTranslation()
   const { orgId = '' } = useParams()
+  const navigate = useNavigate()
   const userId = useSession().data?.user.id ?? 'anonymous'
+  const access = useOrgAccess(orgId)
+  const scope = useScope(orgId)
+  const sites = useSites(orgId)
   useBreadcrumbs([{ label: t('nav.devices') }])
 
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const [sorting, setSorting] = useState<SortingState>([{ id: 'hostname', desc: false }])
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 })
   const [selection, setSelection] = useState<RowSelectionState>({})
-  const [confirmDelete, setConfirmDelete] = useState<SampleDevice | null>(null)
-  const [confirmBulk, setConfirmBulk] = useState<string[] | null>(null)
+  const [editing, setEditing] = useState<Device | 'new' | null>(null)
+  const [bulkEdit, setBulkEdit] = useState<string[] | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Device[] | null>(null)
+  const del = useDeleteDevices(orgId)
   const q = useDeferredValue(filter.q)
 
   const list = useDeviceList(orgId, {
     q,
     facets: filter.facets,
-    sort: sorting[0] ? { id: sorting[0].id as SortKey, desc: sorting[0].desc } : null,
+    partnerId: scope.unitId ? null : scope.partnerId,
+    unitId: scope.unitId,
+    sort: sorting[0] ? { id: sorting[0].id as DeviceSort, desc: sorting[0].desc } : null,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
   })
+  const rows = list.data?.devices
+  const byId = useMemo(() => new Map((rows ?? []).map((d) => [d.id, d])), [rows])
 
   const changeFilter = (f: FilterState) => {
     setFilter(f)
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }
 
-  const counts = list.data?.facetCounts
+  const counts = list.data?.facets
+  const valuesOf = (facet: string) => Object.keys(counts?.[facet] ?? {})
   const facets: Facet[] = [
     {
       id: 'site',
       label: t('devices.site'),
-      options: SITES.map((s) => ({ value: s, label: s, count: counts?.site?.[s] ?? 0 })),
+      options: (sites.data ?? []).map((s) => ({
+        value: s.id,
+        label: s.code,
+        count: counts?.site?.[s.id] ?? 0,
+      })),
     },
     {
       id: 'type',
       label: t('devices.type'),
-      options: (Object.keys(TYPE_LABELS) as DeviceType[]).map((v) => ({
+      options: DEVICE_TYPES.filter(
+        (v) => (counts?.type?.[v] ?? 0) > 0 || filter.facets.type?.includes(v),
+      ).map((v) => ({ value: v, label: t(`devices.types.${v}`), count: counts?.type?.[v] ?? 0 })),
+    },
+    {
+      id: 'lifecycle',
+      label: t('devices.lifecycle'),
+      options: LIFECYCLES.map((v) => ({
         value: v,
-        label: TYPE_LABELS[v],
-        count: counts?.type?.[v] ?? 0,
+        label: t(`devices.lifecycleValues.${v}`),
+        count: counts?.lifecycle?.[v] ?? 0,
       })),
     },
     {
-      id: 'status',
-      label: t('devices.status'),
-      options: STATUS_VALUES.map((v) => ({
-        value: v,
-        label: t(`status.${v}`),
-        count: counts?.status?.[v] ?? 0,
-      })),
+      id: 'vendor',
+      label: t('devices.vendor'),
+      options: valuesOf('vendor')
+        .filter(Boolean)
+        .sort()
+        .map((v) => ({ value: v, label: v, count: counts?.vendor?.[v] ?? 0 })),
+    },
+    {
+      id: 'tag',
+      label: t('devices.tags'),
+      options: valuesOf('tag')
+        .sort()
+        .map((v) => ({ value: v, label: v, count: counts?.tag?.[v] ?? 0 })),
     },
   ]
 
-  const columns = useMemo<DataColumn<SampleDevice>[]>(
+  const columns = useMemo<DataColumn<Device>[]>(
     () => [
       {
         id: 'hostname',
         accessorKey: 'hostname',
         header: t('devices.hostname'),
-        meta: { label: t('devices.hostname'), width: 168, pin: true, alwaysVisible: true },
+        meta: { label: t('devices.hostname'), width: 180, pin: true, alwaysVisible: true },
         cell: ({ row }) => (
           <Link
             to={row.original.id}
@@ -164,25 +199,17 @@ export function DeviceListPage() {
         ),
       },
       {
-        id: 'mgmtIp',
-        accessorKey: 'mgmtIp',
-        header: t('devices.mgmtIp'),
-        meta: { label: t('devices.mgmtIp'), width: 148 },
-        cell: ({ row }) => <TechText value={row.original.mgmtIp} label={t('devices.mgmtIp')} />,
-      },
-      {
         id: 'type',
         accessorKey: 'type',
         header: t('devices.type'),
-        meta: { label: t('devices.type'), width: 120 },
-        cell: ({ row }) => TYPE_LABELS[row.original.type],
+        meta: { label: t('devices.type'), width: 130 },
+        cell: ({ row }) => t(`devices.types.${row.original.type}`),
       },
       {
         id: 'vendor',
         accessorKey: 'vendor',
         header: t('devices.vendor'),
-        enableSorting: false,
-        meta: { label: t('devices.vendor'), width: 100 },
+        meta: { label: t('devices.vendor'), width: 110 },
       },
       {
         id: 'model',
@@ -192,41 +219,54 @@ export function DeviceListPage() {
       },
       {
         id: 'serial',
-        accessorKey: 'serial',
+        accessorKey: 'serialNumber',
         header: t('devices.serial'),
-        enableSorting: false,
         meta: { label: t('devices.serial'), width: 150 },
         cell: ({ row }) =>
-          row.original.serial ? (
-            <TechText value={row.original.serial} label={t('devices.serial')} />
+          row.original.serialNumber ? (
+            <TechText value={row.original.serialNumber} label={t('devices.serial')} />
           ) : (
             <span className="text-muted-foreground">{t('common.none')}</span>
           ),
       },
       {
+        id: 'unit',
+        accessorFn: (d) => `${d.partnerCode} › ${d.unitCode}`,
+        header: t('devices.unit'),
+        meta: { label: t('devices.unit'), width: 130 },
+      },
+      {
         id: 'site',
-        accessorKey: 'site',
-        header: t('devices.location'),
-        meta: { label: t('devices.location'), width: 240 },
-        cell: ({ row }) => (
+        accessorKey: 'siteCode',
+        header: t('devices.placement'),
+        meta: { label: t('devices.placement'), width: 300 },
+        cell: ({ row: { original: d } }) => (
           <span>
-            {row.original.site}{' '}
-            <span className="text-muted-foreground">› {row.original.location}</span>
+            {d.siteCode}
+            {(d.locationName || d.rackName) && (
+              <span className="text-muted-foreground">
+                {' '}
+                ›{' '}
+                {[d.locationName, d.rackName && `${d.rackName}${d.rackU ? ` U${d.rackU}` : ''}`]
+                  .filter(Boolean)
+                  .join(' › ')}
+              </span>
+            )}
           </span>
         ),
       },
       {
-        id: 'status',
-        accessorKey: 'status',
-        header: t('devices.status'),
-        meta: { label: t('devices.status'), width: 132 },
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+        id: 'lifecycle',
+        accessorKey: 'lifecycle',
+        header: t('devices.lifecycle'),
+        meta: { label: t('devices.lifecycle'), width: 150 },
+        cell: ({ row }) => t(`devices.lifecycleValues.${row.original.lifecycle}`),
       },
       {
         id: 'warrantyEnd',
         accessorKey: 'warrantyEnd',
         header: t('devices.warranty'),
-        meta: { label: t('devices.warranty'), width: 120 },
+        meta: { label: t('devices.warranty'), width: 130 },
         cell: ({ row }) => <WarrantyText date={row.original.warrantyEnd} />,
       },
       {
@@ -237,19 +277,18 @@ export function DeviceListPage() {
         meta: { label: t('devices.firmware'), width: 150 },
       },
       {
-        id: 'mac',
-        accessorKey: 'mac',
-        header: t('devices.mac'),
-        enableSorting: false,
-        meta: { label: t('devices.mac'), width: 170 },
-        cell: ({ row }) => <TechText value={row.original.mac} label={t('devices.mac')} />,
-      },
-      {
         id: 'owner',
-        accessorKey: 'owner',
+        accessorKey: 'ownerName',
         header: t('devices.owner'),
         enableSorting: false,
         meta: { label: t('devices.owner'), width: 150 },
+      },
+      {
+        id: 'tags',
+        accessorFn: (d) => d.tags.join(', '),
+        header: t('devices.tags'),
+        enableSorting: false,
+        meta: { label: t('devices.tags'), width: 160 },
       },
       {
         id: 'actions',
@@ -257,14 +296,30 @@ export function DeviceListPage() {
         enableSorting: false,
         meta: { label: t('common.more'), width: 48, alwaysVisible: true, align: 'right' },
         cell: ({ row }) => (
-          <RowActions device={row.original} onDelete={() => setConfirmDelete(row.original)} />
+          <RowActions
+            device={row.original}
+            onEdit={() => setEditing(row.original)}
+            onDelete={() => setConfirmDelete([row.original])}
+          />
         ),
       },
     ],
     [t],
   )
 
-  const sample = () => toast(t('devices.sampleAction'))
+  const filtered = filter.q !== '' || Object.values(filter.facets).some((v) => v.length > 0)
+  const doDelete = (devices: Device[]) =>
+    del.mutate(
+      devices.map((d) => d.id),
+      {
+        onSuccess: (n) => {
+          toast.success(t('devices.deleted', { count: n }))
+          setSelection({})
+        },
+        onError: (e) => toast.error(e.message),
+        onSettled: () => setConfirmDelete(null),
+      },
+    )
 
   return (
     <div className="space-y-3 p-4">
@@ -272,23 +327,13 @@ export function DeviceListPage() {
         title={t('devices.title')}
         count={list.data?.total}
         actions={
-          <>
-            <Button variant="outline" onClick={sample}>
-              <Download aria-hidden /> {t('devices.export')}
-            </Button>
-            <Button variant="outline" onClick={sample}>
-              <Upload aria-hidden /> {t('devices.import')}
-            </Button>
-            <Button onClick={sample}>
+          access.canAddSites && (
+            <Button onClick={() => setEditing('new')}>
               <Plus aria-hidden /> {t('devices.add')}
             </Button>
-          </>
+          )
         }
       />
-      <Alert className="py-2">
-        <Info aria-hidden />
-        <AlertDescription>{t('devices.sampleBanner')}</AlertDescription>
-      </Alert>
       <DataTable
         tableId="devices"
         userId={userId}
@@ -303,8 +348,8 @@ export function DeviceListPage() {
           />
         }
         columns={columns}
-        defaultHidden={['vendor', 'firmware', 'mac', 'owner']}
-        data={list.data?.items}
+        defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit']}
+        data={rows}
         total={list.data?.total ?? 0}
         isLoading={list.isPending}
         error={list.error}
@@ -319,66 +364,89 @@ export function DeviceListPage() {
         }}
         selection={selection}
         onSelectionChange={setSelection}
-        maxHeight="calc(100vh - 330px)"
+        maxHeight="calc(100vh - 280px)"
         empty={
-          <EmptyState
-            icon={<SearchX />}
-            title={t('devices.emptyTitle')}
-            description={t('devices.emptyBody')}
-            action={
-              <Button variant="outline" onClick={() => changeFilter(emptyFilter)}>
-                {t('filter.clear')}
-              </Button>
-            }
-          />
+          filtered ? (
+            <EmptyState
+              icon={<SearchX />}
+              title={t('devices.emptyTitle')}
+              description={t('devices.emptyBody')}
+              action={
+                <Button variant="outline" onClick={() => changeFilter(emptyFilter)}>
+                  {t('filter.clear')}
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Server />}
+              title={t('devices.noneTitle')}
+              description={t('devices.noneBody')}
+              action={
+                access.canAddSites && (
+                  <Button onClick={() => setEditing('new')}>
+                    <Plus aria-hidden /> {t('devices.add')}
+                  </Button>
+                )
+              }
+            />
+          )
         }
         bulkActions={(ids) => (
           <>
-            <Button variant="outline" size="sm" onClick={sample}>
+            <Button variant="outline" size="sm" onClick={() => setBulkEdit(ids)}>
               {t('devices.bulkEdit')}
             </Button>
-            <Button variant="outline" size="sm" onClick={sample}>
-              {t('devices.bulkSite')}
-            </Button>
-            <Button variant="outline" size="sm" onClick={sample}>
-              {t('devices.bulkExport')}
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => setConfirmBulk(ids)}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() =>
+                setConfirmDelete(ids.map((id) => byId.get(id)).filter((d): d is Device => !!d))
+              }
+            >
               {t('devices.bulkDelete')}
             </Button>
           </>
         )}
       />
 
+      {editing && (
+        <DeviceFormDialog
+          orgId={orgId}
+          device={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onSaved={(d) => editing === 'new' && navigate(d.id)}
+        />
+      )}
+      {bulkEdit && (
+        <BulkEditDialog orgId={orgId} ids={bulkEdit} onClose={() => setBulkEdit(null)} />
+      )}
       <ConfirmDialog
-        open={confirmDelete !== null}
+        open={confirmDelete?.length === 1}
         onOpenChange={(o) => !o && setConfirmDelete(null)}
-        title={t('devices.deleteTitle', { name: confirmDelete?.hostname ?? '' })}
+        title={t('devices.deleteTitle', { name: confirmDelete?.[0]?.hostname ?? '' })}
         description={t('devices.deleteBody')}
         confirmLabel={t('devices.delete')}
-        onConfirm={() => {
-          setConfirmDelete(null)
-          sample()
-        }}
+        pending={del.isPending}
+        onConfirm={() => confirmDelete && doDelete(confirmDelete)}
       />
       <ConfirmDialog
-        open={confirmBulk !== null}
-        onOpenChange={(o) => !o && setConfirmBulk(null)}
-        title={t('devices.bulkDeleteTitle', { count: confirmBulk?.length ?? 0 })}
+        open={(confirmDelete?.length ?? 0) > 1}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title={t('devices.bulkDeleteTitle', { count: confirmDelete?.length ?? 0 })}
         description={t('devices.bulkDeleteBody')}
-        consequences={confirmBulk
+        consequences={confirmDelete
           ?.slice(0, 5)
-          .map((id) => SAMPLE_DEVICES.find((d) => d.id === id)?.hostname ?? id)
+          .map((d) => d.hostname)
           .concat(
-            confirmBulk.length > 5 ? [t('devices.andMore', { count: confirmBulk.length - 5 })] : [],
+            confirmDelete.length > 5
+              ? [t('devices.andMore', { count: confirmDelete.length - 5 })]
+              : [],
           )}
-        confirmText={t('devices.bulkDeleteConfirm', { count: confirmBulk?.length ?? 0 })}
-        confirmLabel={t('devices.bulkDeleteConfirm', { count: confirmBulk?.length ?? 0 })}
-        onConfirm={() => {
-          setConfirmBulk(null)
-          setSelection({})
-          sample()
-        }}
+        confirmText={t('devices.bulkDeleteConfirm', { count: confirmDelete?.length ?? 0 })}
+        confirmLabel={t('devices.bulkDeleteConfirm', { count: confirmDelete?.length ?? 0 })}
+        pending={del.isPending}
+        onConfirm={() => confirmDelete && doDelete(confirmDelete)}
       />
     </div>
   )

@@ -30,7 +30,7 @@ import {
 import { setLanguage } from '@/i18n'
 import { usePreferences } from '@/lib/preferences'
 import { useMembers } from '@/modules/admin/members'
-import { SAMPLE_DEVICES } from '@/modules/inventory/sampleDevices'
+import { useDeviceList } from '@/modules/inventory/devices'
 import { useBusinessUnits, usePartners, useSites } from '@/modules/sites/sites'
 import { OrgAvatar } from './OrgAvatar'
 
@@ -64,6 +64,12 @@ export function CommandPalette({
   const org = useOrganization(orgId)
   const sites = useSites(orgId, open)
   const partners = usePartners(orgId, open)
+  // First 200 devices by hostname; full search (IP, MAC…) is the global search of P1-23.
+  const deviceList = useDeviceList(
+    orgId,
+    { q: '', facets: {}, partnerId: null, unitId: null, sort: null, pageIndex: 0, pageSize: 200 },
+    open,
+  )
   const units = useBusinessUnits(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
@@ -190,12 +196,12 @@ export function CommandPalette({
     : []
 
   const devices: Entry[] = base
-    ? SAMPLE_DEVICES.map((d) => ({
+    ? (deviceList.data?.devices ?? []).map((d) => ({
         key: `d-${d.id}`,
         label: d.hostname,
-        keywords: [d.mgmtIp, d.mac, d.serial, d.partNumber, d.site].join(' '),
+        keywords: [d.serialNumber, d.partNumber, d.model, d.siteCode].join(' '),
         icon: <Server />,
-        hint: <span className="font-mono text-tech text-muted-foreground">{d.mgmtIp}</span>,
+        hint: <span className="font-mono text-tech text-muted-foreground">{d.siteCode}</span>,
         run: go(`${base}/devices/${d.id}`),
       }))
     : []
@@ -223,7 +229,7 @@ export function CommandPalette({
     { heading: t('palette.units'), entries: unitEntries },
     { heading: t('palette.sites'), entries: siteEntries },
     { heading: t('palette.members'), entries: people },
-    { heading: t('palette.devicesSample'), entries: devices },
+    { heading: t('palette.devices'), entries: devices },
     { heading: t('palette.commands'), entries: commands },
   ]
 

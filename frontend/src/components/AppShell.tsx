@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   MapPin,
   Network,
+  ListPlus,
   ScrollText,
   Search,
   Server,
@@ -436,7 +437,12 @@ export function OrgShell() {
         ...(role && role !== 'member'
           ? [{ to: `${base}/members`, label: t('nav.members'), icon: Users }]
           : []),
-        ...(isAdmin ? [{ to: `${base}/audit`, label: t('nav.audit'), icon: ScrollText }] : []),
+        ...(isAdmin
+          ? [
+              { to: `${base}/custom-fields`, label: t('nav.customFields'), icon: ListPlus },
+              { to: `${base}/audit`, label: t('nav.audit'), icon: ScrollText },
+            ]
+          : []),
         ...(session.data?.user.isSystemAdmin
           ? [{ to: '/admin/organizations', label: t('nav.system'), icon: ShieldCheck }]
           : []),

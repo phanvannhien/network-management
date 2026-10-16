@@ -468,7 +468,10 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 	if err != nil {
 		return nil, err
 	}
-	var notFound, forbidden bool
+	var (
+		notFound, forbidden bool
+		conflict            string
+	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, ok, err := loadSite(ctx, q, m, req.SiteId)
 		if err != nil {
@@ -484,6 +487,12 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 			forbidden = true
 			return errRollback
 		}
+		if n, err := q.CountLiveDevicesInSite(ctx, store.CountLiveDevicesInSiteParams{OrganizationID: m.OrgID, SiteID: before.ID}); err != nil {
+			return fmt.Errorf("count site devices: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Site còn %d thiết bị — chuyển hoặc xóa thiết bị trước", n)
+			return errRollback
+		}
 		if _, err := q.SoftDeleteSite(ctx, store.SoftDeleteSiteParams{ID: before.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("delete site: %w", err)
 		}
@@ -495,6 +504,8 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 	switch {
 	case notFound:
 		return apigen.DeleteSite404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgSiteNotFound}}, nil
+	case conflict != "":
+		return apigen.DeleteSite409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: conflict}}, nil
 	case forbidden:
 		return apigen.DeleteSite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin tổ chức hoặc admin của đối tác/đơn vị được xóa site"}}, nil
 	case err != nil:
@@ -779,6 +790,12 @@ func (s *Server) DeleteLocation(ctx context.Context, req apigen.DeleteLocationRe
 			conflict = fmt.Sprintf("Location còn %d location con và %d rack — xóa hoặc chuyển chúng trước", used.Children, used.Racks)
 			return errRollback
 		}
+		if n, err := q.CountLiveDevicesInLocation(ctx, store.CountLiveDevicesInLocationParams{OrganizationID: m.OrgID, LocationID: before.ID}); err != nil {
+			return fmt.Errorf("count location devices: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Location còn %d thiết bị — chuyển thiết bị đi trước", n)
+			return errRollback
+		}
 		if _, err := q.DeleteLocation(ctx, store.DeleteLocationParams{ID: before.ID, OrganizationID: m.OrgID, SiteID: site.ID}); isFKViolation(err) {
 			conflict = "Location đang được dùng"
 			return errRollback
@@ -1055,7 +1072,13 @@ func (s *Server) DeleteRack(ctx context.Context, req apigen.DeleteRackRequestObj
 			readOnly = true
 			return errRollback
 		}
-		// From P1-08 devices reference racks with ON DELETE RESTRICT: a rack holding devices cannot go.
+		// Live devices keep the rack; soft-deleted ones just lose the reference (P1-08).
+		if n, err := q.CountLiveDevicesInRack(ctx, store.CountLiveDevicesInRackParams{OrganizationID: m.OrgID, RackID: before.ID}); err != nil {
+			return fmt.Errorf("count rack devices: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Rack còn %d thiết bị — chuyển thiết bị đi trước", n)
+			return errRollback
+		}
 		if _, err := q.DeleteRack(ctx, store.DeleteRackParams{ID: before.ID, OrganizationID: m.OrgID, SiteID: site.ID}); isFKViolation(err) {
 			conflict = "Rack còn thiết bị — chuyển thiết bị đi trước"
 			return errRollback

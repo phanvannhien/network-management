@@ -92,6 +92,7 @@ export function useDeleteSite(orgId: string) {
 export function useLocations(orgId: string, siteId: string) {
   return useQuery({
     queryKey: keys.locations(orgId, siteId),
+    enabled: siteId !== '',
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/sites/{siteId}/locations', {
         params: { path: { orgId, siteId } },
@@ -142,6 +143,7 @@ export function useLocationMutations(orgId: string, siteId: string) {
 export function useRacks(orgId: string, siteId: string) {
   return useQuery({
     queryKey: keys.racks(orgId, siteId),
+    enabled: siteId !== '',
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/sites/{siteId}/racks', {
         params: { path: { orgId, siteId } },

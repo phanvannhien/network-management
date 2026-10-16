@@ -703,34 +703,6 @@ describe('system health', () => {
 })
 
 describe('app shell and device pages', () => {
-  it('lists sample devices with server-style search and opens a device', async () => {
-    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
-    renderAt(`/o/${ORG_ID}/devices`)
-    expect(await screen.findByRole('heading', { name: 'Thiết bị' })).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: 'AP-DN-01' })).toBeInTheDocument()
-    // Hostname is a regular-weight sans link, IPs are mono.
-    expect(screen.getByRole('link', { name: 'AP-DN-01' }).className).not.toMatch(/font-mono/)
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm kiếm' }), {
-      target: { value: 'FW-HQ' },
-    })
-    await waitFor(() =>
-      expect(screen.queryByRole('link', { name: 'AP-DN-01' })).not.toBeInTheDocument(),
-    )
-    fireEvent.click(await screen.findByRole('link', { name: 'FW-HQ-01' }))
-    expect(await screen.findByRole('heading', { name: 'FW-HQ-01' })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Vị trí trang' })).toHaveTextContent('Thiết bị')
-  })
-
-  it('opens the interfaces tab from ?tab= and masks credentials', async () => {
-    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
-    renderAt(`/o/${ORG_ID}/devices/dev-hq-sw-acc-01?tab=interfaces`)
-    expect(await screen.findByRole('heading', { name: 'SW-ACC-HQ-01' })).toBeInTheDocument()
-    expect(screen.getByText('Gi1/0/1')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('tab', { name: 'Truy cập' }))
-    expect(await screen.findByText(/Mật khẩu SSH: Đã che/)).toBeInTheDocument()
-    expect(screen.queryByText('Sample-Ssh-Pa55w0rd')).not.toBeInTheDocument()
-  })
-
   it('marks the system area with its own band and label', async () => {
     fakeApi({
       'GET /api/auth/me': () => json(SESSION),
@@ -757,17 +729,6 @@ describe('app shell and device pages', () => {
     )
     const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' })
     expect(within(nav).getByRole('link', { name: 'Thiết bị' })).toBeInTheDocument() // icon link keeps its name
-  })
-
-  it('Ctrl+K opens the command palette and jumps to a device', async () => {
-    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
-    renderAt(`/o/${ORG_ID}`)
-    await screen.findByText('Xin chào Admin')
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-    const input = await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…')
-    fireEvent.change(input, { target: { value: '10.72.114.1' } })
-    fireEvent.click(await screen.findByRole('option', { name: /FW-HQ-01/ }))
-    expect(await screen.findByRole('heading', { name: 'FW-HQ-01' })).toBeInTheDocument()
   })
 
   it('shows a 404 page for unknown addresses', async () => {
@@ -1372,5 +1333,169 @@ describe('partner / unit permissions and sharing (P1-07c, ADR-031)', () => {
       unitId: UNIT_ID,
     })
     act(() => useScopeStore.getState().set(ORG_ID, { partnerId: null, unitId: null }))
+  })
+})
+
+describe('device inventory (P1-08)', () => {
+  const DEVICE = {
+    id: 'dev-1',
+    hostname: 'AGRI-BD-FW01',
+    type: 'firewall',
+    vendor: 'Fortinet',
+    model: 'FortiGate 60F',
+    partNumber: 'FG-60F',
+    serialNumber: 'FGT60F0001',
+    assetTag: '',
+    firmware: 'FortiOS 7.4',
+    role: 'edge',
+    lifecycle: 'active',
+    managed: true,
+    ownerName: 'Phạm Hùng',
+    poNumber: '',
+    purchaseDate: null,
+    warrantyEnd: '2027-06-30',
+    licenseEnd: null,
+    eolDate: null,
+    eosDate: null,
+    notes: '',
+    tags: ['edge'],
+    customFields: {},
+    siteId: AGRI_SITE.id,
+    siteCode: 'AGRI-BD01',
+    siteName: 'Nhà máy Bình Định',
+    businessUnitId: UNIT_ID,
+    unitCode: 'MAIN',
+    unitName: 'Agri chính',
+    partnerId: PARTNER_ID,
+    partnerCode: 'AGRI',
+    partnerName: 'Mẫu Agri',
+    locationId: null,
+    locationName: '',
+    rackId: null,
+    rackName: '',
+    rackU: null,
+    uHeight: 1,
+    access: 'edit',
+    version: 3,
+    createdAt: '2026-10-16T00:00:00Z',
+    updatedAt: '2026-10-16T00:00:00Z',
+  }
+  const SWITCH = { ...DEVICE, id: 'dev-2', hostname: 'AGRI-BD-SW01', type: 'l2_switch', tags: [] }
+  const list = (devices: unknown[]) =>
+    json({ devices, total: devices.length, facets: { type: { firewall: 1, l2_switch: 1 } } })
+  const routes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}/devices`]: () => list([DEVICE, SWITCH]),
+      [`GET /api/orgs/${ORG_ID}/devices/dev-1`]: () => json(DEVICE),
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/partners`]: () => json({ partners: [PARTNER] }),
+      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ businessUnits: [UNIT] }),
+      [`GET /api/orgs/${ORG_ID}/custom-fields`]: () => json({ fields: [] }),
+      ...extra,
+    })
+
+  it('lists devices from the API, searches on the server and opens one', async () => {
+    const calls = fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/devices`)
+    expect(await screen.findByRole('link', { name: 'AGRI-BD-SW01' })).toBeInTheDocument()
+    expect(screen.queryByText(/Dữ liệu mẫu/)).not.toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm kiếm' }), {
+      target: { value: 'FW' },
+    })
+    await waitFor(() =>
+      expect(
+        calls.some(
+          (r) => r.url.includes('/devices?') && new URL(r.url).searchParams.get('q') === 'FW',
+        ),
+      ).toBe(true),
+    )
+    const first = calls.find((r) => r.url.includes('/devices?'))!
+    expect(new URL(first.url).searchParams.get('sort')).toBe('hostname')
+    expect(new URL(first.url).searchParams.get('pageSize')).toBe('50')
+    fireEvent.click(screen.getByRole('link', { name: 'AGRI-BD-FW01' }))
+    expect(await screen.findByRole('heading', { name: 'AGRI-BD-FW01' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Vị trí trang' })).toHaveTextContent('Thiết bị')
+  })
+
+  it('a device in a shared site needs an owner unit', async () => {
+    const calls = fakeApi(
+      routes({ [`POST /api/orgs/${ORG_ID}/devices`]: () => json({ ...DEVICE, id: 'dev-9' }, 201) }),
+    )
+    renderAt(`/o/${ORG_ID}/devices`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm thiết bị' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm thiết bị vào Văn phòng mẫu' })
+    fireEvent.change(within(dialog).getByLabelText('Hostname'), { target: { value: 'IDC-FW01' } })
+    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: SITE_ID } })
+    const unit = await within(dialog).findByLabelText('Đơn vị')
+    expect(unit.tagName).toBe('SELECT') // shared site: choose the owner
+    fireEvent.change(unit, { target: { value: UNIT_ID } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/devices')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
+      hostname: 'IDC-FW01',
+      siteId: SITE_ID,
+      businessUnitId: UNIT_ID,
+      locationId: null,
+      rackId: null,
+    })
+  })
+
+  it('bulk edit sends only the changed fields', async () => {
+    const calls = fakeApi(
+      routes({ [`POST /api/orgs/${ORG_ID}/devices/bulk-update`]: () => json({ count: 2 }) }),
+    )
+    renderAt(`/o/${ORG_ID}/devices`)
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Chọn AGRI-BD-FW01' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chọn AGRI-BD-SW01' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sửa hàng loạt' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Sửa 2 thiết bị' })
+    fireEvent.change(within(dialog).getByLabelText('Vòng đời'), { target: { value: 'spare' } })
+    fireEvent.change(within(dialog).getByLabelText('Thêm tag'), { target: { value: 'kho, 2026' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isBulk = (r: Request) => r.url.endsWith('/bulk-update')
+    await waitFor(() => expect(calls.some(isBulk)).toBe(true))
+    expect(await calls.find(isBulk)!.clone().json()).toEqual({
+      ids: ['dev-1', 'dev-2'],
+      lifecycle: 'spare',
+      addTags: ['kho', '2026'],
+    })
+  })
+
+  it('the detail page shows the history and is read-only without edit access', async () => {
+    fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1`]: () => json({ ...DEVICE, access: 'view' }),
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/history`]: () =>
+          json({
+            entries: [
+              {
+                id: 2,
+                at: '2026-10-16T03:00:00Z',
+                action: 'device.update',
+                actorEmail: 'admin@example.com',
+                actorName: 'Admin',
+                before: { lifecycle: 'planned', hostname: 'AGRI-BD-FW01' },
+                after: { lifecycle: 'active', hostname: 'AGRI-BD-FW01' },
+              },
+            ],
+          }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=history`)
+    expect(await screen.findByText('planned → active', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Bạn chỉ có quyền xem thiết bị này')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sửa' })).not.toBeInTheDocument()
+  })
+
+  it('Ctrl+K jumps to a device', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}`)
+    await screen.findByText('Xin chào Admin')
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    const input = await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…')
+    fireEvent.change(input, { target: { value: 'FGT60F' } })
+    fireEvent.click(await screen.findByRole('option', { name: /AGRI-BD-FW01/ }))
+    expect(await screen.findByRole('heading', { name: 'AGRI-BD-FW01' })).toBeInTheDocument()
   })
 })

@@ -1,17 +1,14 @@
-import { Info, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Cable, History, KeyRound, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
-import { useMfaVerify, useSession } from '@/app/auth'
+import { NotFoundPage } from '@/app/NotFoundPage'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { KeyValueList } from '@/components/KeyValueList'
-import { SecretField } from '@/components/SecretField'
-import { StatusBadge } from '@/components/StatusBadge'
 import { TechText } from '@/components/TechText'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -21,17 +18,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatDateTime } from '@/lib/format'
-import { NotFoundPage } from '@/app/NotFoundPage'
+import { formatDate, formatDateTime } from '@/lib/format'
+import { atLeast } from '@/modules/sites/access'
 import { WarrantyText } from './DeviceListPage'
-import { useDevice } from './devices'
+import { DeviceFormDialog } from './DeviceFormDialog'
 import {
-  sampleCredentials,
-  sampleInterfaces,
-  TYPE_LABELS,
-  type SampleDevice,
-  type SampleInterface,
-} from './sampleDevices'
+  useCustomFields,
+  useDeleteDevices,
+  useDevice,
+  useDeviceHistory,
+  type Device,
+  type HistoryEntry,
+} from './devices'
 
 const TABS = [
   'overview',
@@ -45,122 +43,6 @@ const TABS = [
 ] as const
 type Tab = (typeof TABS)[number]
 
-/** Read-only table styled like DataTable, for short per-device lists. */
-function PlainTable({
-  caption,
-  head,
-  children,
-}: {
-  caption: string
-  head: ReactNode[]
-  children: ReactNode
-}) {
-  return (
-    <div className="overflow-auto rounded-lg border border-border bg-card focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
-      <table className="w-full border-separate border-spacing-0 text-table">
-        <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-muted">
-          <tr>
-            {head.map((h, i) => (
-              <th
-                key={i}
-                scope="col"
-                className="h-8 border-b border-border px-cell-x text-left text-label font-medium whitespace-nowrap text-muted-foreground"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="[&_td]:h-row [&_td]:border-b [&_td]:border-border [&_td]:px-cell-x [&_td]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tr:hover]:bg-muted">
-          {children}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function InterfacesTab({ device }: { device: SampleDevice }) {
-  const { t } = useTranslation()
-  const ports: SampleInterface[] = sampleInterfaces(device)
-  return (
-    <PlainTable
-      caption={t('devices.tabInterfaces')}
-      head={[
-        t('devices.port'),
-        t('devices.portType'),
-        t('devices.media'),
-        t('devices.speed'),
-        t('devices.mode'),
-        t('devices.vlan'),
-        t('devices.connectedTo'),
-        t('devices.status'),
-      ]}
-    >
-      {ports.map((p) => (
-        <tr key={p.name}>
-          <td>
-            <TechText value={p.name} label={t('devices.port')} copy={false} />
-          </td>
-          <td>{p.type}</td>
-          <td>{p.media}</td>
-          <td data-numeric>{p.speed}</td>
-          <td>{p.mode}</td>
-          <td>
-            <TechText value={p.vlan} label={t('devices.vlan')} copy={false} />
-          </td>
-          <td>
-            {p.connectedTo ? (
-              <span className="font-medium">{p.connectedTo}</span>
-            ) : (
-              <span className="text-muted-foreground">{t('devices.notConnected')}</span>
-            )}
-          </td>
-          <td>
-            <StatusBadge status={p.status} />
-          </td>
-        </tr>
-      ))}
-    </PlainTable>
-  )
-}
-
-function AccessTab({ device }: { device: SampleDevice }) {
-  const { t } = useTranslation()
-  const session = useSession()
-  const verify = useMfaVerify()
-  const mfa = session.data?.mfa
-  // Sample secrets: the real reveal endpoint (P2-02) checks credential.reveal + recent MFA and audits.
-  // Accounts without MFA have nothing to re-verify in this sample.
-  const [openedAt] = useState(() => new Date().toISOString())
-  const verifiedAt = mfa?.enabled ? mfa.verifiedAt : openedAt
-  return (
-    <PlainTable
-      caption={t('devices.credentials')}
-      head={[t('devices.protocol'), t('devices.username'), t('devices.secretPassword')]}
-    >
-      {sampleCredentials(device).map((c) => (
-        <tr key={c.id}>
-          <td>{c.protocol}</td>
-          <td>
-            <TechText value={c.username} label={t('devices.username')} />
-          </td>
-          <td>
-            <SecretField
-              label={`${t('devices.secretPassword')} ${c.protocol}`}
-              reveal={async () => c.secret}
-              mfaVerifiedAt={verifiedAt}
-              verifyMfa={async (code) => {
-                await verify.mutateAsync({ code })
-              }}
-            />
-          </td>
-        </tr>
-      ))}
-    </PlainTable>
-  )
-}
-
 function DetailSkeleton() {
   return (
     <div className="space-y-4 p-4" aria-busy>
@@ -172,16 +54,94 @@ function DetailSkeleton() {
   )
 }
 
-/** Device detail (DESIGN.md §7b) on sample data until P1-08. Tab is kept in ?tab= for deep links. */
+const none = (v: string | null | undefined, empty: string) => (v ? v : empty)
+
+/** Fields that changed between two audit snapshots, as "field: from → to". */
+function changes(e: HistoryEntry): { field: string; from: string; to: string }[] {
+  if (!e.before || !e.after) return []
+  const show = (v: unknown) =>
+    v === undefined || v === null || v === ''
+      ? '—'
+      : Array.isArray(v)
+        ? v.join(', ') || '—'
+        : typeof v === 'object'
+          ? JSON.stringify(v)
+          : String(v)
+  const keys = new Set([...Object.keys(e.before), ...Object.keys(e.after)])
+  return [...keys]
+    .filter((k) => show(e.before?.[k]) !== show(e.after?.[k]))
+    .map((k) => ({ field: k, from: show(e.before?.[k]), to: show(e.after?.[k]) }))
+}
+
+function HistoryTab({ orgId, deviceId }: { orgId: string; deviceId: string }) {
+  const { t } = useTranslation()
+  const history = useDeviceHistory(orgId, deviceId)
+  if (history.isPending) return <Skeleton className="h-32" />
+  if (history.isError)
+    return (
+      <p role="alert" className="text-destructive">
+        {history.error.message}
+      </p>
+    )
+  if (history.data.length === 0)
+    return (
+      <div className="rounded-lg border border-border bg-card">
+        <EmptyState icon={<History />} title={t('devices.historyEmpty')} />
+      </div>
+    )
+  return (
+    <ol className="divide-y divide-border rounded-lg border border-border bg-card">
+      {history.data.map((e) => (
+        <li key={e.id} className="space-y-1 px-3 py-2">
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="font-medium">
+              {t(`devices.historyActions.${e.action as 'device.update'}`, {
+                defaultValue: e.action,
+              })}
+            </span>
+            <span className="text-muted-foreground">
+              {t('devices.historyBy', {
+                who: e.actorName || e.actorEmail || '—',
+                when: formatDateTime(e.at),
+              })}
+            </span>
+          </div>
+          {changes(e).length > 0 && (
+            <ul className="text-muted-foreground">
+              {changes(e).map((c) => (
+                <li key={c.field}>
+                  <span className="font-mono text-tech">{c.field}</span>: {c.from} → {c.to}
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function Soon({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card">
+      <EmptyState icon={icon} title={text} />
+    </div>
+  )
+}
+
+/** Device detail (P1-08, DESIGN.md §7b). Tab is kept in ?tab= for deep links. */
 export function DeviceDetailPage() {
   const { t } = useTranslation()
   const { orgId = '', deviceId = '' } = useParams()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
+  const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const device = useDevice(orgId, deviceId)
+  const fields = useCustomFields(orgId)
+  const del = useDeleteDevices(orgId)
   const tab: Tab = TABS.includes(params.get('tab') as Tab) ? (params.get('tab') as Tab) : 'overview'
-  const d = device.data
+  const d: Device | null | undefined = device.data
   useBreadcrumbs([
     { label: t('nav.devices'), to: `/o/${orgId}/devices` },
     { label: d?.hostname ?? '…' },
@@ -190,12 +150,19 @@ export function DeviceDetailPage() {
   if (device.isPending) return <DetailSkeleton />
   if (!d) return <NotFoundPage inShell />
 
-  const sample = () => toast(t('devices.sampleAction'))
-  const ports = sampleInterfaces(d)
-  const statusLabel =
-    d.status === 'down' || d.status === 'warning'
-      ? `${t(`status.${d.status}`)} · ${t('devices.since', { time: formatDateTime(d.statusSince) })}`
-      : undefined
+  const dash = t('common.none')
+  const canEdit = atLeast(d.access, 'edit')
+  const tech = (v: string, label: string) =>
+    v ? <TechText value={v} label={label} /> : <span className="text-muted-foreground">{dash}</span>
+  const date = (v: string | null) => (v ? formatDate(v) : dash)
+  const customValue = (v: unknown) =>
+    v === undefined || v === null || v === ''
+      ? dash
+      : typeof v === 'boolean'
+        ? v
+          ? t('devices.yes')
+          : t('devices.no')
+        : String(v)
 
   return (
     <div className="space-y-4 p-4">
@@ -207,71 +174,60 @@ export function DeviceDetailPage() {
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="text-title font-semibold">{d.hostname}</h1>
-              <StatusBadge status={d.status} label={statusLabel} />
               <span className="text-muted-foreground">
-                {d.site} › {d.location}
-                {d.rack && ` › ${d.rack}`}
+                <Link to={`/o/${orgId}/sites/${d.siteId}`} className="hover:underline">
+                  {d.siteCode}
+                </Link>
+                {d.locationName && ` › ${d.locationName}`}
+                {d.rackName && ` › ${d.rackName}${d.rackU ? ` U${d.rackU}` : ''}`}
               </span>
             </div>
             <p className="text-muted-foreground">
-              {TYPE_LABELS[d.type]} · {d.role} · {t(`devices.lifecycleValues.${d.lifecycle}`)}
+              {t(`devices.types.${d.type}`)} · {t(`devices.lifecycleValues.${d.lifecycle}`)} ·{' '}
+              {d.partnerCode} › {d.unitCode}
+              {!d.managed && ` · ${t('devices.external')}`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/editor')}>
-            <Network aria-hidden /> {t('devices.openDiagram')}
-          </Button>
-          <Button variant="outline" onClick={sample}>
-            <Pencil aria-hidden /> {t('devices.edit')}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
-            >
-              <MoreHorizontal aria-hidden />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDelete(true)}>
-                {t('devices.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {canEdit ? (
+            <>
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                <Pencil aria-hidden /> {t('devices.edit')}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" size="icon" aria-label={t('common.more')} />}
+                >
+                  <MoreHorizontal aria-hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem variant="destructive" onClick={() => setConfirmDelete(true)}>
+                    {t('devices.delete')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <span className="text-muted-foreground">{t('devices.readOnly')}</span>
+          )}
         </div>
       </header>
 
-      <Alert className="py-2">
-        <Info aria-hidden />
-        <AlertDescription>{t('devices.sampleBanner')}</AlertDescription>
-      </Alert>
-
       <section
-        aria-label={t('devices.tabOverview')}
+        aria-label={t('devices.groupIdentity')}
         className="rounded-lg border border-border bg-card p-3"
       >
         <KeyValueList
           columns={4}
           items={[
-            { label: t('devices.model'), value: d.model },
-            {
-              label: t('devices.partNumber'),
-              value: <TechText value={d.partNumber} label={t('devices.partNumber')} />,
-            },
-            {
-              label: t('devices.serial'),
-              value: d.serial ? (
-                <TechText value={d.serial} label={t('devices.serial')} />
-              ) : (
-                <span className="text-muted-foreground">{t('common.none')}</span>
-              ),
-            },
-            { label: t('devices.vendor'), value: d.vendor },
-            {
-              label: t('devices.mgmtIp'),
-              value: <TechText value={`${d.mgmtIp}/${d.prefix}`} label={t('devices.mgmtIp')} />,
-            },
-            { label: t('devices.firmware'), value: d.firmware },
-            { label: t('devices.mac'), value: <TechText value={d.mac} label={t('devices.mac')} /> },
+            { label: t('devices.vendor'), value: none(d.vendor, dash) },
+            { label: t('devices.model'), value: none(d.model, dash) },
+            { label: t('devices.partNumber'), value: tech(d.partNumber, t('devices.partNumber')) },
+            { label: t('devices.serial'), value: tech(d.serialNumber, t('devices.serial')) },
+            { label: t('devices.assetTag'), value: none(d.assetTag, dash) },
+            { label: t('devices.firmware'), value: none(d.firmware, dash) },
+            { label: t('devices.role'), value: t(`devices.roleValues.${d.role}`) },
             { label: t('devices.warranty'), value: <WarrantyText date={d.warrantyEnd} /> },
           ]}
         />
@@ -280,12 +236,7 @@ export function DeviceDetailPage() {
       <Tabs value={tab} onValueChange={(v) => setParams({ tab: String(v) }, { replace: true })}>
         <TabsList variant="line" className="w-full justify-start border-b border-border">
           <TabsTrigger value="overview">{t('devices.tabOverview')}</TabsTrigger>
-          <TabsTrigger value="interfaces">
-            {t('devices.tabInterfaces')}{' '}
-            <span className="text-muted-foreground" data-numeric>
-              {ports.length}
-            </span>
-          </TabsTrigger>
+          <TabsTrigger value="interfaces">{t('devices.tabInterfaces')}</TabsTrigger>
           <TabsTrigger value="ips">{t('devices.tabIps')}</TabsTrigger>
           <TabsTrigger value="links">{t('devices.tabLinks')}</TabsTrigger>
           <TabsTrigger value="access">{t('devices.tabAccess')}</TabsTrigger>
@@ -293,52 +244,110 @@ export function DeviceDetailPage() {
           <TabsTrigger value="diagrams">{t('devices.tabDiagrams')}</TabsTrigger>
           <TabsTrigger value="history">{t('devices.tabHistory')}</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="pt-3">
+        <TabsContent value="overview" className="space-y-3 pt-3">
           <div className="rounded-lg border border-border bg-card p-3">
             <KeyValueList
               columns={2}
+              wrap
               items={[
-                { label: t('devices.site'), value: d.site },
-                { label: t('devices.rack'), value: d.rack ?? t('common.none') },
-                { label: t('devices.owner'), value: d.owner },
                 {
-                  label: t('devices.tags'),
-                  value: d.tags.length ? d.tags.join(', ') : t('common.none'),
+                  label: t('devices.unit'),
+                  value: `${d.partnerCode} › ${d.unitCode} · ${d.unitName}`,
                 },
-                { label: t('devices.role'), value: d.role },
+                { label: t('devices.site'), value: `${d.siteCode} · ${d.siteName}` },
+                { label: t('devices.location'), value: none(d.locationName, dash) },
                 {
-                  label: t('devices.lifecycle'),
-                  value: t(`devices.lifecycleValues.${d.lifecycle}`),
+                  label: t('devices.rack'),
+                  value: d.rackName
+                    ? `${d.rackName}${
+                        d.rackU
+                          ? d.uHeight > 1
+                            ? ` · U${d.rackU}–U${d.rackU + d.uHeight - 1}`
+                            : ` · U${d.rackU}`
+                          : ''
+                      }`
+                    : dash,
                 },
+                { label: t('devices.owner'), value: none(d.ownerName, dash) },
+                { label: t('devices.tags'), value: d.tags.length ? d.tags.join(', ') : dash },
+                { label: t('devices.notes'), value: none(d.notes, dash) },
               ]}
             />
           </div>
+          {(fields.data ?? []).length > 0 && (
+            <section
+              aria-label={t('devices.groupCustom')}
+              className="rounded-lg border border-border bg-card p-3"
+            >
+              <h2 className="mb-2 text-sm font-semibold">{t('devices.groupCustom')}</h2>
+              <KeyValueList
+                columns={2}
+                wrap
+                items={(fields.data ?? []).map((f) => ({
+                  label: f.label,
+                  value: customValue(d.customFields[f.key]),
+                }))}
+              />
+            </section>
+          )}
         </TabsContent>
         <TabsContent value="interfaces" className="pt-3">
-          <InterfacesTab device={d} />
+          <Soon icon={<Cable />} text={t('devices.interfacesSoon')} />
+        </TabsContent>
+        <TabsContent value="ips" className="pt-3">
+          <Soon icon={<Cable />} text={t('devices.interfacesSoon')} />
+        </TabsContent>
+        <TabsContent value="links" className="pt-3">
+          <Soon icon={<Network />} text={t('devices.linksSoon')} />
         </TabsContent>
         <TabsContent value="access" className="pt-3">
-          <AccessTab device={d} />
+          <Soon icon={<KeyRound />} text={t('devices.accessSoon')} />
         </TabsContent>
-        {(['ips', 'links', 'contracts', 'diagrams', 'history'] as const).map((v) => (
-          <TabsContent key={v} value={v} className="pt-3">
-            <div className="rounded-lg border border-border bg-card">
-              <EmptyState title={t('devices.comingSoon')} />
-            </div>
-          </TabsContent>
-        ))}
+        <TabsContent value="contracts" className="space-y-2 pt-3">
+          <div className="rounded-lg border border-border bg-card p-3">
+            <KeyValueList
+              columns={2}
+              wrap
+              items={[
+                { label: t('devices.purchaseDate'), value: date(d.purchaseDate) },
+                { label: t('devices.poNumber'), value: none(d.poNumber, dash) },
+                { label: t('devices.warranty'), value: <WarrantyText date={d.warrantyEnd} /> },
+                { label: t('devices.licenseEnd'), value: date(d.licenseEnd) },
+                { label: t('devices.eolDate'), value: date(d.eolDate) },
+                { label: t('devices.eosDate'), value: date(d.eosDate) },
+              ]}
+            />
+          </div>
+          <p className="text-muted-foreground">{t('devices.contractsHint')}</p>
+        </TabsContent>
+        <TabsContent value="diagrams" className="pt-3">
+          <Soon icon={<Network />} text={t('devices.diagramsSoon')} />
+        </TabsContent>
+        <TabsContent value="history" className="pt-3">
+          {tab === 'history' && <HistoryTab orgId={orgId} deviceId={d.id} />}
+        </TabsContent>
       </Tabs>
 
+      {editing && <DeviceFormDialog orgId={orgId} device={d} onClose={() => setEditing(false)} />}
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={t('devices.deleteTitle', { name: d.hostname })}
         description={t('devices.deleteBody')}
         confirmLabel={t('devices.delete')}
-        onConfirm={() => {
-          setConfirmDelete(false)
-          sample()
-        }}
+        pending={del.isPending}
+        onConfirm={() =>
+          del.mutate([d.id], {
+            onSuccess: () => {
+              toast.success(t('devices.deleted', { count: 1 }))
+              navigate(`/o/${orgId}/devices`, { replace: true })
+            },
+            onError: (e) => {
+              setConfirmDelete(false)
+              toast.error(e.message)
+            },
+          })
+        }
       />
     </div>
   )

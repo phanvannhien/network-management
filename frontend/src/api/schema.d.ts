@@ -697,6 +697,154 @@ export interface paths {
         patch: operations["updateRack"];
         trace?: never;
     };
+    "/orgs/{orgId}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Devices visible to the caller, server-side filtered / sorted / paginated (P1-08) */
+        get: operations["listDevices"];
+        put?: never;
+        /** Create a device (edit access on its unit) */
+        post: operations["createDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/bulk-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change lifecycle / role / owner / tags of many devices at once (all or nothing) */
+        post: operations["bulkUpdateDevices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Soft-delete many devices at once (all or nothing) */
+        post: operations["bulkDeleteDevices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        /** One device */
+        get: operations["getDevice"];
+        put?: never;
+        post?: never;
+        /** Soft-delete a device */
+        delete: operations["deleteDevice"];
+        options?: never;
+        head?: never;
+        /** Update a device (optimistic lock on version) */
+        patch: operations["updateDevice"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        /** Audit entries of the device, newest first */
+        get: operations["getDeviceHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/custom-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Custom device fields of the organization */
+        get: operations["listCustomFields"];
+        put?: never;
+        /** Declare a custom field (owner/admin) */
+        post: operations["createCustomField"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/custom-fields/{fieldId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fieldId: components["parameters"]["FieldId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a custom field (stored values are kept but no longer shown) */
+        delete: operations["deleteCustomField"];
+        options?: never;
+        head?: never;
+        /** Change a custom field (key and kind are fixed) */
+        patch: operations["updateCustomField"];
+        trace?: never;
+    };
     "/orgs/{orgId}/audit": {
         parameters: {
             query?: never;
@@ -1398,6 +1546,215 @@ export interface components {
         AdminUserList: {
             users: components["schemas"]["AdminUser"][];
         };
+        /** @enum {string} */
+        DeviceType: "router" | "l3_switch" | "l2_switch" | "poe_switch" | "firewall" | "load_balancer" | "wireless_controller" | "access_point" | "vpn_gateway" | "ids_ips" | "waf" | "nac" | "proxy" | "media_converter" | "patch_panel" | "modem" | "ont" | "sdwan_edge" | "server" | "vm" | "nas" | "pc" | "laptop" | "printer" | "ip_camera" | "nvr" | "ip_phone" | "pbx" | "access_control" | "video_conference" | "iot" | "ups" | "pdu" | "other";
+        /** @enum {string} */
+        DeviceRole: "none" | "core" | "distribution" | "access" | "edge" | "dmz" | "oob";
+        /** @enum {string} */
+        DeviceLifecycle: "planned" | "active" | "spare" | "rma" | "retired";
+        DeviceInput: {
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            vendor?: string;
+            model?: string;
+            partNumber?: string;
+            serialNumber?: string;
+            assetTag?: string;
+            firmware?: string;
+            role?: components["schemas"]["DeviceRole"];
+            lifecycle?: components["schemas"]["DeviceLifecycle"];
+            /** @description false = belongs to someone else (e.g. the ISP's modem) */
+            managed?: boolean;
+            /** @description Person in charge */
+            ownerName?: string;
+            poNumber?: string;
+            /** Format: date */
+            purchaseDate?: string | null;
+            /** Format: date */
+            warrantyEnd?: string | null;
+            /** Format: date */
+            licenseEnd?: string | null;
+            /** Format: date */
+            eolDate?: string | null;
+            /** Format: date */
+            eosDate?: string | null;
+            notes?: string;
+            tags?: string[];
+            /** @description Values by custom field key (string, number, boolean or ISO date) */
+            customFields?: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            siteId: string;
+            /**
+             * Format: uuid
+             * @description Owner unit; null = the site's unit (required for shared sites, ADR-026)
+             */
+            businessUnitId?: string | null;
+            /** Format: uuid */
+            locationId?: string | null;
+            /** Format: uuid */
+            rackId?: string | null;
+            /**
+             * Format: int32
+             * @description Lowest U the device occupies
+             */
+            rackU?: number | null;
+            /** Format: int32 */
+            uHeight?: number;
+        };
+        DeviceUpdate: components["schemas"]["DeviceInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        Device: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            vendor: string;
+            model: string;
+            partNumber: string;
+            serialNumber: string;
+            assetTag: string;
+            firmware: string;
+            role: components["schemas"]["DeviceRole"];
+            lifecycle: components["schemas"]["DeviceLifecycle"];
+            /** @description false = belongs to someone else (e.g. the ISP's modem) */
+            managed: boolean;
+            /** @description Person in charge */
+            ownerName: string;
+            poNumber: string;
+            /** Format: date */
+            purchaseDate: string | null;
+            /** Format: date */
+            warrantyEnd: string | null;
+            /** Format: date */
+            licenseEnd: string | null;
+            /** Format: date */
+            eolDate: string | null;
+            /** Format: date */
+            eosDate: string | null;
+            notes: string;
+            tags: string[];
+            /** @description Values by custom field key (string, number, boolean or ISO date) */
+            customFields: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            siteId: string;
+            /** Format: uuid */
+            businessUnitId: string;
+            /** Format: uuid */
+            locationId: string | null;
+            /** Format: uuid */
+            rackId: string | null;
+            /**
+             * Format: int32
+             * @description Lowest U the device occupies
+             */
+            rackU: number | null;
+            /** Format: int32 */
+            uHeight: number;
+            siteCode: string;
+            siteName: string;
+            unitCode: string;
+            unitName: string;
+            /** Format: uuid */
+            partnerId: string;
+            partnerCode: string;
+            partnerName: string;
+            locationName: string;
+            rackName: string;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        DeviceList: {
+            devices: components["schemas"]["Device"][];
+            /** Format: int64 */
+            total: number;
+            /** @description Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet */
+            facets: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+        };
+        DeviceIds: {
+            ids: string[];
+        };
+        /** @description Only the fields present are changed */
+        DeviceBulkUpdate: {
+            ids: string[];
+            lifecycle?: components["schemas"]["DeviceLifecycle"];
+            role?: components["schemas"]["DeviceRole"];
+            ownerName?: string;
+            managed?: boolean;
+            addTags?: string[];
+            removeTags?: string[];
+        };
+        DeviceBulkResult: {
+            /** Format: int64 */
+            count: number;
+        };
+        DeviceHistory: {
+            entries: {
+                /** Format: int64 */
+                id: number;
+                /** Format: date-time */
+                at: string;
+                action: string;
+                actorEmail: string;
+                actorName: string;
+                before: {
+                    [key: string]: unknown;
+                } | null;
+                after: {
+                    [key: string]: unknown;
+                } | null;
+            }[];
+        };
+        /** @enum {string} */
+        CustomFieldKind: "text" | "number" | "date" | "boolean" | "select";
+        CustomField: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            label: string;
+            kind: components["schemas"]["CustomFieldKind"];
+            options: string[];
+            required: boolean;
+            /** Format: int32 */
+            sortOrder: number;
+            /** Format: int32 */
+            version: number;
+        };
+        CustomFieldList: {
+            fields: components["schemas"]["CustomField"][];
+        };
+        CustomFieldInput: {
+            key: string;
+            label: string;
+            kind: components["schemas"]["CustomFieldKind"];
+            options?: string[];
+            required?: boolean;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        CustomFieldUpdate: {
+            label: string;
+            options?: string[];
+            required?: boolean;
+            /** Format: int32 */
+            sortOrder?: number;
+            /** Format: int32 */
+            version: number;
+        };
     };
     responses: {
         /** @description Not found (also returned for organizations the caller does not belong to) */
@@ -1461,6 +1818,21 @@ export interface components {
         OrgId: string;
         /** @description 1-based page number */
         AuditPageNumber: number;
+        /** @description Substring of hostname, serial, part number, model or asset tag */
+        DeviceQuery: string;
+        DevicePartnerFilter: string;
+        DeviceUnitFilter: string;
+        DeviceSiteFilter: string[];
+        DeviceTypeFilter: components["schemas"]["DeviceType"][];
+        DeviceVendorFilter: string[];
+        DeviceLifecycleFilter: components["schemas"]["DeviceLifecycle"][];
+        DeviceRoleFilter: components["schemas"]["DeviceRole"][];
+        /** @description Devices carrying any of the tags */
+        DeviceTagFilter: string[];
+        DeviceSort: "hostname" | "type" | "vendor" | "model" | "serial" | "site" | "unit" | "lifecycle" | "warrantyEnd";
+        DeviceSortDesc: boolean;
+        DeviceId: string;
+        FieldId: string;
         AuditPageSize: number;
         /** @description Case-insensitive text in action, object id or actor email */
         AuditQuery: string;
@@ -3238,6 +3610,393 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Rack"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listDevices: {
+        parameters: {
+            query?: {
+                /** @description Substring of hostname, serial, part number, model or asset tag */
+                q?: components["parameters"]["DeviceQuery"];
+                partnerId?: components["parameters"]["DevicePartnerFilter"];
+                businessUnitId?: components["parameters"]["DeviceUnitFilter"];
+                siteId?: components["parameters"]["DeviceSiteFilter"];
+                type?: components["parameters"]["DeviceTypeFilter"];
+                vendor?: components["parameters"]["DeviceVendorFilter"];
+                lifecycle?: components["parameters"]["DeviceLifecycleFilter"];
+                role?: components["parameters"]["DeviceRoleFilter"];
+                /** @description Devices carrying any of the tags */
+                tag?: components["parameters"]["DeviceTagFilter"];
+                sort?: components["parameters"]["DeviceSort"];
+                desc?: components["parameters"]["DeviceSortDesc"];
+                /** @description 1-based page number */
+                page?: components["parameters"]["AuditPageNumber"];
+                pageSize?: components["parameters"]["AuditPageSize"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDevice: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    bulkUpdateDevices: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceBulkUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceBulkResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    bulkDeleteDevices: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceIds"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceBulkResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteDevice: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateDevice: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getDeviceHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHistory"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listCustomFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomFieldList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createCustomField: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomFieldInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomField"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteCustomField: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fieldId: components["parameters"]["FieldId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateCustomField: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fieldId: components["parameters"]["FieldId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomFieldUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomField"];
                 };
             };
             400: components["responses"]["BadRequest"];

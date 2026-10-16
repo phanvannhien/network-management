@@ -5,6 +5,40 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-08 Kho thiết bị
+- Đã làm:
+  - **Migration 000011:** bảng `devices` theo SRS §4.1 (nhận dạng, vị trí đơn vị/site/location/rack + U, vận hành, vòng đời
+    planned/active/spare/rma/retired, `managed`, mua sắm & hỗ trợ dạng ngày, tag, custom fields JSON) với FK ghép theo tổ chức và
+    theo site (location/rack phải thuộc đúng site); hostname duy nhất trong tổ chức (không phân biệt hoa thường, chỉ thiết bị chưa
+    xóa); `custom_field_defs` (text/number/date/boolean/select, bắt buộc, thứ tự).
+  - **Quy tắc:** thiết bị ở site của đơn vị thì thuộc đơn vị đó; ở site dùng chung phải chọn đơn vị sở hữu (ADR-026). Chọn rack thì
+    location theo rack; kiểm tra chồng U và vượt chiều cao rack. Xóa site/location/rack/đơn vị còn thiết bị → 409.
+  - **Quyền (ADR-031):** thấy thiết bị khi đơn vị của nó được giao (trực tiếp/qua đối tác) hoặc site của nó nhìn thấy được (kể cả
+    share) — lọc trong SQL. Sửa: quyền sửa ở đơn vị, hoặc share sửa của site. Chuyển đơn vị/site và xóa cần quyền sửa trực tiếp ở
+    đơn vị (không qua share).
+  - **API:** danh sách phân trang + lọc (q, đối tác, đơn vị, site, loại, hãng, vòng đời, vai trò, tag) + sắp xếp ở server, kèm số
+    đếm cho từng bộ lọc; CRUD có khóa version; sửa hàng loạt (vòng đời, vai trò, phụ trách, quản lý, thêm/bỏ tag) và xóa hàng loạt
+    theo kiểu tất cả hoặc không; lịch sử thiết bị từ audit; CRUD trường tùy biến (owner/admin). Audit `device.*`, `custom_field.*`.
+  - **Giao diện:** trang Thiết bị dùng dữ liệu thật (bỏ dữ liệu mẫu — chỉ còn trong thư viện giao diện dev); bộ chọn đối tác/đơn vị
+    trên topbar áp vào danh sách; form thêm/sửa đủ nhóm trường + trường tùy biến; sửa/xóa hàng loạt; trang chi tiết có Tổng quan,
+    Hợp đồng & bảo hành (các ngày), Lịch sử (ai, khi nào, đổi gì); các tab Interface/IP/Kết nối/Truy cập/Sơ đồ ghi rõ task sẽ có
+    dữ liệu; trang "Trường tùy biến" trong Quản trị; Ctrl+K tìm thiết bị thật.
+- Test / cách kiểm tra:
+  - Go `device_test.go`: test chéo tổ chức cho mọi endpoint thiết bị và trường tùy biến; quy tắc (hostname trùng, site dùng chung,
+    location/rack khác site, chồng U, trường tùy biến sai kiểu/thiếu bắt buộc); lọc/sắp xếp/phân trang/số đếm; quyền theo
+    đối tác/đơn vị và share (thấy, sửa, không chiếm/không xóa qua share); hàng loạt tất cả-hoặc-không; chặn xóa site/rack/
+    location/đơn vị còn thiết bị; audit. Mutation check 15 điểm backend + 5 điểm frontend — đều bị test bắt.
+  - Vitest 162 pass (5 test mới cho thiết bị). Ảnh chụp + axe 6 trang × sáng/tối (owner và partner_admin): 0 lỗi. `make check` pass.
+  - Dev DB: chạy `make migrate-up` (000011) rồi khởi động lại `make dev-api`.
+- Còn dở / lỗi đã biết:
+  - IP quản trị, interface, MAC chưa có (P1-09) nên cột IP quản trị tạm bỏ khỏi danh sách.
+  - Tag lưu dạng mảng trên thiết bị (SRS §13 ghi bảng `tags`); đủ cho lọc/sửa hàng loạt — nếu cần quản lý tag riêng (màu, đổi tên
+    hàng loạt) sẽ tách bảng sau.
+  - Xuất/nhập Excel thuộc P1-21/P1-22; "khôi phục trong 30 ngày" chưa có giao diện (dữ liệu vẫn xóa mềm).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-09** Template & interface.
+
 ## 2026-10-16 — P1-07c Phân quyền theo đối tác/đơn vị & chia sẻ (ADR-029, ADR-031)
 - Đã làm:
   - **Migration 000010:** `partner_members` (partner_admin/editor/viewer), `business_unit_members` (unit_admin/editor/viewer),

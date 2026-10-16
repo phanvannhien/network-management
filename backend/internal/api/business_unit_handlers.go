@@ -273,6 +273,13 @@ func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusine
 			conflict = fmt.Sprintf("Đơn vị còn %d site — chuyển hoặc xóa các site trước", before.SiteCount)
 			return errRollback
 		}
+		// Devices of the unit may sit in shared sites (ADR-026).
+		if n, err := q.CountLiveDevicesOfUnit(ctx, store.CountLiveDevicesOfUnitParams{OrganizationID: m.OrgID, BusinessUnitID: before.ID}); err != nil {
+			return fmt.Errorf("count unit devices: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Đơn vị còn %d thiết bị — chuyển hoặc xóa thiết bị trước", n)
+			return errRollback
+		}
 		if _, err := q.SoftDeleteBusinessUnit(ctx, store.SoftDeleteBusinessUnitParams{ID: before.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("delete business unit: %w", err)
 		}

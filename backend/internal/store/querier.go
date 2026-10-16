@@ -22,6 +22,11 @@ type Querier interface {
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
+	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
+	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
+	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
+	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
+	CountLiveDevicesOfUnit(ctx context.Context, arg CountLiveDevicesOfUnitParams) (int64, error)
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
@@ -29,6 +34,8 @@ type Querier interface {
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error)
+	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
+	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
@@ -41,6 +48,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
+	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
 	DeleteLocation(ctx context.Context, arg DeleteLocationParams) (int64, error)
 	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
@@ -52,11 +60,15 @@ type Querier interface {
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
 	DeleteUnitMember(ctx context.Context, arg DeleteUnitMemberParams) (int64, error)
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
+	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
+	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
 	// Grant-only users join the organization with role 'member'; existing memberships are kept as they are.
 	// Returns true when the membership was created by this call.
 	EnsureMembership(ctx context.Context, arg EnsureMembershipParams) (bool, error)
 	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
+	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
+	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
 	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
 	// Organizations and memberships (P1-03, ADR-016, ADR-023).
@@ -85,6 +97,12 @@ type Querier interface {
 	ListAccessGrants(ctx context.Context, arg ListAccessGrantsParams) ([]ListAccessGrantsRow, error)
 	// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
 	ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error)
+	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
+	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
+	ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryParams) ([]ListDeviceHistoryRow, error)
+	// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
+	// see devices of their granted units plus every device in a site visible to them.
+	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
@@ -113,6 +131,8 @@ type Querier interface {
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
+	// Live devices placed in a rack (for U overlap checks and the rack view).
+	RackOccupancy(ctx context.Context, arg RackOccupancyParams) ([]RackOccupancyRow, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
 	// ADR-030/031: site codes carry the partner code; renaming the partner renames the prefix of its live sites.
@@ -123,11 +143,14 @@ type Querier interface {
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusinessUnitParams) (BusinessUnit, error)
+	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) (int64, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeletePartner(ctx context.Context, arg SoftDeletePartnerParams) (Partner, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
 	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
+	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
+	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).

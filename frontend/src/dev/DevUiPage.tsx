@@ -27,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ORG_COLORS } from '@/lib/orgAvatar'
 import { usePreferences } from '@/lib/preferences'
-import { SAMPLE_DEVICES, TYPE_LABELS, type SampleDevice } from '@/modules/inventory/sampleDevices'
+import { SAMPLE_DEVICES, TYPE_LABELS, type SampleDevice } from './sampleDevices'
 
 const STATUSES: Status[] = ['up', 'down', 'warning', 'unknown', 'planned', 'notMonitored']
 const FAKE_ORGS = [

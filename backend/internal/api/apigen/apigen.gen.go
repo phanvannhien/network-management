@@ -56,6 +56,207 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 	}
 }
 
+// Defines values for CustomFieldKind.
+const (
+	Boolean CustomFieldKind = "boolean"
+	Date    CustomFieldKind = "date"
+	Number  CustomFieldKind = "number"
+	Select  CustomFieldKind = "select"
+	Text    CustomFieldKind = "text"
+)
+
+// Valid indicates whether the value is a known member of the CustomFieldKind enum.
+func (e CustomFieldKind) Valid() bool {
+	switch e {
+	case Boolean:
+		return true
+	case Date:
+		return true
+	case Number:
+		return true
+	case Select:
+		return true
+	case Text:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeviceLifecycle.
+const (
+	Active  DeviceLifecycle = "active"
+	Planned DeviceLifecycle = "planned"
+	Retired DeviceLifecycle = "retired"
+	Rma     DeviceLifecycle = "rma"
+	Spare   DeviceLifecycle = "spare"
+)
+
+// Valid indicates whether the value is a known member of the DeviceLifecycle enum.
+func (e DeviceLifecycle) Valid() bool {
+	switch e {
+	case Active:
+		return true
+	case Planned:
+		return true
+	case Retired:
+		return true
+	case Rma:
+		return true
+	case Spare:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeviceRole.
+const (
+	Access       DeviceRole = "access"
+	Core         DeviceRole = "core"
+	Distribution DeviceRole = "distribution"
+	Dmz          DeviceRole = "dmz"
+	Edge         DeviceRole = "edge"
+	None         DeviceRole = "none"
+	Oob          DeviceRole = "oob"
+)
+
+// Valid indicates whether the value is a known member of the DeviceRole enum.
+func (e DeviceRole) Valid() bool {
+	switch e {
+	case Access:
+		return true
+	case Core:
+		return true
+	case Distribution:
+		return true
+	case Dmz:
+		return true
+	case Edge:
+		return true
+	case None:
+		return true
+	case Oob:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeviceType.
+const (
+	DeviceTypeAccessControl      DeviceType = "access_control"
+	DeviceTypeAccessPoint        DeviceType = "access_point"
+	DeviceTypeFirewall           DeviceType = "firewall"
+	DeviceTypeIdsIps             DeviceType = "ids_ips"
+	DeviceTypeIot                DeviceType = "iot"
+	DeviceTypeIpCamera           DeviceType = "ip_camera"
+	DeviceTypeIpPhone            DeviceType = "ip_phone"
+	DeviceTypeL2Switch           DeviceType = "l2_switch"
+	DeviceTypeL3Switch           DeviceType = "l3_switch"
+	DeviceTypeLaptop             DeviceType = "laptop"
+	DeviceTypeLoadBalancer       DeviceType = "load_balancer"
+	DeviceTypeMediaConverter     DeviceType = "media_converter"
+	DeviceTypeModem              DeviceType = "modem"
+	DeviceTypeNac                DeviceType = "nac"
+	DeviceTypeNas                DeviceType = "nas"
+	DeviceTypeNvr                DeviceType = "nvr"
+	DeviceTypeOnt                DeviceType = "ont"
+	DeviceTypeOther              DeviceType = "other"
+	DeviceTypePatchPanel         DeviceType = "patch_panel"
+	DeviceTypePbx                DeviceType = "pbx"
+	DeviceTypePc                 DeviceType = "pc"
+	DeviceTypePdu                DeviceType = "pdu"
+	DeviceTypePoeSwitch          DeviceType = "poe_switch"
+	DeviceTypePrinter            DeviceType = "printer"
+	DeviceTypeProxy              DeviceType = "proxy"
+	DeviceTypeRouter             DeviceType = "router"
+	DeviceTypeSdwanEdge          DeviceType = "sdwan_edge"
+	DeviceTypeServer             DeviceType = "server"
+	DeviceTypeUps                DeviceType = "ups"
+	DeviceTypeVideoConference    DeviceType = "video_conference"
+	DeviceTypeVm                 DeviceType = "vm"
+	DeviceTypeVpnGateway         DeviceType = "vpn_gateway"
+	DeviceTypeWaf                DeviceType = "waf"
+	DeviceTypeWirelessController DeviceType = "wireless_controller"
+)
+
+// Valid indicates whether the value is a known member of the DeviceType enum.
+func (e DeviceType) Valid() bool {
+	switch e {
+	case DeviceTypeAccessControl:
+		return true
+	case DeviceTypeAccessPoint:
+		return true
+	case DeviceTypeFirewall:
+		return true
+	case DeviceTypeIdsIps:
+		return true
+	case DeviceTypeIot:
+		return true
+	case DeviceTypeIpCamera:
+		return true
+	case DeviceTypeIpPhone:
+		return true
+	case DeviceTypeL2Switch:
+		return true
+	case DeviceTypeL3Switch:
+		return true
+	case DeviceTypeLaptop:
+		return true
+	case DeviceTypeLoadBalancer:
+		return true
+	case DeviceTypeMediaConverter:
+		return true
+	case DeviceTypeModem:
+		return true
+	case DeviceTypeNac:
+		return true
+	case DeviceTypeNas:
+		return true
+	case DeviceTypeNvr:
+		return true
+	case DeviceTypeOnt:
+		return true
+	case DeviceTypeOther:
+		return true
+	case DeviceTypePatchPanel:
+		return true
+	case DeviceTypePbx:
+		return true
+	case DeviceTypePc:
+		return true
+	case DeviceTypePdu:
+		return true
+	case DeviceTypePoeSwitch:
+		return true
+	case DeviceTypePrinter:
+		return true
+	case DeviceTypeProxy:
+		return true
+	case DeviceTypeRouter:
+		return true
+	case DeviceTypeSdwanEdge:
+		return true
+	case DeviceTypeServer:
+		return true
+	case DeviceTypeUps:
+		return true
+	case DeviceTypeVideoConference:
+		return true
+	case DeviceTypeVm:
+		return true
+	case DeviceTypeVpnGateway:
+		return true
+	case DeviceTypeWaf:
+		return true
+	case DeviceTypeWirelessController:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -259,28 +460,28 @@ func (e ShareTargetType) Valid() bool {
 
 // Defines values for SiteKind.
 const (
-	Datacenter SiteKind = "datacenter"
-	Factory    SiteKind = "factory"
-	Office     SiteKind = "office"
-	Other      SiteKind = "other"
-	Store      SiteKind = "store"
-	Warehouse  SiteKind = "warehouse"
+	SiteKindDatacenter SiteKind = "datacenter"
+	SiteKindFactory    SiteKind = "factory"
+	SiteKindOffice     SiteKind = "office"
+	SiteKindOther      SiteKind = "other"
+	SiteKindStore      SiteKind = "store"
+	SiteKindWarehouse  SiteKind = "warehouse"
 )
 
 // Valid indicates whether the value is a known member of the SiteKind enum.
 func (e SiteKind) Valid() bool {
 	switch e {
-	case Datacenter:
+	case SiteKindDatacenter:
 		return true
-	case Factory:
+	case SiteKindFactory:
 		return true
-	case Office:
+	case SiteKindOffice:
 		return true
-	case Other:
+	case SiteKindOther:
 		return true
-	case Store:
+	case SiteKindStore:
 		return true
-	case Warehouse:
+	case SiteKindWarehouse:
 		return true
 	default:
 		return false
@@ -302,6 +503,84 @@ func (e UnitGrantRole) Valid() bool {
 	case UnitGrantRoleUnitAdmin:
 		return true
 	case UnitGrantRoleViewer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeviceSort.
+const (
+	DeviceSortHostname    DeviceSort = "hostname"
+	DeviceSortLifecycle   DeviceSort = "lifecycle"
+	DeviceSortModel       DeviceSort = "model"
+	DeviceSortSerial      DeviceSort = "serial"
+	DeviceSortSite        DeviceSort = "site"
+	DeviceSortType        DeviceSort = "type"
+	DeviceSortUnit        DeviceSort = "unit"
+	DeviceSortVendor      DeviceSort = "vendor"
+	DeviceSortWarrantyEnd DeviceSort = "warrantyEnd"
+)
+
+// Valid indicates whether the value is a known member of the DeviceSort enum.
+func (e DeviceSort) Valid() bool {
+	switch e {
+	case DeviceSortHostname:
+		return true
+	case DeviceSortLifecycle:
+		return true
+	case DeviceSortModel:
+		return true
+	case DeviceSortSerial:
+		return true
+	case DeviceSortSite:
+		return true
+	case DeviceSortType:
+		return true
+	case DeviceSortUnit:
+		return true
+	case DeviceSortVendor:
+		return true
+	case DeviceSortWarrantyEnd:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListDevicesParamsSort.
+const (
+	ListDevicesParamsSortHostname    ListDevicesParamsSort = "hostname"
+	ListDevicesParamsSortLifecycle   ListDevicesParamsSort = "lifecycle"
+	ListDevicesParamsSortModel       ListDevicesParamsSort = "model"
+	ListDevicesParamsSortSerial      ListDevicesParamsSort = "serial"
+	ListDevicesParamsSortSite        ListDevicesParamsSort = "site"
+	ListDevicesParamsSortType        ListDevicesParamsSort = "type"
+	ListDevicesParamsSortUnit        ListDevicesParamsSort = "unit"
+	ListDevicesParamsSortVendor      ListDevicesParamsSort = "vendor"
+	ListDevicesParamsSortWarrantyEnd ListDevicesParamsSort = "warrantyEnd"
+)
+
+// Valid indicates whether the value is a known member of the ListDevicesParamsSort enum.
+func (e ListDevicesParamsSort) Valid() bool {
+	switch e {
+	case ListDevicesParamsSortHostname:
+		return true
+	case ListDevicesParamsSortLifecycle:
+		return true
+	case ListDevicesParamsSortModel:
+		return true
+	case ListDevicesParamsSortSerial:
+		return true
+	case ListDevicesParamsSortSite:
+		return true
+	case ListDevicesParamsSortType:
+		return true
+	case ListDevicesParamsSortUnit:
+		return true
+	case ListDevicesParamsSortVendor:
+		return true
+	case ListDevicesParamsSortWarrantyEnd:
 		return true
 	default:
 		return false
@@ -505,6 +784,234 @@ type CurrentUser struct {
 	Email         string             `json:"email"`
 	Id            openapi_types.UUID `json:"id"`
 	IsSystemAdmin bool               `json:"isSystemAdmin"`
+}
+
+// CustomField defines model for CustomField.
+type CustomField struct {
+	Id        openapi_types.UUID `json:"id"`
+	Key       string             `json:"key"`
+	Kind      CustomFieldKind    `json:"kind"`
+	Label     string             `json:"label"`
+	Options   []string           `json:"options"`
+	Required  bool               `json:"required"`
+	SortOrder int32              `json:"sortOrder"`
+	Version   int32              `json:"version"`
+}
+
+// CustomFieldInput defines model for CustomFieldInput.
+type CustomFieldInput struct {
+	Key       string          `json:"key"`
+	Kind      CustomFieldKind `json:"kind"`
+	Label     string          `json:"label"`
+	Options   *[]string       `json:"options,omitempty"`
+	Required  *bool           `json:"required,omitempty"`
+	SortOrder *int32          `json:"sortOrder,omitempty"`
+}
+
+// CustomFieldKind defines model for CustomFieldKind.
+type CustomFieldKind string
+
+// CustomFieldList defines model for CustomFieldList.
+type CustomFieldList struct {
+	Fields []CustomField `json:"fields"`
+}
+
+// CustomFieldUpdate defines model for CustomFieldUpdate.
+type CustomFieldUpdate struct {
+	Label     string    `json:"label"`
+	Options   *[]string `json:"options,omitempty"`
+	Required  *bool     `json:"required,omitempty"`
+	SortOrder *int32    `json:"sortOrder,omitempty"`
+	Version   int32     `json:"version"`
+}
+
+// Device defines model for Device.
+type Device struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel        `json:"access"`
+	AssetTag       string             `json:"assetTag"`
+	BusinessUnitId openapi_types.UUID `json:"businessUnitId"`
+	CreatedAt      time.Time          `json:"createdAt"`
+
+	// CustomFields Values by custom field key (string, number, boolean or ISO date)
+	CustomFields map[string]interface{} `json:"customFields"`
+	EolDate      *openapi_types.Date    `json:"eolDate"`
+	EosDate      *openapi_types.Date    `json:"eosDate"`
+	Firmware     string                 `json:"firmware"`
+	Hostname     string                 `json:"hostname"`
+	Id           openapi_types.UUID     `json:"id"`
+	LicenseEnd   *openapi_types.Date    `json:"licenseEnd"`
+	Lifecycle    DeviceLifecycle        `json:"lifecycle"`
+	LocationId   *openapi_types.UUID    `json:"locationId"`
+	LocationName string                 `json:"locationName"`
+
+	// Managed false = belongs to someone else (e.g. the ISP's modem)
+	Managed bool   `json:"managed"`
+	Model   string `json:"model"`
+	Notes   string `json:"notes"`
+
+	// OwnerName Person in charge
+	OwnerName    string              `json:"ownerName"`
+	PartNumber   string              `json:"partNumber"`
+	PartnerCode  string              `json:"partnerCode"`
+	PartnerId    openapi_types.UUID  `json:"partnerId"`
+	PartnerName  string              `json:"partnerName"`
+	PoNumber     string              `json:"poNumber"`
+	PurchaseDate *openapi_types.Date `json:"purchaseDate"`
+	RackId       *openapi_types.UUID `json:"rackId"`
+	RackName     string              `json:"rackName"`
+
+	// RackU Lowest U the device occupies
+	RackU        *int32              `json:"rackU"`
+	Role         DeviceRole          `json:"role"`
+	SerialNumber string              `json:"serialNumber"`
+	SiteCode     string              `json:"siteCode"`
+	SiteId       openapi_types.UUID  `json:"siteId"`
+	SiteName     string              `json:"siteName"`
+	Tags         []string            `json:"tags"`
+	Type         DeviceType          `json:"type"`
+	UHeight      int32               `json:"uHeight"`
+	UnitCode     string              `json:"unitCode"`
+	UnitName     string              `json:"unitName"`
+	UpdatedAt    time.Time           `json:"updatedAt"`
+	Vendor       string              `json:"vendor"`
+	Version      int32               `json:"version"`
+	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd"`
+}
+
+// DeviceBulkResult defines model for DeviceBulkResult.
+type DeviceBulkResult struct {
+	Count int64 `json:"count"`
+}
+
+// DeviceBulkUpdate Only the fields present are changed
+type DeviceBulkUpdate struct {
+	AddTags    *[]string            `json:"addTags,omitempty"`
+	Ids        []openapi_types.UUID `json:"ids"`
+	Lifecycle  *DeviceLifecycle     `json:"lifecycle,omitempty"`
+	Managed    *bool                `json:"managed,omitempty"`
+	OwnerName  *string              `json:"ownerName,omitempty"`
+	RemoveTags *[]string            `json:"removeTags,omitempty"`
+	Role       *DeviceRole          `json:"role,omitempty"`
+}
+
+// DeviceHistory defines model for DeviceHistory.
+type DeviceHistory struct {
+	Entries []struct {
+		Action     string                  `json:"action"`
+		ActorEmail string                  `json:"actorEmail"`
+		ActorName  string                  `json:"actorName"`
+		After      *map[string]interface{} `json:"after"`
+		At         time.Time               `json:"at"`
+		Before     *map[string]interface{} `json:"before"`
+		Id         int64                   `json:"id"`
+	} `json:"entries"`
+}
+
+// DeviceIds defines model for DeviceIds.
+type DeviceIds struct {
+	Ids []openapi_types.UUID `json:"ids"`
+}
+
+// DeviceInput defines model for DeviceInput.
+type DeviceInput struct {
+	AssetTag *string `json:"assetTag,omitempty"`
+
+	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites, ADR-026)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// CustomFields Values by custom field key (string, number, boolean or ISO date)
+	CustomFields *map[string]interface{} `json:"customFields,omitempty"`
+	EolDate      *openapi_types.Date     `json:"eolDate,omitempty"`
+	EosDate      *openapi_types.Date     `json:"eosDate,omitempty"`
+	Firmware     *string                 `json:"firmware,omitempty"`
+	Hostname     string                  `json:"hostname"`
+	LicenseEnd   *openapi_types.Date     `json:"licenseEnd,omitempty"`
+	Lifecycle    *DeviceLifecycle        `json:"lifecycle,omitempty"`
+	LocationId   *openapi_types.UUID     `json:"locationId,omitempty"`
+
+	// Managed false = belongs to someone else (e.g. the ISP's modem)
+	Managed *bool   `json:"managed,omitempty"`
+	Model   *string `json:"model,omitempty"`
+	Notes   *string `json:"notes,omitempty"`
+
+	// OwnerName Person in charge
+	OwnerName    *string             `json:"ownerName,omitempty"`
+	PartNumber   *string             `json:"partNumber,omitempty"`
+	PoNumber     *string             `json:"poNumber,omitempty"`
+	PurchaseDate *openapi_types.Date `json:"purchaseDate,omitempty"`
+	RackId       *openapi_types.UUID `json:"rackId,omitempty"`
+
+	// RackU Lowest U the device occupies
+	RackU        *int32              `json:"rackU,omitempty"`
+	Role         *DeviceRole         `json:"role,omitempty"`
+	SerialNumber *string             `json:"serialNumber,omitempty"`
+	SiteId       openapi_types.UUID  `json:"siteId"`
+	Tags         *[]string           `json:"tags,omitempty"`
+	Type         DeviceType          `json:"type"`
+	UHeight      *int32              `json:"uHeight,omitempty"`
+	Vendor       *string             `json:"vendor,omitempty"`
+	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd,omitempty"`
+}
+
+// DeviceLifecycle defines model for DeviceLifecycle.
+type DeviceLifecycle string
+
+// DeviceList defines model for DeviceList.
+type DeviceList struct {
+	Devices []Device `json:"devices"`
+
+	// Facets Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet
+	Facets map[string]map[string]int64 `json:"facets"`
+	Total  int64                       `json:"total"`
+}
+
+// DeviceRole defines model for DeviceRole.
+type DeviceRole string
+
+// DeviceType defines model for DeviceType.
+type DeviceType string
+
+// DeviceUpdate defines model for DeviceUpdate.
+type DeviceUpdate struct {
+	AssetTag *string `json:"assetTag,omitempty"`
+
+	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites, ADR-026)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// CustomFields Values by custom field key (string, number, boolean or ISO date)
+	CustomFields *map[string]interface{} `json:"customFields,omitempty"`
+	EolDate      *openapi_types.Date     `json:"eolDate,omitempty"`
+	EosDate      *openapi_types.Date     `json:"eosDate,omitempty"`
+	Firmware     *string                 `json:"firmware,omitempty"`
+	Hostname     string                  `json:"hostname"`
+	LicenseEnd   *openapi_types.Date     `json:"licenseEnd,omitempty"`
+	Lifecycle    *DeviceLifecycle        `json:"lifecycle,omitempty"`
+	LocationId   *openapi_types.UUID     `json:"locationId,omitempty"`
+
+	// Managed false = belongs to someone else (e.g. the ISP's modem)
+	Managed *bool   `json:"managed,omitempty"`
+	Model   *string `json:"model,omitempty"`
+	Notes   *string `json:"notes,omitempty"`
+
+	// OwnerName Person in charge
+	OwnerName    *string             `json:"ownerName,omitempty"`
+	PartNumber   *string             `json:"partNumber,omitempty"`
+	PoNumber     *string             `json:"poNumber,omitempty"`
+	PurchaseDate *openapi_types.Date `json:"purchaseDate,omitempty"`
+	RackId       *openapi_types.UUID `json:"rackId,omitempty"`
+
+	// RackU Lowest U the device occupies
+	RackU        *int32              `json:"rackU,omitempty"`
+	Role         *DeviceRole         `json:"role,omitempty"`
+	SerialNumber *string             `json:"serialNumber,omitempty"`
+	SiteId       openapi_types.UUID  `json:"siteId"`
+	Tags         *[]string           `json:"tags,omitempty"`
+	Type         DeviceType          `json:"type"`
+	UHeight      *int32              `json:"uHeight,omitempty"`
+	Vendor       *string             `json:"vendor,omitempty"`
+	Version      int32               `json:"version"`
+	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd,omitempty"`
 }
 
 // Error defines model for Error.
@@ -999,6 +1506,45 @@ type BusinessUnitId = openapi_types.UUID
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
 
+// DeviceId defines model for DeviceId.
+type DeviceId = openapi_types.UUID
+
+// DeviceLifecycleFilter defines model for DeviceLifecycleFilter.
+type DeviceLifecycleFilter = []DeviceLifecycle
+
+// DevicePartnerFilter defines model for DevicePartnerFilter.
+type DevicePartnerFilter = openapi_types.UUID
+
+// DeviceQuery defines model for DeviceQuery.
+type DeviceQuery = string
+
+// DeviceRoleFilter defines model for DeviceRoleFilter.
+type DeviceRoleFilter = []DeviceRole
+
+// DeviceSiteFilter defines model for DeviceSiteFilter.
+type DeviceSiteFilter = []openapi_types.UUID
+
+// DeviceSort defines model for DeviceSort.
+type DeviceSort string
+
+// DeviceSortDesc defines model for DeviceSortDesc.
+type DeviceSortDesc = bool
+
+// DeviceTagFilter defines model for DeviceTagFilter.
+type DeviceTagFilter = []string
+
+// DeviceTypeFilter defines model for DeviceTypeFilter.
+type DeviceTypeFilter = []DeviceType
+
+// DeviceUnitFilter defines model for DeviceUnitFilter.
+type DeviceUnitFilter = openapi_types.UUID
+
+// DeviceVendorFilter defines model for DeviceVendorFilter.
+type DeviceVendorFilter = []string
+
+// FieldId defines model for FieldId.
+type FieldId = openapi_types.UUID
+
 // LocationId defines model for LocationId.
 type LocationId = openapi_types.UUID
 
@@ -1178,6 +1724,71 @@ type UpdateUnitMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateCustomFieldParams defines parameters for CreateCustomField.
+type CreateCustomFieldParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteCustomFieldParams defines parameters for DeleteCustomField.
+type DeleteCustomFieldParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateCustomFieldParams defines parameters for UpdateCustomField.
+type UpdateCustomFieldParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ListDevicesParams defines parameters for ListDevices.
+type ListDevicesParams struct {
+	// Q Substring of hostname, serial, part number, model or asset tag
+	Q              *DeviceQuery           `form:"q,omitempty" json:"q,omitempty"`
+	PartnerId      *DevicePartnerFilter   `form:"partnerId,omitempty" json:"partnerId,omitempty"`
+	BusinessUnitId *DeviceUnitFilter      `form:"businessUnitId,omitempty" json:"businessUnitId,omitempty"`
+	SiteId         *DeviceSiteFilter      `form:"siteId,omitempty" json:"siteId,omitempty"`
+	Type           *DeviceTypeFilter      `form:"type,omitempty" json:"type,omitempty"`
+	Vendor         *DeviceVendorFilter    `form:"vendor,omitempty" json:"vendor,omitempty"`
+	Lifecycle      *DeviceLifecycleFilter `form:"lifecycle,omitempty" json:"lifecycle,omitempty"`
+	Role           *DeviceRoleFilter      `form:"role,omitempty" json:"role,omitempty"`
+
+	// Tag Devices carrying any of the tags
+	Tag  *DeviceTagFilter       `form:"tag,omitempty" json:"tag,omitempty"`
+	Sort *ListDevicesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Desc *DeviceSortDesc        `form:"desc,omitempty" json:"desc,omitempty"`
+
+	// Page 1-based page number
+	Page     *AuditPageNumber `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *AuditPageSize   `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// ListDevicesParamsSort defines parameters for ListDevices.
+type ListDevicesParamsSort string
+
+// CreateDeviceParams defines parameters for CreateDevice.
+type CreateDeviceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// BulkDeleteDevicesParams defines parameters for BulkDeleteDevices.
+type BulkDeleteDevicesParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// BulkUpdateDevicesParams defines parameters for BulkUpdateDevices.
+type BulkUpdateDevicesParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteDeviceParams defines parameters for DeleteDevice.
+type DeleteDeviceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateDeviceParams defines parameters for UpdateDevice.
+type UpdateDeviceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -1342,6 +1953,24 @@ type AddUnitMemberJSONRequestBody = UnitGrantInput
 // UpdateUnitMemberJSONRequestBody defines body for UpdateUnitMember for application/json ContentType.
 type UpdateUnitMemberJSONRequestBody = UnitGrantUpdate
 
+// CreateCustomFieldJSONRequestBody defines body for CreateCustomField for application/json ContentType.
+type CreateCustomFieldJSONRequestBody = CustomFieldInput
+
+// UpdateCustomFieldJSONRequestBody defines body for UpdateCustomField for application/json ContentType.
+type UpdateCustomFieldJSONRequestBody = CustomFieldUpdate
+
+// CreateDeviceJSONRequestBody defines body for CreateDevice for application/json ContentType.
+type CreateDeviceJSONRequestBody = DeviceInput
+
+// BulkDeleteDevicesJSONRequestBody defines body for BulkDeleteDevices for application/json ContentType.
+type BulkDeleteDevicesJSONRequestBody = DeviceIds
+
+// BulkUpdateDevicesJSONRequestBody defines body for BulkUpdateDevices for application/json ContentType.
+type BulkUpdateDevicesJSONRequestBody = DeviceBulkUpdate
+
+// UpdateDeviceJSONRequestBody defines body for UpdateDevice for application/json ContentType.
+type UpdateDeviceJSONRequestBody = DeviceUpdate
+
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
 
@@ -1485,6 +2114,42 @@ type ServerInterface interface {
 	// UpdateUnitMember Change a unit grant (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 	UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams)
+	// ListCustomFields Custom device fields of the organization
+	// (GET /orgs/{orgId}/custom-fields)
+	ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateCustomField Declare a custom field (owner/admin)
+	// (POST /orgs/{orgId}/custom-fields)
+	CreateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCustomFieldParams)
+	// DeleteCustomField Remove a custom field (stored values are kept but no longer shown)
+	// (DELETE /orgs/{orgId}/custom-fields/{fieldId})
+	DeleteCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params DeleteCustomFieldParams)
+	// UpdateCustomField Change a custom field (key and kind are fixed)
+	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
+	UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams)
+	// ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
+	// (GET /orgs/{orgId}/devices)
+	ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams)
+	// CreateDevice Create a device (edit access on its unit)
+	// (POST /orgs/{orgId}/devices)
+	CreateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceParams)
+	// BulkDeleteDevices Soft-delete many devices at once (all or nothing)
+	// (POST /orgs/{orgId}/devices/bulk-delete)
+	BulkDeleteDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkDeleteDevicesParams)
+	// BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
+	// (POST /orgs/{orgId}/devices/bulk-update)
+	BulkUpdateDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkUpdateDevicesParams)
+	// DeleteDevice Soft-delete a device
+	// (DELETE /orgs/{orgId}/devices/{deviceId})
+	DeleteDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params DeleteDeviceParams)
+	// GetDevice One device
+	// (GET /orgs/{orgId}/devices/{deviceId})
+	GetDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId)
+	// UpdateDevice Update a device (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId})
+	UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams)
+	// GetDeviceHistory Audit entries of the device, newest first
+	// (GET /orgs/{orgId}/devices/{deviceId}/history)
+	GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -1782,6 +2447,78 @@ func (_ Unimplemented) RemoveUnitMember(w http.ResponseWriter, r *http.Request, 
 // UpdateUnitMember Change a unit grant (optimistic lock on version)
 // (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 func (_ Unimplemented) UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListCustomFields Custom device fields of the organization
+// (GET /orgs/{orgId}/custom-fields)
+func (_ Unimplemented) ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateCustomField Declare a custom field (owner/admin)
+// (POST /orgs/{orgId}/custom-fields)
+func (_ Unimplemented) CreateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCustomFieldParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteCustomField Remove a custom field (stored values are kept but no longer shown)
+// (DELETE /orgs/{orgId}/custom-fields/{fieldId})
+func (_ Unimplemented) DeleteCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params DeleteCustomFieldParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateCustomField Change a custom field (key and kind are fixed)
+// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
+func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
+// (GET /orgs/{orgId}/devices)
+func (_ Unimplemented) ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDevice Create a device (edit access on its unit)
+// (POST /orgs/{orgId}/devices)
+func (_ Unimplemented) CreateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// BulkDeleteDevices Soft-delete many devices at once (all or nothing)
+// (POST /orgs/{orgId}/devices/bulk-delete)
+func (_ Unimplemented) BulkDeleteDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkDeleteDevicesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
+// (POST /orgs/{orgId}/devices/bulk-update)
+func (_ Unimplemented) BulkUpdateDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkUpdateDevicesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteDevice Soft-delete a device
+// (DELETE /orgs/{orgId}/devices/{deviceId})
+func (_ Unimplemented) DeleteDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params DeleteDeviceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDevice One device
+// (GET /orgs/{orgId}/devices/{deviceId})
+func (_ Unimplemented) GetDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateDevice Update a device (optimistic lock on version)
+// (PATCH /orgs/{orgId}/devices/{deviceId})
+func (_ Unimplemented) UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDeviceHistory Audit entries of the device, newest first
+// (GET /orgs/{orgId}/devices/{deviceId}/history)
+func (_ Unimplemented) GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3517,6 +4254,768 @@ func (siw *ServerInterfaceWrapper) UpdateUnitMember(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateUnitMember(w, r, orgId, businessUnitId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCustomFields operation middleware
+func (siw *ServerInterfaceWrapper) ListCustomFields(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCustomFields(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCustomField operation middleware
+func (siw *ServerInterfaceWrapper) CreateCustomField(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCustomFieldParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCustomField(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCustomField operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCustomField(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "fieldId" -------------
+	var fieldId FieldId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "fieldId", chi.URLParam(r, "fieldId"), &fieldId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fieldId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCustomFieldParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCustomField(w, r, orgId, fieldId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCustomField operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCustomField(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "fieldId" -------------
+	var fieldId FieldId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "fieldId", chi.URLParam(r, "fieldId"), &fieldId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fieldId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateCustomFieldParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCustomField(w, r, orgId, fieldId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDevices operation middleware
+func (siw *ServerInterfaceWrapper) ListDevices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListDevicesParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "partnerId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "partnerId", r.URL.Query(), &params.PartnerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "partnerId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "businessUnitId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "businessUnitId", r.URL.Query(), &params.BusinessUnitId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "businessUnitId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", r.URL.Query(), &params.Type, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "vendor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "vendor", r.URL.Query(), &params.Vendor, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "vendor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "lifecycle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "lifecycle", r.URL.Query(), &params.Lifecycle, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "lifecycle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lifecycle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "role" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "role", r.URL.Query(), &params.Role, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "role"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "role", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tag" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag", r.URL.Query(), &params.Tag, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tag"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "desc" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "desc", r.URL.Query(), &params.Desc, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "desc"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "desc", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pageSize"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDevices(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDevice operation middleware
+func (siw *ServerInterfaceWrapper) CreateDevice(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDeviceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDevice(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BulkDeleteDevices operation middleware
+func (siw *ServerInterfaceWrapper) BulkDeleteDevices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BulkDeleteDevicesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BulkDeleteDevices(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BulkUpdateDevices operation middleware
+func (siw *ServerInterfaceWrapper) BulkUpdateDevices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BulkUpdateDevicesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BulkUpdateDevices(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDevice operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDevice(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteDeviceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDevice(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDevice operation middleware
+func (siw *ServerInterfaceWrapper) GetDevice(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDevice(w, r, orgId, deviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateDevice operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDevice(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateDeviceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateDevice(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeviceHistory operation middleware
+func (siw *ServerInterfaceWrapper) GetDeviceHistory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeviceHistory(w, r, orgId, deviceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5628,6 +7127,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/racks/{rackId}", wrapper.UpdateRack)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/devices", wrapper.ListDevices)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices", wrapper.CreateDevice)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-update", wrapper.BulkUpdateDevices)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}", wrapper.DeleteDevice)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}", wrapper.GetDevice)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}", wrapper.UpdateDevice)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/history", wrapper.GetDeviceHistory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/custom-fields", wrapper.ListCustomFields)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/custom-fields", wrapper.CreateCustomField)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/custom-fields/{fieldId}", wrapper.DeleteCustomField)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/custom-fields/{fieldId}", wrapper.UpdateCustomField)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/audit", wrapper.ListOrgAudit)
@@ -7789,6 +9324,1007 @@ func (response UpdateUnitMember409JSONResponse) VisitUpdateUnitMemberResponse(w 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCustomFieldsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListCustomFieldsResponseObject interface {
+	VisitListCustomFieldsResponse(w http.ResponseWriter) error
+}
+
+type ListCustomFields200JSONResponse CustomFieldList
+
+func (response ListCustomFields200JSONResponse) VisitListCustomFieldsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCustomFields400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListCustomFields400JSONResponse) VisitListCustomFieldsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCustomFields401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCustomFields401JSONResponse) VisitListCustomFieldsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCustomFields404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListCustomFields404JSONResponse) VisitListCustomFieldsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomFieldRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateCustomFieldParams
+	Body   *CreateCustomFieldJSONRequestBody
+}
+
+type CreateCustomFieldResponseObject interface {
+	VisitCreateCustomFieldResponse(w http.ResponseWriter) error
+}
+
+type CreateCustomField201JSONResponse CustomField
+
+func (response CreateCustomField201JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomField400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCustomField400JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomField401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCustomField401JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomField403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateCustomField403JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomField404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateCustomField404JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCustomField409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCustomField409JSONResponse) VisitCreateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCustomFieldRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	FieldId FieldId `json:"fieldId"`
+	Params  DeleteCustomFieldParams
+}
+
+type DeleteCustomFieldResponseObject interface {
+	VisitDeleteCustomFieldResponse(w http.ResponseWriter) error
+}
+
+type DeleteCustomField204Response struct {
+}
+
+func (response DeleteCustomField204Response) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCustomField400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteCustomField400JSONResponse) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCustomField401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCustomField401JSONResponse) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCustomField403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteCustomField403JSONResponse) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCustomField404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCustomField404JSONResponse) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCustomField409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteCustomField409JSONResponse) VisitDeleteCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomFieldRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	FieldId FieldId `json:"fieldId"`
+	Params  UpdateCustomFieldParams
+	Body    *UpdateCustomFieldJSONRequestBody
+}
+
+type UpdateCustomFieldResponseObject interface {
+	VisitUpdateCustomFieldResponse(w http.ResponseWriter) error
+}
+
+type UpdateCustomField200JSONResponse CustomField
+
+func (response UpdateCustomField200JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomField400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateCustomField400JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomField401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateCustomField401JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomField403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateCustomField403JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomField404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCustomField404JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCustomField409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateCustomField409JSONResponse) VisitUpdateCustomFieldResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDevicesRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListDevicesParams
+}
+
+type ListDevicesResponseObject interface {
+	VisitListDevicesResponse(w http.ResponseWriter) error
+}
+
+type ListDevices200JSONResponse DeviceList
+
+func (response ListDevices200JSONResponse) VisitListDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDevices400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListDevices400JSONResponse) VisitListDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDevices401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDevices401JSONResponse) VisitListDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDevices404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDevices404JSONResponse) VisitListDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateDeviceParams
+	Body   *CreateDeviceJSONRequestBody
+}
+
+type CreateDeviceResponseObject interface {
+	VisitCreateDeviceResponse(w http.ResponseWriter) error
+}
+
+type CreateDevice201JSONResponse Device
+
+func (response CreateDevice201JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDevice400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDevice400JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDevice401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDevice401JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDevice403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDevice403JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDevice404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateDevice404JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDevice409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDevice409JSONResponse) VisitCreateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevicesRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params BulkDeleteDevicesParams
+	Body   *BulkDeleteDevicesJSONRequestBody
+}
+
+type BulkDeleteDevicesResponseObject interface {
+	VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error
+}
+
+type BulkDeleteDevices200JSONResponse DeviceBulkResult
+
+func (response BulkDeleteDevices200JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevices400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response BulkDeleteDevices400JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevices401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response BulkDeleteDevices401JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevices403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response BulkDeleteDevices403JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevices404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response BulkDeleteDevices404JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkDeleteDevices409JSONResponse struct{ ConflictJSONResponse }
+
+func (response BulkDeleteDevices409JSONResponse) VisitBulkDeleteDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevicesRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params BulkUpdateDevicesParams
+	Body   *BulkUpdateDevicesJSONRequestBody
+}
+
+type BulkUpdateDevicesResponseObject interface {
+	VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error
+}
+
+type BulkUpdateDevices200JSONResponse DeviceBulkResult
+
+func (response BulkUpdateDevices200JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevices400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response BulkUpdateDevices400JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevices401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response BulkUpdateDevices401JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevices403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response BulkUpdateDevices403JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevices404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response BulkUpdateDevices404JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BulkUpdateDevices409JSONResponse struct{ ConflictJSONResponse }
+
+func (response BulkUpdateDevices409JSONResponse) VisitBulkUpdateDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   DeleteDeviceParams
+}
+
+type DeleteDeviceResponseObject interface {
+	VisitDeleteDeviceResponse(w http.ResponseWriter) error
+}
+
+type DeleteDevice204Response struct {
+}
+
+func (response DeleteDevice204Response) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDevice400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteDevice400JSONResponse) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDevice401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDevice401JSONResponse) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDevice403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteDevice403JSONResponse) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDevice404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDevice404JSONResponse) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDevice409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteDevice409JSONResponse) VisitDeleteDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+}
+
+type GetDeviceResponseObject interface {
+	VisitGetDeviceResponse(w http.ResponseWriter) error
+}
+
+type GetDevice200JSONResponse Device
+
+func (response GetDevice200JSONResponse) VisitGetDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDevice400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetDevice400JSONResponse) VisitGetDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDevice401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDevice401JSONResponse) VisitGetDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDevice404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDevice404JSONResponse) VisitGetDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   UpdateDeviceParams
+	Body     *UpdateDeviceJSONRequestBody
+}
+
+type UpdateDeviceResponseObject interface {
+	VisitUpdateDeviceResponse(w http.ResponseWriter) error
+}
+
+type UpdateDevice200JSONResponse Device
+
+func (response UpdateDevice200JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDevice400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateDevice400JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDevice401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateDevice401JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDevice403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateDevice403JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDevice404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateDevice404JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDevice409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateDevice409JSONResponse) VisitUpdateDeviceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceHistoryRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+}
+
+type GetDeviceHistoryResponseObject interface {
+	VisitGetDeviceHistoryResponse(w http.ResponseWriter) error
+}
+
+type GetDeviceHistory200JSONResponse DeviceHistory
+
+func (response GetDeviceHistory200JSONResponse) VisitGetDeviceHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceHistory400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetDeviceHistory400JSONResponse) VisitGetDeviceHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceHistory401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDeviceHistory401JSONResponse) VisitGetDeviceHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceHistory404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDeviceHistory404JSONResponse) VisitGetDeviceHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -10699,6 +13235,42 @@ type StrictServerInterface interface {
 	// UpdateUnitMember Change a unit grant (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 	UpdateUnitMember(ctx context.Context, request UpdateUnitMemberRequestObject) (UpdateUnitMemberResponseObject, error)
+	// ListCustomFields Custom device fields of the organization
+	// (GET /orgs/{orgId}/custom-fields)
+	ListCustomFields(ctx context.Context, request ListCustomFieldsRequestObject) (ListCustomFieldsResponseObject, error)
+	// CreateCustomField Declare a custom field (owner/admin)
+	// (POST /orgs/{orgId}/custom-fields)
+	CreateCustomField(ctx context.Context, request CreateCustomFieldRequestObject) (CreateCustomFieldResponseObject, error)
+	// DeleteCustomField Remove a custom field (stored values are kept but no longer shown)
+	// (DELETE /orgs/{orgId}/custom-fields/{fieldId})
+	DeleteCustomField(ctx context.Context, request DeleteCustomFieldRequestObject) (DeleteCustomFieldResponseObject, error)
+	// UpdateCustomField Change a custom field (key and kind are fixed)
+	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
+	UpdateCustomField(ctx context.Context, request UpdateCustomFieldRequestObject) (UpdateCustomFieldResponseObject, error)
+	// ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
+	// (GET /orgs/{orgId}/devices)
+	ListDevices(ctx context.Context, request ListDevicesRequestObject) (ListDevicesResponseObject, error)
+	// CreateDevice Create a device (edit access on its unit)
+	// (POST /orgs/{orgId}/devices)
+	CreateDevice(ctx context.Context, request CreateDeviceRequestObject) (CreateDeviceResponseObject, error)
+	// BulkDeleteDevices Soft-delete many devices at once (all or nothing)
+	// (POST /orgs/{orgId}/devices/bulk-delete)
+	BulkDeleteDevices(ctx context.Context, request BulkDeleteDevicesRequestObject) (BulkDeleteDevicesResponseObject, error)
+	// BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
+	// (POST /orgs/{orgId}/devices/bulk-update)
+	BulkUpdateDevices(ctx context.Context, request BulkUpdateDevicesRequestObject) (BulkUpdateDevicesResponseObject, error)
+	// DeleteDevice Soft-delete a device
+	// (DELETE /orgs/{orgId}/devices/{deviceId})
+	DeleteDevice(ctx context.Context, request DeleteDeviceRequestObject) (DeleteDeviceResponseObject, error)
+	// GetDevice One device
+	// (GET /orgs/{orgId}/devices/{deviceId})
+	GetDevice(ctx context.Context, request GetDeviceRequestObject) (GetDeviceResponseObject, error)
+	// UpdateDevice Update a device (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId})
+	UpdateDevice(ctx context.Context, request UpdateDeviceRequestObject) (UpdateDeviceResponseObject, error)
+	// GetDeviceHistory Audit entries of the device, newest first
+	// (GET /orgs/{orgId}/devices/{deviceId}/history)
+	GetDeviceHistory(ctx context.Context, request GetDeviceHistoryRequestObject) (GetDeviceHistoryResponseObject, error)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -11776,6 +14348,375 @@ func (sh *strictHandler) UpdateUnitMember(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateUnitMemberResponseObject); ok {
 		if err := validResponse.VisitUpdateUnitMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCustomFields operation middleware
+func (sh *strictHandler) ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListCustomFieldsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCustomFields(ctx, request.(ListCustomFieldsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCustomFields")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCustomFieldsResponseObject); ok {
+		if err := validResponse.VisitListCustomFieldsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCustomField operation middleware
+func (sh *strictHandler) CreateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCustomFieldParams) {
+	var request CreateCustomFieldRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateCustomFieldJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCustomField(ctx, request.(CreateCustomFieldRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCustomField")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCustomFieldResponseObject); ok {
+		if err := validResponse.VisitCreateCustomFieldResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCustomField operation middleware
+func (sh *strictHandler) DeleteCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params DeleteCustomFieldParams) {
+	var request DeleteCustomFieldRequestObject
+
+	request.OrgId = orgId
+	request.FieldId = fieldId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCustomField(ctx, request.(DeleteCustomFieldRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCustomField")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCustomFieldResponseObject); ok {
+		if err := validResponse.VisitDeleteCustomFieldResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCustomField operation middleware
+func (sh *strictHandler) UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams) {
+	var request UpdateCustomFieldRequestObject
+
+	request.OrgId = orgId
+	request.FieldId = fieldId
+	request.Params = params
+
+	var body UpdateCustomFieldJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCustomField(ctx, request.(UpdateCustomFieldRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCustomField")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCustomFieldResponseObject); ok {
+		if err := validResponse.VisitUpdateCustomFieldResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDevices operation middleware
+func (sh *strictHandler) ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams) {
+	var request ListDevicesRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDevices(ctx, request.(ListDevicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDevices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDevicesResponseObject); ok {
+		if err := validResponse.VisitListDevicesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDevice operation middleware
+func (sh *strictHandler) CreateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceParams) {
+	var request CreateDeviceRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateDeviceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDevice(ctx, request.(CreateDeviceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDevice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDeviceResponseObject); ok {
+		if err := validResponse.VisitCreateDeviceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BulkDeleteDevices operation middleware
+func (sh *strictHandler) BulkDeleteDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkDeleteDevicesParams) {
+	var request BulkDeleteDevicesRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body BulkDeleteDevicesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BulkDeleteDevices(ctx, request.(BulkDeleteDevicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BulkDeleteDevices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BulkDeleteDevicesResponseObject); ok {
+		if err := validResponse.VisitBulkDeleteDevicesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BulkUpdateDevices operation middleware
+func (sh *strictHandler) BulkUpdateDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkUpdateDevicesParams) {
+	var request BulkUpdateDevicesRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body BulkUpdateDevicesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BulkUpdateDevices(ctx, request.(BulkUpdateDevicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BulkUpdateDevices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BulkUpdateDevicesResponseObject); ok {
+		if err := validResponse.VisitBulkUpdateDevicesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDevice operation middleware
+func (sh *strictHandler) DeleteDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params DeleteDeviceParams) {
+	var request DeleteDeviceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDevice(ctx, request.(DeleteDeviceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDevice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDeviceResponseObject); ok {
+		if err := validResponse.VisitDeleteDeviceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDevice operation middleware
+func (sh *strictHandler) GetDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	var request GetDeviceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDevice(ctx, request.(GetDeviceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDevice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeviceResponseObject); ok {
+		if err := validResponse.VisitGetDeviceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateDevice operation middleware
+func (sh *strictHandler) UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams) {
+	var request UpdateDeviceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body UpdateDeviceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateDevice(ctx, request.(UpdateDeviceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateDevice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateDeviceResponseObject); ok {
+		if err := validResponse.VisitUpdateDeviceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeviceHistory operation middleware
+func (sh *strictHandler) GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	var request GetDeviceHistoryRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDeviceHistory(ctx, request.(GetDeviceHistoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeviceHistory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeviceHistoryResponseObject); ok {
+		if err := validResponse.VisitGetDeviceHistoryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

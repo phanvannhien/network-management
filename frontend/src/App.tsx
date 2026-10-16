@@ -36,6 +36,9 @@ const DeviceDetailPage = lazy(() =>
 const DeviceListPage = lazy(() =>
   import('./modules/inventory/DeviceListPage').then((m) => ({ default: m.DeviceListPage })),
 )
+const CustomFieldsPage = lazy(() =>
+  import('./modules/inventory/CustomFieldsPage').then((m) => ({ default: m.CustomFieldsPage })),
+)
 const AuditLogPage = lazy(() =>
   import('./modules/audit/AuditLogPage').then((m) => ({ default: m.AuditLogPage })),
 )
@@ -85,6 +88,7 @@ export function AppRoutes() {
         <Route path="units/:unitId" element={<UnitDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage scope="org" />} />
+        <Route path="custom-fields" element={<CustomFieldsPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/admin" element={guard(<SystemShell />)}>

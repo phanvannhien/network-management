@@ -52,6 +52,56 @@ type BusinessUnitMember struct {
 	Version        int32
 }
 
+type CustomFieldDef struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Key            string
+	Label          string
+	Kind           string
+	Options        []string
+	Required       bool
+	SortOrder      int32
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
+type Device struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	BusinessUnitID pgtype.UUID
+	SiteID         pgtype.UUID
+	LocationID     pgtype.UUID
+	RackID         pgtype.UUID
+	RackU          pgtype.Int4
+	UHeight        int32
+	Hostname       string
+	Type           string
+	Vendor         string
+	Model          string
+	PartNumber     string
+	SerialNumber   string
+	AssetTag       string
+	Firmware       string
+	Role           string
+	Lifecycle      string
+	Managed        bool
+	OwnerName      string
+	PurchaseDate   pgtype.Date
+	PoNumber       string
+	WarrantyEnd    pgtype.Date
+	LicenseEnd     pgtype.Date
+	EolDate        pgtype.Date
+	EosDate        pgtype.Date
+	Notes          string
+	Tags           []string
+	CustomFields   []byte
+	DeletedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Location struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID

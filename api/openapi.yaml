@@ -1422,6 +1422,319 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/devices:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listDevices
+      summary: Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
+      parameters:
+        - $ref: '#/components/parameters/DeviceQuery'
+        - $ref: '#/components/parameters/DevicePartnerFilter'
+        - $ref: '#/components/parameters/DeviceUnitFilter'
+        - $ref: '#/components/parameters/DeviceSiteFilter'
+        - $ref: '#/components/parameters/DeviceTypeFilter'
+        - $ref: '#/components/parameters/DeviceVendorFilter'
+        - $ref: '#/components/parameters/DeviceLifecycleFilter'
+        - $ref: '#/components/parameters/DeviceRoleFilter'
+        - $ref: '#/components/parameters/DeviceTagFilter'
+        - $ref: '#/components/parameters/DeviceSort'
+        - $ref: '#/components/parameters/DeviceSortDesc'
+        - $ref: '#/components/parameters/AuditPageNumber'
+        - $ref: '#/components/parameters/AuditPageSize'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createDevice
+      summary: Create a device (edit access on its unit)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/devices/bulk-update:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: bulkUpdateDevices
+      summary: Change lifecycle / role / owner / tags of many devices at once (all or nothing)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceBulkUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceBulkResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/devices/bulk-delete:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: bulkDeleteDevices
+      summary: Soft-delete many devices at once (all or nothing)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceIds'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceBulkResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/devices/{deviceId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DeviceId'
+    get:
+      operationId: getDevice
+      summary: One device
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateDevice
+      summary: Update a device (optimistic lock on version)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteDevice
+      summary: Soft-delete a device
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/devices/{deviceId}/history:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DeviceId'
+    get:
+      operationId: getDeviceHistory
+      summary: Audit entries of the device, newest first
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceHistory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/custom-fields:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listCustomFields
+      summary: Custom device fields of the organization
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createCustomField
+      summary: Declare a custom field (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomField'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/custom-fields/{fieldId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/FieldId'
+    patch:
+      operationId: updateCustomField
+      summary: Change a custom field (key and kind are fixed)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomField'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteCustomField
+      summary: Remove a custom field (stored values are kept but no longer shown)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/audit:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -1604,6 +1917,114 @@ components:
         format: int32
         minimum: 1
         default: 1
+    DeviceQuery:
+      name: q
+      in: query
+      description: Substring of hostname, serial, part number, model or asset tag
+      schema:
+        type: string
+        maxLength: 200
+
+    DevicePartnerFilter:
+      name: partnerId
+      in: query
+      schema:
+        type: string
+        format: uuid
+
+    DeviceUnitFilter:
+      name: businessUnitId
+      in: query
+      schema:
+        type: string
+        format: uuid
+
+    DeviceSiteFilter:
+      name: siteId
+      in: query
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+          format: uuid
+
+    DeviceTypeFilter:
+      name: type
+      in: query
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          $ref: '#/components/schemas/DeviceType'
+
+    DeviceVendorFilter:
+      name: vendor
+      in: query
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+
+    DeviceLifecycleFilter:
+      name: lifecycle
+      in: query
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          $ref: '#/components/schemas/DeviceLifecycle'
+
+    DeviceRoleFilter:
+      name: role
+      in: query
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          $ref: '#/components/schemas/DeviceRole'
+
+    DeviceTagFilter:
+      name: tag
+      in: query
+      description: Devices carrying any of the tags
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+
+    DeviceSort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [hostname, type, vendor, model, serial, site, unit, lifecycle, warrantyEnd]
+        default: hostname
+
+    DeviceSortDesc:
+      name: desc
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    FieldId:
+      name: fieldId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     AuditPageSize:
       name: pageSize
       in: query
@@ -2862,3 +3283,437 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminUser'
+
+    DeviceType:
+      type: string
+      enum: [router, l3_switch, l2_switch, poe_switch, firewall, load_balancer, wireless_controller, access_point, vpn_gateway, ids_ips, waf, nac, proxy, media_converter, patch_panel, modem, ont, sdwan_edge, server, vm, nas, pc, laptop, printer, ip_camera, nvr, ip_phone, pbx, access_control, video_conference, iot, ups, pdu, other]
+
+    DeviceRole:
+      type: string
+      enum: [none, core, distribution, access, edge, dmz, oob]
+
+    DeviceLifecycle:
+      type: string
+      enum: [planned, active, spare, rma, retired]
+
+    DeviceInput:
+      type: object
+      required: [hostname, type, siteId]
+      properties:
+        hostname:
+          type: string
+          minLength: 1
+          maxLength: 253
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        vendor:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        partNumber:
+          type: string
+          maxLength: 100
+        serialNumber:
+          type: string
+          maxLength: 100
+        assetTag:
+          type: string
+          maxLength: 100
+        firmware:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/DeviceRole'
+        lifecycle:
+          $ref: '#/components/schemas/DeviceLifecycle'
+        managed:
+          type: boolean
+          description: false = belongs to someone else (e.g. the ISP's modem)
+        ownerName:
+          type: string
+          maxLength: 200
+          description: Person in charge
+        poNumber:
+          type: string
+          maxLength: 100
+        purchaseDate:
+          type: [string, 'null']
+          format: date
+        warrantyEnd:
+          type: [string, 'null']
+          format: date
+        licenseEnd:
+          type: [string, 'null']
+          format: date
+        eolDate:
+          type: [string, 'null']
+          format: date
+        eosDate:
+          type: [string, 'null']
+          format: date
+        notes:
+          type: string
+          maxLength: 4000
+        tags:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 50
+        customFields:
+          type: object
+          additionalProperties: true
+          description: Values by custom field key (string, number, boolean or ISO date)
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+          description: Owner unit; null = the site's unit (required for shared sites, ADR-026)
+        locationId:
+          type: [string, 'null']
+          format: uuid
+        rackId:
+          type: [string, 'null']
+          format: uuid
+        rackU:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 60
+          description: Lowest U the device occupies
+        uHeight:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 60
+
+    DeviceUpdate:
+      allOf:
+        - $ref: '#/components/schemas/DeviceInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Device:
+      type: object
+      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, businessUnitId, unitCode, unitName, partnerId, partnerCode, partnerName, locationId, locationName, rackId, rackName, rackU, uHeight, access, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+          minLength: 1
+          maxLength: 253
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        vendor:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        partNumber:
+          type: string
+          maxLength: 100
+        serialNumber:
+          type: string
+          maxLength: 100
+        assetTag:
+          type: string
+          maxLength: 100
+        firmware:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/DeviceRole'
+        lifecycle:
+          $ref: '#/components/schemas/DeviceLifecycle'
+        managed:
+          type: boolean
+          description: false = belongs to someone else (e.g. the ISP's modem)
+        ownerName:
+          type: string
+          maxLength: 200
+          description: Person in charge
+        poNumber:
+          type: string
+          maxLength: 100
+        purchaseDate:
+          type: [string, 'null']
+          format: date
+        warrantyEnd:
+          type: [string, 'null']
+          format: date
+        licenseEnd:
+          type: [string, 'null']
+          format: date
+        eolDate:
+          type: [string, 'null']
+          format: date
+        eosDate:
+          type: [string, 'null']
+          format: date
+        notes:
+          type: string
+          maxLength: 4000
+        tags:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 50
+        customFields:
+          type: object
+          additionalProperties: true
+          description: Values by custom field key (string, number, boolean or ISO date)
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: string
+          format: uuid
+        locationId:
+          type: [string, 'null']
+          format: uuid
+        rackId:
+          type: [string, 'null']
+          format: uuid
+        rackU:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 60
+          description: Lowest U the device occupies
+        uHeight:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 60
+        siteCode:
+          type: string
+        siteName:
+          type: string
+        unitCode:
+          type: string
+        unitName:
+          type: string
+        partnerId:
+          type: string
+          format: uuid
+        partnerCode:
+          type: string
+        partnerName:
+          type: string
+        locationName:
+          type: string
+        rackName:
+          type: string
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DeviceList:
+      type: object
+      required: [devices, total, facets]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        total:
+          type: integer
+          format: int64
+        facets:
+          type: object
+          description: Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+
+    DeviceIds:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            type: string
+            format: uuid
+
+    DeviceBulkUpdate:
+      type: object
+      required: [ids]
+      description: Only the fields present are changed
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            type: string
+            format: uuid
+        lifecycle:
+          $ref: '#/components/schemas/DeviceLifecycle'
+        role:
+          $ref: '#/components/schemas/DeviceRole'
+        ownerName:
+          type: string
+          maxLength: 200
+        managed:
+          type: boolean
+        addTags:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 50
+        removeTags:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 50
+
+    DeviceBulkResult:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+          format: int64
+
+    DeviceHistory:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            required: [id, at, action, actorEmail, actorName, before, after]
+            properties:
+              id:
+                type: integer
+                format: int64
+              at:
+                type: string
+                format: date-time
+              action:
+                type: string
+              actorEmail:
+                type: string
+              actorName:
+                type: string
+              before:
+                type: [object, 'null']
+                additionalProperties: true
+              after:
+                type: [object, 'null']
+                additionalProperties: true
+
+    CustomFieldKind:
+      type: string
+      enum: [text, number, date, boolean, select]
+
+    CustomField:
+      type: object
+      required: [id, key, label, kind, options, required, sortOrder, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        label:
+          type: string
+        kind:
+          $ref: '#/components/schemas/CustomFieldKind'
+        options:
+          type: array
+          items:
+            type: string
+        required:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        version:
+          type: integer
+          format: int32
+
+    CustomFieldList:
+      type: object
+      required: [fields]
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomField'
+
+    CustomFieldInput:
+      type: object
+      required: [key, label, kind]
+      properties:
+        key:
+          type: string
+          pattern: '^[a-z][a-z0-9_]{0,39}$'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/CustomFieldKind'
+        options:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 100
+        required:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+
+    CustomFieldUpdate:
+      type: object
+      required: [label, version]
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 100
+        options:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 100
+        required:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        version:
+          type: integer
+          format: int32
