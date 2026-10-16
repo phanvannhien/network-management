@@ -25,7 +25,9 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
     bộ chọn trên topbar; test chéo đối tác/đơn vị (user AGRI không đọc/sửa FOOD; unit_admin NM không sửa đơn vị VP cùng đối tác;
     share xem → không sửa; thu hồi share → 404).
   - Tổng **~6–7,5 ngày** trước P1-08. Thứ tự: P1-07b → P1-07c → P1-08.
-- Câu hỏi cho người dùng:
+- Đã chốt sau (2026-10-16): đổi module Phase 2 thành "Nhà cung cấp & hợp đồng" (SRS §8, PLAN P2-04, CLAUDE.md: `vendors`);
+  đơn vị mặc định mã `MAIN`.
+- Câu hỏi cho người dùng (đã trả lời — xem dòng trên):
   1. **Trùng tên "Đối tác":** module Phase 2 (SRS §8) "Đối tác & hợp đồng" là hãng / nhà cung cấp / ISP / đơn vị bảo trì — khác
      với cấp đối tác mới. Đề xuất đổi tên module Phase 2 thành **"Nhà cung cấp & hợp đồng"** (bảng `vendors`), giữ "Đối tác" cho cấp
      mới. Đồng ý không?

@@ -241,6 +241,8 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Bộ chọn trên topbar:** "Tất cả" / một đối tác / một đơn vị (chỉ là bộ lọc; quyền kiểm ở server; ngoài quyền → 404).
 - **Thay thế một phần:** ADR-026 (đơn vị nằm dưới đối tác; quan hệ chuyển lên đối tác), ADR-029 (giao quyền theo đơn vị → theo
   đối tác hoặc đơn vị; bu_admin → partner_admin / unit_admin), ADR-030 (tiền tố mã site = mã đối tác; mã đơn vị duy nhất trong đối tác).
+- **Đặt tên:** module Phase 2 "Đối tác & hợp đồng" (SRS §8) đổi thành **"Nhà cung cấp & hợp đồng"** (bảng `vendors`) để "Đối tác"
+  chỉ còn nghĩa là cấp trong cây tổ chức. Chuyển dữ liệu P1-07: mỗi đối tác sinh một đơn vị mặc định mã `MAIN`.
 - **Lý do:** một đối tác của khách hàng (vd Deheus) có nhiều công ty/bộ phận; IT của đối tác cần quản lý tất cả cùng lúc, còn
   từng bộ phận chỉ cần thấy phần của mình.
 - **Chốt:** người dùng xác nhận 2026-10-16.

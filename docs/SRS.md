@@ -1,7 +1,7 @@
 # Network Topology Builder — Đặc tả yêu cầu (SRS v2.0)
 
 Cập nhật 2026-10-16. Thay đổi lớn so với v1.2: chuyển từ công cụ vẽ sơ đồ thành **hệ thống quản lý hạ tầng mạng**
-(kho thiết bị, Site/Location, IPAM, sơ đồ, đối tác, kho mật khẩu, đa tổ chức). Backend + database có từ MVP.
+(kho thiết bị, Site/Location, IPAM, sơ đồ, nhà cung cấp & hợp đồng, kho mật khẩu, đa tổ chức). Backend + database có từ MVP.
 Quyết định kiến trúc: `docs/DECISIONS.md`. Task: `docs/PLAN.md`.
 
 ---
@@ -27,7 +27,7 @@ lên dữ liệu đó. Sửa IP ở sơ đồ hay ở danh sách thiết bị đ
 ## §2. Giao diện tổng & điều hướng (ADR-020)
 
 **Thanh trên cùng:** bộ chọn tổ chức (khi user thuộc nhiều tổ chức), tìm kiếm toàn cục (Ctrl+K: hostname, IP, MAC, S/N,
-part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh báo), menu tài khoản.
+part number, tên site, đối tác, nhà cung cấp), thông báo (sắp hết hạn, cảnh báo), menu tài khoản.
 
 **Menu trái (thu gọn được):**
 
@@ -38,7 +38,7 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 | Thiết bị | Bảng kho thiết bị, lọc/sắp xếp/cột tùy chọn, chi tiết thiết bị | 1 |
 | IPAM | VLAN, Subnet, dải IP, mức sử dụng | 1 |
 | Đơn vị & Sites | Đối tác → Đơn vị → Site → tòa nhà → tầng → phòng → rack | 1 |
-| Đối tác | Nhà cung cấp, hãng, ISP, đơn vị bảo trì; liên hệ; hợp đồng | 2 |
+| Nhà cung cấp & hợp đồng | Nhà cung cấp, hãng, ISP, đơn vị bảo trì; liên hệ; hợp đồng (≠ cấp Đối tác của ADR-031) | 2 |
 | Kho mật khẩu & Cloud | Credential thiết bị, tài khoản cloud | 2 |
 | Giám sát | Trạng thái live, SNMP profile | 3 |
 | Báo cáo | Báo cáo dựng sẵn, export Excel/PDF | 2 |
@@ -72,7 +72,7 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 | Vị trí | **Đơn vị**, **Site**, **Location**, rack + vị trí U + chiều cao U |
 | Cụm | Cụm HA/stack, vai trò trong cụm, số thứ tự thành viên |
 | Quản trị | Interface quản trị (IP quản trị suy ra từ đây), IP NAT/public, gateway, DNS, `poll_address` |
-| Mua sắm | Nhà cung cấp (→ Đối tác), ngày mua, số PO/hóa đơn |
+| Mua sắm | Nhà cung cấp (→ Nhà cung cấp), ngày mua, số PO/hóa đơn |
 | Hỗ trợ | Hợp đồng support (→ Hợp đồng), ngày hết bảo hành, ngày hết license, ngày End-of-Life/End-of-Support của hãng, ngày End-of-Sale / End-of-Support của hãng (tự điền từ model library nếu có) |
 | Truy cập | Credential đăng nhập (SSH/HTTPS/console/enable… → Kho mật khẩu), tài khoản cloud quản lý (→ Tài khoản cloud) |
 | Vận hành | Vai trò (core/distribution/access/edge…), trạng thái vòng đời, `managed` (của mình / bên ngoài), người phụ trách, ghi chú |
@@ -149,7 +149,7 @@ bảo hành riêng. Trên sơ đồ hiển thị gộp (badge HA / Stack ×N) ho
 - Đầu mút có thể là device, endpoint group hoặc segment.
 - Kéo dây: popup chọn cổng trống hợp lệ (cổng đã dùng/sai loại làm mờ); kéo lại đầu dây để đổi cổng.
 - Hình dạng: thẳng, orthogonal, cong; điểm uốn; link song song tự tách.
-- Thuộc tính link: loại cáp, tốc độ, chiều dài, cable ID, trạng thái, vòng đời; với WAN: nhà cung cấp (→ Đối tác), circuit ID, băng thông, hợp đồng.
+- Thuộc tính link: loại cáp, tốc độ, chiều dài, cable ID, trạng thái, vòng đời; với WAN: nhà cung cấp (→ Nhà cung cấp), circuit ID, băng thông, hợp đồng.
 - Hiển thị tốc độ (độ dày nét) và trạng thái Up/Down/Planned; màu luôn kèm icon/kiểu nét.
 
 ### 6.3 Hiển thị
@@ -203,11 +203,13 @@ click → zoom tới đối tượng; badge trên node.
 | Lệch thiết kế ↔ thực tế (cổng down, sai cổng theo LLDP, IP chạy thật chưa khai báo) | Warning | 3 |
 | Vượt PoE budget; vòng lặp L2 | Warning / Info | 4 |
 
-## §8. Đối tác & hợp đồng (Phase 2)
+## §8. Nhà cung cấp & hợp đồng (Phase 2)
+
+*(Đổi tên từ "Đối tác & hợp đồng" ngày 2026-10-16 để không trùng với cấp Đối tác của ADR-031.)*
 
 - **Đối tác:** loại (hãng, nhà cung cấp, ISP, bảo trì, khách hàng, khác), tên, mã số thuế, website, hotline/portal support, ghi chú.
-- **Liên hệ:** tên, chức vụ, điện thoại, email, ghi chú (thuộc đối tác).
-- **Hợp đồng:** đối tác, loại (support/bảo hành hãng, license, ISP, bảo trì), số hợp đồng, ngày bắt đầu/kết thúc, SLA, file đính kèm,
+- **Liên hệ:** tên, chức vụ, điện thoại, email, ghi chú (thuộc nhà cung cấp).
+- **Hợp đồng:** nhà cung cấp, loại (support/bảo hành hãng, license, ISP, bảo trì), số hợp đồng, ngày bắt đầu/kết thúc, SLA, file đính kèm,
   thiết bị/link được áp dụng.
 - Từ thiết bị hoặc link WAN bấm ra ngay hotline, liên hệ và hợp đồng liên quan.
 
@@ -220,7 +222,7 @@ click → zoom tới đối tượng; badge trên node.
 Gắn credential với một hoặc nhiều thiết bị (kèm mục đích). Chu kỳ đổi mật khẩu đề xuất và ngày đổi gần nhất.
 
 **Tài khoản cloud:** nhà cung cấp (FortiCloud, TP-Link Omada, UniFi, Meraki, Aruba Central, Hikvision Hik-Connect, khác), URL portal,
-username, credential (local/external), người giữ thiết bị MFA, gói dịch vụ, ngày hết hạn, đối tác liên quan; danh sách thiết bị được quản lý bởi tài khoản.
+username, credential (local/external), người giữ thiết bị MFA, gói dịch vụ, ngày hết hạn, nhà cung cấp liên quan; danh sách thiết bị được quản lý bởi tài khoản.
 
 **An toàn:**
 - Bí mật mặc định che; "Hiện"/"Copy" cần quyền `credential.reveal` + MFA trong 5 phút gần nhất; mỗi lần ghi audit (ai, khi nào, credential nào, IP).
@@ -282,7 +284,7 @@ Import subnet/dải IP từ Excel (P2). Import `.ntb.json` (P1). Import draw.io 
 - Chuẩn hóa tên khi import: phát hiện tên gần giống (khác hoa/thường, dấu, khoảng trắng, gạch dưới — vd 'Hochiminh', 'HoChiMinh', 'Ho Chi Minh')
   và đề xuất gộp; người dùng xác nhận trước khi tạo.
 - Thiết bị cùng IP + cùng site + cùng loại firewall/switch: đề xuất tạo cụm HA/stack thay vì báo lỗi.
-- Cột 'Person in charge': ánh xạ vào người phụ trách hoặc đối tác bảo trì.
+- Cột 'Person in charge': ánh xạ vào người phụ trách hoặc nhà cung cấp bảo trì.
 
 **Export:** PNG/SVG sơ đồ có legend (P1); `.ntb.json` một site/sơ đồ, không có bí mật (P1); Excel danh sách thiết bị (P1);
 PDF sơ đồ A4/A3 có title block (P2); Excel IP plan, port map, BOQ, VLAN (P2); Design Document tổng hợp (P4).
@@ -339,7 +341,7 @@ Chrome/Edge/Firefox/Safari 2 bản mới nhất; màn hình ≥ 1280 px (tablet 
 
 ```
 Trình duyệt ── React SPA
-   App shell (menu module, org switcher, Ctrl+K) · Modules (Thiết bị, IPAM, Sites, Đối tác, Kho mật khẩu, Quản trị)
+   App shell (menu module, org switcher, Ctrl+K) · Modules (Thiết bị, IPAM, Đơn vị & Sites, Nhà cung cấp, Kho mật khẩu, Quản trị)
    Editor sơ đồ (Zustand + commands + React Flow + Web Worker validation)
    TanStack Query ◄── client sinh từ api/openapi.yaml
         │ HTTPS /api  (+ SSE /api/live ở P3)
@@ -347,7 +349,7 @@ Nginx ──┤
         ▼
 Go binary `ntb`
    ├─ HTTP API (chi + oapi-codegen): auth/MFA/RBAC, tenant middleware, inventory, ipam, diagrams,
-   │  import/export, partners, vault, audit, notify
+   │  import/export, vendors, vault, audit, notify
    └─ (P3) SNMP poller (goroutine pool, gosnmp) ──► thiết bị (UDP 161)
         │ pgx + sqlc
         ▼
@@ -372,7 +374,7 @@ PostgreSQL 16
 | --- | --- | --- |
 | 0 | Khung repo, Compose (web+api+db), OpenAPI + sinh code, migration, lint/test | `make check` pass, đăng nhập được trong Docker |
 | 1 — MVP | Auth + MFA cơ bản, tổ chức + vai trò, Sites/Location/Rack, kho thiết bị + interface + IP, IPAM cơ bản, editor sơ đồ gắn kho, validation, import Excel thiết bị, export PNG/SVG/JSON/Excel, audit log, tìm kiếm toàn cục, dashboard cơ bản | Checklist bên dưới |
-| 2 — Enterprise | Kho mật khẩu & cloud, Đối tác & hợp đồng, cảnh báo hết hạn + email, link chia sẻ, SSO OIDC, báo cáo PDF/Excel, multi-page, layer, segment, IPAM đầy đủ, model library | Review bảo mật kho mật khẩu & phân quyền đạt |
+| 2 — Enterprise | Kho mật khẩu & cloud, Nhà cung cấp & hợp đồng, cảnh báo hết hạn + email, link chia sẻ, SSO OIDC, báo cáo PDF/Excel, multi-page, layer, segment, IPAM đầy đủ, model library | Review bảo mật kho mật khẩu & phân quyền đạt |
 | 3 — Giám sát | SNMP profile, poller, ifIndex, SSE, UI live, ARP/MAC, LLDP, phụ thuộc site | Poll 200 thiết bị/60 s, đúng với snmpsim |
 | 4 | Backup cấu hình qua SSH (chỉ đọc), remote poller, cộng tác realtime, API token công khai, import draw.io, desktop | — |
 

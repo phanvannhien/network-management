@@ -33,7 +33,7 @@ Phase hiện tại: **Phase 0**
 
 ### Dữ liệu hạ tầng
 - [x] **P1-07 Đơn vị/Sites/Location/Rack**: CRUD đơn vị; site có kind và đơn vị (hoặc dùng chung); cây location; rack view đơn giản; quy tắc mã ADR-030 (bắt buộc + gợi ý).
-- [ ] **P1-07b Cấp Đối tác (ADR-031)**: bảng `partners` (mã, quan hệ với tổ chức, liên hệ); đơn vị bắt buộc thuộc đối tác (mã đơn vị duy nhất trong đối tác); mã site theo mã đối tác; chuyển dữ liệu P1-07 (đơn vị hiện có → đối tác + một đơn vị mặc định); giao diện Đối tác → Đơn vị → Site.
+- [ ] **P1-07b Cấp Đối tác (ADR-031)**: bảng `partners` (mã, quan hệ với tổ chức, liên hệ); đơn vị bắt buộc thuộc đối tác (mã đơn vị duy nhất trong đối tác); mã site theo mã đối tác; chuyển dữ liệu P1-07 (đơn vị hiện có → đối tác + một đơn vị mặc định mã `MAIN`); giao diện Đối tác → Đơn vị → Site.
 - [ ] **P1-07c Phân quyền theo đối tác/đơn vị & chia sẻ (ADR-029, ADR-031)**: `partner_members` (partner_admin/editor/viewer) và `business_unit_members` (unit_admin/editor/viewer), quyền = hợp các cấp; partner_admin/unit_admin mời/phân quyền user, tạo/sửa đơn vị/site trong phạm vi; `resource_shares` cho site với đích đối tác hoặc đơn vị (xem/sửa); bộ chọn đối tác/đơn vị trên topbar; bỏ `site_scope`; audit mọi cấp/thu hồi quyền; test chéo đối tác/đơn vị như test chéo tổ chức.
 - [ ] **P1-08 Kho thiết bị**: bảng devices đủ trường SRS §4.1 (trừ phần Phase 2), danh sách phân trang server + lọc + chọn cột + sửa hàng loạt; trang chi tiết các tab có sẵn dữ liệu; custom fields + tag; thiết bị có business_unit_id (mặc định theo site, bắt buộc chọn khi site dùng chung); lọc theo đối tác/đơn vị.
 - [ ] **P1-09 Template & interface**: template theo SRS §4.3 sinh cổng physical; thêm interface ảo; IP theo interface (CIDR, VRF, role); chọn interface quản trị; IP NAT/public; `poll_address`.
@@ -71,7 +71,7 @@ Phase hiện tại: **Phase 0**
 - [ ] **P2-01 Review bảo mật nền tảng**: tenant isolation, RBAC, session, CSRF, header, rate limit; cân nhắc Postgres RLS (ADR-016).
 - [ ] **P2-02 Kho mật khẩu**: credentials local (envelope encryption, xoay master key) + external reference (Bitwarden/Vaultwarden, HashiCorp Vault, khác); gắn thiết bị; reveal/copy với quyền + MFA 5 phút + audit; clipboard tự xóa; cảnh báo dùng chung/quá hạn đổi.
 - [ ] **P2-03 Tài khoản cloud**: CRUD, liên kết credential, thiết bị được quản lý, người giữ MFA, ngày hết hạn.
-- [ ] **P2-04 Đối tác & hợp đồng**: partners, contacts, contracts + đính kèm file; liên kết thiết bị/link WAN; trường mua sắm/hỗ trợ của thiết bị trỏ tới đối tác/hợp đồng.
+- [ ] **P2-04 Nhà cung cấp & hợp đồng**: vendors, vendor_contacts, contracts + đính kèm file; liên kết thiết bị/link WAN; trường mua sắm/hỗ trợ của thiết bị trỏ tới nhà cung cấp/hợp đồng. *(đổi tên từ "Đối tác & hợp đồng" — ADR-031)*
 - [ ] **P2-05 Cảnh báo hết hạn**: cấu hình SMTP theo tổ chức; quy tắc 90/60/30/7 ngày cho bảo hành, license, EoL, cloud, hợp đồng, credential; thông báo trong app + email.
 - [ ] **P2-06 Link chia sẻ chỉ xem**: token có hạn, mật khẩu tùy chọn, ẩn IP tùy chọn, thu hồi; trang xem công khai không lộ dữ liệu khác.
 - [ ] **P2-07 SSO OIDC**: Entra ID / Google Workspace / Keycloak; ánh xạ nhóm → vai trò.
