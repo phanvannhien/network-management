@@ -305,7 +305,7 @@ PostgreSQL, dữ liệu quan hệ. Mọi bảng nghiệp vụ có `id` (UUID), `
 | IPAM | vlans, subnets, ip_ranges |
 | Sơ đồ logic | endpoint_groups, endpoint_members, segments (P2), links (a_kind, a_id, a_interface_id null được; b_…; kind, medium, speed, status…) |
 | Sơ đồ hiển thị | diagrams (scope: organization / business_unit / site + scope_id, name, layer, view JSONB: nodes {refKind, refId, x, y, labelStyle, locked}, edges {linkId, routing, waypoints}, annotations, viewport, labelTemplate) |
-| Đối tác (P2) | partners, partner_contacts, contracts, contract_items (device/link) |
+| Nhà cung cấp (P2) | vendors, vendor_contacts, contracts, contract_items (device/link) |
 | Kho mật khẩu (P2) | credentials (storage: local/external, ciphertext, wrapped_dek, external_provider, external_ref), device_credentials, cloud_accounts, device_cloud_accounts |
 | Cảnh báo (P2) | notifications, notification_rules |
 | Giám sát (P3) | snmp_profiles, device_status, interface_status, interface_metrics, arp_observations, fdb_observations |
