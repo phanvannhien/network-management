@@ -18,7 +18,7 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
     sơ đồ), làm trước P1-14; P1-19 thêm khung nhóm; P1-20 thêm cảnh báo lệch site; P1-21/P1-25 đổi đơn vị → danh mục.
 - Test / cách kiểm tra: không có thay đổi code.
 - Còn dở / lỗi đã biết: code hiện tại vẫn theo ADR-031 cho tới khi xong P1-27..P1-29.
-- Câu hỏi cho người dùng: chưa trả lời — hướng tạo VLAN/subnet/IP ngay trên sơ đồ (giữ menu IPAM để tra cứu) đã đề xuất trước đó.
+- Câu hỏi cho người dùng: không. *(Đã chốt thêm: giữ menu IPAM để tra cứu nhanh; panel thuộc tính trên sơ đồ cũng tạo/gán VLAN, subnet, IP — ghi vào P1-18 và ADR-014.)*
 - Đề xuất quyết định cần chốt: như trên.
 - Task tiếp theo đề xuất: **P1-27** Cây Danh mục & mã site tự sinh.
 

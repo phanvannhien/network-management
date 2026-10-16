@@ -65,6 +65,9 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Chi tiết triển khai (P1-10/P1-11, người dùng đồng ý 2026-10-16):** dải IP **không có trường VLAN riêng** — dùng VLAN của
   subnet chứa nó (một subnet chạy trên đúng một VLAN, trường riêng chỉ tạo dữ liệu mâu thuẫn). "Đang dùng" = view
   `ipam_addresses`: IP interface thiết bị + IP quản trị cụm + IP thành viên nhóm đầu cuối (VRF của subnet chứa dải của nhóm).
+- **Chỗ thao tác (người dùng chốt 2026-10-16):** VLAN/subnet/dải là dữ liệu chung của tổ chức (một VLAN dùng cho nhiều sơ đồ, màu
+  chung). Menu **IPAM** giữ để tra cứu nhanh (IP thuộc ai, IP trống, mức sử dụng); **panel thuộc tính trên sơ đồ** cũng tạo/gán
+  VLAN, subnet, IP tại chỗ (P1-18) — cùng ghi vào IPAM chung, không có bản riêng theo sơ đồ.
 
 ### ADR-015 — Backend và database ngay từ MVP; database là nguồn sự thật *(thay thế ADR-007)*
 - **Quyết định:** Phase 1 đã có Go API + Postgres + đăng nhập. Dữ liệu mạng (thiết bị, interface, IP, link, subnet…)
