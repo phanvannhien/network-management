@@ -110,7 +110,7 @@ export function ClusterDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('clusters.kind')}>
+            <FormField label={t('clusters.kind')} hint={t(`hints.clusterKinds.${f.kind}`)}>
               {(p) => (
                 <NativeSelect
                   {...p}

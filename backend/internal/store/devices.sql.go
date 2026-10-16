@@ -33,7 +33,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -349,7 +350,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -380,7 +382,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -411,7 +414,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -442,7 +446,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -473,7 +478,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -505,7 +511,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
@@ -536,7 +543,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)
   AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
@@ -928,7 +936,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
        OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
   AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
   AND ($8::uuid IS NULL OR du.partner_id = $8)
   AND ($9::uuid IS NULL OR d.business_unit_id = $9)

@@ -4331,6 +4331,15 @@ components:
           maxLength: 200
         adminUp:
           type: boolean
+        mac:
+          type: [string, 'null']
+          description: MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+        vlanTag:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 4094
+          description: 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
 
     InterfaceUpdate:
       type: object
@@ -4378,13 +4387,22 @@ components:
           maxLength: 200
         adminUp:
           type: boolean
+        mac:
+          type: [string, 'null']
+          description: MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+        vlanTag:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 4094
+          description: 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
         version:
           type: integer
           format: int32
 
     Interface:
       type: object
-      required: [id, name, kind, media, speed, duplex, mode, accessVlan, nativeVlan, allowedVlans, poe, lagId, lagName, description, adminUp, sortOrder, isManagement, version]
+      required: [id, name, kind, media, speed, duplex, mode, accessVlan, nativeVlan, allowedVlans, poe, lagId, lagName, description, adminUp, mac, vlanTag, sortOrder, isManagement, version]
       properties:
         id:
           type: string
@@ -4431,6 +4449,15 @@ components:
           maxLength: 200
         adminUp:
           type: boolean
+        mac:
+          type: [string, 'null']
+          description: MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+        vlanTag:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 4094
+          description: 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
         lagName:
           type: string
         sortOrder:
@@ -4534,7 +4561,7 @@ components:
     PortGroup:
       type: object
       required: [pattern, start, count]
-      description: Ports named by pattern with {n} replaced by start … start+count-1, e.g. Gi1/0/{n}
+      description: Ports named by pattern with {n} replaced by start … start+count-1 and {m} by the stack member number (1 outside a cluster), e.g. Gi{m}/0/{n}
       properties:
         pattern:
           type: string

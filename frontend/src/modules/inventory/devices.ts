@@ -496,10 +496,10 @@ export function useTemplateMutations(orgId: string) {
 }
 
 /** Expand port groups like the server does (preview in the template form). */
-export function expandPorts(groups: PortGroup[]): string[] {
+export function expandPorts(groups: PortGroup[], member = 1): string[] {
   return groups.flatMap((g) =>
     Array.from({ length: Math.max(0, Math.min(g.count, 512)) }, (_, i) =>
-      g.pattern.replaceAll('{n}', String(g.start + i)),
+      g.pattern.replaceAll('{n}', String(g.start + i)).replaceAll('{m}', String(member)),
     ),
   )
 }

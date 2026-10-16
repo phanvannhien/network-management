@@ -10,6 +10,7 @@ Tài liệu nguồn:
 - `docs/PLAN.md` — task theo phase, có ID và điều kiện "Done khi".
 - `docs/DECISIONS.md` — quyết định kiến trúc (ADR). Không làm trái ADR nếu chưa hỏi.
 - `docs/STATUS.md` — nhật ký phiên làm việc. Luôn đọc mục mới nhất khi bắt đầu.
+- `docs/GLOSSARY.md` — thuật ngữ mạng giải thích cho người không chuyên; cập nhật khi thêm khái niệm mới vào sản phẩm.
 
 ## Quy trình mỗi phiên
 1. Đọc mục mới nhất trong `docs/STATUS.md`, rồi `docs/PLAN.md`. Làm task người dùng chỉ định;

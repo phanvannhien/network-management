@@ -111,6 +111,8 @@ function InterfaceDialog({
     lagId: iface?.lagId ?? '',
     description: iface?.description ?? '',
     adminUp: iface?.adminUp ?? true,
+    mac: iface?.mac ?? '',
+    vlanTag: iface?.vlanTag ? String(iface.vlanTag) : '',
   })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
@@ -134,6 +136,8 @@ function InterfaceDialog({
           lagId: f.kind === 'lag' ? null : f.lagId || null,
           description: f.description,
           adminUp: f.adminUp,
+          mac: f.mac.trim() || null,
+          vlanTag: f.kind === 'subinterface' ? optNum(f.vlanTag) : null,
         },
       },
       {
@@ -171,7 +175,7 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.ifaceKind')}>
+            <FormField label={t('devices.ifaceKind')} hint={t(`hints.ifaceKinds.${f.kind}`)}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -204,7 +208,7 @@ function InterfaceDialog({
             <FormField label={t('devices.speed')}>
               {(p) => <Input {...p} maxLength={20} value={f.speed} onChange={set('speed')} />}
             </FormField>
-            <FormField label={t('devices.mode')}>
+            <FormField label={t('devices.mode')} hint={t('hints.mode')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -219,7 +223,7 @@ function InterfaceDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.lag')}>
+            <FormField label={t('devices.lag')} hint={t('hints.lag')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -236,7 +240,7 @@ function InterfaceDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.accessVlan')}>
+            <FormField label={t('devices.accessVlan')} hint={t('hints.accessVlan')}>
               {(p) => (
                 <Input
                   {...p}
@@ -248,7 +252,7 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.nativeVlan')}>
+            <FormField label={t('devices.nativeVlan')} hint={t('hints.nativeVlan')}>
               {(p) => (
                 <Input
                   {...p}
@@ -260,7 +264,7 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.allowedVlans')} hint={t('devices.allowedHint')}>
+            <FormField label={t('devices.allowedVlans')} hint={t('hints.allowedVlans')}>
               {(p) => (
                 <Input
                   {...p}
@@ -272,11 +276,37 @@ function InterfaceDialog({
               )}
             </FormField>
           </div>
-          <FormField label={t('devices.ifaceDescription')}>
-            {(p) => (
-              <Input {...p} maxLength={200} value={f.description} onChange={set('description')} />
-            )}
-          </FormField>
+          <div className="grid grid-cols-3 gap-3">
+            <FormField label={t('devices.ifaceDescription')} className="col-span-1">
+              {(p) => (
+                <Input {...p} maxLength={200} value={f.description} onChange={set('description')} />
+              )}
+            </FormField>
+            <FormField label={t('devices.mac')} hint={t('hints.mac')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  maxLength={20}
+                  value={f.mac}
+                  onChange={set('mac')}
+                  className="font-mono"
+                />
+              )}
+            </FormField>
+            <FormField label={t('devices.vlanTag')} hint={t('hints.vlanTag')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  min={1}
+                  max={4094}
+                  disabled={f.kind !== 'subinterface'}
+                  value={f.vlanTag}
+                  onChange={set('vlanTag')}
+                />
+              )}
+            </FormField>
+          </div>
           <div className="flex gap-6 text-form">
             <label className="flex items-center gap-2">
               <Checkbox
@@ -409,6 +439,7 @@ export function InterfacesTab({
             'VLAN',
             t('devices.lag'),
             'IP',
+            'MAC',
             t('devices.ifaceDescription'),
             <span key="a" className="sr-only">
               {t('common.more')}
@@ -434,7 +465,8 @@ export function InterfacesTab({
               <td className="font-mono text-tech">
                 {i.accessVlan ?? ''}
                 {i.allowedVlans && `${i.accessVlan ? ' · ' : ''}${i.allowedVlans}`}
-                {!i.accessVlan && !i.allowedVlans && '—'}
+                {i.vlanTag && `dot1q ${i.vlanTag}`}
+                {!i.accessVlan && !i.allowedVlans && !i.vlanTag && '—'}
               </td>
               <td>{i.lagName || '—'}</td>
               <td className="font-mono text-tech">
@@ -442,6 +474,7 @@ export function InterfacesTab({
                   .map((ip) => ip.address)
                   .join(', ') || '—'}
               </td>
+              <td className="font-mono text-tech">{i.mac || '—'}</td>
               <td className="max-w-64 truncate">{i.description || '—'}</td>
               <td className="text-right">
                 {canEdit && (
@@ -563,7 +596,7 @@ function IpDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('devices.address')} required hint={t('devices.addressHint')}>
+            <FormField label={t('devices.address')} required hint={t('hints.cidr')}>
               {(p) => (
                 <Input
                   {...p}
@@ -575,7 +608,7 @@ function IpDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.ipRole')}>
+            <FormField label={t('devices.ipRole')} hint={t(`hints.ipRoles.${f.role}`)}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -606,7 +639,7 @@ function IpDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.vrf')}>
+            <FormField label={t('devices.vrf')} hint={t('hints.vrf')}>
               {(p) => (
                 <Input
                   {...p}

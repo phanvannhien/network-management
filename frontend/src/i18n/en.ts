@@ -369,6 +369,8 @@ export const en: Strings = {
     },
     noMedia: '—',
     ipCount: '{{count}} IP',
+    mac: 'MAC',
+    vlanTag: 'VLAN tag (802.1Q)',
     types: {
       router: 'Router',
       l3_switch: 'L3 switch',
@@ -432,6 +434,43 @@ export const en: Strings = {
     yes: 'Yes',
     no: 'No',
   },
+  hints: {
+    ifaceKinds: {
+      physical: 'A real port on the device (takes a cable), e.g. Gi1/0/1.',
+      svi: 'A virtual port for a VLAN on an L3 switch, e.g. Vlan10 — often the management IP or the VLAN gateway.',
+      loopback:
+        "An always-up virtual port, often the router's management IP / router-id, e.g. Loopback0.",
+      tunnel: 'A virtual link between two devices across another network (IPsec VPN, GRE).',
+      subinterface: 'A child of a physical port, one VLAN each (router-on-a-stick), e.g. Gi0/0.10.',
+      lag: 'Several physical ports bundled into one link (LACP / Port-channel) for bandwidth and redundancy.',
+    },
+    mode: 'Access: one VLAN (PCs, cameras…). Trunk: many VLANs (switch–switch, switch–firewall). Routed: the port has an IP like a router.',
+    accessVlan: 'The VLAN of an access port.',
+    nativeVlan: 'On a trunk: the untagged VLAN (VLAN 1 by default).',
+    allowedVlans: 'On a trunk: the VLANs allowed through, e.g. 10,20-30.',
+    lag: 'The LAG this port belongs to (pick an interface of kind LAG).',
+    mac: "The port's hardware address in any common form: aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…",
+    vlanTag: 'Sub-interfaces only: the 802.1Q VLAN the sub-interface handles, e.g. Gi0/0.10 → 10.',
+    cidr: 'IP with its prefix length, e.g. 10.72.114.2/24 (/24 = 255.255.255.0). An IP without /… means /32.',
+    vrf: 'A separate routing table (MPLS / isolated customers). Leave empty if unused — the same IP in two VRFs is valid.',
+    ipRoles: {
+      primary:
+        "The interface's main IP. The primary IP of the management interface is the device's management IP.",
+      secondary: 'An extra IP on the same interface.',
+      nat: 'The IP the device is seen as after NAT; not configured on the device.',
+      public: 'A public IP used to reach the device from the Internet (usually NATed to it).',
+    },
+    clusterKinds: {
+      ha_active_passive:
+        'Standby pair: one runs, one waits and takes over on failure. Shared management IP / config.',
+      ha_active_active: 'Both run and share the load; one carries everything if the other fails.',
+      stack:
+        'Switches joined by stack cables, managed as one: shared hostname and IP, ports numbered per member (Gi1/…, Gi2/…).',
+      vpc: 'Cisco Nexus: two separate switches; devices below build a LAG to both. Each keeps its own IP.',
+      vss: 'Cisco Catalyst: two switches merged into one logical switch (stack-like for core).',
+      other: 'Any other special case; no device type limits.',
+    },
+  },
   clusters: {
     join: 'Join a cluster',
     joinTitle: 'Add {{name}} to a cluster',
@@ -493,7 +532,7 @@ export const en: Strings = {
     name: 'Template name',
     ports: 'Port groups',
     portsHint:
-      'Each group: a name pattern where {n} is the number, e.g. Gi1/0/{n} from 1, 24 ports.',
+      'Each group: a name pattern where {n} is the port number and {m} the stack member number (1 when standalone), e.g. Gi{m}/0/{n} from 1, 24 ports → Gi1/0/1…; member 2 of a stack → Gi2/0/1….',
     pattern: 'Pattern',
     start: 'Start',
     count: 'Count',

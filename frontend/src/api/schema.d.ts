@@ -2025,6 +2025,13 @@ export interface components {
             lagId?: string | null;
             description?: string;
             adminUp?: boolean;
+            /** @description MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff */
+            mac?: string | null;
+            /**
+             * Format: int32
+             * @description 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+             */
+            vlanTag?: number | null;
         };
         InterfaceUpdate: {
             name: string;
@@ -2049,6 +2056,13 @@ export interface components {
             lagId?: string | null;
             description?: string;
             adminUp?: boolean;
+            /** @description MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff */
+            mac?: string | null;
+            /**
+             * Format: int32
+             * @description 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+             */
+            vlanTag?: number | null;
             /** Format: int32 */
             version: number;
         };
@@ -2077,6 +2091,13 @@ export interface components {
             lagId: string | null;
             description: string;
             adminUp: boolean;
+            /** @description MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff */
+            mac: string | null;
+            /**
+             * Format: int32
+             * @description 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+             */
+            vlanTag: number | null;
             lagName: string;
             /** Format: int32 */
             sortOrder: number;
@@ -2133,7 +2154,7 @@ export interface components {
         IpAddressList: {
             ips: components["schemas"]["IpAddress"][];
         };
-        /** @description Ports named by pattern with {n} replaced by start … start+count-1, e.g. Gi1/0/{n} */
+        /** @description Ports named by pattern with {n} replaced by start … start+count-1 and {m} by the stack member number (1 outside a cluster), e.g. Gi{m}/0/{n} */
         PortGroup: {
             pattern: string;
             /** Format: int32 */

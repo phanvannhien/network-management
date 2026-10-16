@@ -33,7 +33,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -85,7 +86,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -118,7 +120,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -149,7 +152,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -180,7 +184,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -211,7 +216,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -242,7 +248,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -274,7 +281,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
@@ -305,7 +313,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))

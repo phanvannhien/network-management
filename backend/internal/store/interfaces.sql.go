@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"net"
 	"net/netip"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -122,10 +123,11 @@ func (q *Queries) CreateIP(ctx context.Context, arg CreateIPParams) (IpAddress, 
 
 const createInterface = `-- name: CreateInterface :one
 INSERT INTO interfaces (organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan,
-                        allowed_vlans, poe, lag_id, description, admin_up, sort_order)
+                        allowed_vlans, poe, lag_id, description, admin_up, sort_order, mac, vlan_tag)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, $15, $16)
-RETURNING id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version
+        $10, $11, $12, $13, $14, $15, $16,
+        $17, $18)
+RETURNING id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version, mac, vlan_tag
 `
 
 type CreateInterfaceParams struct {
@@ -145,6 +147,8 @@ type CreateInterfaceParams struct {
 	Description    string
 	AdminUp        bool
 	SortOrder      int32
+	Mac            net.HardwareAddr
+	VlanTag        pgtype.Int4
 }
 
 func (q *Queries) CreateInterface(ctx context.Context, arg CreateInterfaceParams) (Interface, error) {
@@ -165,6 +169,8 @@ func (q *Queries) CreateInterface(ctx context.Context, arg CreateInterfaceParams
 		arg.Description,
 		arg.AdminUp,
 		arg.SortOrder,
+		arg.Mac,
+		arg.VlanTag,
 	)
 	var i Interface
 	err := row.Scan(
@@ -188,6 +194,8 @@ func (q *Queries) CreateInterface(ctx context.Context, arg CreateInterfaceParams
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Mac,
+		&i.VlanTag,
 	)
 	return i, err
 }
@@ -338,7 +346,7 @@ func (q *Queries) GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
 }
 
 const getInterface = `-- name: GetInterface :one
-SELECT id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version FROM interfaces WHERE id = $1 AND organization_id = $2 AND device_id = $3
+SELECT id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version, mac, vlan_tag FROM interfaces WHERE id = $1 AND organization_id = $2 AND device_id = $3
 `
 
 type GetInterfaceParams struct {
@@ -371,6 +379,8 @@ func (q *Queries) GetInterface(ctx context.Context, arg GetInterfaceParams) (Int
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Mac,
+		&i.VlanTag,
 	)
 	return i, err
 }
@@ -478,7 +488,7 @@ func (q *Queries) ListDeviceTemplates(ctx context.Context, organizationID pgtype
 }
 
 const listInterfaces = `-- name: ListInterfaces :many
-SELECT i.id, i.organization_id, i.device_id, i.name, i.kind, i.media, i.speed, i.duplex, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.poe, i.lag_id, i.description, i.admin_up, i.sort_order, i.created_at, i.updated_at, i.version, COALESCE(lag.name, '')::text AS lag_name
+SELECT i.id, i.organization_id, i.device_id, i.name, i.kind, i.media, i.speed, i.duplex, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.poe, i.lag_id, i.description, i.admin_up, i.sort_order, i.created_at, i.updated_at, i.version, i.mac, i.vlan_tag, COALESCE(lag.name, '')::text AS lag_name
 FROM interfaces i
 LEFT JOIN interfaces lag ON lag.id = i.lag_id
 WHERE i.organization_id = $1 AND i.device_id = $2
@@ -511,6 +521,8 @@ type ListInterfacesRow struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	Mac            net.HardwareAddr
+	VlanTag        pgtype.Int4
 	LagName        string
 }
 
@@ -544,6 +556,8 @@ func (q *Queries) ListInterfaces(ctx context.Context, arg ListInterfacesParams) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
+			&i.Mac,
+			&i.VlanTag,
 			&i.LagName,
 		); err != nil {
 			return nil, err
@@ -677,9 +691,10 @@ func (q *Queries) UpdateIP(ctx context.Context, arg UpdateIPParams) (IpAddress, 
 const updateInterface = `-- name: UpdateInterface :one
 UPDATE interfaces SET name = $1, kind = $2, media = $3, speed = $4, duplex = $5, mode = $6,
   access_vlan = $7, native_vlan = $8, allowed_vlans = $9,
-  poe = $10, lag_id = $11, description = $12, admin_up = $13, version = version + 1
-WHERE id = $14 AND organization_id = $15 AND device_id = $16 AND version = $17
-RETURNING id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version
+  poe = $10, lag_id = $11, description = $12, admin_up = $13, mac = $14,
+  vlan_tag = $15, version = version + 1
+WHERE id = $16 AND organization_id = $17 AND device_id = $18 AND version = $19
+RETURNING id, organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan, allowed_vlans, poe, lag_id, description, admin_up, sort_order, created_at, updated_at, version, mac, vlan_tag
 `
 
 type UpdateInterfaceParams struct {
@@ -696,6 +711,8 @@ type UpdateInterfaceParams struct {
 	LagID          pgtype.UUID
 	Description    string
 	AdminUp        bool
+	Mac            net.HardwareAddr
+	VlanTag        pgtype.Int4
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
 	DeviceID       pgtype.UUID
@@ -717,6 +734,8 @@ func (q *Queries) UpdateInterface(ctx context.Context, arg UpdateInterfaceParams
 		arg.LagID,
 		arg.Description,
 		arg.AdminUp,
+		arg.Mac,
+		arg.VlanTag,
 		arg.ID,
 		arg.OrganizationID,
 		arg.DeviceID,
@@ -744,6 +763,8 @@ func (q *Queries) UpdateInterface(ctx context.Context, arg UpdateInterfaceParams
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Mac,
+		&i.VlanTag,
 	)
 	return i, err
 }

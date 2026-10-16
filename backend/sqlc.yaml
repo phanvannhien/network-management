@@ -22,3 +22,8 @@ sql:
               type: "Prefix"
               pointer: true
             nullable: true
+          - column: "interfaces.mac"
+            go_type:
+              import: "net"
+              type: "HardwareAddr"
+            nullable: true

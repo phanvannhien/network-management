@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/netip"
 	"regexp"
 	"strconv"
@@ -42,7 +43,8 @@ type port struct {
 }
 
 // expandPorts turns template port groups into port names ("Gi1/0/{n}", start 1, count 24 → Gi1/0/1 … Gi1/0/24).
-func expandPorts(groups []apigen.PortGroup) ([]port, string) {
+// {m} is the stack member number, so member 2 of a stack gets Gi2/0/1 … from "Gi{m}/0/{n}".
+func expandPorts(groups []apigen.PortGroup, member int32) ([]port, string) {
 	out := []port{}
 	seen := map[string]bool{}
 	for _, g := range groups {
@@ -60,7 +62,7 @@ func expandPorts(groups []apigen.PortGroup) ([]port, string) {
 			return nil, "Tốc độ tối đa 20 ký tự"
 		}
 		for n := g.Start; n < g.Start+g.Count; n++ {
-			name := strings.ReplaceAll(pattern, "{n}", strconv.Itoa(int(n)))
+			name := strings.ReplaceAll(strings.ReplaceAll(pattern, "{n}", strconv.Itoa(int(n))), "{m}", strconv.Itoa(int(member)))
 			if tooLong(name, 64) {
 				return nil, "Tên cổng tối đa 64 ký tự"
 			}
@@ -86,12 +88,12 @@ func expandPorts(groups []apigen.PortGroup) ([]port, string) {
 }
 
 // generatePorts adds the template's ports a device lacks; returns how many were added.
-func generatePorts(ctx context.Context, q store.Querier, m tenant.Membership, device pgtype.UUID, tpl store.DeviceTemplate) (int64, error) {
+func generatePorts(ctx context.Context, q store.Querier, m tenant.Membership, device pgtype.UUID, tpl store.DeviceTemplate, member int32) (int64, error) {
 	var groups []apigen.PortGroup
 	if err := json.Unmarshal(tpl.Ports, &groups); err != nil {
 		return 0, fmt.Errorf("decode template ports: %w", err)
 	}
-	ports, msg := expandPorts(groups)
+	ports, msg := expandPorts(groups, max(member, 1))
 	if msg != "" {
 		return 0, fmt.Errorf("stored template is invalid: %s", msg)
 	}
@@ -118,7 +120,7 @@ func generatePorts(ctx context.Context, q store.Querier, m tenant.Membership, de
 func toTemplate(t store.DeviceTemplate) apigen.DeviceTemplate {
 	groups := []apigen.PortGroup{}
 	_ = json.Unmarshal(t.Ports, &groups)
-	ports, _ := expandPorts(groups)
+	ports, _ := expandPorts(groups, 1)
 	return apigen.DeviceTemplate{
 		Id: uuid.UUID(t.ID.Bytes), Name: t.Name, Type: apigen.DeviceType(t.Type), Vendor: t.Vendor, Model: t.Model,
 		PartNumber: t.PartNumber, UHeight: t.UHeight, Ports: groups, PortCount: int32(len(ports)), Notes: t.Notes, Version: t.Version,
@@ -155,7 +157,7 @@ func validateTemplate(name string, typ apigen.DeviceType, vendor, model, partNum
 	case len(groups) > 50:
 		return f, "Tối đa 50 nhóm cổng"
 	}
-	if _, msg := expandPorts(groups); msg != "" {
+	if _, msg := expandPorts(groups, 1); msg != "" {
 		return f, msg
 	}
 	f.ports, _ = json.Marshal(groups)
@@ -385,12 +387,15 @@ type ifaceFields struct {
 	accessVlan, nativeVlan                                       pgtype.Int4
 	poe, adminUp                                                 bool
 	lag                                                          *uuid.UUID
+	mac                                                          net.HardwareAddr
+	vlanTag                                                      pgtype.Int4
 }
 
 func vlanOK(v *int32) bool { return v == nil || (*v >= 1 && *v <= 4094) }
 
 func validateInterface(name string, kind apigen.InterfaceKind, media *apigen.InterfaceMedia, speed *string, duplex *string,
-	mode *apigen.InterfaceMode, access, native *int32, allowed *string, poe *bool, lag *uuid.UUID, description *string, adminUp *bool) (ifaceFields, string) {
+	mode *apigen.InterfaceMode, access, native *int32, allowed *string, poe *bool, lag *uuid.UUID, description *string, adminUp *bool,
+	mac *string, vlanTag *int32) (ifaceFields, string) {
 	f := ifaceFields{
 		name: strings.TrimSpace(name), kind: string(kind), speed: strings.TrimSpace(str(speed)), duplex: "auto",
 		allowed: strings.ReplaceAll(str(allowed), " ", ""), description: str(description), adminUp: true, lag: lag,
@@ -413,6 +418,22 @@ func validateInterface(name string, kind apigen.InterfaceKind, media *apigen.Int
 	}
 	if native != nil {
 		f.nativeVlan = pgtype.Int4{Int32: *native, Valid: true}
+	}
+	if mac != nil && strings.TrimSpace(*mac) != "" {
+		hw, err := net.ParseMAC(strings.TrimSpace(*mac))
+		if err != nil || len(hw) != 6 {
+			return f, "MAC không hợp lệ, vd aa:bb:cc:dd:ee:ff hoặc aabb.ccdd.eeff"
+		}
+		f.mac = hw
+	}
+	if vlanTag != nil {
+		if *vlanTag < 1 || *vlanTag > 4094 {
+			return f, "VLAN tag từ 1 đến 4094"
+		}
+		if kind != apigen.Subinterface {
+			return f, "VLAN tag (802.1Q) chỉ dùng cho sub-interface"
+		}
+		f.vlanTag = pgtype.Int4{Int32: *vlanTag, Valid: true}
 	}
 	switch {
 	case f.name == "" || tooLong(f.name, 64):
@@ -456,10 +477,12 @@ type ifaceSnapshot struct {
 	Poe         bool   `json:"poe,omitempty"`
 	Description string `json:"description,omitempty"`
 	AdminUp     bool   `json:"adminUp"`
+	Mac         string `json:"mac,omitempty"`
+	VlanTag     int32  `json:"vlanTag,omitempty"`
 }
 
 func snapInterface(i store.Interface) ifaceSnapshot {
-	return ifaceSnapshot{i.Name, i.Kind, i.Media, i.Speed, i.Mode, i.AccessVlan.Int32, i.NativeVlan.Int32, i.AllowedVlans, i.Poe, i.Description, i.AdminUp}
+	return ifaceSnapshot{i.Name, i.Kind, i.Media, i.Speed, i.Mode, i.AccessVlan.Int32, i.NativeVlan.Int32, i.AllowedVlans, i.Poe, i.Description, i.AdminUp, macString(i.Mac), i.VlanTag.Int32}
 }
 
 func optInt(v pgtype.Int4) *int32 {
@@ -476,6 +499,7 @@ func toInterface(i store.Interface, lagName string, mgmt pgtype.UUID) apigen.Int
 		Speed: i.Speed, Duplex: apigen.InterfaceDuplex(i.Duplex), Mode: apigen.InterfaceMode(i.Mode), AccessVlan: optInt(i.AccessVlan),
 		NativeVlan: optInt(i.NativeVlan), AllowedVlans: i.AllowedVlans, Poe: i.Poe, LagId: optUUID(i.LagID), LagName: lagName,
 		Description: i.Description, AdminUp: i.AdminUp, SortOrder: i.SortOrder, IsManagement: mgmt.Valid && mgmt == i.ID,
+		Mac: optMac(i.Mac), VlanTag: optInt(i.VlanTag),
 		Version: i.Version,
 	}
 }
@@ -517,7 +541,7 @@ func (s *Server) ListInterfaces(ctx context.Context, req apigen.ListInterfacesRe
 			ID: r.ID, OrganizationID: r.OrganizationID, DeviceID: r.DeviceID, Name: r.Name, Kind: r.Kind, Media: r.Media,
 			Speed: r.Speed, Duplex: r.Duplex, Mode: r.Mode, AccessVlan: r.AccessVlan, NativeVlan: r.NativeVlan,
 			AllowedVlans: r.AllowedVlans, Poe: r.Poe, LagID: r.LagID, Description: r.Description, AdminUp: r.AdminUp,
-			SortOrder: r.SortOrder, Version: r.Version,
+			SortOrder: r.SortOrder, Version: r.Version, Mac: r.Mac, VlanTag: r.VlanTag,
 		}
 		out.Interfaces = append(out.Interfaces, toInterface(i, r.LagName, d.MgmtInterfaceID))
 	}
@@ -546,7 +570,7 @@ func (s *Server) CreateInterface(ctx context.Context, req apigen.CreateInterface
 		v := string(*b.Duplex)
 		duplex = &v
 	}
-	f, msg := validateInterface(b.Name, b.Kind, b.Media, b.Speed, duplex, b.Mode, b.AccessVlan, b.NativeVlan, b.AllowedVlans, b.Poe, b.LagId, b.Description, b.AdminUp)
+	f, msg := validateInterface(b.Name, b.Kind, b.Media, b.Speed, duplex, b.Mode, b.AccessVlan, b.NativeVlan, b.AllowedVlans, b.Poe, b.LagId, b.Description, b.AdminUp, b.Mac, b.VlanTag)
 	var (
 		out     writeOutcome
 		created store.Interface
@@ -573,7 +597,7 @@ func (s *Server) CreateInterface(ctx context.Context, req apigen.CreateInterface
 		created, err = q.CreateInterface(ctx, store.CreateInterfaceParams{
 			OrganizationID: m.OrgID, DeviceID: dev.ID, Name: f.name, Kind: f.kind, Media: f.media, Speed: f.speed, Duplex: f.duplex,
 			Mode: f.mode, AccessVlan: f.accessVlan, NativeVlan: f.nativeVlan, AllowedVlans: f.allowed, Poe: f.poe, LagID: lag,
-			Description: f.description, AdminUp: f.adminUp, SortOrder: sort + 1,
+			Description: f.description, AdminUp: f.adminUp, SortOrder: sort + 1, Mac: f.mac, VlanTag: f.vlanTag,
 		})
 		if isUniqueViolation(err) {
 			out.conf = "Thiết bị đã có interface tên này"
@@ -632,7 +656,7 @@ func (s *Server) UpdateInterface(ctx context.Context, req apigen.UpdateInterface
 		v := string(*b.Duplex)
 		duplex = &v
 	}
-	f, msg := validateInterface(b.Name, b.Kind, b.Media, b.Speed, duplex, b.Mode, b.AccessVlan, b.NativeVlan, b.AllowedVlans, b.Poe, b.LagId, b.Description, b.AdminUp)
+	f, msg := validateInterface(b.Name, b.Kind, b.Media, b.Speed, duplex, b.Mode, b.AccessVlan, b.NativeVlan, b.AllowedVlans, b.Poe, b.LagId, b.Description, b.AdminUp, b.Mac, b.VlanTag)
 	var (
 		out     writeOutcome
 		updated store.Interface
@@ -664,6 +688,7 @@ func (s *Server) UpdateInterface(ctx context.Context, req apigen.UpdateInterface
 			ID: before.ID, OrganizationID: m.OrgID, DeviceID: dev.ID, Version: b.Version, Name: f.name, Kind: f.kind,
 			Media: f.media, Speed: f.speed, Duplex: f.duplex, Mode: f.mode, AccessVlan: f.accessVlan, NativeVlan: f.nativeVlan,
 			AllowedVlans: f.allowed, Poe: f.poe, LagID: lag, Description: f.description, AdminUp: f.adminUp,
+			Mac: f.mac, VlanTag: f.vlanTag,
 		})
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -757,7 +782,8 @@ func (s *Server) ApplyDeviceTemplate(ctx context.Context, req apigen.ApplyDevice
 		if err != nil {
 			return fmt.Errorf("load template: %w", err)
 		}
-		if added, err = generatePorts(ctx, q, m, dev.ID, tpl); err != nil {
+		// A stack member gets its own port numbers ({m}, ADR-027).
+		if added, err = generatePorts(ctx, q, m, dev.ID, tpl, dev.ClusterMemberNo.Int32); err != nil {
 			return err
 		}
 		return deviceAudit(ctx, q, m, dev.ID, "device.apply_template", nil, map[string]any{"template": tpl.Name, "addedPorts": added})
@@ -1040,4 +1066,19 @@ func (s *Server) DeleteDeviceIp(ctx context.Context, req apigen.DeleteDeviceIpRe
 		return nil, err
 	}
 	return apigen.DeleteDeviceIp204Response{}, nil
+}
+
+func macString(hw net.HardwareAddr) string {
+	if len(hw) == 0 {
+		return ""
+	}
+	return hw.String()
+}
+
+func optMac(hw net.HardwareAddr) *string {
+	if len(hw) == 0 {
+		return nil
+	}
+	v := hw.String()
+	return &v
 }

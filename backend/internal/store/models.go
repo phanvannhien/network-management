@@ -5,6 +5,7 @@
 package store
 
 import (
+	"net"
 	"net/netip"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -160,6 +161,8 @@ type Interface struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	Mac            net.HardwareAddr
+	VlanTag        pgtype.Int4
 }
 
 type IpAddress struct {

@@ -51,6 +51,9 @@ Phase hiện tại: **Phase 0**
 - [ ] **P1-18 Panel thuộc tính & hiển thị**: sửa nhanh device/link/nhóm, mở trang chi tiết; label template, màu nền label, label cổng, ẩn label khi zoom < 50%, tooltip, viền nét đứt cho managed=false.
 - [ ] **P1-19 Annotation**: text màu, mũi tên, zone có nền.
 - [ ] **P1-20 Validation**: rule engine dùng chung logic cho Web Worker (khi vẽ); rule Phase 1 SRS §7; backend kiểm tra lại các rule Error khi lưu/import; panel Problems, badge node. Mỗi rule có unit test.
+  Gồm thêm các rule nghiệp vụ mạng (chốt 2026-10-16): IP trùng **theo VRF** (bỏ qua thành viên cùng cụm, ADR-027); IP là địa chỉ
+  mạng/broadcast của subnet IPv4 (trừ /31, /32) → cảnh báo; cổng access có allowed/native VLAN, cổng trunk có access VLAN →
+  cảnh báo; thành viên LAG khác tốc độ/media → cảnh báo; thành viên cụm khác model/firmware → cảnh báo.
 
 ### Nhập/xuất & tiện ích
 - [ ] **P1-21 Import Excel thiết bị**: file mẫu tải về, ánh xạ cột, xem trước, lỗi từng dòng, tạo mới/cập nhật theo hostname hoặc S/N, chạy nền có tiến trình; ánh xạ Site→Đơn vị, Location→Site; chuẩn hóa và gộp tên gần giống; đề xuất cụm HA khi trùng IP.

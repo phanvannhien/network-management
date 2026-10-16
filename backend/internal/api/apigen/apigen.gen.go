@@ -1520,18 +1520,24 @@ type Interface struct {
 	Kind         InterfaceKind      `json:"kind"`
 
 	// LagId Parent LAG (an interface of kind lag on the same device)
-	LagId      *openapi_types.UUID `json:"lagId"`
-	LagName    string              `json:"lagName"`
-	Media      InterfaceMedia      `json:"media"`
-	Mode       InterfaceMode       `json:"mode"`
-	Name       string              `json:"name"`
-	NativeVlan *int32              `json:"nativeVlan"`
-	Poe        bool                `json:"poe"`
-	SortOrder  int32               `json:"sortOrder"`
+	LagId   *openapi_types.UUID `json:"lagId"`
+	LagName string              `json:"lagName"`
+
+	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+	Mac        *string        `json:"mac"`
+	Media      InterfaceMedia `json:"media"`
+	Mode       InterfaceMode  `json:"mode"`
+	Name       string         `json:"name"`
+	NativeVlan *int32         `json:"nativeVlan"`
+	Poe        bool           `json:"poe"`
+	SortOrder  int32          `json:"sortOrder"`
 
 	// Speed Free text, e.g. 1G, 10G, 100M
 	Speed   string `json:"speed"`
 	Version int32  `json:"version"`
+
+	// VlanTag 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+	VlanTag *int32 `json:"vlanTag"`
 }
 
 // InterfaceDuplex defines model for Interface.Duplex.
@@ -1549,15 +1555,21 @@ type InterfaceInput struct {
 	Kind         InterfaceKind         `json:"kind"`
 
 	// LagId Parent LAG (an interface of kind lag on the same device)
-	LagId      *openapi_types.UUID `json:"lagId,omitempty"`
-	Media      *InterfaceMedia     `json:"media,omitempty"`
-	Mode       *InterfaceMode      `json:"mode,omitempty"`
-	Name       string              `json:"name"`
-	NativeVlan *int32              `json:"nativeVlan,omitempty"`
-	Poe        *bool               `json:"poe,omitempty"`
+	LagId *openapi_types.UUID `json:"lagId,omitempty"`
+
+	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+	Mac        *string         `json:"mac,omitempty"`
+	Media      *InterfaceMedia `json:"media,omitempty"`
+	Mode       *InterfaceMode  `json:"mode,omitempty"`
+	Name       string          `json:"name"`
+	NativeVlan *int32          `json:"nativeVlan,omitempty"`
+	Poe        *bool           `json:"poe,omitempty"`
 
 	// Speed Free text, e.g. 1G, 10G, 100M
 	Speed *string `json:"speed,omitempty"`
+
+	// VlanTag 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+	VlanTag *int32 `json:"vlanTag,omitempty"`
 }
 
 // InterfaceInputDuplex defines model for InterfaceInput.Duplex.
@@ -1589,16 +1601,22 @@ type InterfaceUpdate struct {
 	Kind         InterfaceKind          `json:"kind"`
 
 	// LagId Parent LAG (an interface of kind lag on the same device)
-	LagId      *openapi_types.UUID `json:"lagId,omitempty"`
-	Media      *InterfaceMedia     `json:"media,omitempty"`
-	Mode       *InterfaceMode      `json:"mode,omitempty"`
-	Name       string              `json:"name"`
-	NativeVlan *int32              `json:"nativeVlan,omitempty"`
-	Poe        *bool               `json:"poe,omitempty"`
+	LagId *openapi_types.UUID `json:"lagId,omitempty"`
+
+	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
+	Mac        *string         `json:"mac,omitempty"`
+	Media      *InterfaceMedia `json:"media,omitempty"`
+	Mode       *InterfaceMode  `json:"mode,omitempty"`
+	Name       string          `json:"name"`
+	NativeVlan *int32          `json:"nativeVlan,omitempty"`
+	Poe        *bool           `json:"poe,omitempty"`
 
 	// Speed Free text, e.g. 1G, 10G, 100M
 	Speed   *string `json:"speed,omitempty"`
 	Version int32   `json:"version"`
+
+	// VlanTag 802.1Q tag of a sub-interface (e.g. Gi0/0.10 → 10); sub-interfaces only
+	VlanTag *int32 `json:"vlanTag,omitempty"`
 }
 
 // InterfaceUpdateDuplex defines model for InterfaceUpdate.Duplex.
@@ -1884,7 +1902,7 @@ type PasswordResetLink struct {
 // Permission defines model for Permission.
 type Permission string
 
-// PortGroup Ports named by pattern with {n} replaced by start … start+count-1, e.g. Gi1/0/{n}
+// PortGroup Ports named by pattern with {n} replaced by start … start+count-1 and {m} by the stack member number (1 outside a cluster), e.g. Gi{m}/0/{n}
 type PortGroup struct {
 	Count   int32           `json:"count"`
 	Media   *InterfaceMedia `json:"media,omitempty"`

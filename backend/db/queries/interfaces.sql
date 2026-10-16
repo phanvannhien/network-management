@@ -36,9 +36,10 @@ SELECT COALESCE(max(sort_order), 0)::integer FROM interfaces WHERE organization_
 
 -- name: CreateInterface :one
 INSERT INTO interfaces (organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan,
-                        allowed_vlans, poe, lag_id, description, admin_up, sort_order)
+                        allowed_vlans, poe, lag_id, description, admin_up, sort_order, mac, vlan_tag)
 VALUES (@organization_id, @device_id, @name, @kind, @media, @speed, @duplex, @mode, sqlc.narg('access_vlan'),
-        sqlc.narg('native_vlan'), @allowed_vlans, @poe, sqlc.narg('lag_id'), @description, @admin_up, @sort_order)
+        sqlc.narg('native_vlan'), @allowed_vlans, @poe, sqlc.narg('lag_id'), @description, @admin_up, @sort_order,
+        sqlc.narg('mac'), sqlc.narg('vlan_tag'))
 RETURNING *;
 
 -- name: CreateInterfaceIfMissing :execrows
@@ -50,7 +51,8 @@ ON CONFLICT (device_id, lower(name)) DO NOTHING;
 -- name: UpdateInterface :one
 UPDATE interfaces SET name = @name, kind = @kind, media = @media, speed = @speed, duplex = @duplex, mode = @mode,
   access_vlan = sqlc.narg('access_vlan'), native_vlan = sqlc.narg('native_vlan'), allowed_vlans = @allowed_vlans,
-  poe = @poe, lag_id = sqlc.narg('lag_id'), description = @description, admin_up = @admin_up, version = version + 1
+  poe = @poe, lag_id = sqlc.narg('lag_id'), description = @description, admin_up = @admin_up, mac = sqlc.narg('mac'),
+  vlan_tag = sqlc.narg('vlan_tag'), version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND device_id = @device_id AND version = @version
 RETURNING *;
 

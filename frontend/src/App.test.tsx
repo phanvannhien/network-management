@@ -1524,6 +1524,8 @@ describe('device inventory (P1-08)', () => {
     lagName: '',
     description: 'MGMT',
     adminUp: true,
+    mac: null,
+    vlanTag: null,
     sortOrder: 1,
     isManagement: false,
     version: 1,
@@ -1737,6 +1739,33 @@ describe('device inventory (P1-08)', () => {
       clusterId: 'cl-1',
       clusterRole: 'primary',
       clusterMemberNo: 1,
+    })
+  })
+
+  it('a sub-interface sends its VLAN tag and MAC, with plain-language hints', async () => {
+    const calls = fakeApi(
+      ifaceRoutes({
+        [`POST /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () => json(IFACE, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=interfaces`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm interface' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm interface' })
+    fireEvent.change(within(dialog).getByLabelText('Tên'), { target: { value: 'Gi0/0.10' } })
+    const tag = within(dialog).getByLabelText('VLAN tag (802.1Q)')
+    expect(tag).toBeDisabled() // SVI by default
+    fireEvent.change(within(dialog).getByLabelText('Loại'), { target: { value: 'subinterface' } })
+    expect(within(dialog).getByText(/router-on-a-stick/)).toBeInTheDocument()
+    fireEvent.change(tag, { target: { value: '10' } })
+    fireEvent.change(within(dialog).getByLabelText('MAC'), { target: { value: 'aabb.ccdd.ee01' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/interfaces')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
+      name: 'Gi0/0.10',
+      kind: 'subinterface',
+      vlanTag: 10,
+      mac: 'aabb.ccdd.ee01',
     })
   })
 })

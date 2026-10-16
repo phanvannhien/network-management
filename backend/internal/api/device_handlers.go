@@ -810,7 +810,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 			return fmt.Errorf("save device: %w", err)
 		}
 		if tpl != nil {
-			if _, err := generatePorts(ctx, q, m, devID, *tpl); err != nil {
+			if _, err := generatePorts(ctx, q, m, devID, *tpl, f.clusterNo.Int32); err != nil {
 				return err
 			}
 		}

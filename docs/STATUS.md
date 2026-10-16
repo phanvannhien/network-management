@@ -5,6 +5,27 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Rà soát nghiệp vụ mạng: tên cổng stack, MAC, VLAN tag, thuật ngữ
+- Đã làm (người dùng chọn cả 4 mục):
+  - **Tên cổng stack:** mẫu tên cổng của template có thêm `{m}` = số thứ tự thành viên stack (1 nếu đứng lẻ), vd `Gi{m}/0/{n}`
+    → thành viên 2 có `Gi2/0/1…`. Áp dụng khi tạo thiết bị từ template và khi "Áp template"; các mẫu điền nhanh Cisco/Aruba đã
+    dùng `{m}`.
+  - **Migration 000014:** interface có **MAC** (nhập kiểu nào cũng được, lưu `aa:bb:cc:dd:ee:ff`; tìm thiết bị theo MAC ở danh
+    sách) và **VLAN tag 802.1Q** cho sub-interface (chỉ sub-interface).
+  - **Gợi ý trên form:** chú thích ngắn bằng lời thường cho loại interface, mode, access/native/allowed VLAN, LAG, MAC, VLAN tag,
+    CIDR, VRF, vai trò IP, kiểu cụm.
+  - **`docs/GLOSSARY.md`:** bảng thuật ngữ tiếng Việt (thiết bị, cổng, VLAN, IP, cụm, loại thiết bị) — CLAUDE.md trỏ tới.
+  - **PLAN P1-20:** thêm các rule cảnh báo nghiệp vụ mạng (IP trùng theo VRF, IP mạng/broadcast, VLAN sai mode, LAG khác tốc độ,
+    cụm khác model/firmware).
+- Test / cách kiểm tra: Go — stack thành viên 1/2 + thiết bị lẻ sinh đúng `Gi1/0/1` / `Gi2/0/1` / `Gi1/0/1`; MAC kiểu Cisco
+  được chuẩn hóa và tìm được; VLAN tag trên cổng vật lý / ngoài 1–4094 → 400; 3 mutation đều bị bắt. Vitest 168 pass (thêm test
+  sub-interface + gợi ý). `make check` pass. Dev DB: `make migrate-up` (000014).
+- Còn dở / lỗi đã biết: thiết bị đã vào stack mà cổng đã sinh trước theo `Gi1/…` thì cần xóa/sửa tay (áp lại template chỉ thêm
+  cổng còn thiếu).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-10** IPAM cơ bản.
+
 ## 2026-10-16 — Quy định loại thiết bị cho cụm (ADR-027)
 - Đã làm (người dùng chốt phương án đề xuất): kiểu cụm chỉ nhận loại thiết bị phù hợp (HA: firewall/router/VPN/LB/WLC/WAF/proxy/
   IDS-IPS/SD-WAN/server/NAS; Stack: switch L2/L3/PoE; vPC/VSS: switch L2/L3; Khác: mọi loại); thành viên cùng cụm phải cùng loại;

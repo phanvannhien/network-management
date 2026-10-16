@@ -365,6 +365,8 @@ export const vi = {
     },
     noMedia: '—',
     ipCount: '{{count}} IP',
+    mac: 'MAC',
+    vlanTag: 'VLAN tag (802.1Q)',
     types: {
       router: 'Router',
       l3_switch: 'Switch L3',
@@ -428,6 +430,42 @@ export const vi = {
     yes: 'Có',
     no: 'Không',
   },
+  hints: {
+    ifaceKinds: {
+      physical: 'Cổng thật trên thiết bị (cắm dây được), vd Gi1/0/1.',
+      svi: 'Cổng ảo đại diện một VLAN trên switch L3, vd Vlan10 — thường dùng làm IP quản trị hoặc gateway của VLAN.',
+      loopback: 'Cổng ảo luôn "up", hay dùng làm IP quản trị/router-id của router, vd Loopback0.',
+      tunnel: 'Đường hầm ảo nối 2 thiết bị qua mạng khác (VPN IPsec, GRE).',
+      subinterface:
+        'Cổng con trên một cổng vật lý, mỗi cổng con một VLAN (router-on-a-stick), vd Gi0/0.10.',
+      lag: 'Gộp nhiều cổng vật lý thành một đường (LACP / Port-channel) để tăng băng thông và dự phòng.',
+    },
+    mode: 'Access: cổng mang 1 VLAN (cắm PC, camera…). Trunk: cổng mang nhiều VLAN (nối switch–switch, switch–firewall). Routed: cổng có IP như router.',
+    accessVlan: 'VLAN của cổng ở mode access.',
+    nativeVlan: 'Ở cổng trunk: VLAN đi không gắn tag (mặc định VLAN 1).',
+    allowedVlans: 'Ở cổng trunk: các VLAN được đi qua, vd 10,20-30.',
+    lag: 'Cổng này là thành viên của LAG nào (chọn interface loại LAG).',
+    mac: 'Địa chỉ phần cứng của cổng, nhập kiểu nào cũng được: aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…',
+    vlanTag: 'Chỉ cho sub-interface: số VLAN (802.1Q) mà cổng con xử lý, vd Gi0/0.10 → 10.',
+    cidr: 'IP kèm độ dài mạng, vd 10.72.114.2/24 (/24 = 255.255.255.0). Gõ IP không có /… nghĩa là /32.',
+    vrf: 'Bảng định tuyến riêng (thường thấy ở MPLS/khách hàng tách biệt). Để trống nếu không dùng — cùng một IP ở 2 VRF khác nhau là hợp lệ.',
+    ipRoles: {
+      primary: 'IP chính của interface. IP chính của interface quản trị là IP quản trị thiết bị.',
+      secondary: 'IP phụ trên cùng interface (vd IP thứ hai của cùng VLAN).',
+      nat: 'IP thiết bị được nhìn thấy sau NAT, không cấu hình trên thiết bị.',
+      public: 'IP public để truy cập thiết bị từ Internet (thường NAT về thiết bị).',
+    },
+    clusterKinds: {
+      ha_active_passive:
+        'Cặp dự phòng: 1 thiết bị chạy, 1 chờ; con chính hỏng thì con kia nhận việc. Chung IP quản trị/cấu hình.',
+      ha_active_active: 'Cả hai cùng chạy và chia tải, hỏng một con thì con còn lại gánh hết.',
+      stack:
+        'Nhiều switch nối cáp stack, quản lý như 1 switch: chung hostname và IP, cổng đánh số theo thành viên (Gi1/…, Gi2/…).',
+      vpc: 'Cisco Nexus: 2 switch riêng nhưng thiết bị bên dưới cắm LAG sang cả hai. Mỗi switch vẫn có IP riêng.',
+      vss: 'Cisco Catalyst: 2 switch gộp thành 1 switch logic (giống stack cho dòng core).',
+      other: 'Trường hợp đặc biệt khác; không giới hạn loại thiết bị.',
+    },
+  },
   clusters: {
     join: 'Thêm vào cụm',
     joinTitle: 'Thêm {{name}} vào cụm',
@@ -488,7 +526,8 @@ export const vi = {
     edit: 'Sửa template',
     name: 'Tên template',
     ports: 'Nhóm cổng',
-    portsHint: 'Mỗi nhóm: mẫu tên với {n} là số thứ tự, vd Gi1/0/{n} từ 1, 24 cổng.',
+    portsHint:
+      'Mỗi nhóm: mẫu tên với {n} là số cổng và {m} là số thứ tự thành viên stack (1 nếu đứng lẻ), vd Gi{m}/0/{n} từ 1, 24 cổng → Gi1/0/1…; switch thứ 2 của stack → Gi2/0/1….',
     pattern: 'Mẫu tên',
     start: 'Bắt đầu',
     count: 'Số cổng',

@@ -270,3 +270,43 @@ func TestInterfacePermissions(t *testing.T) {
 		t.Errorf("member writes a template: %d, want 403", status)
 	}
 }
+
+// Stack members get their own port numbers ({m}); MAC is normalized and searchable; dot1q tags only on sub-interfaces.
+func TestStackPortsMACAndSubinterfaceTag(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	tpl := idOf(t, mustCreate(t, fx.A, templatesPath(org), map[string]any{"name": "C9300-24", "type": "l3_switch",
+		"ports": []map[string]any{{"pattern": "Gi{m}/0/{n}", "start": 1, "count": 24, "media": "RJ45"}}}))
+	stack := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "CORE", "siteId": bd}))
+	sw1 := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "CORE", "type": "l3_switch", "siteId": bd, "templateId": tpl, "clusterId": stack, "clusterMemberNo": 1}))
+	sw2 := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "CORE", "type": "l3_switch", "siteId": bd, "templateId": tpl, "clusterId": stack, "clusterMemberNo": 2}))
+	lone := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "LONE", "type": "l3_switch", "siteId": bd, "templateId": tpl}))
+	for dev, want := range map[string]string{sw1: "Gi1/0/1", sw2: "Gi2/0/1", lone: "Gi1/0/1"} {
+		if n := ifaceNames(t, fx.A, org, dev); len(n) != 24 || n[0] != want {
+			t.Errorf("ports of %s: %v…, want %s first", dev, n[:1], want)
+		}
+	}
+	ifPath := devicePath(org, sw2) + "/interfaces"
+	created := mustCreate(t, fx.A, ifPath, map[string]any{"name": "Vlan1", "kind": "svi", "mac": "AABB.CCDD.EE01"})
+	if created["mac"] != "aa:bb:cc:dd:ee:01" {
+		t.Errorf("MAC stored as %v", created["mac"])
+	}
+	if got := hostnamesOf(t, listDevices(t, fx.A, org, url.Values{"q": {"AA:BB:CC:DD:EE"}})); len(got) != 1 {
+		t.Errorf("search by MAC: %v", got)
+	}
+	for name, c := range map[string]struct {
+		body map[string]any
+		want int
+	}{
+		"bad MAC":                  {map[string]any{"name": "Vlan2", "kind": "svi", "mac": "zz:zz"}, http.StatusBadRequest},
+		"tag on a physical port":   {map[string]any{"name": "Gi9", "kind": "physical", "vlanTag": 10}, http.StatusBadRequest},
+		"tag out of range":         {map[string]any{"name": "Gi2/0/1.5000", "kind": "subinterface", "vlanTag": 5000}, http.StatusBadRequest},
+		"router-on-a-stick sub-if": {map[string]any{"name": "Gi2/0/1.10", "kind": "subinterface", "vlanTag": 10}, http.StatusCreated},
+	} {
+		if status, body := fx.A.Do("POST", ifPath, c.body); status != c.want {
+			t.Errorf("%s: %d %v, want %d", name, status, body, c.want)
+		}
+	}
+}

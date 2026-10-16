@@ -51,8 +51,8 @@ const PRESETS: {
     partNumber: 'C9200-24P-E',
     uHeight: 1,
     ports: [
-      { pattern: 'Gi1/0/{n}', start: 1, count: 24, media: 'RJ45', speed: '1G', poe: true },
-      { pattern: 'Gi1/1/{n}', start: 1, count: 4, media: 'SFP', speed: '1G' },
+      { pattern: 'Gi{m}/0/{n}', start: 1, count: 24, media: 'RJ45', speed: '1G', poe: true },
+      { pattern: 'Gi{m}/1/{n}', start: 1, count: 4, media: 'SFP', speed: '1G' },
     ],
   },
   {
@@ -63,8 +63,8 @@ const PRESETS: {
     partNumber: 'C9300-48UXM-E',
     uHeight: 1,
     ports: [
-      { pattern: 'Gi1/0/{n}', start: 1, count: 36, media: 'RJ45', speed: '1G', poe: true },
-      { pattern: 'Te1/0/{n}', start: 37, count: 12, media: 'RJ45', speed: '10G', poe: true },
+      { pattern: 'Gi{m}/0/{n}', start: 1, count: 36, media: 'RJ45', speed: '1G', poe: true },
+      { pattern: 'Te{m}/0/{n}', start: 37, count: 12, media: 'RJ45', speed: '10G', poe: true },
     ],
   },
   {
@@ -89,8 +89,8 @@ const PRESETS: {
     partNumber: 'JL677A',
     uHeight: 1,
     ports: [
-      { pattern: '1/1/{n}', start: 1, count: 24, media: 'RJ45', speed: '1G', poe: true },
-      { pattern: '1/1/{n}', start: 25, count: 4, media: 'SFP+', speed: '10G' },
+      { pattern: '{m}/1/{n}', start: 1, count: 24, media: 'RJ45', speed: '1G', poe: true },
+      { pattern: '{m}/1/{n}', start: 25, count: 4, media: 'SFP+', speed: '10G' },
     ],
   },
   {
