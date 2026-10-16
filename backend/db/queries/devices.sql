@@ -34,6 +34,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -85,6 +86,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -117,6 +119,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
@@ -147,6 +150,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -177,6 +181,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -207,6 +212,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -237,6 +243,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -268,6 +275,7 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -275,6 +283,38 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
+GROUP BY 2
+UNION ALL
+SELECT 'cluster'::text AS facet, d.cluster_id::text AS value, count(*)::bigint AS n
+FROM devices d
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN business_units du ON du.id = d.business_unit_id
+JOIN partners dp ON dp.id = du.partner_id
+LEFT JOIN business_units sb ON sb.id = s.business_unit_id
+WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
+  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
+  -- to the caller (site's unit granted, or the site shared to the caller).
+  AND (NOT @restricted::boolean
+       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
+       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
+                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
+                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
+  AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
+  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
+  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
+  AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
+  AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
+  AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
+  AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
+  AND d.cluster_id IS NOT NULL
 GROUP BY 2;
 
 -- name: GetDevice :one

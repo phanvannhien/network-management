@@ -1349,7 +1349,7 @@ type DeviceLifecycle string
 type DeviceList struct {
 	Devices []Device `json:"devices"`
 
-	// Facets Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet
+	// Facets Per facet (site, type, vendor, lifecycle, role, tag, cluster) the count of each value, filtered by every other facet
 	Facets map[string]map[string]int64 `json:"facets"`
 	Total  int64                       `json:"total"`
 }
@@ -2112,6 +2112,9 @@ type ClusterId = openapi_types.UUID
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
 
+// DeviceClusterFilter defines model for DeviceClusterFilter.
+type DeviceClusterFilter = []openapi_types.UUID
+
 // DeviceId defines model for DeviceId.
 type DeviceId = openapi_types.UUID
 
@@ -2402,9 +2405,12 @@ type ListDevicesParams struct {
 	Role           *DeviceRoleFilter      `form:"role,omitempty" json:"role,omitempty"`
 
 	// Tag Devices carrying any of the tags
-	Tag  *DeviceTagFilter       `form:"tag,omitempty" json:"tag,omitempty"`
-	Sort *ListDevicesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
-	Desc *DeviceSortDesc        `form:"desc,omitempty" json:"desc,omitempty"`
+	Tag *DeviceTagFilter `form:"tag,omitempty" json:"tag,omitempty"`
+
+	// ClusterId Devices in any of the clusters
+	ClusterId *DeviceClusterFilter   `form:"clusterId,omitempty" json:"clusterId,omitempty"`
+	Sort      *ListDevicesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Desc      *DeviceSortDesc        `form:"desc,omitempty" json:"desc,omitempty"`
 
 	// Page 1-based page number
 	Page     *AuditPageNumber `form:"page,omitempty" json:"page,omitempty"`
@@ -5981,6 +5987,19 @@ func (siw *ServerInterfaceWrapper) ListDevices(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tag"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "clusterId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "clusterId", r.URL.Query(), &params.ClusterId, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "clusterId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "clusterId", Err: err})
 		}
 		return
 	}

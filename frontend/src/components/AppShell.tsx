@@ -2,7 +2,6 @@ import {
   Activity,
   ArrowLeft,
   Bell,
-  Boxes,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -429,8 +428,6 @@ export function OrgShell() {
         { to: base, label: t('nav.dashboard'), icon: LayoutDashboard, end: true },
         { to: '/editor', label: t('nav.diagrams'), icon: Network },
         { to: `${base}/devices`, label: t('nav.devices'), icon: Server },
-        { to: `${base}/clusters`, label: t('nav.clusters'), icon: Boxes },
-        { to: `${base}/device-templates`, label: t('nav.templates'), icon: LayoutTemplate },
         { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
       ],
     },
@@ -440,6 +437,11 @@ export function OrgShell() {
         // Grant-only members (ADR-031) do not see the organization's member list.
         ...(role && role !== 'member'
           ? [{ to: `${base}/members`, label: t('nav.members'), icon: Users }]
+          : []),
+        // Device templates: the organization's library, written by its owners/admins/editors (P1-09); also used
+        // from the diagram library panel (P1-15).
+        ...(role === 'owner' || role === 'admin' || role === 'editor'
+          ? [{ to: `${base}/device-templates`, label: t('nav.templates'), icon: LayoutTemplate }]
           : []),
         ...(isAdmin
           ? [

@@ -112,6 +112,7 @@ export function useDeviceList(orgId: string, p: ListParams, enabled = true) {
             lifecycle: f.lifecycle?.length ? (f.lifecycle as DeviceLifecycle[]) : undefined,
             role: f.role?.length ? (f.role as DeviceRole[]) : undefined,
             tag: f.tag?.length ? f.tag : undefined,
+            clusterId: f.cluster?.length ? f.cluster : undefined,
             sort: p.sort?.id,
             desc: p.sort?.desc || undefined,
             page: p.pageIndex + 1,

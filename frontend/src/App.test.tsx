@@ -1660,21 +1660,24 @@ describe('device inventory (P1-08)', () => {
     version: 1,
   }
 
-  it('creates a cluster in a site', async () => {
+  it('creates a cluster from a device page and joins it', async () => {
     const calls = fakeApi(
       routes({
         [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [] }),
         [`POST /api/orgs/${ORG_ID}/clusters`]: () => json({ ...CLUSTER, members: [] }, 201),
+        [`PATCH /api/orgs/${ORG_ID}/devices/dev-1`]: () =>
+          json({ ...DEVICE, clusterId: 'cl-1', version: 4 }),
       }),
     )
-    renderAt(`/o/${ORG_ID}/clusters`)
-    fireEvent.click(await screen.findByRole('button', { name: 'Thêm cụm' }))
+    renderAt(`/o/${ORG_ID}/devices/dev-1`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm vào cụm' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Tạo cụm mới' }))
     const dialog = await screen.findByRole('dialog', { name: 'Thêm cụm' })
+    await waitFor(() => expect(within(dialog).getByLabelText('Site')).toHaveValue(AGRI_SITE.id))
     fireEvent.change(within(dialog).getByLabelText('Tên cụm'), { target: { value: 'BD-FW-HA' } })
     fireEvent.change(within(dialog).getByLabelText(/IP quản trị cụm/), {
       target: { value: '10.72.114.1/24' },
     })
-    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: AGRI_SITE.id } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
     const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/clusters')
     await waitFor(() => expect(calls.some(isPost)).toBe(true))
@@ -1686,6 +1689,13 @@ describe('device inventory (P1-08)', () => {
       notes: '',
       siteId: AGRI_SITE.id,
       businessUnitId: null,
+    })
+    const isPatch = (r: Request) => r.method === 'PATCH'
+    await waitFor(() => expect(calls.some(isPatch)).toBe(true))
+    expect(await calls.find(isPatch)!.clone().json()).toMatchObject({
+      clusterId: 'cl-1',
+      clusterRole: 'primary',
+      clusterMemberNo: 1,
     })
   })
 

@@ -5,6 +5,21 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Sắp lại chỗ quản lý Template và Cụm thiết bị (theo SRS §2)
+- Đã làm (người dùng chốt phương án đề xuất):
+  - Bỏ 2 menu riêng "Cụm thiết bị" và "Template thiết bị" ở nhóm chính (SRS §2 không có).
+  - **Template:** chuyển vào nhóm **Quản trị** (chỉ owner/admin/editor tổ chức thấy) — thư viện dùng chung của tổ chức; từ P1-15
+    dùng trong panel thư viện của sơ đồ.
+  - **Cụm:** quản lý ngay **trong trang thiết bị** — thẻ "Cụm" ở tab Tổng quan: thêm vào cụm có sẵn (cùng site/đơn vị) hoặc tạo cụm
+    mới rồi vào luôn; sửa cụm; rời cụm (thành viên cuối rời thì cụm tự xóa); danh sách thành viên có link. Danh sách Thiết bị có
+    bộ lọc **Cụm** (lọc + đếm ở server, `clusterId`) — chỉ hiện khi tổ chức đã có cụm. Từ P1-16: gộp cụm trên sơ đồ.
+- Test / cách kiểm tra: Go thêm kiểm tra lọc/đếm theo cụm; Vitest 167 pass (test tạo cụm chuyển sang luồng từ trang thiết bị);
+  ảnh chụp + axe 5 trang × sáng/tối: 0 lỗi; `make check` pass.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-10** IPAM cơ bản.
+
 ## 2026-10-16 — P1-09b Cụm thiết bị
 - Đã làm:
   - **Migration 000013:** `device_clusters` (kiểu HA active-passive / active-active / stack / vPC / VSS / khác; tên duy nhất

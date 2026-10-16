@@ -1,15 +1,9 @@
-import { Boxes, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
-import { useBreadcrumbs } from '@/components/breadcrumbs'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { EmptyState } from '@/components/EmptyState'
 import { FormField } from '@/components/FormField'
 import { NativeSelect } from '@/components/NativeSelect'
-import { PageHeader } from '@/components/PageHeader'
-import { TechText } from '@/components/TechText'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,25 +15,32 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { atLeast, useOrgAccess } from '@/modules/sites/access'
+import { atLeast } from '@/modules/sites/access'
 import { useBusinessUnits, useSites } from '@/modules/sites/sites'
 import {
   CLUSTER_KINDS,
   useCluster,
   useClusterMutations,
-  useClusters,
   type Cluster,
+  type ClusterDetail,
   type ClusterKind,
 } from './devices'
 
-function ClusterDialog({
+/** Create or edit a device cluster (ADR-027); opened from a device page. */
+export function ClusterDialog({
   orgId,
   cluster,
+  defaultSiteId,
+  defaultUnitId,
   onClose,
+  onSaved,
 }: {
   orgId: string
   cluster?: Cluster
+  defaultSiteId?: string
+  defaultUnitId?: string
   onClose: () => void
+  onSaved?: (c: ClusterDetail) => void
 }) {
   const { t } = useTranslation()
   const { save } = useClusterMutations(orgId)
@@ -52,8 +53,8 @@ function ClusterDialog({
     hostname: cluster?.hostname ?? '',
     mgmtIp: cluster?.mgmtIp ?? '',
     notes: cluster?.notes ?? '',
-    siteId: cluster?.siteId ?? '',
-    businessUnitId: cluster?.businessUnitId ?? '',
+    siteId: cluster?.siteId ?? defaultSiteId ?? '',
+    businessUnitId: cluster?.businessUnitId ?? defaultUnitId ?? '',
   })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
@@ -77,8 +78,9 @@ function ClusterDialog({
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (saved) => {
           toast.success(t('clusters.saved'))
+          onSaved?.(saved)
           onClose()
         },
       },
@@ -232,123 +234,5 @@ function ClusterDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
-
-/** Device clusters (P1-09b, ADR-027). ?id= opens one cluster. */
-export function ClustersPage() {
-  const { t } = useTranslation()
-  const { orgId = '' } = useParams()
-  const [params, setParams] = useSearchParams()
-  const clusters = useClusters(orgId)
-  const { remove } = useClusterMutations(orgId)
-  const access = useOrgAccess(orgId)
-  const [creating, setCreating] = useState(false)
-  const [deleting, setDeleting] = useState<Cluster | null>(null)
-  const openId = params.get('id')
-  const open = clusters.data?.find((c) => c.id === openId)
-  useBreadcrumbs([{ label: t('clusters.title') }])
-
-  return (
-    <div className="max-w-5xl space-y-3 p-4">
-      <PageHeader
-        title={t('clusters.title')}
-        actions={
-          access.canAddSites && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus aria-hidden /> {t('clusters.add')}
-            </Button>
-          )
-        }
-      />
-      <p className="text-muted-foreground">{t('clusters.subtitle')}</p>
-      {clusters.isPending ? (
-        <Skeleton className="h-24" />
-      ) : clusters.isError ? (
-        <p role="alert" className="text-destructive">
-          {clusters.error.message}
-        </p>
-      ) : clusters.data.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card">
-          <EmptyState icon={<Boxes />} title={t('clusters.empty')} />
-        </div>
-      ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-          {clusters.data.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <button
-                    type="button"
-                    className="font-medium hover:text-primary hover:underline"
-                    onClick={() => setParams({ id: c.id }, { replace: true })}
-                  >
-                    {c.name}
-                  </button>
-                  <span className="text-muted-foreground">
-                    {t('clusters.badge', {
-                      kind: t(`clusters.kinds.${c.kind}`),
-                      count: c.memberCount,
-                    })}
-                  </span>
-                  {c.mgmtIp && <TechText value={c.mgmtIp} label={t('clusters.mgmtIp')} />}
-                </div>
-                <div className="truncate text-muted-foreground">
-                  {c.siteCode} · {c.partnerCode} › {c.unitCode}
-                  {c.hostname && ` · ${c.hostname}`}
-                  {c.memberHostnames && ` · ${c.memberHostnames}`}
-                </div>
-              </div>
-              {atLeast(c.access, 'edit') && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`${t('clusters.edit')} ${c.name}`}
-                    onClick={() => setParams({ id: c.id }, { replace: true })}
-                  >
-                    <Pencil aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`${t('clusters.delete')} ${c.name}`}
-                    onClick={() => setDeleting(c)}
-                  >
-                    <Trash2 aria-hidden />
-                  </Button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {(creating || open) && (
-        <ClusterDialog
-          key={open?.id ?? 'new'}
-          orgId={orgId}
-          cluster={creating ? undefined : open}
-          onClose={() => {
-            setCreating(false)
-            setParams({}, { replace: true })
-          }}
-        />
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(o) => !o && setDeleting(null)}
-        title={t('clusters.deleteTitle', { name: deleting?.name ?? '' })}
-        description={t('clusters.deleteBody')}
-        confirmLabel={t('clusters.delete')}
-        pending={remove.isPending}
-        onConfirm={() =>
-          deleting &&
-          remove.mutate(deleting.id, {
-            onSettled: () => setDeleting(null),
-            onError: (e) => toast.error(e.message),
-          })
-        }
-      />
-    </div>
   )
 }

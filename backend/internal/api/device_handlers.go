@@ -516,7 +516,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 	params := store.ListDevicesParams{
 		OrganizationID: m.OrgID, Restricted: v.restricted, GrantUnits: v.grantUnits, GrantPartners: v.grantPartners,
 		SharePartners: v.sharePts, SiteIds: []pgtype.UUID{}, Types: []string{}, Vendors: []string{}, Lifecycles: []string{},
-		Roles: []string{}, Tags: []string{}, SortKey: "hostname", PageLimit: size, PageOffset: (page - 1) * size,
+		Roles: []string{}, Tags: []string{}, ClusterIds: []pgtype.UUID{}, SortKey: "hostname", PageLimit: size, PageOffset: (page - 1) * size,
 	}
 	if p.Q != nil {
 		q := strings.TrimSpace(*p.Q)
@@ -557,6 +557,11 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 	if p.Tag != nil {
 		params.Tags = append(params.Tags, *p.Tag...)
 	}
+	if p.ClusterId != nil {
+		for _, id := range *p.ClusterId {
+			params.ClusterIds = append(params.ClusterIds, pgUUID(id))
+		}
+	}
 	if p.Sort != nil {
 		if !p.Sort.Valid() {
 			return bad("Cột sắp xếp không hợp lệ")
@@ -579,6 +584,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		GrantPartners: params.GrantPartners, SharePartners: params.SharePartners, Q: params.Q,
 		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
+		ClusterIds: params.ClusterIds,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("count devices: %w", err)
@@ -588,6 +594,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		GrantPartners: params.GrantPartners, SharePartners: params.SharePartners, Q: params.Q,
 		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
+		ClusterIds: params.ClusterIds,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("device facets: %w", err)
@@ -601,7 +608,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		return nil, err
 	}
 	out := apigen.DeviceList{Devices: make([]apigen.Device, 0, len(rows)), Total: total, Facets: map[string]map[string]int64{}}
-	for _, f := range []string{"site", "type", "vendor", "lifecycle", "role", "tag"} {
+	for _, f := range []string{"site", "type", "vendor", "lifecycle", "role", "tag", "cluster"} {
 		out.Facets[f] = map[string]int64{}
 	}
 	for _, c := range counts {

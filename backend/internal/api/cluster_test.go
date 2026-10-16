@@ -93,6 +93,11 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 			t.Errorf("%s: %d %v, want %d", name, status, body, c.want)
 		}
 	}
+	// The device list filters by cluster and counts members per cluster.
+	_, byCluster := fx.A.Do("GET", devicesPath(org)+"?clusterId="+stackID, nil)
+	if byCluster["total"] != float64(2) || byCluster["facets"].(map[string]any)["cluster"].(map[string]any)[stackID] != float64(2) {
+		t.Errorf("cluster filter: %v %v", byCluster["total"], byCluster["facets"])
+	}
 	// The role is dropped when no cluster is set.
 	_, x1 := fx.A.Do("GET", devicesPath(org)+"?q=X1", nil)
 	if d := x1["devices"].([]any)[0].(map[string]any); d["clusterRole"] != nil || d["clusterMemberNo"] != nil {

@@ -29,6 +29,7 @@ import { DeviceFormDialog } from './DeviceFormDialog'
 import {
   DEVICE_TYPES,
   LIFECYCLES,
+  useClusters,
   useDeleteDevices,
   useDeviceList,
   type Device,
@@ -108,6 +109,7 @@ export function DeviceListPage() {
   const access = useOrgAccess(orgId)
   const scope = useScope(orgId)
   const sites = useSites(orgId)
+  const clusters = useClusters(orgId)
   useBreadcrumbs([{ label: t('nav.devices') }])
 
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
@@ -173,6 +175,20 @@ export function DeviceListPage() {
         .sort()
         .map((v) => ({ value: v, label: v, count: counts?.vendor?.[v] ?? 0 })),
     },
+    // Only when the organization has clusters, to keep the bar on one line otherwise.
+    ...((clusters.data ?? []).length > 0
+      ? [
+          {
+            id: 'cluster',
+            label: t('clusters.filter'),
+            options: (clusters.data ?? []).map((c) => ({
+              value: c.id,
+              label: c.name,
+              count: counts?.cluster?.[c.id] ?? 0,
+            })),
+          },
+        ]
+      : []),
     {
       id: 'tag',
       label: t('devices.tags'),

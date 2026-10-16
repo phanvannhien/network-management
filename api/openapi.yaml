@@ -1438,6 +1438,7 @@ paths:
         - $ref: '#/components/parameters/DeviceLifecycleFilter'
         - $ref: '#/components/parameters/DeviceRoleFilter'
         - $ref: '#/components/parameters/DeviceTagFilter'
+        - $ref: '#/components/parameters/DeviceClusterFilter'
         - $ref: '#/components/parameters/DeviceSort'
         - $ref: '#/components/parameters/DeviceSortDesc'
         - $ref: '#/components/parameters/AuditPageNumber'
@@ -2454,6 +2455,16 @@ components:
         items:
           type: string
 
+    DeviceClusterFilter:
+      name: clusterId
+      in: query
+      description: Devices in any of the clusters
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+          format: uuid
     DeviceSort:
       name: sort
       in: query
@@ -4081,7 +4092,7 @@ components:
           format: int64
         facets:
           type: object
-          description: Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet
+          description: Per facet (site, type, vendor, lifecycle, role, tag, cluster) the count of each value, filtered by every other facet
           additionalProperties:
             type: object
             additionalProperties:

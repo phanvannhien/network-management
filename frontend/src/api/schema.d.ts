@@ -1917,7 +1917,7 @@ export interface components {
             devices: components["schemas"]["Device"][];
             /** Format: int64 */
             total: number;
-            /** @description Per facet (site, type, vendor, lifecycle, role, tag) the count of each value, filtered by every other facet */
+            /** @description Per facet (site, type, vendor, lifecycle, role, tag, cluster) the count of each value, filtered by every other facet */
             facets: {
                 [key: string]: {
                     [key: string]: number;
@@ -2351,6 +2351,8 @@ export interface components {
         DeviceRoleFilter: components["schemas"]["DeviceRole"][];
         /** @description Devices carrying any of the tags */
         DeviceTagFilter: string[];
+        /** @description Devices in any of the clusters */
+        DeviceClusterFilter: string[];
         DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "unit" | "lifecycle" | "warrantyEnd";
         DeviceSortDesc: boolean;
         DeviceId: string;
@@ -4159,6 +4161,8 @@ export interface operations {
                 role?: components["parameters"]["DeviceRoleFilter"];
                 /** @description Devices carrying any of the tags */
                 tag?: components["parameters"]["DeviceTagFilter"];
+                /** @description Devices in any of the clusters */
+                clusterId?: components["parameters"]["DeviceClusterFilter"];
                 sort?: components["parameters"]["DeviceSort"];
                 desc?: components["parameters"]["DeviceSortDesc"];
                 /** @description 1-based page number */

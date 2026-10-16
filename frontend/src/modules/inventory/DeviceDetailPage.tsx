@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { WarrantyText } from './DeviceListPage'
+import { DeviceClusterCard } from './DeviceClusterCard'
 import { DeviceFormDialog } from './DeviceFormDialog'
 import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import {
@@ -190,15 +191,10 @@ export function DeviceDetailPage() {
               {d.clusterId && (
                 <>
                   {' · '}
-                  <Link
-                    to={`/o/${orgId}/clusters?id=${d.clusterId}`}
-                    className="hover:text-foreground hover:underline"
-                  >
-                    {t('clusters.cluster')} {d.clusterName} (
-                    {t(`clusters.kinds.${d.clusterKind as 'stack'}`)}
-                    {d.clusterRole && ` · ${t(`clusters.roles.${d.clusterRole}`)}`}
-                    {d.clusterMemberNo && ` #${d.clusterMemberNo}`})
-                  </Link>
+                  {t('clusters.cluster')} {d.clusterName} (
+                  {t(`clusters.kinds.${d.clusterKind as 'stack'}`)}
+                  {d.clusterRole && ` · ${t(`clusters.roles.${d.clusterRole}`)}`}
+                  {d.clusterMemberNo && ` #${d.clusterMemberNo}`})
                 </>
               )}
             </p>
@@ -295,6 +291,7 @@ export function DeviceDetailPage() {
               ]}
             />
           </div>
+          <DeviceClusterCard orgId={orgId} device={d} canEdit={canEdit} />
           {(fields.data ?? []).length > 0 && (
             <section
               aria-label={t('devices.groupCustom')}
