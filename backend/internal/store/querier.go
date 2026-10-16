@@ -11,22 +11,37 @@ import (
 )
 
 type Querier interface {
+	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
+	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
+	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	// Users and sessions are global (not tenant-scoped): a user can belong to several organizations.
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
+	DeleteRecoveryCodes(ctx context.Context, userID pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
-	// Returns the live session joined with its (enabled) user.
+	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
+	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
+	// MFA data is per user (global, not tenant-scoped).
+	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
+	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
+	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.
+	UpsertPendingTOTP(ctx context.Context, arg UpsertPendingTOTPParams) (int64, error)
+	UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams) (int64, error)
+	// ADR-019 / SRS §10: system admins and organization owners/admins must use MFA.
+	UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

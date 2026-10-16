@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/testdb"
 )
@@ -18,11 +20,20 @@ func newTestService(t *testing.T) (*Service, *store.Queries, *pgxpool.Pool) {
 	t.Helper()
 	pool, _ := testdb.New(t)
 	q := store.New(pool)
-	svc, err := NewService(q, slog.New(slog.DiscardHandler), cheapArgon)
+	svc, err := NewService(pool, testKeyring(t), slog.New(slog.DiscardHandler), cheapArgon)
 	if err != nil {
 		t.Fatalf("new service: %v", err)
 	}
 	return svc, q, pool
+}
+
+func testKeyring(t *testing.T) *secrets.Keyring {
+	t.Helper()
+	k, err := secrets.NewKeyring(bytes.Repeat([]byte{7}, secrets.KeySize))
+	if err != nil {
+		t.Fatalf("keyring: %v", err)
+	}
+	return k
 }
 
 var meta = RequestMeta{IP: netip.MustParseAddr("198.51.100.9"), UserAgent: "test", RequestID: "r1"}

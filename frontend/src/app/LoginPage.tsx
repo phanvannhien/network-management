@@ -1,14 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
+import { AuthCard, inputClass, primaryButtonClass, safeNext } from './AuthCard'
 import { useLogin, useSession } from './auth'
-
-const inputClass =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring'
-
-/** Only same-app paths are allowed as post-login redirects (no open redirect via ?next=). */
-function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
-}
 
 export function LoginPage() {
   const [params] = useSearchParams()
@@ -19,6 +12,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  // The route guard on `next` sends the user on to the MFA screens if a second factor is still owed.
   if (session.data) return <Navigate to={next} replace />
 
   const onSubmit = (e: FormEvent) => {
@@ -27,15 +21,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm"
-        aria-labelledby="login-title"
-      >
-        <h1 id="login-title" className="text-xl font-semibold">
-          Đăng nhập
-        </h1>
+    <AuthCard title="Đăng nhập">
+      <form onSubmit={onSubmit} className="space-y-4">
         <label className="block space-y-1">
           <span className="text-sm text-muted-foreground">Email</span>
           <input
@@ -63,14 +50,10 @@ export function LoginPage() {
             {login.error.message}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={login.isPending}
-          className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={login.isPending} className={primaryButtonClass}>
           {login.isPending ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
       </form>
-    </main>
+    </AuthCard>
   )
 }

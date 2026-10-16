@@ -37,6 +37,25 @@ type Membership struct {
 	Version        int32
 }
 
+type MfaRecoveryCode struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	CodeHash  []byte
+	UsedAt    pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+type MfaTotp struct {
+	UserID           pgtype.UUID
+	SecretCiphertext []byte
+	WrappedDek       []byte
+	KeyVersion       int16
+	EnabledAt        pgtype.Timestamptz
+	LastUsedStep     int64
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
 type Organization struct {
 	ID        pgtype.UUID
 	Name      string

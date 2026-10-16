@@ -94,6 +94,38 @@ func csrfGuard(next http.Handler) http.Handler {
 	})
 }
 
+// partialSessionPaths are reachable while a session still owes MFA (enter a code, or enroll if mandatory).
+var partialSessionPaths = map[auth.Access]map[string]bool{
+	auth.AccessNeedsMFA: {
+		"/api/auth/me": true, "/api/auth/logout": true, "/api/auth/mfa/verify": true,
+	},
+	auth.AccessNeedsMFASetup: {
+		"/api/auth/me": true, "/api/auth/logout": true, "/api/auth/mfa/setup": true, "/api/auth/mfa/enable": true,
+	},
+}
+
+// mfaGate blocks every other endpoint for sessions that have not completed MFA (ADR-019). New modules are
+// protected automatically: only the allowlisted auth endpoints work until the session is fully verified.
+func mfaGate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sess, ok := sessionFrom(r.Context())
+		if !ok || r.URL.Path == "/api/healthz" || r.URL.Path == "/api/auth/login" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		access := sess.Access()
+		if access != auth.AccessFull && !partialSessionPaths[access][r.URL.Path] {
+			msg := "Cần nhập mã MFA để tiếp tục"
+			if access == auth.AccessNeedsMFASetup {
+				msg = "Tài khoản quản trị phải thiết lập MFA trước khi tiếp tục"
+			}
+			writeError(w, http.StatusForbidden, msg)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func isSafeMethod(m string) bool {
 	return m == http.MethodGet || m == http.MethodHead || m == http.MethodOptions
 }

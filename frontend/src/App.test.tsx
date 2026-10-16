@@ -20,7 +20,14 @@ const SESSION = {
     displayName: 'Admin',
     isSystemAdmin: true,
   },
+  // Admin with MFA enrolled and verified this session → full access.
+  mfa: { enabled: true, verified: true, required: true },
 }
+
+const withMfa = (mfa: { enabled: boolean; verified: boolean; required: boolean }) => ({
+  ...SESSION,
+  mfa,
+})
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -169,5 +176,93 @@ describe('logout', () => {
     expect(await screen.findByRole('heading', { name: 'Đăng nhập' })).toBeInTheDocument()
     const logoutCall = calls.find((r) => r.method === 'POST')!
     expect(logoutCall.headers.get('X-CSRF-Token')).toBe('csrf-123')
+  })
+})
+
+describe('MFA', () => {
+  it('sends a session that still owes a code to /mfa, then on to the requested page', async () => {
+    let verified = false
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(withMfa({ enabled: true, verified, required: true })),
+      'POST /api/auth/mfa/verify': () => {
+        verified = true
+        return json(withMfa({ enabled: true, verified: true, required: true }))
+      },
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/')
+    expect(await screen.findByRole('heading', { name: 'Xác thực hai lớp' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Mã 6 số từ ứng dụng xác thực'), {
+      target: { value: '123456' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận' }))
+    expect(await screen.findByText('Admin')).toBeInTheDocument()
+    const verifyCall = calls.find((r) => r.url.endsWith('/auth/mfa/verify'))!
+    expect(await verifyCall.clone().json()).toEqual({ code: '123456' })
+    expect(verifyCall.headers.get('X-CSRF-Token')).toBe('csrf-123')
+  })
+
+  it('can verify with a recovery code instead', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(withMfa({ enabled: true, verified: false, required: true })),
+      'POST /api/auth/mfa/verify': () =>
+        json({ message: 'Mã không đúng, đã hết hạn hoặc đã được dùng' }, 401),
+    })
+    renderAt('/mfa')
+    fireEvent.click(await screen.findByRole('button', { name: 'Dùng mã khôi phục' }))
+    fireEvent.change(screen.getByLabelText('Mã khôi phục'), {
+      target: { value: 'ABCD-EFGH-IJKL-MNOP' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('đã được dùng')
+    const verifyCall = calls.find((r) => r.url.endsWith('/auth/mfa/verify'))!
+    expect(await verifyCall.clone().json()).toEqual({ recoveryCode: 'ABCD-EFGH-IJKL-MNOP' })
+  })
+
+  it('forces admins without MFA through setup and shows recovery codes once', async () => {
+    let enabled = false
+    fakeApi({
+      'GET /api/auth/me': () => json(withMfa({ enabled, verified: enabled, required: true })),
+      'POST /api/auth/mfa/setup': () =>
+        json({
+          secret: 'JBSWY3DPEHPK3PXP',
+          otpauthUrl: 'otpauth://totp/x',
+          qrCode: 'data:image/png;base64,AAAA',
+        }),
+      'POST /api/auth/mfa/enable': () => {
+        enabled = true
+        return json({ recoveryCodes: ['AAAA-BBBB-CCCC-DDDD', 'EEEE-FFFF-GGGG-HHHH'] })
+      },
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/editor')
+    expect(
+      await screen.findByRole('heading', { name: 'Thiết lập xác thực hai lớp' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/bắt buộc dùng MFA/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }))
+    expect(await screen.findByAltText('Mã QR thiết lập MFA')).toBeInTheDocument()
+    expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/Nhập mã 6 số/), { target: { value: '654321' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Bật MFA' }))
+
+    // Codes stay on screen even though the session now reports MFA enabled.
+    expect(await screen.findByRole('heading', { name: 'Lưu mã khôi phục' })).toBeInTheDocument()
+    expect(screen.getByText('AAAA-BBBB-CCCC-DDDD')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Tôi đã lưu mã, tiếp tục' }))
+    await waitFor(() => expect(document.body.querySelector('.react-flow')).toBeInTheDocument())
+  })
+
+  it('lets non-admin users with MFA off reach the app, with an enable link', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({
+          ...withMfa({ enabled: false, verified: false, required: false }),
+          user: { ...SESSION.user, isSystemAdmin: false },
+        }),
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/')
+    expect(await screen.findByRole('link', { name: 'Bật xác thực hai lớp' })).toBeInTheDocument()
   })
 })

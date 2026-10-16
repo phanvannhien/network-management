@@ -93,6 +93,108 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth/mfa/setup:
+    post:
+      operationId: setupMfa
+      summary: Start TOTP enrollment (returns the secret and a QR code once)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Enrollment started; confirm with /auth/mfa/enable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetup'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/mfa/enable:
+    post:
+      operationId: enableMfa
+      summary: Confirm enrollment with a code; returns one-time recovery codes
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+      responses:
+        '200':
+          description: MFA enabled; recovery codes are shown only now
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaRecoveryCodes'
+        '400':
+          $ref: '#/components/responses/InvalidCode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/mfa/verify:
+    post:
+      operationId: verifyMfa
+      summary: Complete sign-in with a TOTP code or a recovery code
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          description: Session is now MFA-verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          description: Too many attempts; retry later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/mfa/disable:
+    post:
+      operationId: disableMfa
+      summary: Turn off MFA (not allowed when MFA is mandatory for the account)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+      responses:
+        '204':
+          description: MFA disabled
+        '400':
+          $ref: '#/components/responses/InvalidCode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: MFA is mandatory for this account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
 components:
   securitySchemes:
     sessionCookie:
@@ -111,6 +213,18 @@ components:
   responses:
     Unauthorized:
       description: Not signed in, or wrong credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Request conflicts with the current MFA state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidCode:
+      description: The code is wrong, expired or already used
       content:
         application/json:
           schema:
@@ -158,12 +272,70 @@ components:
 
     AuthSession:
       type: object
-      required: [user, csrfToken]
+      required: [user, csrfToken, mfa]
       properties:
         user:
           $ref: '#/components/schemas/CurrentUser'
         csrfToken:
           type: string
+        mfa:
+          $ref: '#/components/schemas/MfaStatus'
+
+    MfaStatus:
+      type: object
+      description: |
+        enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
+        account (system admin / org owner / org admin). The session is fully usable only when
+        (enabled and verified) or (not enabled and not required).
+      required: [enabled, verified, required]
+      properties:
+        enabled:
+          type: boolean
+        verified:
+          type: boolean
+        required:
+          type: boolean
+
+    MfaSetup:
+      type: object
+      required: [secret, otpauthUrl, qrCode]
+      properties:
+        secret:
+          type: string
+          description: Base32 secret for manual entry
+        otpauthUrl:
+          type: string
+        qrCode:
+          type: string
+          description: PNG data URL of the otpauth QR code
+
+    MfaCode:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          maxLength: 16
+
+    MfaVerifyRequest:
+      type: object
+      description: Provide either a TOTP code or a recovery code.
+      properties:
+        code:
+          type: string
+          maxLength: 16
+        recoveryCode:
+          type: string
+          maxLength: 32
+
+    MfaRecoveryCodes:
+      type: object
+      required: [recoveryCodes]
+      properties:
+        recoveryCodes:
+          type: array
+          items:
+            type: string
 
     Error:
       type: object

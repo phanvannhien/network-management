@@ -103,6 +103,7 @@ func toAuthSession(s auth.Session) apigen.AuthSession {
 		User: apigen.CurrentUser{
 			Id: uuid.UUID(s.UserID.Bytes), Email: s.Email, DisplayName: s.DisplayName, IsSystemAdmin: s.IsSystemAdmin,
 		},
+		Mfa: apigen.MfaStatus{Enabled: s.MFAEnabled, Verified: s.MFAVerified, Required: s.MFARequired},
 	}
 }
 

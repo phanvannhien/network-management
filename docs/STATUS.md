@@ -5,6 +5,20 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-02 MFA TOTP
+- Đã làm:
+  - `internal/secrets`: mã hóa envelope — mỗi bí mật một DEK (AES-256-GCM), DEK bọc bằng master key (AES-256-GCM), lưu `key_version` để xoay key sau (ADR-018); AAD gắn bí mật vào ngữ cảnh (`totp:<user id>`) nên chép sang dòng khác không giải mã được. Dùng lại cho kho mật khẩu Phase 2.
+  - `NTB_MASTER_KEY` **bắt buộc**: API không khởi động nếu thiếu/sai (base64 32 byte). Compose báo lỗi nếu chưa đặt; `make dev-env` tạo `deploy/.env` (chmod 600, key ngẫu nhiên) — đã tạo cho máy người dùng; `make dev-api` đọc cùng key đó (dev và Docker dùng chung DB nên phải chung key); không còn key nào commit trong repo.
+  - Migration `000004_mfa`: `mfa_totp` (seed mã hóa, `enabled_at`, `last_used_step` chống dùng lại mã), `mfa_recovery_codes` (chỉ SHA-256). Query sqlc `mfa.sql`; `GetSession` trả thêm trạng thái MFA (enabled / verified / required = system admin hoặc owner/admin ở bất kỳ tổ chức nào).
+  - `auth`: SetupTOTP (pquerna/otp, QR PNG sinh ở backend), EnableTOTP (transaction: bật + 10 mã khôi phục + đánh dấu session), VerifyMFA (TOTP ±1 bước, claim bước nguyên tử chống replay; hoặc mã khôi phục dùng 1 lần, gõ thường/không gạch vẫn nhận), DisableTOTP (cần mã mới; cấm khi bắt buộc), rate limit verify 5/phút/user; audit `mfa.setup/enable/enable_failed/verify/verify_failed/recovery_code_used/disable/disable_failed/verify_rate_limited`.
+  - API: `POST /auth/mfa/{setup,enable,verify,disable}`; `AuthSession.mfa`. Middleware `mfaGate`: session chưa xong MFA chỉ gọi được me/logout/verify (hoặc setup/enable nếu bắt buộc thiết lập) — module sau tự được bảo vệ.
+  - Frontend: `/mfa` (mã TOTP hoặc mã khôi phục), `/mfa/setup` (QR, khóa nhập tay, xác nhận, hiện mã khôi phục 1 lần + sao chép/tải .txt), guard điều hướng theo trạng thái MFA, trang chủ bật/tắt MFA cho người không bắt buộc.
+  - Lỗi bắt được nhờ test: SetupTOTP với trạng thái session cũ trả QR cho seed không được lưu (UPSERT bỏ qua âm thầm) → giờ dựa vào số dòng DB ghi được, trả 409.
+- Test / cách kiểm tra: secrets 4 test; auth thêm 4 test MFA với Postgres thật (trọn luồng + seed không lưu bản rõ + replay + mã khôi phục 1 lần + tắt; bắt buộc với system admin; rate limit; seed gắn với user); router thêm 2 test gate (admin bị buộc thiết lập; session chờ mã bị chặn). Vitest 98 (4 test MFA mới). Chạy thật với DB tạm (đã xóa): thiếu/sai key → API từ chối khởi động; admin → setup → bật bằng mã TOTP thật (tính độc lập bằng Python) → login mới bị chặn setup (403) → replay 401 → mã bước kế tiếp OK; audit đúng thứ tự. Docker build lại, migration 4 tự áp. `make check` pass.
+- Còn dở / lỗi đã biết: chưa có trang "Tài khoản" đầy đủ (bật/tắt MFA tạm ở trang chủ, app shell P1-06); chưa có xoay master key (Phase 2, cấu trúc đã sẵn `key_version`); đặt lại MFA khi mất cả điện thoại lẫn mã khôi phục cần admin (P1-04 quản lý user). Trong lúc kiểm tra tôi đã tắt tiến trình `make dev-api` đang chạy ở 8069 (bản cũ) — người dùng cần chạy lại.
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-03 Tổ chức & tenant middleware.
+
 ## 2026-10-16 — ADR-022 Xóa mềm + ẩn mật khẩu CLI
 - Đã làm:
   - ADR-022 (người dùng chốt): user/tổ chức không xóa cứng khi có dữ liệu liên quan — xóa mềm qua `users.disabled_at` / `organizations.deleted_at`; thêm `golang.org/x/term` vào Stack (CLAUDE.md cập nhật).

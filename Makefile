@@ -1,4 +1,4 @@
-.PHONY: dev-web dev-api db-up gen sqlc migrate-up migrate-down types test check format
+.PHONY: dev-web dev-api dev-env db-up gen sqlc migrate-up migrate-down types test check format
 
 # Dev Postgres from deploy/docker-compose.yml (service `db`, host port 5468). Override per shell if needed.
 DATABASE_URL ?= postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable
@@ -10,12 +10,20 @@ export DATABASE_URL NTB_TEST_DATABASE_URL
 dev-web:
 	cd frontend && npm run dev
 
-# Go API on :8069 (NTB_HTTP_ADDR).
-dev-api:
-	cd backend && go run ./cmd/ntb
+# Go API on :8069 (NTB_HTTP_ADDR). Uses the NTB_MASTER_KEY from deploy/.env — the same key as the Docker
+# stack, because both share the dev database (different keys would make stored MFA seeds unreadable).
+dev-api: dev-env
+	cd backend && NTB_MASTER_KEY="$$(grep '^NTB_MASTER_KEY=' ../deploy/.env | cut -d= -f2-)" go run ./cmd/ntb
+
+# Create deploy/.env for Docker Compose (random NTB_MASTER_KEY) if it does not exist yet.
+# Keep that key: losing or changing it makes every stored secret (MFA seeds, …) unreadable.
+dev-env:
+	@if [ -f deploy/.env ]; then echo "deploy/.env already exists — not touching it"; \
+	else sed "s|^NTB_MASTER_KEY=.*|NTB_MASTER_KEY=$$(openssl rand -base64 32)|" deploy/.env.example > deploy/.env \
+	  && chmod 600 deploy/.env && echo "Created deploy/.env with a random NTB_MASTER_KEY"; fi
 
 # Start only the dev database.
-db-up:
+db-up: dev-env
 	docker compose -f deploy/docker-compose.yml up -d --wait db
 
 # Regenerate all code from contracts (ADR-017): run after editing api/openapi.yaml or db/queries.

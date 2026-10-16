@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { HomePage } from './app/HomePage'
 import { LoginPage } from './app/LoginPage'
+import { MfaSetupPage } from './app/MfaSetupPage'
+import { MfaVerifyPage } from './app/MfaVerifyPage'
 import { RequireAuth } from './app/RequireAuth'
 import { CanvasView } from './editor/canvas/CanvasView'
 import { Palette } from './editor/panels/Palette'
@@ -26,6 +28,8 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/mfa" element={<MfaVerifyPage />} />
+      <Route path="/mfa/setup" element={<MfaSetupPage />} />
       <Route
         path="/"
         element={

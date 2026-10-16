@@ -22,6 +22,7 @@ func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResol
 	r.Use(withRequestInfo(resolver))
 	r.Use(withSession(server.auth))
 	r.Use(csrfGuard)
+	r.Use(mfaGate)
 
 	strict := apigen.NewStrictHandlerWithOptions(server, nil, apigen.StrictHTTPServerOptions{
 		// Malformed JSON / params: generic 400, no parser internals echoed back.

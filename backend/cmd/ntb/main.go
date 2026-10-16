@@ -22,6 +22,7 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
@@ -69,12 +70,21 @@ func serve(logger *slog.Logger) error {
 		logger.Warn("database not reachable at startup", "error", err)
 	}
 
+	masterKey, err := secrets.ParseMasterKey(cfg.MasterKey)
+	if err != nil {
+		return err
+	}
+	keys, err := secrets.NewKeyring(masterKey)
+	if err != nil {
+		return err
+	}
+
 	resolver, err := auth.NewClientIPResolver(cfg.TrustedProxies)
 	if err != nil {
 		return fmt.Errorf("NTB_TRUSTED_PROXIES: %w", err)
 	}
 	queries := store.New(pool)
-	authSvc, err := auth.NewService(queries, logger, auth.DefaultArgon2)
+	authSvc, err := auth.NewService(pool, keys, logger, auth.DefaultArgon2)
 	if err != nil {
 		return fmt.Errorf("init auth: %w", err)
 	}
@@ -156,7 +166,8 @@ func adminCreate(logger *slog.Logger, args []string, stdin *os.File, stderr io.W
 		return err
 	}
 	defer pool.Close()
-	svc, err := auth.NewService(store.New(pool), logger, auth.DefaultArgon2)
+	// No keyring: creating a user never touches encrypted secrets, so the CLI works before NTB_MASTER_KEY is set.
+	svc, err := auth.NewService(pool, nil, logger, auth.DefaultArgon2)
 	if err != nil {
 		return err
 	}

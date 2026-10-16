@@ -16,6 +16,8 @@ type Config struct {
 	DatabaseURL string
 	// MigrateOnStart applies pending migrations before serving (enabled in Docker Compose).
 	MigrateOnStart bool
+	// MasterKey is the base64 32-byte key for envelope encryption of secrets (required; ADR-018).
+	MasterKey string
 	// TrustedProxies are CIDRs whose X-Forwarded-For / X-Forwarded-Proto headers are honoured
 	// (loopback for the Vite dev proxy; Compose adds the Docker network for nginx).
 	TrustedProxies string
@@ -29,6 +31,7 @@ func Load() Config {
 		DatabaseURL:    getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 		MigrateOnStart: getbool("NTB_MIGRATE_ON_START", false),
 		TrustedProxies: getenv("NTB_TRUSTED_PROXIES", "127.0.0.1/32,::1/128"),
+		MasterKey:      os.Getenv("NTB_MASTER_KEY"), // no default: the server refuses to start without it
 	}
 }
 

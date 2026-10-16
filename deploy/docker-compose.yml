@@ -31,8 +31,9 @@ services:
       # Trust X-Forwarded-For only from the nginx container. Never trust whole private ranges:
       # LAN clients (often 192.168.x.x) could then spoof their IP and bypass per-IP rate limits.
       NTB_TRUSTED_PROXIES: "172.30.68.10/32"
-      # Envelope-encryption master key for secrets (MFA, credentials; used from P1-02). Required in production.
-      NTB_MASTER_KEY: ${NTB_MASTER_KEY:-}
+      # Envelope-encryption master key for secrets (MFA seeds now, credentials later). Required:
+      # compose refuses to start without it. Create deploy/.env with `make dev-env`.
+      NTB_MASTER_KEY: ${NTB_MASTER_KEY:?Set NTB_MASTER_KEY in deploy/.env (run make dev-env, or openssl rand -base64 32)}
     networks:
       - internal
     depends_on:

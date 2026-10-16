@@ -11,7 +11,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
@@ -49,6 +51,17 @@ type Session struct {
 	Email         string
 	DisplayName   string
 	IsSystemAdmin bool
+	MFAEnabled    bool // user has confirmed TOTP enrollment
+	MFAVerified   bool // MFA code entered in this session
+	MFARequired   bool // system admin or org owner/admin (ADR-019)
+}
+
+func sessionFromRow(row store.GetSessionRow) Session {
+	return Session{
+		TokenHash: row.TokenHash, CSRFToken: row.CsrfToken, UserID: row.UserID,
+		Email: row.Email, DisplayName: row.DisplayName, IsSystemAdmin: row.IsSystemAdmin,
+		MFAEnabled: row.MfaEnabled, MFAVerified: row.MfaVerifiedAt.Valid, MFARequired: row.MfaRequired,
+	}
 }
 
 // LoginResult carries the new cookie token (only ever sent to the client, never stored) and the session.
@@ -57,32 +70,54 @@ type LoginResult struct {
 	Session Session
 }
 
-// Service implements login, logout and session lookup.
+// Service implements login, logout, session lookup and MFA.
 type Service struct {
+	pool     *pgxpool.Pool // for multi-statement transactions
 	q        store.Querier
+	keys     *secrets.Keyring
 	logger   *slog.Logger
 	argon    Argon2Params
 	ipLimit  *RateLimiter
 	idLimit  *RateLimiter
+	mfaLimit *RateLimiter
 	now      func() time.Time
 	dummyPwd string // hash compared when the email is unknown (constant-ish timing)
 }
 
 // NewService builds the auth service with the given argon2 cost (tests pass a cheap one).
-func NewService(q store.Querier, logger *slog.Logger, argon Argon2Params) (*Service, error) {
+func NewService(pool *pgxpool.Pool, keys *secrets.Keyring, logger *slog.Logger, argon Argon2Params) (*Service, error) {
 	dummy, err := HashPassword("not-a-real-password-for-timing", argon)
 	if err != nil {
 		return nil, err
 	}
 	return &Service{
-		q:        q,
+		pool:     pool,
+		q:        store.New(pool),
+		keys:     keys,
 		logger:   logger,
 		argon:    argon,
 		ipLimit:  NewRateLimiter(10, time.Minute),
 		idLimit:  NewRateLimiter(5, time.Minute),
+		mfaLimit: NewRateLimiter(5, time.Minute),
 		now:      time.Now,
 		dummyPwd: dummy,
 	}, nil
+}
+
+// withTx runs fn inside one database transaction.
+func (s *Service) withTx(ctx context.Context, fn func(q store.Querier) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := fn(store.New(tx)); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+	return nil
 }
 
 // Argon returns the hashing parameters (used by the admin CLI so hashes match the server's cost).
@@ -150,13 +185,12 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 	}
 	s.audit(ctx, user.ID, "auth.login", user.Email, meta)
 
-	return LoginResult{
-		Token: token,
-		Session: Session{
-			TokenHash: params.TokenHash, CSRFToken: csrf, UserID: user.ID,
-			Email: user.Email, DisplayName: user.DisplayName, IsSystemAdmin: user.IsSystemAdmin,
-		},
-	}, nil
+	// Reload through GetSession so the result carries the same MFA state Lookup would report.
+	row, err := s.q.GetSession(ctx, params.TokenHash)
+	if err != nil {
+		return LoginResult{}, fmt.Errorf("load new session: %w", err)
+	}
+	return LoginResult{Token: token, Session: sessionFromRow(row)}, nil
 }
 
 // Lookup resolves a cookie token to a live session and slides its idle expiry (capped by SessionAbsolute).
@@ -187,10 +221,7 @@ func (s *Service) Lookup(ctx context.Context, token string) (Session, error) {
 			return Session{}, fmt.Errorf("touch session: %w", err)
 		}
 	}
-	return Session{
-		TokenHash: row.TokenHash, CSRFToken: row.CsrfToken, UserID: row.UserID,
-		Email: row.Email, DisplayName: row.DisplayName, IsSystemAdmin: row.IsSystemAdmin,
-	}, nil
+	return sessionFromRow(row), nil
 }
 
 // Logout deletes the session and records it.

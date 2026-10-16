@@ -1,7 +1,55 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { api, type Health } from '../api/client'
-import { useLogout, useSession } from './auth'
+import { api, type AuthSession, type Health } from '../api/client'
+import { useLogout, useMfaDisable, useSession } from './auth'
+
+/** MFA status with enable link, or a disable form for users not required to use MFA. */
+function MfaSection({ session }: { session: AuthSession }) {
+  const disable = useMfaDisable()
+  const [code, setCode] = useState('')
+  const { enabled, required } = session.mfa
+
+  if (!enabled) {
+    return (
+      <p className="text-sm">
+        MFA: <span className="text-muted-foreground">chưa bật</span> ·{' '}
+        <Link to="/mfa/setup?next=/" className="text-primary underline">
+          Bật xác thực hai lớp
+        </Link>
+      </p>
+    )
+  }
+  if (required) {
+    return <p className="text-sm">MFA: đã bật (bắt buộc với tài khoản quản trị)</p>
+  }
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    disable.mutate(code, { onSuccess: () => setCode('') })
+  }
+  return (
+    <form onSubmit={onSubmit} className="flex items-center gap-2 text-sm">
+      <span>MFA: đã bật ·</span>
+      <input
+        aria-label="Mã MFA để tắt"
+        placeholder="Mã 6 số"
+        inputMode="numeric"
+        required
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        className="w-24 rounded-md border border-border bg-background px-2 py-1"
+      />
+      <button type="submit" disabled={disable.isPending} className="underline">
+        Tắt MFA
+      </button>
+      {disable.isError && (
+        <span role="alert" className="text-destructive">
+          {disable.error.message}
+        </span>
+      )}
+    </form>
+  )
+}
 
 // 503 still carries a Health body (database unavailable), so both branches return it.
 async function fetchHealth(): Promise<Health> {
@@ -29,6 +77,7 @@ export function HomePage() {
           {user.isSystemAdmin && <span className="text-muted-foreground"> (system admin)</span>}
         </p>
       )}
+      {session.data && <MfaSection session={session.data} />}
       <p className="text-sm" data-testid="api-status">
         API:{' '}
         {health.isPending

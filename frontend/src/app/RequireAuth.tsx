@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
-import { useSession } from './auth'
+import { mfaStep, useSession } from './auth'
 
 /**
- * Route guard: redirects to /login when there is no session. This is UX only —
- * every API endpoint enforces authentication on the server (CLAUDE.md).
+ * Route guard: no session → /login; MFA still owed → /mfa (enter code) or /mfa/setup (mandatory
+ * enrollment). This is UX only — the backend rejects every request the session may not make (mfaGate).
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const session = useSession()
@@ -20,9 +20,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       </p>
     )
   }
+  const next = encodeURIComponent(location.pathname + location.search)
   if (!session.data) {
-    const next = encodeURIComponent(location.pathname + location.search)
     return <Navigate to={`/login?next=${next}`} replace />
   }
+  const step = mfaStep(session.data)
+  if (step === 'verify') return <Navigate to={`/mfa?next=${next}`} replace />
+  if (step === 'setup') return <Navigate to={`/mfa/setup?next=${next}`} replace />
   return children
 }

@@ -25,6 +25,7 @@ Yêu cầu thêm: Docker (Postgres dev), `brew install golang-migrate sqlc`
 (oapi-codegen được ghim phiên bản trong `backend/go.mod`, chạy qua `go tool`).
 
 ```sh
+make dev-env   # tạo deploy/.env với NTB_MASTER_KEY ngẫu nhiên (db-up/dev-api tự gọi)
 make db-up     # Postgres dev trong Docker, cổng host 5468
 make migrate-up / make migrate-down   # áp/rollback migration (DATABASE_URL mặc định trỏ DB dev)
 make dev-api   # Go API ở http://localhost:8069 (đổi bằng NTB_HTTP_ADDR)
@@ -39,9 +40,12 @@ Hợp đồng API: `api/openapi.yaml` (OpenAPI 3.1). Quy trình: sửa `api/open
 ## Triển khai
 
 ```sh
-cp deploy/.env.example deploy/.env    # đổi mật khẩu DB, đặt NTB_MASTER_KEY
+make dev-env    # tạo deploy/.env (NTB_MASTER_KEY ngẫu nhiên); đổi mật khẩu DB trong file đó khi chạy thật
 docker compose -f deploy/docker-compose.yml up -d --build   # web :8068, api, db
 ```
+
+**NTB_MASTER_KEY** mã hóa mọi bí mật (MFA, sau này là mật khẩu thiết bị). Sao lưu key riêng, KHÔNG để chung
+với backup DB; mất hoặc đổi key = không đọc được các bí mật đã lưu. API không khởi động nếu thiếu key.
 
 Tạo system admin đầu tiên (mật khẩu ≥ 12 ký tự, đọc từ stdin để không lộ trong lịch sử shell):
 

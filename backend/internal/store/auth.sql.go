@@ -99,10 +99,15 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at,
-       u.id AS user_id, u.email, u.display_name, u.is_system_admin
+SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s.mfa_verified_at,
+       u.id AS user_id, u.email, u.display_name, u.is_system_admin,
+       (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
+       (u.is_system_admin OR EXISTS (
+          SELECT 1 FROM memberships m WHERE m.user_id = u.id AND m.role IN ('owner', 'admin')
+        ))::boolean AS mfa_required
 FROM sessions s
 JOIN users u ON u.id = s.user_id
+LEFT JOIN mfa_totp t ON t.user_id = u.id
 WHERE s.token_hash = $1
   AND s.expires_at > now()
   AND u.disabled_at IS NULL
@@ -114,13 +119,16 @@ type GetSessionRow struct {
 	CreatedAt     pgtype.Timestamptz
 	LastSeenAt    pgtype.Timestamptz
 	ExpiresAt     pgtype.Timestamptz
+	MfaVerifiedAt pgtype.Timestamptz
 	UserID        pgtype.UUID
 	Email         string
 	DisplayName   string
 	IsSystemAdmin bool
+	MfaEnabled    bool
+	MfaRequired   bool
 }
 
-// Returns the live session joined with its (enabled) user.
+// Returns the live session joined with its (enabled) user and MFA state.
 func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
 	row := q.db.QueryRow(ctx, getSession, tokenHash)
 	var i GetSessionRow
@@ -130,10 +138,13 @@ func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionR
 		&i.CreatedAt,
 		&i.LastSeenAt,
 		&i.ExpiresAt,
+		&i.MfaVerifiedAt,
 		&i.UserID,
 		&i.Email,
 		&i.DisplayName,
 		&i.IsSystemAdmin,
+		&i.MfaEnabled,
+		&i.MfaRequired,
 	)
 	return i, err
 }

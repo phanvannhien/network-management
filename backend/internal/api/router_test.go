@@ -11,8 +11,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pquerna/otp/totp"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/testdb"
 )
@@ -23,10 +28,19 @@ type fakePinger struct{ err error }
 
 func (f fakePinger) Ping(context.Context) (int32, error) { return 1, f.err }
 
-func newRouter(t *testing.T, db Pinger, q store.Querier) http.Handler {
+func testKeyring(t *testing.T) *secrets.Keyring {
+	t.Helper()
+	k, err := secrets.NewKeyring(bytes.Repeat([]byte{7}, secrets.KeySize))
+	if err != nil {
+		t.Fatalf("keyring: %v", err)
+	}
+	return k
+}
+
+func newRouter(t *testing.T, db Pinger, pool *pgxpool.Pool) http.Handler {
 	t.Helper()
 	logger := slog.New(slog.DiscardHandler)
-	svc, err := auth.NewService(q, logger, cheapArgon)
+	svc, err := auth.NewService(pool, testKeyring(t), logger, cheapArgon)
 	if err != nil {
 		t.Fatalf("auth service: %v", err)
 	}
@@ -104,8 +118,8 @@ func TestMeWithoutSessionIs401(t *testing.T) {
 func TestLoginSessionLogoutFlow(t *testing.T) {
 	pool, _ := testdb.New(t)
 	q := store.New(pool)
-	h := newRouter(t, q, q)
-	seed, _ := auth.NewService(q, slog.New(slog.DiscardHandler), cheapArgon)
+	h := newRouter(t, q, pool)
+	seed, _ := auth.NewService(pool, testKeyring(t), slog.New(slog.DiscardHandler), cheapArgon)
 	if _, err := seed.CreateUser(context.Background(), "admin@example.com", "Admin", "a-strong-password", true); err != nil {
 		t.Fatalf("seed user: %v", err)
 	}
@@ -164,7 +178,7 @@ func TestLoginSessionLogoutFlow(t *testing.T) {
 func TestCrossOriginWriteIsBlocked(t *testing.T) {
 	pool, _ := testdb.New(t)
 	q := store.New(pool)
-	c := newClient(t, newRouter(t, q, q))
+	c := newClient(t, newRouter(t, q, pool))
 	creds := map[string]string{"email": "x@example.com", "password": "whatever-123"}
 
 	resp, _ := c.do("POST", "/api/auth/login", creds, map[string]string{"Origin": "https://evil.example"})
@@ -201,8 +215,98 @@ func TestMalformedLoginBodyIs400WithoutInternals(t *testing.T) {
 func TestHealthzWithRealDatabase(t *testing.T) {
 	pool, _ := testdb.New(t)
 	q := store.New(pool)
-	c := newClient(t, newRouter(t, q, q))
+	c := newClient(t, newRouter(t, q, pool))
 	if resp, body := c.do("GET", "/api/healthz", nil, nil); resp.StatusCode != 200 || body["database"] != "ok" {
 		t.Fatalf("status=%d body=%v", resp.StatusCode, body)
+	}
+}
+
+// ADR-019: a system admin without MFA can only reach the enrollment endpoints until MFA is set up.
+func TestMFAGateForcesAdminEnrollment(t *testing.T) {
+	pool, _ := testdb.New(t)
+	q := store.New(pool)
+	seed, _ := auth.NewService(pool, testKeyring(t), slog.New(slog.DiscardHandler), cheapArgon)
+	if _, err := seed.CreateUser(context.Background(), "root@example.com", "Root", "a-strong-password", true); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	c := newClient(t, newRouter(t, q, pool))
+
+	resp, body := c.do("POST", "/api/auth/login", map[string]string{"email": "root@example.com", "password": "a-strong-password"}, nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("login: %d %v", resp.StatusCode, body)
+	}
+	csrf := body["csrfToken"].(string)
+	mfa := body["mfa"].(map[string]any)
+	if mfa["required"] != true || mfa["enabled"] != false {
+		t.Fatalf("mfa status = %v", mfa)
+	}
+	h := map[string]string{"X-CSRF-Token": csrf}
+
+	// Not on the enrollment allowlist → blocked by the gate.
+	if resp, _ := c.do("POST", "/api/auth/mfa/disable", map[string]string{"code": "123456"}, h); resp.StatusCode != 403 {
+		t.Fatalf("disable before enrollment: status = %d, want 403", resp.StatusCode)
+	}
+	// Enrollment endpoints are reachable.
+	resp, body = c.do("POST", "/api/auth/mfa/setup", nil, h)
+	if resp.StatusCode != 200 || !strings.HasPrefix(body["qrCode"].(string), "data:image/png;base64,") {
+		t.Fatalf("setup: %d", resp.StatusCode)
+	}
+	secret := body["secret"].(string)
+	code, _ := totp.GenerateCode(secret, time.Now())
+	resp, body = c.do("POST", "/api/auth/mfa/enable", map[string]string{"code": code}, h)
+	if resp.StatusCode != 200 || len(body["recoveryCodes"].([]any)) != 10 {
+		t.Fatalf("enable: %d %v", resp.StatusCode, body)
+	}
+
+	// Session is now fully verified.
+	resp, body = c.do("GET", "/api/auth/me", nil, nil)
+	mfa = body["mfa"].(map[string]any)
+	if resp.StatusCode != 200 || mfa["enabled"] != true || mfa["verified"] != true {
+		t.Fatalf("me after enable: %d %v", resp.StatusCode, body)
+	}
+	// Mandatory MFA cannot be disabled (reaches the handler now, which refuses).
+	if resp, _ := c.do("POST", "/api/auth/mfa/disable", map[string]string{"code": "123456"}, h); resp.StatusCode != 403 {
+		t.Fatalf("disable mandatory MFA: status = %d, want 403", resp.StatusCode)
+	}
+}
+
+// A user with MFA enabled who has only entered the password is limited to /auth/me, logout and verify.
+func TestMFAGatePendingVerification(t *testing.T) {
+	pool, _ := testdb.New(t)
+	q := store.New(pool)
+	svc, _ := auth.NewService(pool, testKeyring(t), slog.New(slog.DiscardHandler), cheapArgon)
+	ctx := context.Background()
+	if _, err := svc.CreateUser(ctx, "u@example.com", "U", "a-strong-password", false); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	c := newClient(t, newRouter(t, q, pool))
+
+	// Enroll in a first session.
+	_, body := c.do("POST", "/api/auth/login", map[string]string{"email": "u@example.com", "password": "a-strong-password"}, nil)
+	h := map[string]string{"X-CSRF-Token": body["csrfToken"].(string)}
+	_, body = c.do("POST", "/api/auth/mfa/setup", nil, h)
+	secret := body["secret"].(string)
+	enrollCode, _ := totp.GenerateCode(secret, time.Now())
+	if resp, _ := c.do("POST", "/api/auth/mfa/enable", map[string]string{"code": enrollCode}, h); resp.StatusCode != 200 {
+		t.Fatalf("enable: %d", resp.StatusCode)
+	}
+
+	// Second browser: password only → pending.
+	c2 := newClient(t, newRouter(t, q, pool))
+	_, body = c2.do("POST", "/api/auth/login", map[string]string{"email": "u@example.com", "password": "a-strong-password"}, nil)
+	h2 := map[string]string{"X-CSRF-Token": body["csrfToken"].(string)}
+	if mfa := body["mfa"].(map[string]any); mfa["enabled"] != true || mfa["verified"] != false {
+		t.Fatalf("pending status = %v", mfa)
+	}
+	if resp, _ := c2.do("POST", "/api/auth/mfa/setup", nil, h2); resp.StatusCode != 403 {
+		t.Fatalf("setup while pending verification: status = %d, want 403", resp.StatusCode)
+	}
+	if resp, _ := c2.do("POST", "/api/auth/mfa/verify", map[string]string{"code": "000000"}, h2); resp.StatusCode != 401 {
+		t.Fatalf("wrong code: status = %d, want 401", resp.StatusCode)
+	}
+	next, _ := totp.GenerateCode(secret, time.Now().Add(30*time.Second)) // next step (enroll step is spent)
+	resp, body := c2.do("POST", "/api/auth/mfa/verify", map[string]string{"code": next}, h2)
+	if resp.StatusCode != 200 || body["mfa"].(map[string]any)["verified"] != true {
+		t.Fatalf("verify: %d %v", resp.StatusCode, body)
 	}
 }

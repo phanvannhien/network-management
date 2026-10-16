@@ -31,11 +31,16 @@ INSERT INTO sessions (token_hash, user_id, csrf_token, ip, user_agent, expires_a
 VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: GetSession :one
--- Returns the live session joined with its (enabled) user.
-SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at,
-       u.id AS user_id, u.email, u.display_name, u.is_system_admin
+-- Returns the live session joined with its (enabled) user and MFA state.
+SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s.mfa_verified_at,
+       u.id AS user_id, u.email, u.display_name, u.is_system_admin,
+       (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
+       (u.is_system_admin OR EXISTS (
+          SELECT 1 FROM memberships m WHERE m.user_id = u.id AND m.role IN ('owner', 'admin')
+        ))::boolean AS mfa_required
 FROM sessions s
 JOIN users u ON u.id = s.user_id
+LEFT JOIN mfa_totp t ON t.user_id = u.id
 WHERE s.token_hash = $1
   AND s.expires_at > now()
   AND u.disabled_at IS NULL;

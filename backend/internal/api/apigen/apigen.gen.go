@@ -53,8 +53,13 @@ func (e HealthStatus) Valid() bool {
 
 // AuthSession defines model for AuthSession.
 type AuthSession struct {
-	CsrfToken string      `json:"csrfToken"`
-	User      CurrentUser `json:"user"`
+	CsrfToken string `json:"csrfToken"`
+
+	// Mfa enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
+	// account (system admin / org owner / org admin). The session is fully usable only when
+	// (enabled and verified) or (not enabled and not required).
+	Mfa  MfaStatus   `json:"mfa"`
+	User CurrentUser `json:"user"`
 }
 
 // CurrentUser defines model for CurrentUser.
@@ -89,8 +94,50 @@ type LoginRequest struct {
 	Password string              `json:"password"`
 }
 
+// MfaCode defines model for MfaCode.
+type MfaCode struct {
+	Code string `json:"code"`
+}
+
+// MfaRecoveryCodes defines model for MfaRecoveryCodes.
+type MfaRecoveryCodes struct {
+	RecoveryCodes []string `json:"recoveryCodes"`
+}
+
+// MfaSetup defines model for MfaSetup.
+type MfaSetup struct {
+	OtpauthUrl string `json:"otpauthUrl"`
+
+	// QrCode PNG data URL of the otpauth QR code
+	QrCode string `json:"qrCode"`
+
+	// Secret Base32 secret for manual entry
+	Secret string `json:"secret"`
+}
+
+// MfaStatus enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
+// account (system admin / org owner / org admin). The session is fully usable only when
+// (enabled and verified) or (not enabled and not required).
+type MfaStatus struct {
+	Enabled  bool `json:"enabled"`
+	Required bool `json:"required"`
+	Verified bool `json:"verified"`
+}
+
+// MfaVerifyRequest Provide either a TOTP code or a recovery code.
+type MfaVerifyRequest struct {
+	Code         *string `json:"code,omitempty"`
+	RecoveryCode *string `json:"recoveryCode,omitempty"`
+}
+
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
+
+// Conflict defines model for Conflict.
+type Conflict = Error
+
+// InvalidCode defines model for InvalidCode.
+type InvalidCode = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
@@ -100,8 +147,37 @@ type LogoutParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// DisableMfaParams defines parameters for DisableMfa.
+type DisableMfaParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// EnableMfaParams defines parameters for EnableMfa.
+type EnableMfaParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// SetupMfaParams defines parameters for SetupMfa.
+type SetupMfaParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// VerifyMfaParams defines parameters for VerifyMfa.
+type VerifyMfaParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
+
+// DisableMfaJSONRequestBody defines body for DisableMfa for application/json ContentType.
+type DisableMfaJSONRequestBody = MfaCode
+
+// EnableMfaJSONRequestBody defines body for EnableMfa for application/json ContentType.
+type EnableMfaJSONRequestBody = MfaCode
+
+// VerifyMfaJSONRequestBody defines body for VerifyMfa for application/json ContentType.
+type VerifyMfaJSONRequestBody = MfaVerifyRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -114,6 +190,18 @@ type ServerInterface interface {
 	// GetCurrentSession Current user and CSRF token
 	// (GET /auth/me)
 	GetCurrentSession(w http.ResponseWriter, r *http.Request)
+	// DisableMfa Turn off MFA (not allowed when MFA is mandatory for the account)
+	// (POST /auth/mfa/disable)
+	DisableMfa(w http.ResponseWriter, r *http.Request, params DisableMfaParams)
+	// EnableMfa Confirm enrollment with a code; returns one-time recovery codes
+	// (POST /auth/mfa/enable)
+	EnableMfa(w http.ResponseWriter, r *http.Request, params EnableMfaParams)
+	// SetupMfa Start TOTP enrollment (returns the secret and a QR code once)
+	// (POST /auth/mfa/setup)
+	SetupMfa(w http.ResponseWriter, r *http.Request, params SetupMfaParams)
+	// VerifyMfa Complete sign-in with a TOTP code or a recovery code
+	// (POST /auth/mfa/verify)
+	VerifyMfa(w http.ResponseWriter, r *http.Request, params VerifyMfaParams)
 	// GetHealthz Liveness + database check
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
@@ -138,6 +226,30 @@ func (_ Unimplemented) Logout(w http.ResponseWriter, r *http.Request, params Log
 // GetCurrentSession Current user and CSRF token
 // (GET /auth/me)
 func (_ Unimplemented) GetCurrentSession(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisableMfa Turn off MFA (not allowed when MFA is mandatory for the account)
+// (POST /auth/mfa/disable)
+func (_ Unimplemented) DisableMfa(w http.ResponseWriter, r *http.Request, params DisableMfaParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// EnableMfa Confirm enrollment with a code; returns one-time recovery codes
+// (POST /auth/mfa/enable)
+func (_ Unimplemented) EnableMfa(w http.ResponseWriter, r *http.Request, params EnableMfaParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetupMfa Start TOTP enrollment (returns the secret and a QR code once)
+// (POST /auth/mfa/setup)
+func (_ Unimplemented) SetupMfa(w http.ResponseWriter, r *http.Request, params SetupMfaParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifyMfa Complete sign-in with a TOTP code or a recovery code
+// (POST /auth/mfa/verify)
+func (_ Unimplemented) VerifyMfa(w http.ResponseWriter, r *http.Request, params VerifyMfaParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -220,6 +332,186 @@ func (siw *ServerInterfaceWrapper) GetCurrentSession(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCurrentSession(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisableMfa operation middleware
+func (siw *ServerInterfaceWrapper) DisableMfa(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableMfaParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableMfa(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableMfa operation middleware
+func (siw *ServerInterfaceWrapper) EnableMfa(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EnableMfaParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableMfa(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetupMfa operation middleware
+func (siw *ServerInterfaceWrapper) SetupMfa(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetupMfaParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetupMfa(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyMfa operation middleware
+func (siw *ServerInterfaceWrapper) VerifyMfa(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VerifyMfaParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyMfa(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -368,9 +660,25 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetCurrentSession)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/mfa/setup", wrapper.SetupMfa)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/mfa/enable", wrapper.EnableMfa)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/mfa/verify", wrapper.VerifyMfa)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/mfa/disable", wrapper.DisableMfa)
+	})
 
 	return r
 }
+
+type ConflictJSONResponse Error
+
+type InvalidCodeJSONResponse Error
 
 type UnauthorizedJSONResponse Error
 
@@ -507,6 +815,259 @@ func (response GetCurrentSession401JSONResponse) VisitGetCurrentSessionResponse(
 	return err
 }
 
+type DisableMfaRequestObject struct {
+	Params DisableMfaParams
+	Body   *DisableMfaJSONRequestBody
+}
+
+type DisableMfaResponseObject interface {
+	VisitDisableMfaResponse(w http.ResponseWriter) error
+}
+
+type DisableMfa204Response struct {
+}
+
+func (response DisableMfa204Response) VisitDisableMfaResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisableMfa400JSONResponse struct{ InvalidCodeJSONResponse }
+
+func (response DisableMfa400JSONResponse) VisitDisableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableMfa401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DisableMfa401JSONResponse) VisitDisableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableMfa403JSONResponse Error
+
+func (response DisableMfa403JSONResponse) VisitDisableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableMfa409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DisableMfa409JSONResponse) VisitDisableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMfaRequestObject struct {
+	Params EnableMfaParams
+	Body   *EnableMfaJSONRequestBody
+}
+
+type EnableMfaResponseObject interface {
+	VisitEnableMfaResponse(w http.ResponseWriter) error
+}
+
+type EnableMfa200JSONResponse MfaRecoveryCodes
+
+func (response EnableMfa200JSONResponse) VisitEnableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMfa400JSONResponse struct{ InvalidCodeJSONResponse }
+
+func (response EnableMfa400JSONResponse) VisitEnableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMfa401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response EnableMfa401JSONResponse) VisitEnableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMfa409JSONResponse struct{ ConflictJSONResponse }
+
+func (response EnableMfa409JSONResponse) VisitEnableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetupMfaRequestObject struct {
+	Params SetupMfaParams
+}
+
+type SetupMfaResponseObject interface {
+	VisitSetupMfaResponse(w http.ResponseWriter) error
+}
+
+type SetupMfa200JSONResponse MfaSetup
+
+func (response SetupMfa200JSONResponse) VisitSetupMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetupMfa401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SetupMfa401JSONResponse) VisitSetupMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetupMfa409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SetupMfa409JSONResponse) VisitSetupMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyMfaRequestObject struct {
+	Params VerifyMfaParams
+	Body   *VerifyMfaJSONRequestBody
+}
+
+type VerifyMfaResponseObject interface {
+	VisitVerifyMfaResponse(w http.ResponseWriter) error
+}
+
+type VerifyMfa200JSONResponse AuthSession
+
+func (response VerifyMfa200JSONResponse) VisitVerifyMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyMfa401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response VerifyMfa401JSONResponse) VisitVerifyMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyMfa409JSONResponse struct{ ConflictJSONResponse }
+
+func (response VerifyMfa409JSONResponse) VisitVerifyMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyMfa429JSONResponse Error
+
+func (response VerifyMfa429JSONResponse) VisitVerifyMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthzRequestObject struct {
 }
 
@@ -553,6 +1114,18 @@ type StrictServerInterface interface {
 	// GetCurrentSession Current user and CSRF token
 	// (GET /auth/me)
 	GetCurrentSession(ctx context.Context, request GetCurrentSessionRequestObject) (GetCurrentSessionResponseObject, error)
+	// DisableMfa Turn off MFA (not allowed when MFA is mandatory for the account)
+	// (POST /auth/mfa/disable)
+	DisableMfa(ctx context.Context, request DisableMfaRequestObject) (DisableMfaResponseObject, error)
+	// EnableMfa Confirm enrollment with a code; returns one-time recovery codes
+	// (POST /auth/mfa/enable)
+	EnableMfa(ctx context.Context, request EnableMfaRequestObject) (EnableMfaResponseObject, error)
+	// SetupMfa Start TOTP enrollment (returns the secret and a QR code once)
+	// (POST /auth/mfa/setup)
+	SetupMfa(ctx context.Context, request SetupMfaRequestObject) (SetupMfaResponseObject, error)
+	// VerifyMfa Complete sign-in with a TOTP code or a recovery code
+	// (POST /auth/mfa/verify)
+	VerifyMfa(ctx context.Context, request VerifyMfaRequestObject) (VerifyMfaResponseObject, error)
 	// GetHealthz Liveness + database check
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
@@ -671,6 +1244,131 @@ func (sh *strictHandler) GetCurrentSession(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCurrentSessionResponseObject); ok {
 		if err := validResponse.VisitGetCurrentSessionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableMfa operation middleware
+func (sh *strictHandler) DisableMfa(w http.ResponseWriter, r *http.Request, params DisableMfaParams) {
+	var request DisableMfaRequestObject
+
+	request.Params = params
+
+	var body DisableMfaJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableMfa(ctx, request.(DisableMfaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableMfa")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableMfaResponseObject); ok {
+		if err := validResponse.VisitDisableMfaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableMfa operation middleware
+func (sh *strictHandler) EnableMfa(w http.ResponseWriter, r *http.Request, params EnableMfaParams) {
+	var request EnableMfaRequestObject
+
+	request.Params = params
+
+	var body EnableMfaJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableMfa(ctx, request.(EnableMfaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableMfa")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableMfaResponseObject); ok {
+		if err := validResponse.VisitEnableMfaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetupMfa operation middleware
+func (sh *strictHandler) SetupMfa(w http.ResponseWriter, r *http.Request, params SetupMfaParams) {
+	var request SetupMfaRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetupMfa(ctx, request.(SetupMfaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetupMfa")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetupMfaResponseObject); ok {
+		if err := validResponse.VisitSetupMfaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyMfa operation middleware
+func (sh *strictHandler) VerifyMfa(w http.ResponseWriter, r *http.Request, params VerifyMfaParams) {
+	var request VerifyMfaRequestObject
+
+	request.Params = params
+
+	var body VerifyMfaJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyMfa(ctx, request.(VerifyMfaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyMfa")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyMfaResponseObject); ok {
+		if err := validResponse.VisitVerifyMfaResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
