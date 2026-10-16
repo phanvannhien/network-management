@@ -2,17 +2,18 @@
 package api
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 )
 
 // NewRouter returns the root handler; every route lives under /api (nginx proxies /api as-is).
-func NewRouter(logger *slog.Logger, version string) http.Handler {
+func NewRouter(logger *slog.Logger, server apigen.StrictServerInterface) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	// No middleware.RealIP: it trusts client-supplied X-Forwarded-For (IP spoofing).
@@ -20,18 +21,11 @@ func NewRouter(logger *slog.Logger, version string) http.Handler {
 	r.Use(requestLogger(logger))
 	r.Use(middleware.Recoverer)
 
-	r.Route("/api", func(r chi.Router) {
-		r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-			writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": version})
-		})
+	apigen.HandlerWithOptions(apigen.NewStrictHandler(server, nil), apigen.ChiServerOptions{
+		BaseURL:    "/api",
+		BaseRouter: r,
 	})
 	return r
-}
-
-func writeJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
 }
 
 func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {

@@ -11,8 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
 func main() {
@@ -28,9 +31,19 @@ func run(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// The pool connects lazily: the API starts even when Postgres is down and /api/healthz reports it.
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("configure database pool: %w", err)
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		logger.Warn("database not reachable at startup", "error", err)
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewRouter(logger, cfg.Version),
+		Handler:           api.NewRouter(logger, api.NewServer(logger, store.New(pool), cfg.Version)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

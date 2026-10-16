@@ -1,4 +1,4 @@
-.PHONY: dev-web dev-api db-up sqlc migrate-up migrate-down types test check format
+.PHONY: dev-web dev-api db-up gen sqlc migrate-up migrate-down types test check format
 
 # Dev Postgres from deploy/docker-compose.yml (service `db`, host port 5468). Override per shell if needed.
 DATABASE_URL ?= postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable
@@ -18,7 +18,15 @@ dev-api:
 db-up:
 	docker compose -f deploy/docker-compose.yml up -d --wait db
 
-# Generate Go store code from db/queries (wired up in P0-03).
+# Regenerate all code from contracts (ADR-017): run after editing api/openapi.yaml or db/queries.
+#   oapi-codegen (pinned in backend/go.mod as a Go tool) -> backend/internal/api/apigen
+#   sqlc (brew install sqlc)                              -> backend/internal/store
+#   openapi-typescript                                    -> frontend/src/api/schema.d.ts
+gen:
+	cd backend && go tool oapi-codegen -config internal/api/oapi-codegen.yaml ../api/openapi.yaml
+	cd backend && sqlc generate
+	cd frontend && npx openapi-typescript ../api/openapi.yaml -o src/api/schema.d.ts
+
 sqlc:
 	cd backend && sqlc generate
 

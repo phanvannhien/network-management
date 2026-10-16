@@ -9,13 +9,16 @@ type Config struct {
 	HTTPAddr string
 	// Version is reported by /api/healthz.
 	Version string
+	// DatabaseURL is the Postgres connection string (dev default: Compose db on localhost:5468).
+	DatabaseURL string
 }
 
 // Load reads settings from the environment, falling back to dev defaults.
 func Load() Config {
 	return Config{
-		HTTPAddr: getenv("NTB_HTTP_ADDR", ":8069"),
-		Version:  getenv("NTB_VERSION", "dev"),
+		HTTPAddr:    getenv("NTB_HTTP_ADDR", ":8069"),
+		Version:     getenv("NTB_VERSION", "dev"),
+		DatabaseURL: getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 	}
 }
 

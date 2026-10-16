@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Network Topology Builder API
   version: 0.1.0
@@ -9,10 +9,16 @@ paths:
   /healthz:
     get:
       operationId: getHealthz
-      summary: Liveness check
+      summary: Liveness + database check
       responses:
         '200':
-          description: Service is up
+          description: API and database are up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: API is up but the database is unreachable
           content:
             application/json:
               schema:
@@ -21,10 +27,13 @@ components:
   schemas:
     Health:
       type: object
-      required: [status, version]
+      required: [status, version, database]
       properties:
         status:
           type: string
-          enum: [ok]
+          enum: [ok, degraded]
         version:
           type: string
+        database:
+          type: string
+          enum: [ok, unavailable]

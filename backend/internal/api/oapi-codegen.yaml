@@ -1,0 +1,7 @@
+# oapi-codegen config: `make gen` turns api/openapi.yaml into typed models + a strict chi server interface.
+package: apigen
+generate:
+  models: true
+  chi-server: true
+  strict-server: true
+output: internal/api/apigen/apigen.gen.go

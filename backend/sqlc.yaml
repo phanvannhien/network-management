@@ -1,0 +1,14 @@
+# sqlc: hand-written SQL in db/queries -> typed Go in internal/store (no ORM, CLAUDE.md).
+# Schema comes from the migrations so generated code always matches the real database.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: db/migrations
+    queries: db/queries
+    gen:
+      go:
+        package: store
+        out: internal/store
+        sql_package: pgx/v5
+        emit_json_tags: false
+        emit_interface: true

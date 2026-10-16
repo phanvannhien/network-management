@@ -5,6 +5,19 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P0-03 Sinh code
+- Đã làm:
+  - **OpenAPI 3.1 khả thi:** thử thật oapi-codegen v2.8.0 với spec 3.1 (`type: [string, "null"]` → `*string`) — chạy đúng. `api/openapi.yaml` nâng lên 3.1.0 theo đúng ADR-017, không cần ADR mới.
+  - oapi-codegen ghim phiên bản bằng `go get -tool` (chạy `go tool oapi-codegen`), strict-server + chi + models → `internal/api/apigen`. sqlc (brew) với schema lấy từ migrations → `internal/store` (pgx/v5, có interface Querier). openapi-typescript + openapi-fetch → `frontend/src/api/{schema.d.ts,client.ts}`.
+  - `make gen` chạy cả 3. Endpoint mẫu trọn đường: `GET /api/healthz` → `Server.GetHealthz` (implement StrictServerInterface) → sqlc `Ping` → Postgres; trả 200 `{status:ok, database:ok}` hoặc 503 `{status:degraded, database:unavailable}`; frontend dùng client sinh code (`api.GET('/healthz')`).
+  - API kết nối DB qua `NTB_DATABASE_URL` (mặc định DB dev 5468); pool lazy — API vẫn chạy khi DB tắt và healthz báo.
+  - openapi-typescript 7.13.0 (bản mới nhất) chỉ khai báo peer TypeScript ^5, dự án dùng TS 6 → thêm `overrides` trong `frontend/package.json` cho nó dùng TS của dự án; đã kiểm tra output đúng (chỉ là công cụ sinh code lúc dev).
+  - openapi-fetch: `baseUrl` tuyệt đối theo origin trang (Request ngoài trình duyệt không nhận URL tương đối) và tra `fetch` mỗi lần gọi (test stub được).
+- Test / cách kiểm tra (chạy thật): `make dev-api` + `make dev-web`, `curl :5173/api/healthz` → 200 database ok; dừng container db → 503 degraded (Done khi ✅). Go: healthz ok / DB lỗi 503 / **trọn đường với Postgres thật qua sqlc** / 404. Vitest: client sinh code gọi đúng `/api/healthz`, hiển thị ok / degraded / lỗi mạng. `make check` pass (90 FE test).
+- Còn dở / lỗi đã biết: chưa có kiểm tra tự động "code sinh ra đã cập nhật" (chạy `make gen` rồi `git diff --exit-code`) — đề xuất thêm khi có CI. API chưa tự chạy migration khi khởi động (quyết định ở P0-05 cho container `api`).
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P0-05 Compose đầy đủ (`api` container, nginx proxy `/api`, healthcheck, migration khi khởi động, `NTB_MASTER_KEY` trong `.env.example`).
+
 ## 2026-10-16 — P0-04 Database
 - Đã làm:
   - Migration `000001_init`: `organizations` (kind internal/customer), `users` (email citext unique, password_hash, is_system_admin, khóa tạm), `memberships` (role owner/admin/editor/viewer, permissions giới hạn theo ADR-019, site_scope, unique org+user), `sessions` (chỉ lưu hash token, active_organization_id, mfa_verified_at), `audit_log` (before/after JSONB, ip, request_id; **append-only bằng trigger** — UPDATE/DELETE bị chặn ở DB). Trigger `set_updated_at`; cột `version` cho optimistic lock.

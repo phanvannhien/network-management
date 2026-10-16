@@ -15,7 +15,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P0-01 Khung monorepo**: `/frontend` (Vite + React 19 + TS strict + Tailwind + shadcn/ui + react-router + TanStack Query), `/backend` (Go module, chi, `/healthz`), `/api/openapi.yaml` tối thiểu, `Makefile`, `.editorconfig`, `.gitignore`, README.
   Done khi: `make dev-web` và `make dev-api` chạy; frontend gọi được `/api/healthz` qua proxy Vite.
 - [x] **P0-02 Lint & test**: oxlint + Prettier (ADR-021), Vitest; golangci-lint, `go test`; `make check`.
-- [ ] **P0-03 Sinh code**: `make gen` chạy oapi-codegen (Go), openapi-typescript + openapi-fetch (TS), sqlc. Có một endpoint mẫu đi trọn đường OpenAPI → Go → TS.
+- [x] **P0-03 Sinh code**: `make gen` chạy oapi-codegen (Go), openapi-typescript + openapi-fetch (TS), sqlc. Có một endpoint mẫu đi trọn đường OpenAPI → Go → TS.
 - [x] **P0-04 Database**: Postgres 16 trong Compose dev; golang-migrate; migration đầu: organizations, users, memberships, sessions, audit_log; cấu hình test tích hợp với Postgres thật.
   Done khi: `make migrate-up/down` chạy; test Go kết nối DB pass.
 - [ ] **P0-05 Compose đầy đủ**: `web` (Nginx + build frontend, proxy `/api`), `api`, `db` (volume), healthcheck, `.env.example` (gồm `NTB_MASTER_KEY`).

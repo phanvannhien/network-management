@@ -37,15 +37,33 @@ function renderAt(path: string) {
   )
 }
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 describe('App', () => {
-  it('home page shows the API health from /api/healthz', async () => {
+  it('home page shows the API health from the generated client', async () => {
+    const fetchMock = vi.fn(async (_request: Request) =>
+      jsonResponse({ status: 'ok', version: 'test', database: 'ok' }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/')
+    expect(await screen.findByText('API: ok · test · DB ok')).toBeInTheDocument()
+    expect(new URL(fetchMock.mock.calls[0][0].url).pathname).toBe('/api/healthz')
+  })
+
+  it('home page shows degraded status when the database is down (503)', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({ status: 'ok', version: 'test' }))),
+      vi.fn(async () =>
+        jsonResponse({ status: 'degraded', version: 'test', database: 'unavailable' }, 503),
+      ),
     )
     renderAt('/')
-    expect(await screen.findByText('API: ok · test')).toBeInTheDocument()
-    expect(fetch).toHaveBeenCalledWith('/api/healthz')
+    expect(await screen.findByText('API: degraded · test · DB unavailable')).toBeInTheDocument()
   })
 
   it('home page reports an unreachable API', async () => {

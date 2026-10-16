@@ -21,7 +21,8 @@ Xem `docs/SRS.md` (đặc tả), `docs/PLAN.md` (kế hoạch), `docs/DECISIONS.
 
 Yêu cầu: Node ≥ 20, Go ≥ 1.25, GNU Make.
 
-Yêu cầu thêm: Docker (Postgres dev), golang-migrate CLI (`brew install golang-migrate`).
+Yêu cầu thêm: Docker (Postgres dev), `brew install golang-migrate sqlc`
+(oapi-codegen được ghim phiên bản trong `backend/go.mod`, chạy qua `go tool`).
 
 ```sh
 make db-up     # Postgres dev trong Docker, cổng host 5468
@@ -32,7 +33,8 @@ make test      # Vitest + go test
 make check     # lint + typecheck + test
 ```
 
-Hợp đồng API: `api/openapi.yaml` (sửa file này trước khi viết handler/frontend).
+Hợp đồng API: `api/openapi.yaml` (OpenAPI 3.1). Quy trình: sửa `api/openapi.yaml` hoặc `backend/db/queries/*.sql`
+→ `make gen` (sinh Go server types, sqlc store, TS client) → viết handler / frontend.
 
 ## Triển khai
 
