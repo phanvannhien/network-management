@@ -325,7 +325,13 @@ export function SiteDetailPage() {
     ? (params.get('tab') as Tab)
     : 'locations'
   const s = site.data
-  useBreadcrumbs([{ label: t('sites.title'), to: `/o/${orgId}/sites` }, { label: s?.code ?? '…' }])
+  useBreadcrumbs([
+    { label: t('units.hub'), to: `/o/${orgId}/sites` },
+    s?.businessUnitId
+      ? { label: s.businessUnitCode, to: `/o/${orgId}/units/${s.businessUnitId}` }
+      : { label: t('units.sharedShort'), to: `/o/${orgId}/sites?tab=sites` },
+    { label: s?.code ?? '…' },
+  ])
 
   const role = org.data?.membership.role
   const canEdit = role === 'owner' || role === 'admin' || role === 'editor'
@@ -354,7 +360,13 @@ export function SiteDetailPage() {
                 {s.code} <span className="font-normal text-muted-foreground">· {s.name}</span>
               </h1>
             </div>
-            <p className="text-muted-foreground">{s.address || t('common.none')}</p>
+            <p className="text-muted-foreground">
+              {t(`sites.siteKinds.${s.kind}`)} ·{' '}
+              {s.businessUnitId
+                ? `${s.businessUnitCode} · ${s.businessUnitName}`
+                : t('units.shared')}
+              {s.address && ` · ${s.address}`}
+            </p>
           </div>
         </div>
         {canEdit && (
@@ -422,6 +434,14 @@ export function SiteDetailPage() {
               items={[
                 { label: t('sites.code'), value: s.code },
                 { label: t('sites.name'), value: s.name },
+                {
+                  label: t('sites.unit'),
+                  value: s.businessUnitId
+                    ? `${s.businessUnitCode} · ${s.businessUnitName}`
+                    : t('units.shared'),
+                },
+                { label: t('sites.kind'), value: t(`sites.siteKinds.${s.kind}`) },
+                { label: t('sites.isp'), value: s.isp || t('common.none') },
                 { label: t('sites.address'), value: s.address || t('common.none') },
                 {
                   label: t('sites.timezone'),

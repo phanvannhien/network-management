@@ -1,7 +1,7 @@
-import { MapPin, Plus } from 'lucide-react'
+import { Building2, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useSession } from '@/app/auth'
 import { useOrganization } from '@/app/orgs'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
@@ -12,50 +12,56 @@ import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SiteFormDialog } from './SiteFormDialog'
-import { useSites, type Site } from './sites'
+import { SitesTable } from './SitesTable'
+import { useBusinessUnits, useSites, type BusinessUnit } from './sites'
+import { UnitFormDialog } from './UnitFormDialog'
 
-const SITE_SORT: Record<string, (s: Site) => string | number> = {
-  code: (s) => s.code,
-  name: (s) => s.name,
-  locationCount: (s) => s.locationCount,
-  rackCount: (s) => s.rackCount,
+const UNIT_SORT: Record<string, (u: BusinessUnit) => string | number> = {
+  code: (u) => u.code,
+  name: (u) => u.name,
+  relation: (u) => u.relation,
+  siteCount: (u) => u.siteCount,
 }
 
-/**
- * Sites of the organization (P1-07, ADR-025), filtered by the member's site scope on the server.
- * Each site groups its locations, racks, devices (P1-08) and diagrams (P1-13).
- */
-export function SiteListPage() {
+function UnitsTable({
+  orgId,
+  canAdmin,
+  onAdd,
+}: {
+  orgId: string
+  canAdmin: boolean
+  onAdd: () => void
+}) {
   const { t } = useTranslation()
-  const { orgId = '' } = useParams()
-  const navigate = useNavigate()
   const userId = useSession().data?.user.id ?? ''
-  const org = useOrganization(orgId)
+  const units = useBusinessUnits(orgId)
   const sites = useSites(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
-  const [creating, setCreating] = useState(false)
-  useBreadcrumbs([{ label: t('sites.title') }])
-
-  const role = org.data?.membership.role
-  const canEdit = role === 'owner' || role === 'admin' || role === 'editor'
-
-  const filtered = useMemo(() => {
+  const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
-    return sites.data?.filter(
-      (s) => !q || [s.code, s.name, s.address].some((v) => v.toLowerCase().includes(q)),
+    const rel = filter.facets.relation ?? []
+    return units.data?.filter(
+      (u) =>
+        (!q || [u.code, u.name].some((v) => v.toLowerCase().includes(q))) &&
+        (rel.length === 0 || rel.includes(u.relation)),
     )
-  }, [sites.data, filter])
-  const table = useLocalTable(filtered, SITE_SORT, [{ id: 'code', desc: false }])
+  }, [units.data, filter])
+  const table = useLocalTable(rows, UNIT_SORT, [{ id: 'code', desc: false }])
+  const sharedCount = sites.data?.filter((s) => s.businessUnitId === null).length ?? 0
 
-  const columns: DataColumn<Site>[] = [
+  const columns: DataColumn<BusinessUnit>[] = [
     {
       id: 'code',
       accessorKey: 'code',
-      header: t('sites.code'),
-      meta: { label: t('sites.code'), width: 120, pin: true, alwaysVisible: true },
+      header: t('units.code'),
+      meta: { label: t('units.code'), width: 120, pin: true, alwaysVisible: true },
       cell: ({ row }) => (
-        <Link to={row.original.id} className="font-medium hover:text-primary hover:underline">
+        <Link
+          to={`/o/${orgId}/units/${row.original.id}`}
+          className="font-medium hover:text-primary hover:underline"
+        >
           {row.original.code}
         </Link>
       ),
@@ -63,87 +69,60 @@ export function SiteListPage() {
     {
       id: 'name',
       accessorKey: 'name',
-      header: t('sites.name'),
-      meta: { label: t('sites.name'), width: 220 },
+      header: t('units.name'),
+      meta: { label: t('units.name'), width: 260 },
     },
     {
-      id: 'address',
-      accessorKey: 'address',
-      header: t('sites.address'),
-      enableSorting: false,
-      meta: { label: t('sites.address'), width: 280 },
-      cell: ({ row }) =>
-        row.original.address || <span className="text-muted-foreground">{t('common.none')}</span>,
+      id: 'relation',
+      accessorKey: 'relation',
+      header: t('units.relation'),
+      meta: { label: t('units.relation'), width: 140 },
+      cell: ({ row }) => t(`units.relations.${row.original.relation}`),
     },
     {
       id: 'contact',
-      header: t('sites.contact'),
+      header: t('units.contact'),
       enableSorting: false,
-      meta: { label: t('sites.contact'), width: 220 },
-      cell: ({ row: { original: s } }) =>
-        s.contactName || s.contactPhone ? (
+      meta: { label: t('units.contact'), width: 260 },
+      cell: ({ row: { original: u } }) =>
+        u.contactName || u.contactPhone || u.contactEmail ? (
           <span>
-            {s.contactName}{' '}
-            {s.contactPhone && <span className="text-muted-foreground">· {s.contactPhone}</span>}
+            {u.contactName}{' '}
+            <span className="text-muted-foreground">
+              {[u.contactPhone, u.contactEmail].filter(Boolean).join(' · ')}
+            </span>
           </span>
         ) : (
           <span className="text-muted-foreground">{t('common.none')}</span>
         ),
     },
     {
-      id: 'locationCount',
-      accessorKey: 'locationCount',
-      header: t('sites.locations'),
-      meta: { label: t('sites.locations'), width: 100, align: 'right' },
-      cell: ({ row }) => <span data-numeric>{row.original.locationCount}</span>,
-    },
-    {
-      id: 'rackCount',
-      accessorKey: 'rackCount',
-      header: t('sites.racks'),
-      meta: { label: t('sites.racks'), width: 90, align: 'right' },
-      cell: ({ row }) => <span data-numeric>{row.original.rackCount}</span>,
-    },
-    {
-      id: 'timezone',
-      accessorKey: 'timezone',
-      header: t('sites.timezone'),
-      enableSorting: false,
-      meta: { label: t('sites.timezone'), width: 170 },
-      cell: ({ row }) => <span className="font-mono text-tech">{row.original.timezone}</span>,
+      id: 'siteCount',
+      accessorKey: 'siteCount',
+      header: t('units.sites'),
+      meta: { label: t('units.sites'), width: 90, align: 'right' },
+      cell: ({ row }) => <span data-numeric>{row.original.siteCount}</span>,
     },
   ]
 
   return (
-    <div className="space-y-3 p-4">
-      <PageHeader
-        title={t('sites.title')}
-        count={sites.data?.length}
-        actions={
-          canEdit && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus aria-hidden /> {t('sites.add')}
-            </Button>
-          )
-        }
-      />
+    <div className="space-y-2">
       <DataTable
-        tableId="sites"
+        tableId="units"
         userId={userId}
-        caption={t('sites.title')}
+        caption={t('units.title')}
         columns={columns}
-        defaultHidden={['timezone']}
         data={table.data}
         total={table.total}
-        isLoading={sites.isPending}
-        error={sites.error}
-        getRowId={(s) => s.id}
-        rowLabel={(s) => s.code}
+        isLoading={units.isPending}
+        error={units.error}
+        getRowId={(u) => u.id}
+        rowLabel={(u) => u.code}
         pagination={table.pagination}
         onPaginationChange={table.onPaginationChange}
         sorting={table.sorting}
         onSortingChange={table.onSortingChange}
-        maxHeight="calc(100vh - 220px)"
+        maxHeight="calc(100vh - 300px)"
         filters={
           <FilterBar
             value={filter}
@@ -151,32 +130,114 @@ export function SiteListPage() {
               setFilter(f)
               table.resetPage()
             }}
-            facets={[]}
-            searchPlaceholder={t('sites.searchPlaceholder')}
-            storageKey={`ntb-filters:${userId}:sites`}
+            facets={[
+              {
+                id: 'relation',
+                label: t('units.relation'),
+                options: (['subsidiary', 'partner', 'customer'] as const).map((r) => ({
+                  value: r,
+                  label: t(`units.relations.${r}`),
+                  count: units.data?.filter((u) => u.relation === r).length ?? 0,
+                })),
+              },
+            ]}
+            searchPlaceholder={t('units.searchPlaceholder')}
+            storageKey={`ntb-filters:${userId}:units`}
           />
         }
         empty={
           <EmptyState
-            icon={<MapPin />}
-            title={t('sites.emptyTitle')}
-            description={t('sites.emptyBody')}
+            icon={<Building2 />}
+            title={t('units.emptyTitle')}
+            description={t('units.emptyBody')}
             action={
-              canEdit && (
-                <Button onClick={() => setCreating(true)}>
-                  <Plus aria-hidden /> {t('sites.add')}
+              canAdmin && (
+                <Button onClick={onAdd}>
+                  <Plus aria-hidden /> {t('units.add')}
                 </Button>
               )
             }
           />
         }
       />
-      {creating && (
+      <p className="text-muted-foreground">
+        <Link to={`/o/${orgId}/sites?tab=sites`} className="hover:text-foreground hover:underline">
+          {t('units.sharedShort')}: {sharedCount} {t('units.sites').toLowerCase()}
+        </Link>{' '}
+        — {t('units.sharedHint')}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * "Đơn vị & Sites" (SRS §2, ADR-026): business units of the organization and all its sites. Sites are
+ * filtered by the member's site scope on the server.
+ */
+export function SiteListPage() {
+  const { t } = useTranslation()
+  const { orgId = '' } = useParams()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const org = useOrganization(orgId)
+  const [creating, setCreating] = useState<'unit' | 'site' | null>(null)
+  const tab = params.get('tab') === 'sites' ? 'sites' : 'units'
+  useBreadcrumbs([{ label: t('units.hub') }])
+
+  const role = org.data?.membership.role
+  const canAdmin = role === 'owner' || role === 'admin'
+  const canEdit = canAdmin || role === 'editor'
+
+  return (
+    <div className="space-y-3 p-4">
+      <PageHeader
+        title={t('units.hub')}
+        actions={
+          <>
+            {canAdmin && (
+              <Button
+                variant={tab === 'units' ? 'default' : 'outline'}
+                onClick={() => setCreating('unit')}
+              >
+                <Plus aria-hidden /> {t('units.add')}
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant={tab === 'sites' ? 'default' : 'outline'}
+                onClick={() => setCreating('site')}
+              >
+                <Plus aria-hidden /> {t('sites.add')}
+              </Button>
+            )}
+          </>
+        }
+      />
+      <Tabs value={tab} onValueChange={(v) => setParams({ tab: String(v) }, { replace: true })}>
+        <TabsList variant="line" className="w-full justify-start border-b border-border">
+          <TabsTrigger value="units">{t('units.tabUnits')}</TabsTrigger>
+          <TabsTrigger value="sites">{t('units.tabSites')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="units" className="pt-3">
+          <UnitsTable orgId={orgId} canAdmin={canAdmin} onAdd={() => setCreating('unit')} />
+        </TabsContent>
+        <TabsContent value="sites" className="pt-3">
+          <SitesTable orgId={orgId} canEdit={canEdit} onAdd={() => setCreating('site')} />
+        </TabsContent>
+      </Tabs>
+      {creating === 'unit' && (
+        <UnitFormDialog
+          orgId={orgId}
+          onClose={() => setCreating(null)}
+          onSaved={(u) => navigate(`/o/${orgId}/units/${u.id}`)}
+        />
+      )}
+      {creating === 'site' && (
         <SiteFormDialog
           orgId={orgId}
           open
-          onClose={() => setCreating(false)}
-          onSaved={(s) => navigate(s.id)}
+          onClose={() => setCreating(null)}
+          onSaved={(s) => navigate(`/o/${orgId}/sites/${s.id}`)}
         />
       )}
     </div>

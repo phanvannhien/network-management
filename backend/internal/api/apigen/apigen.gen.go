@@ -35,6 +35,27 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 	}
 }
 
+// Defines values for BusinessUnitRelation.
+const (
+	BusinessUnitRelationCustomer   BusinessUnitRelation = "customer"
+	BusinessUnitRelationPartner    BusinessUnitRelation = "partner"
+	BusinessUnitRelationSubsidiary BusinessUnitRelation = "subsidiary"
+)
+
+// Valid indicates whether the value is a known member of the BusinessUnitRelation enum.
+func (e BusinessUnitRelation) Valid() bool {
+	switch e {
+	case BusinessUnitRelationCustomer:
+		return true
+	case BusinessUnitRelationPartner:
+		return true
+	case BusinessUnitRelationSubsidiary:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -94,16 +115,16 @@ func (e LocationKind) Valid() bool {
 
 // Defines values for OrganizationKind.
 const (
-	Customer OrganizationKind = "customer"
-	Internal OrganizationKind = "internal"
+	OrganizationKindCustomer OrganizationKind = "customer"
+	OrganizationKindInternal OrganizationKind = "internal"
 )
 
 // Valid indicates whether the value is a known member of the OrganizationKind enum.
 func (e OrganizationKind) Valid() bool {
 	switch e {
-	case Customer:
+	case OrganizationKindCustomer:
 		return true
-	case Internal:
+	case OrganizationKindInternal:
 		return true
 	default:
 		return false
@@ -149,6 +170,36 @@ func (e Role) Valid() bool {
 	case Owner:
 		return true
 	case Viewer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SiteKind.
+const (
+	Datacenter SiteKind = "datacenter"
+	Factory    SiteKind = "factory"
+	Office     SiteKind = "office"
+	Other      SiteKind = "other"
+	Store      SiteKind = "store"
+	Warehouse  SiteKind = "warehouse"
+)
+
+// Valid indicates whether the value is a known member of the SiteKind enum.
+func (e SiteKind) Valid() bool {
+	switch e {
+	case Datacenter:
+		return true
+	case Factory:
+		return true
+	case Office:
+		return true
+	case Other:
+		return true
+	case Store:
+		return true
+	case Warehouse:
 		return true
 	default:
 		return false
@@ -267,6 +318,54 @@ type AuthSession struct {
 	// (enabled and verified) or (not enabled and not required).
 	Mfa  MfaStatus   `json:"mfa"`
 	User CurrentUser `json:"user"`
+}
+
+// BusinessUnit defines model for BusinessUnit.
+type BusinessUnit struct {
+	Code         string               `json:"code"`
+	ContactEmail string               `json:"contactEmail"`
+	ContactName  string               `json:"contactName"`
+	ContactPhone string               `json:"contactPhone"`
+	CreatedAt    time.Time            `json:"createdAt"`
+	Id           openapi_types.UUID   `json:"id"`
+	Name         string               `json:"name"`
+	Notes        string               `json:"notes"`
+	Relation     BusinessUnitRelation `json:"relation"`
+	SiteCount    int64                `json:"siteCount"`
+	Version      int32                `json:"version"`
+}
+
+// BusinessUnitInput defines model for BusinessUnitInput.
+type BusinessUnitInput struct {
+	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
+	Code         string                `json:"code"`
+	ContactEmail *string               `json:"contactEmail,omitempty"`
+	ContactName  *string               `json:"contactName,omitempty"`
+	ContactPhone *string               `json:"contactPhone,omitempty"`
+	Name         string                `json:"name"`
+	Notes        *string               `json:"notes,omitempty"`
+	Relation     *BusinessUnitRelation `json:"relation,omitempty"`
+}
+
+// BusinessUnitList defines model for BusinessUnitList.
+type BusinessUnitList struct {
+	BusinessUnits []BusinessUnit `json:"businessUnits"`
+}
+
+// BusinessUnitRelation defines model for BusinessUnitRelation.
+type BusinessUnitRelation string
+
+// BusinessUnitUpdate defines model for BusinessUnitUpdate.
+type BusinessUnitUpdate struct {
+	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
+	Code         string                `json:"code"`
+	ContactEmail *string               `json:"contactEmail,omitempty"`
+	ContactName  *string               `json:"contactName,omitempty"`
+	ContactPhone *string               `json:"contactPhone,omitempty"`
+	Name         string                `json:"name"`
+	Notes        *string               `json:"notes,omitempty"`
+	Relation     *BusinessUnitRelation `json:"relation,omitempty"`
+	Version      int32                 `json:"version"`
 }
 
 // CreateOrganizationRequest defines model for CreateOrganizationRequest.
@@ -498,35 +597,57 @@ type Role string
 
 // Site defines model for Site.
 type Site struct {
-	Address       string             `json:"address"`
-	Code          string             `json:"code"`
-	ContactEmail  string             `json:"contactEmail"`
-	ContactName   string             `json:"contactName"`
-	ContactPhone  string             `json:"contactPhone"`
-	CreatedAt     time.Time          `json:"createdAt"`
-	Id            openapi_types.UUID `json:"id"`
-	LocationCount int64              `json:"locationCount"`
-	Name          string             `json:"name"`
-	Notes         string             `json:"notes"`
-	RackCount     int64              `json:"rackCount"`
-	Timezone      string             `json:"timezone"`
-	UpdatedAt     time.Time          `json:"updatedAt"`
-	Version       int32              `json:"version"`
+	Address string `json:"address"`
+
+	// BusinessUnitCode Empty for shared sites
+	BusinessUnitCode string              `json:"businessUnitCode"`
+	BusinessUnitId   *openapi_types.UUID `json:"businessUnitId"`
+	BusinessUnitName string              `json:"businessUnitName"`
+	Code             string              `json:"code"`
+	ContactEmail     string              `json:"contactEmail"`
+	ContactName      string              `json:"contactName"`
+	ContactPhone     string              `json:"contactPhone"`
+	CreatedAt        time.Time           `json:"createdAt"`
+	Id               openapi_types.UUID  `json:"id"`
+	Isp              string              `json:"isp"`
+	Kind             SiteKind            `json:"kind"`
+	LocationCount    int64               `json:"locationCount"`
+	Name             string              `json:"name"`
+	Notes            string              `json:"notes"`
+	RackCount        int64               `json:"rackCount"`
+	Timezone         string              `json:"timezone"`
+	UpdatedAt        time.Time           `json:"updatedAt"`
+	Version          int32               `json:"version"`
+}
+
+// SiteCodeSuggestion defines model for SiteCodeSuggestion.
+type SiteCodeSuggestion struct {
+	Code string `json:"code"`
 }
 
 // SiteInput defines model for SiteInput.
 type SiteInput struct {
-	Address      *string `json:"address,omitempty"`
-	Code         string  `json:"code"`
-	ContactEmail *string `json:"contactEmail,omitempty"`
-	ContactName  *string `json:"contactName,omitempty"`
-	ContactPhone *string `json:"contactPhone,omitempty"`
-	Name         string  `json:"name"`
-	Notes        *string `json:"notes,omitempty"`
+	Address *string `json:"address,omitempty"`
+
+	// BusinessUnitId Owning business unit; null = shared by the whole organization (e.g. an IDC)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// Code ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
+	Code         string    `json:"code"`
+	ContactEmail *string   `json:"contactEmail,omitempty"`
+	ContactName  *string   `json:"contactName,omitempty"`
+	ContactPhone *string   `json:"contactPhone,omitempty"`
+	Isp          *string   `json:"isp,omitempty"`
+	Kind         *SiteKind `json:"kind,omitempty"`
+	Name         string    `json:"name"`
+	Notes        *string   `json:"notes,omitempty"`
 
 	// Timezone IANA time zone (default Asia/Ho_Chi_Minh)
 	Timezone *string `json:"timezone,omitempty"`
 }
+
+// SiteKind defines model for SiteKind.
+type SiteKind string
 
 // SiteList defines model for SiteList.
 type SiteList struct {
@@ -541,13 +662,20 @@ type SiteScopeInput struct {
 
 // SiteUpdate defines model for SiteUpdate.
 type SiteUpdate struct {
-	Address      *string `json:"address,omitempty"`
-	Code         string  `json:"code"`
-	ContactEmail *string `json:"contactEmail,omitempty"`
-	ContactName  *string `json:"contactName,omitempty"`
-	ContactPhone *string `json:"contactPhone,omitempty"`
-	Name         string  `json:"name"`
-	Notes        *string `json:"notes,omitempty"`
+	Address *string `json:"address,omitempty"`
+
+	// BusinessUnitId Owning business unit; null = shared by the whole organization (e.g. an IDC)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// Code ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
+	Code         string    `json:"code"`
+	ContactEmail *string   `json:"contactEmail,omitempty"`
+	ContactName  *string   `json:"contactName,omitempty"`
+	ContactPhone *string   `json:"contactPhone,omitempty"`
+	Isp          *string   `json:"isp,omitempty"`
+	Kind         *SiteKind `json:"kind,omitempty"`
+	Name         string    `json:"name"`
+	Notes        *string   `json:"notes,omitempty"`
 
 	// Timezone IANA time zone (default Asia/Ho_Chi_Minh)
 	Timezone *string `json:"timezone,omitempty"`
@@ -593,6 +721,9 @@ type AuditQuery = string
 
 // AuditTo defines model for AuditTo.
 type AuditTo = time.Time
+
+// BusinessUnitId defines model for BusinessUnitId.
+type BusinessUnitId = openapi_types.UUID
 
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
@@ -735,6 +866,21 @@ type ListOrgAuditParams struct {
 	To *AuditTo `form:"to,omitempty" json:"to,omitempty"`
 }
 
+// CreateBusinessUnitParams defines parameters for CreateBusinessUnit.
+type CreateBusinessUnitParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteBusinessUnitParams defines parameters for DeleteBusinessUnit.
+type DeleteBusinessUnitParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateBusinessUnitParams defines parameters for UpdateBusinessUnit.
+type UpdateBusinessUnitParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -755,9 +901,27 @@ type RegenerateInviteParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ListSitesParams defines parameters for ListSites.
+type ListSitesParams struct {
+	// BusinessUnitId Only sites of this business unit
+	BusinessUnitId *openapi_types.UUID `form:"businessUnitId,omitempty" json:"businessUnitId,omitempty"`
+
+	// Shared Only organization-wide (shared) sites
+	Shared *bool `form:"shared,omitempty" json:"shared,omitempty"`
+}
+
 // CreateSiteParams defines parameters for CreateSite.
 type CreateSiteParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// SuggestSiteCodeParams defines parameters for SuggestSiteCode.
+type SuggestSiteCodeParams struct {
+	// BusinessUnitId Owning unit; omit for a shared site (SHARED- prefix)
+	BusinessUnitId *openapi_types.UUID `form:"businessUnitId,omitempty" json:"businessUnitId,omitempty"`
+
+	// Place Place abbreviation, 2-4 letters (e.g. HY for Hưng Yên)
+	Place string `form:"place" json:"place"`
 }
 
 // DeleteSiteParams defines parameters for DeleteSite.
@@ -820,6 +984,12 @@ type VerifyMfaJSONRequestBody = MfaVerifyRequest
 
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
+// CreateBusinessUnitJSONRequestBody defines body for CreateBusinessUnit for application/json ContentType.
+type CreateBusinessUnitJSONRequestBody = BusinessUnitInput
+
+// UpdateBusinessUnitJSONRequestBody defines body for UpdateBusinessUnit for application/json ContentType.
+type UpdateBusinessUnitJSONRequestBody = BusinessUnitUpdate
 
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
@@ -919,6 +1089,21 @@ type ServerInterface interface {
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams)
+	// ListBusinessUnits Business units of the organization (ADR-026)
+	// (GET /orgs/{orgId}/business-units)
+	ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateBusinessUnit Create a business unit (owner/admin)
+	// (POST /orgs/{orgId}/business-units)
+	CreateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateBusinessUnitParams)
+	// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+	// (DELETE /orgs/{orgId}/business-units/{businessUnitId})
+	DeleteBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params DeleteBusinessUnitParams)
+	// GetBusinessUnit One business unit
+	// (GET /orgs/{orgId}/business-units/{businessUnitId})
+	GetBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId)
+	// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
+	UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams)
 	// ListMembers Members of the organization
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -936,10 +1121,13 @@ type ServerInterface interface {
 	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
 	// ListSites Sites of the organization (filtered by the member site scope)
 	// (GET /orgs/{orgId}/sites)
-	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
 	// CreateSite Create a site (owner/admin/editor without a site scope)
 	// (POST /orgs/{orgId}/sites)
 	CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams)
+	// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+	// (GET /orgs/{orgId}/sites/next-code)
+	SuggestSiteCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params SuggestSiteCodeParams)
 	// DeleteSite Soft-delete a site (owner/admin)
 	// (DELETE /orgs/{orgId}/sites/{siteId})
 	DeleteSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params DeleteSiteParams)
@@ -1123,6 +1311,36 @@ func (_ Unimplemented) ListOrgAudit(w http.ResponseWriter, r *http.Request, orgI
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListBusinessUnits Business units of the organization (ADR-026)
+// (GET /orgs/{orgId}/business-units)
+func (_ Unimplemented) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateBusinessUnit Create a business unit (owner/admin)
+// (POST /orgs/{orgId}/business-units)
+func (_ Unimplemented) CreateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateBusinessUnitParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+// (DELETE /orgs/{orgId}/business-units/{businessUnitId})
+func (_ Unimplemented) DeleteBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params DeleteBusinessUnitParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetBusinessUnit One business unit
+// (GET /orgs/{orgId}/business-units/{businessUnitId})
+func (_ Unimplemented) GetBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
+func (_ Unimplemented) UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMembers Members of the organization
 // (GET /orgs/{orgId}/members)
 func (_ Unimplemented) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
@@ -1155,13 +1373,19 @@ func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, 
 
 // ListSites Sites of the organization (filtered by the member site scope)
 // (GET /orgs/{orgId}/sites)
-func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // CreateSite Create a site (owner/admin/editor without a site scope)
 // (POST /orgs/{orgId}/sites)
 func (_ Unimplemented) CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+// (GET /orgs/{orgId}/sites/next-code)
+func (_ Unimplemented) SuggestSiteCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params SuggestSiteCodeParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2281,6 +2505,247 @@ func (siw *ServerInterfaceWrapper) ListOrgAudit(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ListBusinessUnits operation middleware
+func (siw *ServerInterfaceWrapper) ListBusinessUnits(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBusinessUnits(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBusinessUnit operation middleware
+func (siw *ServerInterfaceWrapper) CreateBusinessUnit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateBusinessUnitParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBusinessUnit(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteBusinessUnit operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBusinessUnit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteBusinessUnitParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBusinessUnit(w, r, orgId, businessUnitId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBusinessUnit operation middleware
+func (siw *ServerInterfaceWrapper) GetBusinessUnit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBusinessUnit(w, r, orgId, businessUnitId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateBusinessUnit operation middleware
+func (siw *ServerInterfaceWrapper) UpdateBusinessUnit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "businessUnitId" -------------
+	var businessUnitId BusinessUnitId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "businessUnitId", chi.URLParam(r, "businessUnitId"), &businessUnitId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateBusinessUnitParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateBusinessUnit(w, r, orgId, businessUnitId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -2565,8 +3030,37 @@ func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSitesParams
+
+	// ------------- Optional query parameter "businessUnitId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "businessUnitId", r.URL.Query(), &params.BusinessUnitId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "businessUnitId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "shared" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "shared", r.URL.Query(), &params.Shared, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "shared"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shared", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListSites(w, r, orgId)
+		siw.Handler.ListSites(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2621,6 +3115,61 @@ func (siw *ServerInterfaceWrapper) CreateSite(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateSite(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SuggestSiteCode operation middleware
+func (siw *ServerInterfaceWrapper) SuggestSiteCode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SuggestSiteCodeParams
+
+	// ------------- Optional query parameter "businessUnitId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "businessUnitId", r.URL.Query(), &params.BusinessUnitId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "businessUnitId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "place" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "place", r.URL.Query(), &params.Place, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "place"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "place", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuggestSiteCode(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3453,6 +4002,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/account-tokens/{token}", wrapper.AcceptAccountToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/business-units", wrapper.ListBusinessUnits)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/business-units", wrapper.CreateBusinessUnit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}", wrapper.DeleteBusinessUnit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}", wrapper.GetBusinessUnit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/business-units/{businessUnitId}", wrapper.UpdateBusinessUnit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites/next-code", wrapper.SuggestSiteCode)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/sites", wrapper.ListSites)
@@ -4877,6 +5444,468 @@ func (response ListOrgAudit404JSONResponse) VisitListOrgAuditResponse(w http.Res
 	return err
 }
 
+type ListBusinessUnitsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListBusinessUnitsResponseObject interface {
+	VisitListBusinessUnitsResponse(w http.ResponseWriter) error
+}
+
+type ListBusinessUnits200JSONResponse BusinessUnitList
+
+func (response ListBusinessUnits200JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBusinessUnits400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListBusinessUnits400JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBusinessUnits401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListBusinessUnits401JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBusinessUnits403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListBusinessUnits403JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBusinessUnits404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListBusinessUnits404JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBusinessUnits409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListBusinessUnits409JSONResponse) VisitListBusinessUnitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnitRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateBusinessUnitParams
+	Body   *CreateBusinessUnitJSONRequestBody
+}
+
+type CreateBusinessUnitResponseObject interface {
+	VisitCreateBusinessUnitResponse(w http.ResponseWriter) error
+}
+
+type CreateBusinessUnit201JSONResponse BusinessUnit
+
+func (response CreateBusinessUnit201JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateBusinessUnit400JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateBusinessUnit401JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateBusinessUnit403JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnit404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateBusinessUnit404JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBusinessUnit409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateBusinessUnit409JSONResponse) VisitCreateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBusinessUnitRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+	Params         DeleteBusinessUnitParams
+}
+
+type DeleteBusinessUnitResponseObject interface {
+	VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error
+}
+
+type DeleteBusinessUnit204Response struct {
+}
+
+func (response DeleteBusinessUnit204Response) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteBusinessUnit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteBusinessUnit400JSONResponse) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBusinessUnit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteBusinessUnit401JSONResponse) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBusinessUnit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteBusinessUnit403JSONResponse) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBusinessUnit404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteBusinessUnit404JSONResponse) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBusinessUnit409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteBusinessUnit409JSONResponse) VisitDeleteBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnitRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+}
+
+type GetBusinessUnitResponseObject interface {
+	VisitGetBusinessUnitResponse(w http.ResponseWriter) error
+}
+
+type GetBusinessUnit200JSONResponse BusinessUnit
+
+func (response GetBusinessUnit200JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetBusinessUnit400JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetBusinessUnit401JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetBusinessUnit403JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnit404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetBusinessUnit404JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBusinessUnit409JSONResponse struct{ ConflictJSONResponse }
+
+func (response GetBusinessUnit409JSONResponse) VisitGetBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnitRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	BusinessUnitId BusinessUnitId `json:"businessUnitId"`
+	Params         UpdateBusinessUnitParams
+	Body           *UpdateBusinessUnitJSONRequestBody
+}
+
+type UpdateBusinessUnitResponseObject interface {
+	VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error
+}
+
+type UpdateBusinessUnit200JSONResponse BusinessUnit
+
+func (response UpdateBusinessUnit200JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateBusinessUnit400JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateBusinessUnit401JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateBusinessUnit403JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnit404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateBusinessUnit404JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateBusinessUnit409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateBusinessUnit409JSONResponse) VisitUpdateBusinessUnitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMembersRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -5271,7 +6300,8 @@ func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w 
 }
 
 type ListSitesRequestObject struct {
-	OrgId OrgId `json:"orgId"`
+	OrgId  OrgId `json:"orgId"`
+	Params ListSitesParams
 }
 
 type ListSitesResponseObject interface {
@@ -5445,6 +6475,99 @@ func (response CreateSite404JSONResponse) VisitCreateSiteResponse(w http.Respons
 type CreateSite409JSONResponse struct{ ConflictJSONResponse }
 
 func (response CreateSite409JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCodeRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params SuggestSiteCodeParams
+}
+
+type SuggestSiteCodeResponseObject interface {
+	VisitSuggestSiteCodeResponse(w http.ResponseWriter) error
+}
+
+type SuggestSiteCode200JSONResponse SiteCodeSuggestion
+
+func (response SuggestSiteCode200JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCode400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SuggestSiteCode400JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCode401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SuggestSiteCode401JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCode403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SuggestSiteCode403JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCode404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SuggestSiteCode404JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestSiteCode409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SuggestSiteCode409JSONResponse) VisitSuggestSiteCodeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -6552,6 +7675,21 @@ type StrictServerInterface interface {
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(ctx context.Context, request ListOrgAuditRequestObject) (ListOrgAuditResponseObject, error)
+	// ListBusinessUnits Business units of the organization (ADR-026)
+	// (GET /orgs/{orgId}/business-units)
+	ListBusinessUnits(ctx context.Context, request ListBusinessUnitsRequestObject) (ListBusinessUnitsResponseObject, error)
+	// CreateBusinessUnit Create a business unit (owner/admin)
+	// (POST /orgs/{orgId}/business-units)
+	CreateBusinessUnit(ctx context.Context, request CreateBusinessUnitRequestObject) (CreateBusinessUnitResponseObject, error)
+	// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+	// (DELETE /orgs/{orgId}/business-units/{businessUnitId})
+	DeleteBusinessUnit(ctx context.Context, request DeleteBusinessUnitRequestObject) (DeleteBusinessUnitResponseObject, error)
+	// GetBusinessUnit One business unit
+	// (GET /orgs/{orgId}/business-units/{businessUnitId})
+	GetBusinessUnit(ctx context.Context, request GetBusinessUnitRequestObject) (GetBusinessUnitResponseObject, error)
+	// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
+	UpdateBusinessUnit(ctx context.Context, request UpdateBusinessUnitRequestObject) (UpdateBusinessUnitResponseObject, error)
 	// ListMembers Members of the organization
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -6573,6 +7711,9 @@ type StrictServerInterface interface {
 	// CreateSite Create a site (owner/admin/editor without a site scope)
 	// (POST /orgs/{orgId}/sites)
 	CreateSite(ctx context.Context, request CreateSiteRequestObject) (CreateSiteResponseObject, error)
+	// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+	// (GET /orgs/{orgId}/sites/next-code)
+	SuggestSiteCode(ctx context.Context, request SuggestSiteCodeRequestObject) (SuggestSiteCodeResponseObject, error)
 	// DeleteSite Soft-delete a site (owner/admin)
 	// (DELETE /orgs/{orgId}/sites/{siteId})
 	DeleteSite(ctx context.Context, request DeleteSiteRequestObject) (DeleteSiteResponseObject, error)
@@ -7316,6 +8457,156 @@ func (sh *strictHandler) ListOrgAudit(w http.ResponseWriter, r *http.Request, or
 	}
 }
 
+// ListBusinessUnits operation middleware
+func (sh *strictHandler) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListBusinessUnitsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBusinessUnits(ctx, request.(ListBusinessUnitsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBusinessUnits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBusinessUnitsResponseObject); ok {
+		if err := validResponse.VisitListBusinessUnitsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateBusinessUnit operation middleware
+func (sh *strictHandler) CreateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateBusinessUnitParams) {
+	var request CreateBusinessUnitRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateBusinessUnitJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateBusinessUnit(ctx, request.(CreateBusinessUnitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateBusinessUnit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateBusinessUnitResponseObject); ok {
+		if err := validResponse.VisitCreateBusinessUnitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteBusinessUnit operation middleware
+func (sh *strictHandler) DeleteBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params DeleteBusinessUnitParams) {
+	var request DeleteBusinessUnitRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteBusinessUnit(ctx, request.(DeleteBusinessUnitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteBusinessUnit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteBusinessUnitResponseObject); ok {
+		if err := validResponse.VisitDeleteBusinessUnitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBusinessUnit operation middleware
+func (sh *strictHandler) GetBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId) {
+	var request GetBusinessUnitRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBusinessUnit(ctx, request.(GetBusinessUnitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBusinessUnit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBusinessUnitResponseObject); ok {
+		if err := validResponse.VisitGetBusinessUnitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateBusinessUnit operation middleware
+func (sh *strictHandler) UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams) {
+	var request UpdateBusinessUnitRequestObject
+
+	request.OrgId = orgId
+	request.BusinessUnitId = businessUnitId
+	request.Params = params
+
+	var body UpdateBusinessUnitJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateBusinessUnit(ctx, request.(UpdateBusinessUnitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateBusinessUnit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateBusinessUnitResponseObject); ok {
+		if err := validResponse.VisitUpdateBusinessUnitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMembers operation middleware
 func (sh *strictHandler) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	var request ListMembersRequestObject
@@ -7468,10 +8759,11 @@ func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request
 }
 
 // ListSites operation middleware
-func (sh *strictHandler) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+func (sh *strictHandler) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams) {
 	var request ListSitesRequestObject
 
 	request.OrgId = orgId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListSites(ctx, request.(ListSitesRequestObject))
@@ -7520,6 +8812,33 @@ func (sh *strictHandler) CreateSite(w http.ResponseWriter, r *http.Request, orgI
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateSiteResponseObject); ok {
 		if err := validResponse.VisitCreateSiteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SuggestSiteCode operation middleware
+func (sh *strictHandler) SuggestSiteCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params SuggestSiteCodeParams) {
+	var request SuggestSiteCodeRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SuggestSiteCode(ctx, request.(SuggestSiteCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuggestSiteCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SuggestSiteCodeResponseObject); ok {
+		if err := validResponse.VisitSuggestSiteCodeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

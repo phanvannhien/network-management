@@ -948,7 +948,12 @@ describe('app shell (P1-06)', () => {
 const SITE_ID = '44444444-4444-4444-8444-444444444444'
 const SITE = {
   id: SITE_ID,
-  code: 'HQ',
+  code: 'SHARED-HN01',
+  kind: 'office',
+  businessUnitId: null,
+  businessUnitCode: '',
+  businessUnitName: '',
+  isp: '',
   name: 'HQ Hà Nội',
   address: '1 Tràng Tiền',
   timezone: 'Asia/Ho_Chi_Minh',
@@ -984,17 +989,24 @@ describe('sites (P1-07)', () => {
         [`POST /api/orgs/${ORG_ID}/sites`]: () => json(SITE, 201),
       }),
     )
-    renderAt(`/o/${ORG_ID}/sites`)
-    expect(await screen.findByRole('link', { name: 'HQ' })).toBeInTheDocument()
+    renderAt(`/o/${ORG_ID}/sites?tab=sites`)
+    expect(await screen.findByRole('link', { name: 'SHARED-HN01' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Thêm site' }))
-    fireEvent.change(await screen.findByLabelText('Mã site'), { target: { value: 'HQ' } })
-    fireEvent.change(screen.getByLabelText('Tên site'), { target: { value: 'HQ Hà Nội' } })
+    fireEvent.change(await screen.findByLabelText('Tên site'), { target: { value: 'HQ Hà Nội' } })
+    // ADR-030: a shared site needs the SHARED- prefix; a wrong code keeps Save disabled.
+    fireEvent.change(screen.getByLabelText('Mã site'), { target: { value: 'hq' } })
+    expect(screen.getByRole('button', { name: 'Lưu' })).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('Mã site'), { target: { value: 'shared-hn01' } })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
-    expect(await screen.findByRole('heading', { name: /HQ · HQ Hà Nội/ })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: /SHARED-HN01 · HQ Hà Nội/ }),
+    ).toBeInTheDocument()
     const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/sites'))!
     expect(await post.clone().json()).toMatchObject({
-      code: 'HQ',
+      code: 'SHARED-HN01',
       name: 'HQ Hà Nội',
+      kind: 'office',
+      businessUnitId: null,
       timezone: 'Asia/Ho_Chi_Minh',
     })
   })
@@ -1054,10 +1066,12 @@ describe('sites (P1-07)', () => {
     renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
     fireEvent.click(await screen.findByRole('button', { name: 'Thêm thao tác' }))
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Xóa site' }))
-    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa site HQ?' })
+    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa site SHARED-HN01?' })
     const confirm = within(dialog).getByRole('button', { name: 'Xóa site' })
     expect(confirm).toBeDisabled()
-    fireEvent.change(within(dialog).getByLabelText(/Gõ chính xác/), { target: { value: 'HQ' } })
+    fireEvent.change(within(dialog).getByLabelText(/Gõ chính xác/), {
+      target: { value: 'SHARED-HN01' },
+    })
     fireEvent.click(confirm)
     await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
   })
@@ -1075,10 +1089,90 @@ describe('sites (P1-07)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho viewer@example.com' }))
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa vai trò và quyền' }))
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Mọi site' }))
-    fireEvent.click(await screen.findByRole('checkbox', { name: /HQ/ }))
+    fireEvent.click(await screen.findByRole('checkbox', { name: /SHARED-HN01/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
     await waitFor(() => expect(calls.some((r) => r.method === 'PATCH')).toBe(true))
     const patch = calls.find((r) => r.method === 'PATCH')!
     expect((await patch.clone().json()).siteScope).toEqual({ all: false, siteIds: [SITE_ID] })
+  })
+})
+
+const UNIT_ID = '55555555-5555-4555-8555-555555555555'
+const UNIT = {
+  id: UNIT_ID,
+  code: 'AGRI',
+  name: 'Mẫu Agri',
+  relation: 'partner',
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  notes: '',
+  siteCount: 1,
+  version: 1,
+  createdAt: '2026-10-16T00:00:00Z',
+}
+const AGRI_SITE = {
+  ...SITE,
+  id: '66666666-6666-4666-8666-666666666666',
+  code: 'AGRI-BD01',
+  name: 'Nhà máy Bình Định',
+  kind: 'factory',
+  businessUnitId: UNIT_ID,
+  businessUnitCode: 'AGRI',
+  businessUnitName: 'Mẫu Agri',
+}
+
+describe('business units (P1-07, ADR-026/030)', () => {
+  const routes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ businessUnits: [UNIT] }),
+      [`GET /api/orgs/${ORG_ID}/business-units/${UNIT_ID}`]: () => json(UNIT),
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      ...extra,
+    })
+
+  it('lists units with their site counts and creates one with an upper-case code', async () => {
+    const calls = fakeApi(
+      routes({ [`POST /api/orgs/${ORG_ID}/business-units`]: () => json(UNIT, 201) }),
+    )
+    renderAt(`/o/${ORG_ID}/sites`)
+    expect(await screen.findByRole('link', { name: 'AGRI' })).toBeInTheDocument()
+    expect(screen.getByText(/Dùng chung: 1/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm đơn vị' }))
+    fireEvent.change(await screen.findByLabelText('Mã đơn vị'), { target: { value: 'agri-1' } })
+    expect(screen.getByLabelText('Mã đơn vị')).toHaveValue('AGRI1')
+    fireEvent.change(screen.getByLabelText('Tên đơn vị'), { target: { value: 'Mẫu Agri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    await waitFor(() =>
+      expect(calls.some((r) => r.method === 'POST' && r.url.endsWith('/business-units'))).toBe(
+        true,
+      ),
+    )
+    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/business-units'))!
+    expect(await post.clone().json()).toMatchObject({
+      code: 'AGRI1',
+      name: 'Mẫu Agri',
+      relation: 'subsidiary',
+    })
+  })
+
+  it('a site added from a unit gets the unit and a suggested code', async () => {
+    const calls = fakeApi(
+      routes({ [`GET /api/orgs/${ORG_ID}/sites/next-code`]: () => json({ code: 'AGRI-BD02' }) }),
+    )
+    renderAt(`/o/${ORG_ID}/units/${UNIT_ID}`)
+    expect(await screen.findByRole('heading', { name: /AGRI · Mẫu Agri/ })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'AGRI-BD01' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'SHARED-HN01' })).not.toBeInTheDocument() // other unit's / shared sites
+    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm site' })[0])
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm site' })
+    expect(within(dialog).getByLabelText('Đơn vị')).toHaveValue(UNIT_ID)
+    fireEvent.change(within(dialog).getByLabelText('Tên site'), {
+      target: { value: 'Nhà máy Bình Định 2' },
+    })
+    await waitFor(() => expect(within(dialog).getByLabelText('Mã site')).toHaveValue('AGRI-BD02'))
+    const nextCall = calls.find((r) => r.url.includes('/sites/next-code'))!
+    const q = new URL(nextCall.url).searchParams
+    expect([q.get('place'), q.get('businessUnitId')]).toEqual(['BD', UNIT_ID])
   })
 })

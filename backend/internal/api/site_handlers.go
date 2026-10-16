@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
+	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -55,21 +57,37 @@ func tooLong(s string, n int) bool { return utf8.RuneCountInString(s) > n }
 
 // --- sites -------------------------------------------------------------------------------------------
 
+var (
+	siteKinds = []string{"office", "factory", "datacenter", "warehouse", "store", "other"}
+	// ADR-030: <UNIT>-<PLACE><NN>, PLACE = 2–4 letters, NN = 2 digits; organization-wide sites use SHARED.
+	siteCodeRe = regexp.MustCompile(`^([A-Z][A-Z0-9]{1,7})-([A-Z]{2,4})([0-9]{2})$`)
+	placeRe    = regexp.MustCompile(`^[A-Z]{2,4}$`)
+)
+
+const sharedPrefix = "SHARED"
+
 type siteFields struct {
-	code, name, address, timezone, contactName, contactPhone, contactEmail, notes string
+	code, name, address, timezone, contactName, contactPhone, contactEmail, notes, kind, isp string
+	businessUnit                                                                             *uuid.UUID
 }
 
-func validateSite(code, name string, address, timezone, contactName, contactPhone, contactEmail, notes *string) (siteFields, string) {
+func validateSite(code, name string, kind *apigen.SiteKind, bu *uuid.UUID, isp, address, timezone, contactName, contactPhone, contactEmail, notes *string) (siteFields, string) {
 	f := siteFields{
-		code: strings.TrimSpace(code), name: strings.TrimSpace(name), address: str(address), timezone: str(timezone),
+		code: strings.ToUpper(strings.TrimSpace(code)), name: strings.TrimSpace(name), address: str(address), timezone: str(timezone),
 		contactName: str(contactName), contactPhone: str(contactPhone), contactEmail: str(contactEmail), notes: str(notes),
+		kind: "office", isp: str(isp), businessUnit: bu,
+	}
+	if kind != nil {
+		f.kind = string(*kind)
 	}
 	switch {
-	case f.code == "" || tooLong(f.code, 32) || strings.ContainsAny(f.code, " \t/"):
-		return f, "Mã site bắt buộc, tối đa 32 ký tự, không có khoảng trắng hay dấu /"
+	case !siteCodeRe.MatchString(f.code):
+		return f, "Mã site phải theo dạng <MÃ ĐƠN VỊ>-<địa điểm 2–4 chữ><2 số>, vd AGRI-BD01 (site dùng chung: SHARED-HCM01)"
 	case f.name == "" || tooLong(f.name, 200):
 		return f, "Tên site bắt buộc, tối đa 200 ký tự"
-	case tooLong(f.address, 500) || tooLong(f.contactName, 200) || tooLong(f.contactPhone, 50) || tooLong(f.notes, 2000):
+	case !slices.Contains(siteKinds, f.kind):
+		return f, "Loại site không hợp lệ"
+	case tooLong(f.address, 500) || tooLong(f.contactName, 200) || tooLong(f.contactPhone, 50) || tooLong(f.notes, 2000) || tooLong(f.isp, 200):
 		return f, "Một trường vượt quá độ dài cho phép"
 	}
 	if f.timezone == "" {
@@ -86,31 +104,67 @@ func validateSite(code, name string, address, timezone, contactName, contactPhon
 	return f, ""
 }
 
+// resolveUnit loads the owning unit and checks the code prefix against it (ADR-030). Message = 400.
+func resolveUnit(ctx context.Context, q store.Querier, m tenant.Membership, f siteFields) (pgtype.UUID, string, error) {
+	prefix := siteCodeRe.FindStringSubmatch(f.code)[1]
+	if f.businessUnit == nil {
+		if prefix != sharedPrefix {
+			return pgtype.UUID{}, "Site dùng chung phải có mã bắt đầu bằng SHARED-", nil
+		}
+		return pgtype.UUID{}, "", nil
+	}
+	unit, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*f.businessUnit), OrganizationID: m.OrgID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return pgtype.UUID{}, "Đơn vị không tồn tại trong tổ chức", nil
+	}
+	if err != nil {
+		return pgtype.UUID{}, "", fmt.Errorf("load business unit: %w", err)
+	}
+	if prefix != unit.Code {
+		return pgtype.UUID{}, fmt.Sprintf("Mã site của đơn vị %s phải bắt đầu bằng %s-", unit.Name, unit.Code), nil
+	}
+	return unit.ID, "", nil
+}
+
 // siteSnapshot is what the audit log records for a site (no counts, no secrets).
 type siteSnapshot struct {
-	Code         string `json:"code"`
-	Name         string `json:"name"`
-	Address      string `json:"address"`
-	Timezone     string `json:"timezone"`
-	ContactName  string `json:"contactName"`
-	ContactPhone string `json:"contactPhone"`
-	ContactEmail string `json:"contactEmail"`
-	Notes        string `json:"notes"`
+	Code           string `json:"code"`
+	Name           string `json:"name"`
+	Kind           string `json:"kind"`
+	BusinessUnitID string `json:"businessUnitId,omitempty"`
+	ISP            string `json:"isp"`
+	Address        string `json:"address"`
+	Timezone       string `json:"timezone"`
+	ContactName    string `json:"contactName"`
+	ContactPhone   string `json:"contactPhone"`
+	ContactEmail   string `json:"contactEmail"`
+	Notes          string `json:"notes"`
 }
 
-func snapSite(s store.Site) siteSnapshot {
-	return siteSnapshot{s.Code, s.Name, s.Address, s.Timezone, s.ContactName, s.ContactPhone, s.ContactEmail, s.Notes}
+func snapSite(s store.GetSiteRow) siteSnapshot {
+	bu := ""
+	if s.BusinessUnitID.Valid {
+		bu = uuidStr(s.BusinessUnitID)
+	}
+	return siteSnapshot{s.Code, s.Name, s.Kind, bu, s.Isp, s.Address, s.Timezone, s.ContactName, s.ContactPhone, s.ContactEmail, s.Notes}
 }
 
-func toSite(s store.Site, locations, racks int64) apigen.Site {
+func toSite(s store.GetSiteRow, locations, racks int64) apigen.Site {
+	var bu *uuid.UUID
+	if s.BusinessUnitID.Valid {
+		id := uuid.UUID(s.BusinessUnitID.Bytes)
+		bu = &id
+	}
 	return apigen.Site{
-		Id: uuid.UUID(s.ID.Bytes), Code: s.Code, Name: s.Name, Address: s.Address, Timezone: s.Timezone,
+		Id: uuid.UUID(s.ID.Bytes), Code: s.Code, Name: s.Name, Kind: apigen.SiteKind(s.Kind), BusinessUnitId: bu,
+		BusinessUnitCode: s.BusinessUnitCode, BusinessUnitName: s.BusinessUnitName, Isp: s.Isp,
+		Address: s.Address, Timezone: s.Timezone,
 		ContactName: s.ContactName, ContactPhone: s.ContactPhone, ContactEmail: s.ContactEmail, Notes: s.Notes,
 		LocationCount: locations, RackCount: racks, Version: s.Version, CreatedAt: s.CreatedAt.Time, UpdatedAt: s.UpdatedAt.Time,
 	}
 }
 
-func (s *Server) siteCounts(ctx context.Context, m tenant.Membership, site store.Site) (int64, int64, error) {
+func (s *Server) siteCounts(ctx context.Context, m tenant.Membership, site store.GetSiteRow) (int64, int64, error) {
 	rows, err := s.q.ListSites(ctx, store.ListSitesParams{OrganizationID: m.OrgID, Scope: []pgtype.UUID{site.ID}})
 	if err != nil || len(rows) == 0 {
 		return 0, 0, err
@@ -119,13 +173,13 @@ func (s *Server) siteCounts(ctx context.Context, m tenant.Membership, site store
 }
 
 // loadSite returns the site if it is live, in the organization and inside the member's scope.
-func loadSite(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.Site, bool, error) {
+func loadSite(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetSiteRow, bool, error) {
 	site, err := q.GetSite(ctx, store.GetSiteParams{ID: pgUUID(id), OrganizationID: m.OrgID, Scope: m.SiteFilter()})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return store.Site{}, false, nil
+		return store.GetSiteRow{}, false, nil
 	}
 	if err != nil {
-		return store.Site{}, false, fmt.Errorf("load site: %w", err)
+		return store.GetSiteRow{}, false, fmt.Errorf("load site: %w", err)
 	}
 	return site, true, nil
 }
@@ -135,16 +189,24 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.q.ListSites(ctx, store.ListSitesParams{OrganizationID: m.OrgID, Scope: m.SiteFilter()})
+	params := store.ListSitesParams{OrganizationID: m.OrgID, Scope: m.SiteFilter()}
+	if req.Params.BusinessUnitId != nil {
+		params.BuFilter = pgUUID(*req.Params.BusinessUnitId)
+	}
+	if req.Params.Shared != nil && *req.Params.Shared {
+		params.OnlyShared = true
+	}
+	rows, err := s.q.ListSites(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("list sites: %w", err)
 	}
 	out := apigen.SiteList{Sites: make([]apigen.Site, 0, len(rows))}
 	for _, r := range rows {
-		out.Sites = append(out.Sites, toSite(store.Site{
+		out.Sites = append(out.Sites, toSite(store.GetSiteRow{
 			ID: r.ID, OrganizationID: r.OrganizationID, Code: r.Code, Name: r.Name, Address: r.Address, Timezone: r.Timezone,
 			ContactName: r.ContactName, ContactPhone: r.ContactPhone, ContactEmail: r.ContactEmail, Notes: r.Notes,
-			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt, Version: r.Version,
+			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt, Version: r.Version, Kind: r.Kind, BusinessUnitID: r.BusinessUnitID,
+			Isp: r.Isp, BusinessUnitCode: r.BusinessUnitCode, BusinessUnitName: r.BusinessUnitName,
 		}, r.LocationCount, r.RackCount))
 	}
 	return apigen.ListSites200JSONResponse(out), nil
@@ -169,6 +231,44 @@ func (s *Server) GetSite(ctx context.Context, req apigen.GetSiteRequestObject) (
 	return apigen.GetSite200JSONResponse(toSite(site, locs, racks)), nil
 }
 
+// SuggestSiteCode returns the next free <UNIT|SHARED>-<PLACE><NN> code (ADR-030).
+func (s *Server) SuggestSiteCode(ctx context.Context, req apigen.SuggestSiteCodeRequestObject) (apigen.SuggestSiteCodeResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	place := strings.ToUpper(strings.TrimSpace(req.Params.Place))
+	if !placeRe.MatchString(place) {
+		return apigen.SuggestSiteCode400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Mã địa điểm gồm 2–4 chữ cái, vd HY"}}, nil
+	}
+	prefix := sharedPrefix
+	if req.Params.BusinessUnitId != nil {
+		unit, err := s.q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*req.Params.BusinessUnitId), OrganizationID: m.OrgID})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return apigen.SuggestSiteCode404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy đơn vị"}}, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("load business unit: %w", err)
+		}
+		prefix = unit.Code
+	}
+	base := prefix + "-" + place
+	codes, err := s.q.ListSiteCodesWithPrefix(ctx, store.ListSiteCodesWithPrefixParams{OrganizationID: m.OrgID, Prefix: base})
+	if err != nil {
+		return nil, fmt.Errorf("list site codes: %w", err)
+	}
+	used := map[string]bool{}
+	for _, c := range codes {
+		used[strings.ToUpper(c)] = true
+	}
+	for n := 1; n <= 99; n++ {
+		if c := fmt.Sprintf("%s%02d", base, n); !used[c] {
+			return apigen.SuggestSiteCode200JSONResponse{Code: c}, nil
+		}
+	}
+	return apigen.SuggestSiteCode409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: "Đã dùng hết 99 số cho địa điểm này"}}, nil
+}
+
 func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObject) (apigen.CreateSiteResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
@@ -184,16 +284,28 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	b := req.Body
-	f, msg := validateSite(b.Code, b.Name, b.Address, b.Timezone, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
+	f, msg := validateSite(b.Code, b.Name, b.Kind, b.BusinessUnitId, b.Isp, b.Address, b.Timezone, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
 	if msg != "" {
 		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
-	var site store.Site
-	duplicate := false
+	var (
+		site      store.GetSiteRow
+		duplicate bool
+		bad       string
+	)
 	err = s.withTx(ctx, func(q store.Querier) error {
-		site, err = q.CreateSite(ctx, store.CreateSiteParams{
+		unit, msg, err := resolveUnit(ctx, q, m, f)
+		if err != nil {
+			return err
+		}
+		if msg != "" {
+			bad = msg
+			return errRollback
+		}
+		created, err := q.CreateSite(ctx, store.CreateSiteParams{
 			OrganizationID: m.OrgID, Code: f.code, Name: f.name, Address: f.address, Timezone: f.timezone,
 			ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
+			Kind: f.kind, BusinessUnitID: unit, Isp: f.isp,
 		})
 		if isUniqueViolation(err) {
 			duplicate = true
@@ -202,15 +314,20 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 		if err != nil {
 			return fmt.Errorf("create site: %w", err)
 		}
+		if site, _, err = loadSite(ctx, q, m, uuid.UUID(created.ID.Bytes)); err != nil {
+			return err
+		}
 		return audit.Write(ctx, q, audit.Entry{
 			OrganizationID: m.OrgID, Actor: m.UserID, Action: "site.create", ObjectType: "site", ObjectID: uuidStr(site.ID),
 			After: snapSite(site), Meta: infoFrom(ctx).meta,
 		})
 	})
-	if duplicate {
+	switch {
+	case bad != "":
+		return apigen.CreateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: bad}}, nil
+	case duplicate:
 		return apigen.CreateSite409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: "Mã site đã tồn tại trong tổ chức"}}, nil
-	}
-	if err != nil {
+	case err != nil:
 		return nil, err
 	}
 	return apigen.CreateSite201JSONResponse(toSite(site, 0, 0)), nil
@@ -225,9 +342,9 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 		return apigen.UpdateSite400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	b := req.Body
-	f, msg := validateSite(b.Code, b.Name, b.Address, b.Timezone, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
+	f, msg := validateSite(b.Code, b.Name, b.Kind, b.BusinessUnitId, b.Isp, b.Address, b.Timezone, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
 	var (
-		updated            store.Site
+		updated            store.GetSiteRow
 		notFound, readOnly bool
 		conflict           string
 	)
@@ -247,9 +364,18 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 		if msg != "" {
 			return errRollback
 		}
-		updated, err = q.UpdateSite(ctx, store.UpdateSiteParams{
+		unit, bad, err := resolveUnit(ctx, q, m, f)
+		if err != nil {
+			return err
+		}
+		if bad != "" {
+			msg = bad
+			return errRollback
+		}
+		_, err = q.UpdateSite(ctx, store.UpdateSiteParams{
 			ID: before.ID, OrganizationID: m.OrgID, Version: b.Version, Code: f.code, Name: f.name, Address: f.address,
 			Timezone: f.timezone, ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
+			Kind: f.kind, BusinessUnitID: unit, Isp: f.isp,
 		})
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -260,6 +386,9 @@ func (s *Server) UpdateSite(ctx context.Context, req apigen.UpdateSiteRequestObj
 			return errRollback
 		case err != nil:
 			return fmt.Errorf("update site: %w", err)
+		}
+		if updated, _, err = loadSite(ctx, q, m, req.SiteId); err != nil {
+			return err
 		}
 		return audit.Write(ctx, q, audit.Entry{
 			OrganizationID: m.OrgID, Actor: m.UserID, Action: "site.update", ObjectType: "site", ObjectID: uuidStr(before.ID),

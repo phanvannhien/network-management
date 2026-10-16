@@ -32,13 +32,13 @@ func idOf(t *testing.T, v map[string]any) string {
 // Cross-tenant isolation for every site / location / rack endpoint (mandatory per CLAUDE.md).
 func TestSiteEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HQ", "name": "B HQ"}))
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "SHARED-HN01", "name": "B HQ"}))
 	locB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB)+"/"+siteB+"/locations", map[string]any{"kind": "room", "name": "Server room"}))
 	rackB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB)+"/"+siteB+"/racks", map[string]any{"locationId": locB, "name": "R1"}))
 
 	site := func(org uuid.UUID) string { return sitesPath(org) + "/" + siteB }
 	fx.AssertCrossTenantDenied(t, "GET", sitesPath, nil)
-	fx.AssertCrossTenantDenied(t, "POST", sitesPath, map[string]any{"code": "X1", "name": "x"})
+	fx.AssertCrossTenantDenied(t, "POST", sitesPath, map[string]any{"code": "SHARED-XX01", "name": "x"})
 	fx.AssertCrossTenantDenied(t, "GET", site, nil)
 	fx.AssertCrossTenantDenied(t, "GET", func(o uuid.UUID) string { return site(o) + "/locations" }, nil)
 	fx.AssertCrossTenantDenied(t, "GET", func(o uuid.UUID) string { return site(o) + "/racks" }, nil)
@@ -49,7 +49,7 @@ func TestSiteEndpointsAreTenantIsolated(t *testing.T) {
 			method, path string
 			body         map[string]any
 		}{
-			{"PATCH", site(org), map[string]any{"code": "HQ", "name": "hacked", "version": 1}},
+			{"PATCH", site(org), map[string]any{"code": "SHARED-HN01", "name": "hacked", "version": 1}},
 			{"DELETE", site(org), nil},
 			{"POST", site(org) + "/locations", map[string]any{"kind": "building", "name": "A"}},
 			{"PATCH", site(org) + "/locations/" + locB, map[string]any{"name": "hacked", "version": 1}},
@@ -74,21 +74,21 @@ func TestSiteRolesValidationAndSoftDelete(t *testing.T) {
 	editor := fx.NewUser(t, "ed@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "editor"})
 	viewer := fx.NewUser(t, "view@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "viewer"})
 
-	if status, _ := viewer.Do("POST", sitesPath(fx.OrgA), map[string]any{"code": "V", "name": "v"}); status != http.StatusForbidden {
+	if status, _ := viewer.Do("POST", sitesPath(fx.OrgA), map[string]any{"code": "SHARED-VV01", "name": "v"}); status != http.StatusForbidden {
 		t.Errorf("viewer create: %d, want 403", status)
 	}
 	created := mustCreate(t, editor, sitesPath(fx.OrgA), map[string]any{
-		"code": "HQ", "name": "HQ Hà Nội", "contactEmail": "it@example.com",
+		"code": "SHARED-HN01", "name": "HQ Hà Nội", "contactEmail": "it@example.com",
 	})
 	if created["timezone"] != "Asia/Ho_Chi_Minh" {
 		t.Errorf("default timezone: %v", created["timezone"])
 	}
 	id := idOf(t, created)
 	for name, body := range map[string]map[string]any{
-		"duplicate code (case-insensitive)": {"code": "hq", "name": "dup"},
-		"bad timezone":                      {"code": "DN", "name": "x", "timezone": "Mars/Base"},
-		"bad email":                         {"code": "DN", "name": "x", "contactEmail": "not-an-email"},
-		"space in code":                     {"code": "D N", "name": "x"},
+		"duplicate code (case-insensitive)": {"code": "shared-hn01", "name": "dup"},
+		"bad timezone":                      {"code": "SHARED-DN01", "name": "x", "timezone": "Mars/Base"},
+		"bad email":                         {"code": "SHARED-DN01", "name": "x", "contactEmail": "not-an-email"},
+		"space in code":                     {"code": "SHARED DN01", "name": "x"},
 	} {
 		status, _ := editor.Do("POST", sitesPath(fx.OrgA), body)
 		want := http.StatusBadRequest
@@ -102,13 +102,13 @@ func TestSiteRolesValidationAndSoftDelete(t *testing.T) {
 	if status, _ := viewer.Do("GET", sitesPath(fx.OrgA)+"/"+id, nil); status != http.StatusOK {
 		t.Errorf("viewer read: %d", status)
 	}
-	if status, _ := viewer.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "HQ", "name": "x", "version": 1}); status != http.StatusForbidden {
+	if status, _ := viewer.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "SHARED-HN01", "name": "x", "version": 1}); status != http.StatusForbidden {
 		t.Errorf("viewer update: %d, want 403", status)
 	}
-	if status, _ := editor.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "HQ", "name": "HQ mới", "version": 99}); status != http.StatusConflict {
+	if status, _ := editor.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "SHARED-HN01", "name": "HQ mới", "version": 99}); status != http.StatusConflict {
 		t.Errorf("stale version: %d, want 409", status)
 	}
-	if status, body := editor.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "HQ", "name": "HQ mới", "version": 1}); status != http.StatusOK || body["version"] != float64(2) {
+	if status, body := editor.Do("PATCH", sitesPath(fx.OrgA)+"/"+id, map[string]any{"code": "SHARED-HN01", "name": "HQ mới", "version": 1}); status != http.StatusOK || body["version"] != float64(2) {
 		t.Errorf("update: %d %v", status, body)
 	}
 	if n := auditCount(t, fx.Pool, "site.update", fx.OrgA); n != 1 {
@@ -129,13 +129,13 @@ func TestSiteRolesValidationAndSoftDelete(t *testing.T) {
 	if err := fx.Pool.QueryRow(t.Context(), `SELECT count(*) FROM sites WHERE id = $1 AND deleted_at IS NOT NULL`, id).Scan(&kept); err != nil || kept != 1 {
 		t.Errorf("soft delete row: %d %v", kept, err)
 	}
-	mustCreate(t, editor, sitesPath(fx.OrgA), map[string]any{"code": "HQ", "name": "HQ again"})
+	mustCreate(t, editor, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HN01", "name": "HQ again"})
 }
 
 func TestLocationTreeAndRacks(t *testing.T) {
 	fx := newOrgFixture(t)
-	site := sitesPath(fx.OrgA) + "/" + idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "HQ", "name": "HQ"}))
-	other := sitesPath(fx.OrgA) + "/" + idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "DN", "name": "DN"}))
+	site := sitesPath(fx.OrgA) + "/" + idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HN01", "name": "HQ"}))
+	other := sitesPath(fx.OrgA) + "/" + idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-DN01", "name": "DN"}))
 	locs := site + "/locations"
 
 	building := idOf(t, mustCreate(t, fx.A, locs, map[string]any{"kind": "building", "name": "Tòa A"}))
@@ -196,9 +196,9 @@ func TestLocationTreeAndRacks(t *testing.T) {
 // ADR-025: a scoped editor/viewer only sees and edits its sites; owner/admin are never scoped.
 func TestSiteScope(t *testing.T) {
 	fx := newOrgFixture(t)
-	hq := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "HQ", "name": "HQ"}))
-	dn := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "DN", "name": "DN"}))
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HQ", "name": "B"}))
+	hq := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HN01", "name": "HQ"}))
+	dn := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-DN01", "name": "DN"}))
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "SHARED-HN01", "name": "B"}))
 	editor := fx.NewUser(t, "ed@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "editor"})
 	manager := fx.NewUser(t, "mgr@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "editor"})
 	if _, err := fx.Pool.Exec(t.Context(), `UPDATE memberships SET permissions = '{user.manage}' WHERE user_id = $1`, manager.UserID); err != nil {
@@ -223,7 +223,7 @@ func TestSiteScope(t *testing.T) {
 	}
 
 	_, list := editor.Do("GET", sitesPath(fx.OrgA), nil)
-	if sites := list["sites"].([]any); len(sites) != 1 || sites[0].(map[string]any)["code"] != "HQ" {
+	if sites := list["sites"].([]any); len(sites) != 1 || sites[0].(map[string]any)["code"] != "SHARED-HN01" {
 		t.Errorf("scoped list: %v", list)
 	}
 	for _, r := range []struct{ method, path string }{
@@ -232,12 +232,12 @@ func TestSiteScope(t *testing.T) {
 		{"POST", sitesPath(fx.OrgA) + "/" + dn + "/locations"},
 		{"PATCH", sitesPath(fx.OrgA) + "/" + dn},
 	} {
-		if status, _ := editor.Do(r.method, r.path, map[string]any{"kind": "building", "name": "x", "code": "DN", "version": 1}); status != http.StatusNotFound {
+		if status, _ := editor.Do(r.method, r.path, map[string]any{"kind": "building", "name": "x", "code": "SHARED-DN01", "version": 1}); status != http.StatusNotFound {
 			t.Errorf("scoped %s %s: %d, want 404", r.method, r.path, status)
 		}
 	}
 	mustCreate(t, editor, sitesPath(fx.OrgA)+"/"+hq+"/locations", map[string]any{"kind": "building", "name": "Tòa A"})
-	if status, _ := editor.Do("POST", sitesPath(fx.OrgA), map[string]any{"code": "NEW", "name": "new"}); status != http.StatusForbidden {
+	if status, _ := editor.Do("POST", sitesPath(fx.OrgA), map[string]any{"code": "SHARED-NW01", "name": "new"}); status != http.StatusForbidden {
 		t.Errorf("scoped editor creates a site: %d, want 403", status)
 	}
 

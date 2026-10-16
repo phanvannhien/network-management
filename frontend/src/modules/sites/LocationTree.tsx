@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { childKinds, useLocationMutations, type Location, type LocationKind } from './sites'
 
-export const KIND_ICON: Record<LocationKind, LucideIcon> = {
+const KIND_ICON: Record<LocationKind, LucideIcon> = {
   building: Building2,
   floor: Layers,
   room: DoorOpen,

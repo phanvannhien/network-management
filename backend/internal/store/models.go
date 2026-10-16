@@ -25,6 +25,22 @@ type AuditLog struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type BusinessUnit struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Code           string
+	Name           string
+	Relation       string
+	ContactName    string
+	ContactPhone   string
+	ContactEmail   string
+	Notes          string
+	DeletedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Location struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -121,6 +137,9 @@ type Site struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	Kind           string
+	BusinessUnitID pgtype.UUID
+	Isp            string
 }
 
 type User struct {

@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { Wand2 } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { FormField } from '@/components/FormField'
+import { NativeSelect } from '@/components/NativeSelect'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,7 +14,16 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { useSaveSite, type Site } from './sites'
+import { placeCode } from '@/lib/placeCode'
+import {
+  SITE_KINDS,
+  siteCodeError,
+  suggestSiteCode,
+  useBusinessUnits,
+  useSaveSite,
+  type Site,
+  type SiteKind,
+} from './sites'
 
 /** Common IANA zones first; any valid IANA name is accepted by the API. */
 const TIMEZONES = [
@@ -24,25 +35,34 @@ const TIMEZONES = [
   'UTC',
 ]
 
-/** Create (site undefined) or edit a site. Remounted per open, so fields start from the site. */
+/**
+ * Create (site undefined) or edit a site. The code follows ADR-030 (<UNIT>-<PLACE><NN>): while the user
+ * has not typed a code, it is suggested from the unit + place via the API (next free number).
+ */
 export function SiteFormDialog({
   orgId,
   site,
+  defaultUnitId,
   open,
   onClose,
   onSaved,
 }: {
   orgId: string
   site?: Site
+  defaultUnitId?: string | null
   open: boolean
   onClose: () => void
   onSaved?: (site: Site) => void
 }) {
   const { t } = useTranslation()
   const save = useSaveSite(orgId)
+  const units = useBusinessUnits(orgId)
   const [f, setF] = useState({
     code: site?.code ?? '',
     name: site?.name ?? '',
+    kind: (site?.kind ?? 'office') as SiteKind,
+    businessUnitId: site ? site.businessUnitId : (defaultUnitId ?? null),
+    isp: site?.isp ?? '',
     address: site?.address ?? '',
     timezone: site?.timezone ?? 'Asia/Ho_Chi_Minh',
     contactName: site?.contactName ?? '',
@@ -50,13 +70,36 @@ export function SiteFormDialog({
     contactEmail: site?.contactEmail ?? '',
     notes: site?.notes ?? '',
   })
+  const [place, setPlace] = useState(
+    site ? (/^[A-Z0-9]+-([A-Z]{2,4})\d{2}$/.exec(site.code)?.[1] ?? '') : '',
+  )
+  const [placeTouched, setPlaceTouched] = useState(Boolean(site))
+  const codeTouched = useRef(Boolean(site))
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
+  const unitCode = units.data?.find((u) => u.id === f.businessUnitId)?.code ?? null
+
+  // The place is derived from the name/address until the user types one.
+  const effectivePlace = placeTouched ? place : placeCode(`${f.name} ${f.address}`).slice(0, 4)
+
+  const suggest = async (force = false) => {
+    if ((!force && codeTouched.current) || !/^[A-Z]{2,4}$/.test(effectivePlace)) return
+    const code = await suggestSiteCode(orgId, f.businessUnitId, effectivePlace)
+    if (code) setF((cur) => ({ ...cur, code }))
+    if (force) codeTouched.current = false
+  }
+  useEffect(() => {
+    void suggest()
+    // re-suggest when the unit or place changes (not on every keystroke elsewhere)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.businessUnitId, effectivePlace])
+
+  const codeProblem = f.code ? siteCodeError(f.code, unitCode) : null
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
     save.mutate(
-      { siteId: site?.id, body: f, version: site?.version },
+      { siteId: site?.id, body: { ...f, code: f.code.toUpperCase() }, version: site?.version },
       {
         onSuccess: (saved) => {
           toast.success(site ? t('sites.saved') : t('sites.created', { code: saved.code }))
@@ -69,7 +112,7 @@ export function SiteFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-2xl">
         <form
           onSubmit={onSubmit}
           className="space-y-4"
@@ -78,29 +121,114 @@ export function SiteFormDialog({
           <DialogHeader>
             <DialogTitle>{site ? t('sites.edit') : t('sites.add')}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-[160px_1fr] gap-3">
-            <FormField label={t('sites.code')} hint={t('sites.codeHint')} required>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              label={t('sites.unit')}
+              hint={f.businessUnitId ? undefined : t('units.sharedHint')}
+            >
               {(p) => (
-                <Input
+                <NativeSelect
                   {...p}
-                  required
-                  autoFocus
-                  maxLength={32}
-                  value={f.code}
-                  onChange={set('code')}
-                  className="font-mono"
-                />
+                  value={f.businessUnitId ?? ''}
+                  onChange={(e) => setF({ ...f, businessUnitId: e.target.value || null })}
+                >
+                  <option value="">{t('units.shared')}</option>
+                  {(units.data ?? []).map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.code} · {u.name}
+                    </option>
+                  ))}
+                </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('sites.name')} required>
+            <FormField label={t('sites.kind')}>
               {(p) => (
-                <Input {...p} required maxLength={200} value={f.name} onChange={set('name')} />
+                <NativeSelect
+                  {...p}
+                  value={f.kind}
+                  onChange={(e) => setF({ ...f, kind: e.target.value as SiteKind })}
+                >
+                  {SITE_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`sites.siteKinds.${k}`)}
+                    </option>
+                  ))}
+                </NativeSelect>
               )}
             </FormField>
           </div>
-          <FormField label={t('sites.address')}>
-            {(p) => <Input {...p} maxLength={500} value={f.address} onChange={set('address')} />}
+          <FormField label={t('sites.name')} required>
+            {(p) => (
+              <Input
+                {...p}
+                required
+                autoFocus
+                maxLength={200}
+                value={f.name}
+                onChange={set('name')}
+              />
+            )}
           </FormField>
+          <div className="grid grid-cols-[140px_1fr] gap-3">
+            <FormField label={t('sites.place')} hint={t('sites.placeHint')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  maxLength={4}
+                  value={effectivePlace}
+                  onChange={(e) => {
+                    setPlaceTouched(true)
+                    setPlace(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))
+                  }}
+                  className="font-mono uppercase"
+                />
+              )}
+            </FormField>
+            <FormField
+              label={t('sites.code')}
+              required
+              hint={t('sites.codeRule')}
+              error={
+                codeProblem === 'prefix'
+                  ? `${t('sites.codeRule')} (${unitCode ?? 'SHARED'}-…)`
+                  : codeProblem === 'format'
+                    ? t('sites.codeRule')
+                    : undefined
+              }
+            >
+              {(p) => (
+                <div className="flex gap-2">
+                  <Input
+                    {...p}
+                    required
+                    maxLength={32}
+                    value={f.code}
+                    onChange={(e) => {
+                      codeTouched.current = true
+                      setF({ ...f, code: e.target.value.toUpperCase() })
+                    }}
+                    className="font-mono uppercase"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void suggest(true)}
+                    title={t('sites.suggest')}
+                  >
+                    <Wand2 aria-hidden /> {t('sites.suggest')}
+                  </Button>
+                </div>
+              )}
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={t('sites.address')}>
+              {(p) => <Input {...p} maxLength={500} value={f.address} onChange={set('address')} />}
+            </FormField>
+            <FormField label={t('sites.isp')}>
+              {(p) => <Input {...p} maxLength={200} value={f.isp} onChange={set('isp')} />}
+            </FormField>
+          </div>
           <FormField label={t('sites.timezone')}>
             {(p) => (
               <>
@@ -151,7 +279,7 @@ export function SiteFormDialog({
           </fieldset>
           <FormField label={t('sites.notes')}>
             {(p) => (
-              <Textarea {...p} rows={3} maxLength={2000} value={f.notes} onChange={set('notes')} />
+              <Textarea {...p} rows={2} maxLength={2000} value={f.notes} onChange={set('notes')} />
             )}
           </FormField>
           {save.isError && (
@@ -163,7 +291,7 @@ export function SiteFormDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="submit" disabled={save.isPending || codeProblem !== null}>
               {t('common.save')}
             </Button>
           </DialogFooter>

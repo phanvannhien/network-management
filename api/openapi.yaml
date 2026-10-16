@@ -488,12 +488,185 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/business-units:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listBusinessUnits
+      summary: Business units of the organization (ADR-026)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessUnitList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: createBusinessUnit
+      summary: Create a business unit (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessUnitInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessUnit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/business-units/{businessUnitId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/BusinessUnitId'
+    get:
+      operationId: getBusinessUnit
+      summary: One business unit
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessUnit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: updateBusinessUnit
+      summary: Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessUnitUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessUnit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteBusinessUnit
+      summary: Soft-delete a business unit without live sites (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/next-code:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: suggestSiteCode
+      summary: Next free site code for a unit and place (ADR-030)
+      parameters:
+        - name: businessUnitId
+          in: query
+          description: Owning unit; omit for a shared site (SHARED- prefix)
+          schema:
+            type: string
+            format: uuid
+        - name: place
+          in: query
+          required: true
+          description: Place abbreviation, 2-4 letters (e.g. HY for Hưng Yên)
+          schema:
+            type: string
+            maxLength: 4
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteCodeSuggestion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/sites:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
       operationId: listSites
       summary: Sites of the organization (filtered by the member site scope)
+      parameters:
+        - name: businessUnitId
+          in: query
+          description: Only sites of this business unit
+          schema:
+            type: string
+            format: uuid
+        - name: shared
+          in: query
+          description: Only organization-wide (shared) sites
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -1051,6 +1224,13 @@ components:
       schema:
         type: string
         format: date-time
+    BusinessUnitId:
+      name: businessUnitId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     SiteId:
       name: siteId
       in: path
@@ -1576,6 +1756,93 @@ components:
           type: integer
           format: int32
 
+    BusinessUnitRelation:
+      type: string
+      enum: [subsidiary, partner, customer]
+
+    BusinessUnitInput:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          description: "ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)"
+          maxLength: 8
+        name:
+          type: string
+          maxLength: 200
+        relation:
+          $ref: '#/components/schemas/BusinessUnitRelation'
+        contactName:
+          type: string
+          maxLength: 200
+        contactPhone:
+          type: string
+          maxLength: 50
+        contactEmail:
+          type: string
+          maxLength: 320
+        notes:
+          type: string
+          maxLength: 2000
+
+    BusinessUnitUpdate:
+      allOf:
+        - $ref: '#/components/schemas/BusinessUnitInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    BusinessUnit:
+      type: object
+      required: [id, code, name, relation, contactName, contactPhone, contactEmail, notes, siteCount, version, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        relation:
+          $ref: '#/components/schemas/BusinessUnitRelation'
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        notes:
+          type: string
+        siteCount:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessUnitList:
+      type: object
+      required: [businessUnits]
+      properties:
+        businessUnits:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessUnit'
+
+    SiteCodeSuggestion:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+
     SiteScopeInput:
       type: object
       description: Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
@@ -1590,6 +1857,10 @@ components:
             type: string
             format: uuid
 
+    SiteKind:
+      type: string
+      enum: [office, factory, datacenter, warehouse, store, other]
+
     SiteInput:
       type: object
       required: [code, name]
@@ -1597,6 +1868,16 @@ components:
         code:
           type: string
           maxLength: 32
+          description: "ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>"
+        kind:
+          $ref: '#/components/schemas/SiteKind'
+        businessUnitId:
+          description: Owning business unit; null = shared by the whole organization (e.g. an IDC)
+          type: [string, 'null']
+          format: uuid
+        isp:
+          type: string
+          maxLength: 200
         name:
           type: string
           maxLength: 200
@@ -1631,12 +1912,24 @@ components:
 
     Site:
       type: object
-      required: [id, code, name, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt]
+      required: [id, code, name, kind, businessUnitId, businessUnitCode, businessUnitName, isp, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt]
       properties:
         id:
           type: string
           format: uuid
         code:
+          type: string
+        kind:
+          $ref: '#/components/schemas/SiteKind'
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+        businessUnitCode:
+          type: string
+          description: Empty for shared sites
+        businessUnitName:
+          type: string
+        isp:
           type: string
         name:
           type: string

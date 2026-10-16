@@ -5,6 +5,40 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-07 hoàn tất: Đơn vị, loại site, site dùng chung, quy tắc mã (ADR-026, ADR-030)
+- Đã làm:
+  - Migration 000008: `business_units` (mã theo ADR-030 ép bằng CHECK ở DB, cấm `SHARED`, duy nhất với đơn vị còn sống;
+    relation subsidiary/partner/customer; liên hệ; xóa mềm); `sites.kind` (office/factory/datacenter/warehouse/store/other,
+    site cũ → office), `sites.business_unit_id` (NULL = dùng chung; khóa ngoại kép cùng tổ chức), `sites.isp`.
+  - API: CRUD `/orgs/{orgId}/business-units` (owner/admin; editor/viewer chỉ xem); đổi mã đơn vị → đổi tiền tố mã mọi site
+    của đơn vị trong cùng transaction (audit ghi số site đổi); xóa đơn vị còn site → 409. Site: `kind`, `businessUnitId`,
+    `isp`, trả `businessUnitCode/Name`; lọc `?businessUnitId=` / `?shared=true`; mã site bắt buộc `<ĐƠN VỊ>-<địa điểm 2–4 chữ><2 số>`
+    và tiền tố phải đúng đơn vị của site (`SHARED-` cho site dùng chung); `GET /sites/next-code?businessUnitId=&place=`
+    trả số tiếp theo còn trống.
+  - Giao diện: menu **Đơn vị & Sites** (tab Đơn vị / Sites); bảng đơn vị (mã, tên, quan hệ, liên hệ, số site) + dòng "Dùng chung";
+    trang chi tiết đơn vị (thông tin + site của đơn vị, thêm site có sẵn đơn vị, xóa phải gõ mã); bảng site thêm cột Đơn vị,
+    Loại, Nhà mạng (ẩn mặc định), lọc theo đơn vị (gồm "Dùng chung") và loại; form site chọn đơn vị / loại, **mã địa điểm tự
+    suy từ tên/địa chỉ** (Hưng Yên → HY, Nhà máy Bình Định → BD; `lib/placeCode.ts`) và **mã site tự gợi ý** qua API cho tới khi
+    người dùng tự gõ, kiểm tra quy tắc ngay trên form; trang site hiện loại + đơn vị, breadcrumb Đơn vị & Sites › AGRI › AGRI-BD01;
+    Ctrl+K tìm đơn vị.
+- Test / cách kiểm tra: `make check` pass (backend + 155 test frontend).
+  - Backend: chéo tổ chức cho mọi endpoint đơn vị + gắn site vào đơn vị tổ chức khác → 400; editor không tạo đơn vị; mã đơn vị
+    sai (ngắn, số đầu, dài, ký tự lạ, `shared`) 400, trùng 409, lưu chữ hoa; mã site sai tiền tố / thiếu số / địa điểm dài /
+    loại sai 400; next-code (BD02, SHARED-HCM02, địa điểm sai 400); lọc theo đơn vị / dùng chung; đổi mã đơn vị đổi mã site;
+    xóa đơn vị còn site 409; test site cũ chuyển sang mã đúng quy tắc. Mutation: bỏ kiểm tra tiền tố, bỏ đổi tên dây chuyền →
+    test fail.
+  - Frontend: danh sách đơn vị + tạo (mã tự viết hoa, bỏ ký tự lạ), thêm site từ trang đơn vị (đơn vị điền sẵn, gọi
+    next-code với place=BD), tạo site dùng chung (mã sai → nút Lưu tắt), `placeCode`.
+  - Ảnh `docs/ui-screens/after/36-*, 37-*, 38-*, 42..44-*`; `a11y-report.md` 0 vấn đề.
+- Còn dở / lỗi đã biết:
+  - **DB dev của mày:** chạy `make migrate-up` (000008). Site tạo trước đây (mã kiểu `HQ`) vẫn đọc được nhưng sửa sẽ bị
+    bắt đổi mã theo quy tắc (vd `SHARED-HN01`) — dữ liệu dev chỉ là dữ liệu thử.
+  - Giới hạn theo site (`site_scope`) vẫn còn, sẽ thay ở P1-07c (ADR-029); bảng đơn vị hiện ai trong tổ chức cũng xem được.
+  - Loại site không tự đoán từ tên ("Nhà máy …" vẫn mặc định Văn phòng).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-07c Phân quyền theo đơn vị & chia sẻ site (ADR-029), rồi P1-08.
+
 ## 2026-10-16 — Chốt phân quyền theo đơn vị, chia sẻ bản ghi, quy tắc mã (ADR-029, ADR-030)
 - Đã làm (chỉ tài liệu, chưa code):
   - **ADR-029:** giao user theo một hoặc nhiều đơn vị (`bu_admin`/`editor`/`viewer`, thấy hợp các đơn vị); bu_admin mời

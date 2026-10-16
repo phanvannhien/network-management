@@ -1,6 +1,6 @@
 # Kiểm tra truy cập (axe-core + bàn phím)
 
-Chạy: 2026-10-16T07:29:51.224Z · http://localhost:5180
+Chạy: 2026-10-16T08:31:17.764Z · http://localhost:5180
 Tổng vấn đề: **0**
 
 
@@ -35,11 +35,11 @@ Tổng vấn đề: **0**
 ## ✅ 34-account-menu — light
 ## ✅ 35-devices-english — light
 ## ✅ 36-sites — light
+## ✅ 42-units — light
+## ✅ 43-unit-detail — light
 ## ✅ 37-site-create — light
+## ✅ 44-unit-create — light
 ## ✅ 38-site-locations — light
-## ✅ 39-site-racks — light
-## ✅ 40-site-info — light
-## ✅ 41-member-site-scope — light
 ## ✅ 01-login — dark
 ## ✅ 02-forgot-password — dark
 ## ✅ 03-mfa-verify — dark
@@ -71,8 +71,8 @@ Tổng vấn đề: **0**
 ## ✅ 34-account-menu — dark
 ## ✅ 35-devices-english — dark
 ## ✅ 36-sites — dark
+## ✅ 42-units — dark
+## ✅ 43-unit-detail — dark
 ## ✅ 37-site-create — dark
+## ✅ 44-unit-create — dark
 ## ✅ 38-site-locations — dark
-## ✅ 39-site-racks — dark
-## ✅ 40-site-info — dark
-## ✅ 41-member-site-scope — dark

@@ -30,7 +30,7 @@ import { setLanguage } from '@/i18n'
 import { usePreferences } from '@/lib/preferences'
 import { useMembers } from '@/modules/admin/members'
 import { SAMPLE_DEVICES } from '@/modules/inventory/sampleDevices'
-import { useSites } from '@/modules/sites/sites'
+import { useBusinessUnits, useSites } from '@/modules/sites/sites'
 import { OrgAvatar } from './OrgAvatar'
 
 interface Entry {
@@ -63,6 +63,7 @@ export function CommandPalette({
   const org = useOrganization(orgId)
   const members = useMembers(open ? orgId : '')
   const sites = useSites(orgId, open)
+  const units = useBusinessUnits(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
   const role = org.data?.membership.role
@@ -147,6 +148,15 @@ export function CommandPalette({
       }))
     : []
 
+  const unitEntries: Entry[] = base
+    ? (units.data ?? []).map((u) => ({
+        key: `u-${u.id}`,
+        label: `${u.code} · ${u.name}`,
+        icon: <Building2 />,
+        run: go(`${base}/units/${u.id}`),
+      }))
+    : []
+
   const siteEntries: Entry[] = base
     ? (sites.data ?? []).map((st) => ({
         key: `s-${st.id}`,
@@ -187,6 +197,7 @@ export function CommandPalette({
   const groups: { heading: string; entries: Entry[] }[] = [
     { heading: t('palette.pages'), entries: pages },
     { heading: t('palette.organizations'), entries: organizations },
+    { heading: t('palette.units'), entries: unitEntries },
     { heading: t('palette.sites'), entries: siteEntries },
     { heading: t('palette.members'), entries: people },
     { heading: t('palette.devicesSample'), entries: devices },

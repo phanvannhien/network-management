@@ -202,3 +202,109 @@ export function locationPath(locations: Location[], id: string): string {
     parts.unshift(cur.name)
   return parts.join(' › ')
 }
+
+export type BusinessUnit = components['schemas']['BusinessUnit']
+export type BusinessUnitInput = components['schemas']['BusinessUnitInput']
+export type SiteKind = components['schemas']['SiteKind']
+export const SITE_KINDS: SiteKind[] = [
+  'office',
+  'factory',
+  'datacenter',
+  'warehouse',
+  'store',
+  'other',
+]
+export const UNIT_RELATIONS = ['subsidiary', 'partner', 'customer'] as const
+
+const unitKeys = {
+  all: (orgId: string) => ['orgs', orgId, 'business-units'] as const,
+  one: (orgId: string, id: string) => ['orgs', orgId, 'business-units', id] as const,
+}
+
+export function useBusinessUnits(orgId: string, enabled = true) {
+  return useQuery({
+    queryKey: unitKeys.all(orgId),
+    enabled: enabled && orgId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/business-units', { params: { path: { orgId } } })
+      if (r.data) return r.data.businessUnits
+      fail(r.error, r.response.status, i18n.t('errors.unitsLoad'))
+    },
+  })
+}
+
+export function useBusinessUnit(orgId: string, unitId: string) {
+  return useQuery({
+    queryKey: unitKeys.one(orgId, unitId),
+    retry: false,
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/business-units/{businessUnitId}', {
+        params: { path: { orgId, businessUnitId: unitId } },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.unitsLoad'))
+    },
+  })
+}
+
+/** Unit changes rename site codes (ADR-030), so sites are refreshed too. */
+function useInvalidateUnits(orgId: string) {
+  const qc = useQueryClient()
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: unitKeys.all(orgId) }),
+      qc.invalidateQueries({ queryKey: keys.sites(orgId) }),
+    ])
+}
+
+export function useSaveUnit(orgId: string) {
+  const invalidate = useInvalidateUnits(orgId)
+  return useMutation({
+    mutationFn: async (input: { unit?: BusinessUnit; body: BusinessUnitInput }) => {
+      const r = input.unit
+        ? await api.PATCH('/orgs/{orgId}/business-units/{businessUnitId}', {
+            params: { ...csrfParam, path: { orgId, businessUnitId: input.unit.id } },
+            body: { ...input.body, version: input.unit.version },
+          })
+        : await api.POST('/orgs/{orgId}/business-units', {
+            params: { ...csrfParam, path: { orgId } },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled: invalidate,
+  })
+}
+
+export function useDeleteUnit(orgId: string) {
+  const invalidate = useInvalidateUnits(orgId)
+  return useMutation({
+    mutationFn: async (unitId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/business-units/{businessUnitId}', {
+        params: { ...csrfParam, path: { orgId, businessUnitId: unitId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled: invalidate,
+  })
+}
+
+/** Next free site code for a unit (or shared) and place — ADR-030. */
+export async function suggestSiteCode(
+  orgId: string,
+  businessUnitId: string | null,
+  place: string,
+): Promise<string | null> {
+  const r = await api.GET('/orgs/{orgId}/sites/next-code', {
+    params: { path: { orgId }, query: { place, businessUnitId: businessUnitId ?? undefined } },
+  })
+  return r.data?.code ?? null
+}
+
+/** Client-side check mirroring the server rule (the server stays authoritative). */
+export function siteCodeError(code: string, unitCode: string | null): 'format' | 'prefix' | null {
+  const m = /^([A-Z][A-Z0-9]{1,7})-([A-Z]{2,4})([0-9]{2})$/.exec(code.toUpperCase())
+  if (!m) return 'format'
+  return m[1] === (unitCode ?? 'SHARED') ? null : 'prefix'
+}

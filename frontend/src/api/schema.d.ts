@@ -320,6 +320,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/business-units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Business units of the organization (ADR-026) */
+        get: operations["listBusinessUnits"];
+        put?: never;
+        /** Create a business unit (owner/admin) */
+        post: operations["createBusinessUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/business-units/{businessUnitId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                businessUnitId: components["parameters"]["BusinessUnitId"];
+            };
+            cookie?: never;
+        };
+        /** One business unit */
+        get: operations["getBusinessUnit"];
+        put?: never;
+        post?: never;
+        /** Soft-delete a business unit without live sites (owner/admin) */
+        delete: operations["deleteBusinessUnit"];
+        options?: never;
+        head?: never;
+        /** Edit a business unit; a code change renames the prefix of its site codes (ADR-030) */
+        patch: operations["updateBusinessUnit"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/next-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Next free site code for a unit and place (ADR-030) */
+        get: operations["suggestSiteCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/sites": {
         parameters: {
             query?: never;
@@ -819,13 +883,62 @@ export interface components {
             /** Format: int32 */
             pageSize: number;
         };
+        /** @enum {string} */
+        BusinessUnitRelation: "subsidiary" | "partner" | "customer";
+        BusinessUnitInput: {
+            /** @description ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case) */
+            code: string;
+            name: string;
+            relation?: components["schemas"]["BusinessUnitRelation"];
+            contactName?: string;
+            contactPhone?: string;
+            contactEmail?: string;
+            notes?: string;
+        };
+        BusinessUnitUpdate: components["schemas"]["BusinessUnitInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        BusinessUnit: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            relation: components["schemas"]["BusinessUnitRelation"];
+            contactName: string;
+            contactPhone: string;
+            contactEmail: string;
+            notes: string;
+            /** Format: int64 */
+            siteCount: number;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BusinessUnitList: {
+            businessUnits: components["schemas"]["BusinessUnit"][];
+        };
+        SiteCodeSuggestion: {
+            code: string;
+        };
         /** @description Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only). */
         SiteScopeInput: {
             all: boolean;
             siteIds: string[];
         };
+        /** @enum {string} */
+        SiteKind: "office" | "factory" | "datacenter" | "warehouse" | "store" | "other";
         SiteInput: {
+            /** @description ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN> */
             code: string;
+            kind?: components["schemas"]["SiteKind"];
+            /**
+             * Format: uuid
+             * @description Owning business unit; null = shared by the whole organization (e.g. an IDC)
+             */
+            businessUnitId?: string | null;
+            isp?: string;
             name: string;
             address?: string;
             /** @description IANA time zone (default Asia/Ho_Chi_Minh) */
@@ -843,6 +956,13 @@ export interface components {
             /** Format: uuid */
             id: string;
             code: string;
+            kind: components["schemas"]["SiteKind"];
+            /** Format: uuid */
+            businessUnitId: string | null;
+            /** @description Empty for shared sites */
+            businessUnitCode: string;
+            businessUnitName: string;
+            isp: string;
             name: string;
             address: string;
             timezone: string;
@@ -1013,6 +1133,7 @@ export interface components {
         AuditFrom: string;
         /** @description Exclusive upper bound on the event time */
         AuditTo: string;
+        BusinessUnitId: string;
         SiteId: string;
         LocationId: string;
         RackId: string;
@@ -1640,9 +1761,202 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    listSites: {
+    listBusinessUnits: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessUnitList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createBusinessUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessUnitInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessUnit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getBusinessUnit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                businessUnitId: components["parameters"]["BusinessUnitId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessUnit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteBusinessUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                businessUnitId: components["parameters"]["BusinessUnitId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateBusinessUnit: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                businessUnitId: components["parameters"]["BusinessUnitId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessUnitUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessUnit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    suggestSiteCode: {
+        parameters: {
+            query: {
+                /** @description Owning unit; omit for a shared site (SHARED- prefix) */
+                businessUnitId?: string;
+                /** @description Place abbreviation, 2-4 letters (e.g. HY for Hưng Yên) */
+                place: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteCodeSuggestion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listSites: {
+        parameters: {
+            query?: {
+                /** @description Only sites of this business unit */
+                businessUnitId?: string;
+                /** @description Only organization-wide (shared) sites */
+                shared?: boolean;
+            };
             header?: never;
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */

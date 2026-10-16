@@ -28,6 +28,7 @@ type Querier interface {
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error)
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
@@ -47,6 +48,7 @@ type Querier interface {
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
 	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
 	// Organizations and memberships (P1-03, ADR-016, ADR-023).
@@ -57,7 +59,7 @@ type Querier interface {
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
-	GetSite(ctx context.Context, arg GetSiteParams) (Site, error)
+	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
 	// MFA data is per user (global, not tenant-scoped).
 	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
@@ -67,6 +69,8 @@ type Querier interface {
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
+	// Business units (P1-07, ADR-026). Every query takes organization_id.
+	ListBusinessUnits(ctx context.Context, organizationID pgtype.UUID) ([]ListBusinessUnitsRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
@@ -75,8 +79,11 @@ type Querier interface {
 	// @q must already have LIKE wildcards escaped by the caller.
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
+	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
+	ListSiteCodesWithPrefix(ctx context.Context, arg ListSiteCodesWithPrefixParams) ([]string, error)
 	// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id; @scope (NULL = all sites)
 	// applies the member's site_scope.
+	// @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 	ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error)
 	// System-level events only (no organization): sign-ins, MFA, user administration (ADR-023).
 	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
@@ -86,14 +93,18 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
+	// ADR-030: site codes carry the unit code; renaming the unit renames the prefix of its live sites.
+	RenameUnitSitePrefix(ctx context.Context, arg RenameUnitSitePrefixParams) (int64, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
+	SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusinessUnitParams) (BusinessUnit, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
+	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).

@@ -132,9 +132,11 @@ func (q *Queries) CreateRack(ctx context.Context, arg CreateRackParams) (Rack, e
 }
 
 const createSite = `-- name: CreateSite :one
-INSERT INTO sites (organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+INSERT INTO sites (organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes,
+                   kind, business_unit_id, isp)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10, $11, $12)
+RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version, kind, business_unit_id, isp
 `
 
 type CreateSiteParams struct {
@@ -147,6 +149,9 @@ type CreateSiteParams struct {
 	ContactPhone   string
 	ContactEmail   string
 	Notes          string
+	Kind           string
+	BusinessUnitID pgtype.UUID
+	Isp            string
 }
 
 func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error) {
@@ -160,6 +165,9 @@ func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, e
 		arg.ContactPhone,
 		arg.ContactEmail,
 		arg.Notes,
+		arg.Kind,
+		arg.BusinessUnitID,
+		arg.Isp,
 	)
 	var i Site
 	err := row.Scan(
@@ -177,6 +185,9 @@ func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Kind,
+		&i.BusinessUnitID,
+		&i.Isp,
 	)
 	return i, err
 }
@@ -274,9 +285,11 @@ func (q *Queries) GetRack(ctx context.Context, arg GetRackParams) (Rack, error) 
 }
 
 const getSite = `-- name: GetSite :one
-SELECT id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version FROM sites
-WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
-  AND ($3::uuid[] IS NULL OR id = ANY ($3::uuid[]))
+SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version, s.kind, s.business_unit_id, s.isp, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name
+FROM sites s
+LEFT JOIN business_units b ON b.id = s.business_unit_id
+WHERE s.id = $1 AND s.organization_id = $2 AND s.deleted_at IS NULL
+  AND ($3::uuid[] IS NULL OR s.id = ANY ($3::uuid[]))
 `
 
 type GetSiteParams struct {
@@ -285,9 +298,31 @@ type GetSiteParams struct {
 	Scope          []pgtype.UUID
 }
 
-func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (Site, error) {
+type GetSiteRow struct {
+	ID               pgtype.UUID
+	OrganizationID   pgtype.UUID
+	Code             string
+	Name             string
+	Address          string
+	Timezone         string
+	ContactName      string
+	ContactPhone     string
+	ContactEmail     string
+	Notes            string
+	DeletedAt        pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	Version          int32
+	Kind             string
+	BusinessUnitID   pgtype.UUID
+	Isp              string
+	BusinessUnitCode string
+	BusinessUnitName string
+}
+
+func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error) {
 	row := q.db.QueryRow(ctx, getSite, arg.ID, arg.OrganizationID, arg.Scope)
-	var i Site
+	var i GetSiteRow
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
@@ -303,6 +338,11 @@ func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (Site, error) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Kind,
+		&i.BusinessUnitID,
+		&i.Isp,
+		&i.BusinessUnitCode,
+		&i.BusinessUnitName,
 	)
 	return i, err
 }
@@ -391,45 +431,93 @@ func (q *Queries) ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, e
 	return items, nil
 }
 
+const listSiteCodesWithPrefix = `-- name: ListSiteCodesWithPrefix :many
+SELECT code::text FROM sites
+WHERE organization_id = $1 AND deleted_at IS NULL AND code::text LIKE $2::text || '%'
+`
+
+type ListSiteCodesWithPrefixParams struct {
+	OrganizationID pgtype.UUID
+	Prefix         string
+}
+
+// Live site codes starting with @prefix (ADR-030 next-code suggestion).
+func (q *Queries) ListSiteCodesWithPrefix(ctx context.Context, arg ListSiteCodesWithPrefixParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listSiteCodesWithPrefix, arg.OrganizationID, arg.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+		items = append(items, code)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSites = `-- name: ListSites :many
 
-SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version,
+SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version, s.kind, s.business_unit_id, s.isp,
+       COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
        (SELECT count(*) FROM locations l WHERE l.site_id = s.id)::bigint AS location_count,
        (SELECT count(*) FROM racks r WHERE r.site_id = s.id)::bigint AS rack_count
 FROM sites s
+LEFT JOIN business_units b ON b.id = s.business_unit_id
 WHERE s.organization_id = $1 AND s.deleted_at IS NULL
   AND ($2::uuid[] IS NULL OR s.id = ANY ($2::uuid[]))
+  AND ($3::uuid IS NULL OR s.business_unit_id = $3)
+  AND (NOT $4::boolean OR s.business_unit_id IS NULL)
 ORDER BY s.code
 `
 
 type ListSitesParams struct {
 	OrganizationID pgtype.UUID
 	Scope          []pgtype.UUID
+	BuFilter       pgtype.UUID
+	OnlyShared     bool
 }
 
 type ListSitesRow struct {
-	ID             pgtype.UUID
-	OrganizationID pgtype.UUID
-	Code           string
-	Name           string
-	Address        string
-	Timezone       string
-	ContactName    string
-	ContactPhone   string
-	ContactEmail   string
-	Notes          string
-	DeletedAt      pgtype.Timestamptz
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
-	LocationCount  int64
-	RackCount      int64
+	ID               pgtype.UUID
+	OrganizationID   pgtype.UUID
+	Code             string
+	Name             string
+	Address          string
+	Timezone         string
+	ContactName      string
+	ContactPhone     string
+	ContactEmail     string
+	Notes            string
+	DeletedAt        pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	Version          int32
+	Kind             string
+	BusinessUnitID   pgtype.UUID
+	Isp              string
+	BusinessUnitCode string
+	BusinessUnitName string
+	LocationCount    int64
+	RackCount        int64
 }
 
 // Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id; @scope (NULL = all sites)
 // applies the member's site_scope.
+// @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error) {
-	rows, err := q.db.Query(ctx, listSites, arg.OrganizationID, arg.Scope)
+	rows, err := q.db.Query(ctx, listSites,
+		arg.OrganizationID,
+		arg.Scope,
+		arg.BuFilter,
+		arg.OnlyShared,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -452,6 +540,11 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSit
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
+			&i.Kind,
+			&i.BusinessUnitID,
+			&i.Isp,
+			&i.BusinessUnitCode,
+			&i.BusinessUnitName,
 			&i.LocationCount,
 			&i.RackCount,
 		); err != nil {
@@ -468,7 +561,7 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSit
 const softDeleteSite = `-- name: SoftDeleteSite :one
 UPDATE sites SET deleted_at = now(), version = version + 1
 WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
-RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version, kind, business_unit_id, isp
 `
 
 type SoftDeleteSiteParams struct {
@@ -494,6 +587,9 @@ func (q *Queries) SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Kind,
+		&i.BusinessUnitID,
+		&i.Isp,
 	)
 	return i, err
 }
@@ -585,9 +681,10 @@ func (q *Queries) UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, e
 const updateSite = `-- name: UpdateSite :one
 UPDATE sites SET code = $1, name = $2, address = $3, timezone = $4,
                  contact_name = $5, contact_phone = $6, contact_email = $7,
-                 notes = $8, version = version + 1
-WHERE id = $9 AND organization_id = $10 AND deleted_at IS NULL AND version = $11
-RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+                 notes = $8, kind = $9, business_unit_id = $10, isp = $11,
+                 version = version + 1
+WHERE id = $12 AND organization_id = $13 AND deleted_at IS NULL AND version = $14
+RETURNING id, organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version, kind, business_unit_id, isp
 `
 
 type UpdateSiteParams struct {
@@ -599,6 +696,9 @@ type UpdateSiteParams struct {
 	ContactPhone   string
 	ContactEmail   string
 	Notes          string
+	Kind           string
+	BusinessUnitID pgtype.UUID
+	Isp            string
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
 	Version        int32
@@ -614,6 +714,9 @@ func (q *Queries) UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, e
 		arg.ContactPhone,
 		arg.ContactEmail,
 		arg.Notes,
+		arg.Kind,
+		arg.BusinessUnitID,
+		arg.Isp,
 		arg.ID,
 		arg.OrganizationID,
 		arg.Version,
@@ -634,6 +737,9 @@ func (q *Queries) UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.Kind,
+		&i.BusinessUnitID,
+		&i.Isp,
 	)
 	return i, err
 }
