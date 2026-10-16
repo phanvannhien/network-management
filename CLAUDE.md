@@ -27,7 +27,7 @@ Tài liệu nguồn:
   openapi-typescript + openapi-fetch (client sinh từ OpenAPI), ipaddr.js, ajv (file import/export),
   SheetJS (Excel import/export), html-to-image, react-i18next, Dexie (chỉ lưu nháp chưa gửi), Vitest, Playwright.
 - **Backend:** Go (stable mới nhất), chi, oapi-codegen (server types từ OpenAPI), pgx v5, sqlc, golang-migrate,
-  log/slog, golang.org/x/crypto (argon2id, ssh — Phase 4), pquerna/otp (TOTP), coreos/go-oidc (SSO — Phase 2),
+  log/slog, golang.org/x/crypto (argon2id, ssh — Phase 4), golang.org/x/term (ẩn mật khẩu CLI, ADR-022), pquerna/otp (TOTP), coreos/go-oidc (SSO — Phase 2),
   santhosh-tekuri/jsonschema (validate file import), gosnmp (Phase 3).
 - **Database:** PostgreSQL 16.
 - **Deploy:** Docker Compose: `web` (Nginx: frontend tĩnh + proxy `/api`), `api` (Go), `db` (Postgres).

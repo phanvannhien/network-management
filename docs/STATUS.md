@@ -5,6 +5,16 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — ADR-022 Xóa mềm + ẩn mật khẩu CLI
+- Đã làm:
+  - ADR-022 (người dùng chốt): user/tổ chức không xóa cứng khi có dữ liệu liên quan — xóa mềm qua `users.disabled_at` / `organizations.deleted_at`; thêm `golang.org/x/term` vào Stack (CLAUDE.md cập nhật).
+  - Migration `000003_soft_delete`: FK `audit_log` → users/organizations đổi `ON DELETE SET NULL` → `RESTRICT` (sửa lỗi P0-04: SET NULL đụng trigger append-only); thêm `organizations.deleted_at`.
+  - `ntb admin create`: trên terminal gõ mật khẩu ẩn + nhập lại xác nhận; stdin là pipe/file thì đọc 1 dòng như cũ.
+- Test / cách kiểm tra: test DB mới — xóa cứng user/tổ chức có audit → lỗi FK 23503 rõ ràng, user không liên quan xóa được, xóa mềm hoạt động; test auth — user bị vô hiệu hóa mất session và không đăng nhập được. Migration 000003 down/up chạy được; CLI kiểu pipe chạy thật trên DB tạm (đã xóa) và xóa cứng user đó bị chặn bởi `audit_log_actor_user_id_fkey`. `make check` pass. Docker api build lại, migration tự áp.
+- Còn dở / lỗi đã biết: chế độ gõ ẩn cần terminal thật — chưa kiểm tra tự động, nhờ người dùng thử tay. Các truy vấn danh sách tổ chức (P1-03) phải lọc `deleted_at IS NULL`.
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-02 MFA TOTP.
+
 ## 2026-10-16 — P1-01 Đăng nhập (+ tick P0-05)
 - Đã làm:
   - Migration `000002_session_csrf` (csrf_token theo session). Query sqlc `auth.sql` (user, lockout, session, audit).

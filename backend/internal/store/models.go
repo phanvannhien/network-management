@@ -45,6 +45,7 @@ type Organization struct {
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
 	Version   int32
+	DeletedAt pgtype.Timestamptz
 }
 
 type Session struct {

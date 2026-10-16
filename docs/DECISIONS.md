@@ -111,3 +111,12 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Quyết định:** frontend lint bằng oxlint (thay ESLint ghi trong PLAN), kèm Prettier. Cổng web mặc định trong Compose là 8068 (đổi qua `WEB_PORT`).
 - **Lý do:** oxlint đã chạy ổn trong repo, nhanh hơn ESLint nhiều lần, đủ rule cho React/TS; cổng 8080 trùng dịch vụ khác trên máy phát triển.
 - **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-022 — Xóa mềm cho user và tổ chức; thêm golang.org/x/term
+- **Quyết định:** user và tổ chức không bị xóa cứng khi đã có dữ liệu liên quan (audit, …). Ứng dụng xóa mềm:
+  user qua `disabled_at`, tổ chức qua `deleted_at`. Khóa ngoại từ `audit_log` tới `users`/`organizations` là `ON DELETE RESTRICT`
+  (xóa cứng bản ghi đã có audit sẽ bị chặn với lỗi rõ ràng); xóa cứng chỉ thành công khi không còn dữ liệu nào tham chiếu.
+  Thêm `golang.org/x/term` vào Stack backend để ẩn mật khẩu khi gõ ở CLI (`ntb admin create`).
+- **Lý do:** audit log phải giữ nguyên tối thiểu 1 năm (SRS §10) và append-only; FK `ON DELETE SET NULL` cũ mâu thuẫn với trigger
+  chặn UPDATE nên xóa user/tổ chức báo lỗi khó hiểu. Mật khẩu gõ tay không được hiện trên màn hình.
+- **Chốt:** người dùng xác nhận 2026-10-16.

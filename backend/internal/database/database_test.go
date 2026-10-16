@@ -120,6 +120,44 @@ func TestSchemaConstraints(t *testing.T) {
 	})
 }
 
+// ADR-022: rows referenced by audit_log cannot be hard-deleted (clear FK error); unreferenced rows can.
+func TestHardDeleteBlockedByAudit(t *testing.T) {
+	pool, _ := testdb.New(t)
+	ctx := context.Background()
+
+	var orgID, userID, freeUserID string
+	if err := pool.QueryRow(ctx, `INSERT INTO organizations (name) VALUES ('Org') RETURNING id`).Scan(&orgID); err != nil {
+		t.Fatalf("insert org: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO users (email, password_hash) VALUES ('u@example.com', 'x') RETURNING id`).Scan(&userID); err != nil {
+		t.Fatalf("insert user: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO users (email, password_hash) VALUES ('free@example.com', 'x') RETURNING id`).Scan(&freeUserID); err != nil {
+		t.Fatalf("insert user: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO audit_log (organization_id, actor_user_id, action) VALUES ($1, $2, 'test')`, orgID, userID); err != nil {
+		t.Fatalf("insert audit: %v", err)
+	}
+
+	_, err := pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
+	expectSQLState(t, err, "23503") // foreign_key_violation (not the trigger's P0001)
+	_, err = pool.Exec(ctx, `DELETE FROM organizations WHERE id = $1`, orgID)
+	expectSQLState(t, err, "23503")
+
+	if _, err := pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, freeUserID); err != nil {
+		t.Fatalf("unreferenced user should be deletable: %v", err)
+	}
+
+	// Soft delete is the supported path.
+	if _, err := pool.Exec(ctx, `UPDATE organizations SET deleted_at = now() WHERE id = $1`, orgID); err != nil {
+		t.Fatalf("soft delete org: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE users SET disabled_at = now() WHERE id = $1`, userID); err != nil {
+		t.Fatalf("soft delete user: %v", err)
+	}
+}
+
 func expectSQLState(t *testing.T, err error, code string) {
 	t.Helper()
 	var pgErr *pgconn.PgError

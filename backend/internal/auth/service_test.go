@@ -124,6 +124,26 @@ func TestExpiredSessionRejected(t *testing.T) {
 	}
 }
 
+// Soft-deleted (disabled) users cannot sign in and lose existing sessions (ADR-022).
+func TestDisabledUserCannotLogin(t *testing.T) {
+	svc, _, pool := newTestService(t)
+	ctx := context.Background()
+	_, _ = svc.CreateUser(ctx, "d@example.com", "D", "a-strong-password", false)
+	res, err := svc.Login(ctx, "d@example.com", "a-strong-password", meta)
+	if err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE users SET disabled_at = now() WHERE email = 'd@example.com'`); err != nil {
+		t.Fatalf("disable: %v", err)
+	}
+	if _, err := svc.Lookup(ctx, res.Token); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("disabled user's session still valid: %v", err)
+	}
+	if _, err := svc.Login(ctx, "d@example.com", "a-strong-password", meta); !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("disabled user logged in: %v", err)
+	}
+}
+
 func TestCreateUserRejectsShortPassword(t *testing.T) {
 	svc, _, _ := newTestService(t)
 	if _, err := svc.CreateUser(context.Background(), "x@example.com", "", "short", false); err == nil {

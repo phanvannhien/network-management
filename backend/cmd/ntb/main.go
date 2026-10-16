@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/term"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
@@ -129,9 +130,9 @@ func cleanupExpiredSessions(ctx context.Context, logger *slog.Logger, q *store.Q
 	}
 }
 
-// adminCreate creates the first system admin (P1-01). The password comes from stdin so it never
-// appears in shell history or the process list: `ntb admin create --email a@b.c < password.txt`.
-func adminCreate(logger *slog.Logger, args []string, stdin io.Reader, stderr io.Writer) error {
+// adminCreate creates the first system admin (P1-01). The password never appears in shell history or the
+// process list: typed at a hidden prompt (twice) on a terminal, or piped: `ntb admin create --email a@b.c < pw.txt`.
+func adminCreate(logger *slog.Logger, args []string, stdin *os.File, stderr io.Writer) error {
 	fs := flag.NewFlagSet("admin create", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	email := fs.String("email", "", "admin email (required)")
@@ -143,13 +144,10 @@ func adminCreate(logger *slog.Logger, args []string, stdin io.Reader, stderr io.
 		return errors.New("--email is required")
 	}
 
-	_, _ = fmt.Fprintf(stderr, "Password for %s (min %d chars, read from stdin): ", *email, auth.MinPasswordLength)
-	line, err := bufio.NewReader(stdin).ReadString('\n')
-	if err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("read password: %w", err)
+	password, err := readPassword(stdin, stderr, *email)
+	if err != nil {
+		return err
 	}
-	password := strings.TrimRight(line, "\r\n")
-	_, _ = fmt.Fprintln(stderr)
 
 	cfg := config.Load()
 	ctx := context.Background()
@@ -168,4 +166,33 @@ func adminCreate(logger *slog.Logger, args []string, stdin io.Reader, stderr io.
 	}
 	_, _ = fmt.Fprintf(stderr, "Created system admin %s (%x)\n", user.Email, user.ID.Bytes)
 	return nil
+}
+
+// readPassword prompts without echo on a terminal (ADR-022, golang.org/x/term) and asks for confirmation;
+// when stdin is a pipe or file it reads a single line instead.
+func readPassword(stdin *os.File, stderr io.Writer, email string) (string, error) {
+	fd := int(stdin.Fd())
+	if !term.IsTerminal(fd) {
+		line, err := bufio.NewReader(stdin).ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return "", fmt.Errorf("read password: %w", err)
+		}
+		return strings.TrimRight(line, "\r\n"), nil
+	}
+	_, _ = fmt.Fprintf(stderr, "Password for %s (min %d chars): ", email, auth.MinPasswordLength)
+	first, err := term.ReadPassword(fd)
+	_, _ = fmt.Fprintln(stderr)
+	if err != nil {
+		return "", fmt.Errorf("read password: %w", err)
+	}
+	_, _ = fmt.Fprint(stderr, "Repeat password: ")
+	second, err := term.ReadPassword(fd)
+	_, _ = fmt.Fprintln(stderr)
+	if err != nil {
+		return "", fmt.Errorf("read password: %w", err)
+	}
+	if string(first) != string(second) {
+		return "", errors.New("passwords do not match")
+	}
+	return string(first), nil
 }
