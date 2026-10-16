@@ -129,3 +129,17 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** nhân viên MSP mở nhiều tab cho nhiều khách hàng cùng lúc mà không lẫn dữ liệu; link chia sẻ trỏ đúng tổ chức;
   một tài khoản quản trị bị lộ không tự động lộ dữ liệu mọi khách hàng; mọi truy cập đi qua membership nên truy vết được.
 - **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-024 — Hệ thống thiết kế giao diện (NMS)
+- **Quyết định:** giao diện theo `docs/DESIGN.md`: AppShell sidebar thu gọn (tự thu thành icon khi < 1440px); topbar luôn hiện
+  tổ chức hiện tại kèm avatar chữ viết tắt + màu cố định; khu vực Hệ thống có dải màu riêng; bảng là thành phần chính
+  (cuộn ngang trong khung, ghim cột chọn + hostname); token màu riêng (accent aqua OM3, nền NOC tối) cho Light/Dark;
+  màu trạng thái cố định + icon + chữ; IBM Plex Sans/Mono đóng gói qua @fontsource (không Google Fonts), mono chỉ cho dữ liệu kỹ thuật;
+  mật độ Gọn/Thoáng; xác nhận phá hủy 2 mức; `SecretField` cho bí mật; component dùng chung trong `frontend/src/components/`.
+  Thêm thư viện: @tanstack/react-table, cmdk, sonner, recharts, @fontsource/ibm-plex-sans, @fontsource/ibm-plex-mono,
+  @axe-core/playwright (dev); gỡ @fontsource-variable/geist. react-i18next/i18next (đã có trong Stack) cài từ bước này.
+  API thêm `Health.environment` (env `NTB_ENV`) và `AuthSession.expiresAt` để hiện badge môi trường và cảnh báo hết phiên.
+- **Lý do:** người dùng là kỹ sư mạng cần mật độ thông tin cao, quét trạng thái nhanh; nhân viên MSP làm nhiều tổ chức cùng lúc
+  phải luôn biết đang ở tổ chức nào; app chạy trong mạng không Internet.
+- **Ràng buộc:** mọi trang mới dùng component dùng chung; không màu/kích thước viết cứng ngoài token; đạt WCAG AA; nhãn qua i18n.
+- **Chốt:** người dùng xác nhận 2026-10-16 (kèm 10 chỉnh sửa ghi trong DESIGN.md §8b, đánh dấu ✎).

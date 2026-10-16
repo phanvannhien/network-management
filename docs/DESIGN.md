@@ -1,6 +1,6 @@
 # Hệ thống thiết kế giao diện — Network Topology Builder
 
-Trạng thái: **bản đề xuất (Bước 1)**, chờ duyệt. Ảnh hiện trạng: `docs/ui-screens/before/` (1440px, Light + Dark).
+Trạng thái: **đã duyệt 2026-10-16** (ADR-024) kèm 10 chỉnh sửa của người dùng (đánh dấu ✎). Ảnh hiện trạng: `docs/ui-screens/before/` (1440px, Light + Dark).
 
 ---
 
@@ -93,8 +93,10 @@ Bước 2 sẽ kiểm tra lại bằng công cụ trên ảnh chụp thật (axe
 
 | Vai trò | Font | Cỡ / dòng | Ghi chú |
 |---|---|---|---|
-| Giao diện | **IBM Plex Sans** (400, 500, 600) | 13px / 20px mặc định | hỗ trợ đủ tiếng Việt |
-| Dữ liệu kỹ thuật | **IBM Plex Mono** (400, 500) | 12.5px / 20px | IP, MAC, S/N, part number, tên cổng, VLAN ID, hostname trong bảng |
+| Bảng, danh sách, menu, thanh lọc | **IBM Plex Sans** (400, 500, 600) | **13px / 20px** ✎ | hỗ trợ đủ tiếng Việt |
+| Form, trang đăng nhập/MFA, đoạn giải thích | Plex Sans 400 | **14px / 22px** ✎ | dễ đọc khi nhập liệu |
+| Dữ liệu kỹ thuật | **IBM Plex Mono** (400, 500) | 12.5px / 20px | **chỉ** IP, MAC, S/N, part number, tên cổng, VLAN ID ✎ |
+| Hostname / tên đối tượng trong bảng | Plex Sans **500** | 13px | là link mở trang chi tiết, không dùng mono ✎ |
 | Tiêu đề trang | Plex Sans 600 | 18px / 28px | chỉ một H1/trang |
 | Tiêu đề khối | Plex Sans 600 | 14px / 20px | |
 | Nhãn / header bảng | Plex Sans 500 | 12px / 16px | `--text-muted`, không viết hoa toàn bộ |
@@ -146,8 +148,19 @@ Bước 2 sẽ kiểm tra lại bằng công cụ trên ảnh chụp thật (axe
   220px (thu gọn: 48px chỉ icon + tooltip; màn vẽ tự thu gọn — ADR-020)
 ```
 
-- Topbar: org switcher (chỉ hiện khi > 1 tổ chức), breadcrumb, Ctrl+K, thông báo, menu tài khoản (hồ sơ, MFA, giao diện
-  Light/Dark/System, mật độ, đăng xuất).
+- Topbar: **tên tổ chức hiện tại luôn hiện**, kể cả khi user chỉ có 1 tổ chức (bấm để đổi khi có > 1) ✎; breadcrumb, Ctrl+K,
+  thông báo, menu tài khoản (hồ sơ, MFA, giao diện Light/Dark/System, mật độ, đăng xuất).
+- **Avatar tổ chức** ✎: 2 chữ viết tắt (chữ đầu 2 từ đầu, vd "Văn phòng mẫu" → "VP"), nền chọn cố định theo id tổ chức từ bảng
+  8 màu tránh màu trạng thái (xanh lá/đỏ/hổ phách): teal `#0B6F79`, blue `#2458A6`, indigo `#4A4FB0`, plum `#8A3F7E`,
+  rust `#A1461D`, slate `#4A5868`, olive `#5B6620`, cocoa `#7A5230` — chữ trắng ≥ 5.89:1; ở Dark thêm viền 1px `border-control`.
+- **Khu vực hệ thống** (`/admin/*`, system admin) ✎: dải 4px + nhãn "Hệ thống" nền `#7A3E00` chữ trắng (8.34:1) ở đầu topbar,
+  thay avatar tổ chức bằng icon khiên; breadcrumb bắt đầu bằng "Hệ thống". Không thể nhầm với trang của một tổ chức.
+- **Badge môi trường** ✎: chỉ hiện khi API báo `environment ≠ production` (vd nhãn "Development" viền hổ phách) cạnh logo.
+  Tình trạng API/DB không hiện trên trang nghiệp vụ; chuyển vào trang Hệ thống › Tình trạng (Bước 3).
+- **Cảnh báo phiên sắp hết hạn** ✎: 2 phút trước `expiresAt` hiện thông báo dính đầu trang "Phiên sẽ hết hạn sau 1:59" +
+  nút "Gia hạn phiên"; hết hạn → chuyển trang đăng nhập, giữ `next`. Phiên đã chạm giới hạn tuyệt đối 7 ngày thì nút đổi thành
+  "Đăng nhập lại".
+- **Màn hình < 1440px** ✎: sidebar tự thu gọn thành icon (48px, tooltip); người dùng vẫn mở rộng tạm được.
 - Module chưa làm thì ẩn khỏi menu (PLAN P1-06). Mục "Quản trị" chỉ hiện với owner/admin/system admin.
 - Trang lỗi 404 / không có quyền / mất kết nối nằm trong khung, có nút quay lại.
 
@@ -176,7 +189,8 @@ Bước 2 sẽ kiểm tra lại bằng công cụ trên ảnh chụp thật (axe
 │ 1–50 / 1.284              Số dòng: [50 ▾]                         ‹ 1 2 3 … 26 ›             │ phân trang server
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
-- IP/hostname mono; hover hiện nút copy. Click dòng → trang chi tiết; ⋯ = menu hành động dòng.
+- IP mono, hostname Plex Sans 500 là link ✎; hover hiện nút copy cho giá trị kỹ thuật. ⋯ = menu hành động dòng.
+- **Bảng rộng hơn khung**: cuộn ngang **trong khung bảng** (không cuộn cả trang), **ghim cột checkbox + hostname** bên trái, header dính khi cuộn dọc ✎.
 - Cấu hình cột (ẩn/hiện, thứ tự, độ rộng) và bộ lọc đã lưu: lưu theo user.
 
 ### b) Trang chi tiết thiết bị
@@ -257,6 +271,33 @@ Sửa vai trò/quyền mở **sheet bên phải** (không sửa inline bằng 3 
 
 ---
 
+## 8b. Bổ sung đã duyệt ✎
+
+**Xác nhận phá hủy 2 mức**
+- Mức 1 — `ConfirmDialog`: hành động thường (gỡ thành viên, vô hiệu hóa user, xóa 1 thiết bị khỏi sơ đồ). Nút xác nhận đỏ ghi rõ
+  hành động ("Gỡ khỏi tổ chức"), nút hủy được focus mặc định.
+- Mức 2 — gõ lại tên: hành động nặng/khó hoàn tác (xóa tổ chức, xóa site, xóa hàng loạt khỏi kho). Nút xác nhận chỉ bật khi gõ
+  đúng tên (vd tên tổ chức, hoặc "Xóa 12 thiết bị"); dialog liệt kê hậu quả.
+
+**Trang xác thực (đăng nhập, MFA, kích hoạt)**
+- Tên sản phẩm + phiên bản (từ `/api/healthz`) ở đầu card; badge môi trường nếu không phải production.
+- Đăng nhập: nút hiện/ẩn mật khẩu (icon mắt, có aria-label); link "Quên mật khẩu?" → trang hướng dẫn liên hệ quản trị viên
+  (chưa có SMTP — system admin cấp link đặt lại, P2-05 mới gửi email).
+- Ô mã MFA: `inputmode="numeric"`, `autocomplete="one-time-code"`, chỉ nhận số, **tự gửi khi đủ 6 số**, font mono cỡ lớn.
+- Thiết lập MFA: khóa nhập tay chia nhóm 4 ký tự (`ABCD EFGH …`, mono) + nút copy. Sau khi bật **bắt buộc bước mã khôi phục**:
+  danh sách mono, nút "Sao chép" và "Tải file .txt", checkbox "Tôi đã lưu mã khôi phục ở nơi an toàn" — nút "Tiếp tục" chỉ bật khi đã tick.
+
+**SecretField** (mật khẩu thiết bị, tài khoản cloud — dùng từ P2-02; trình bày trước ở /dev/ui với dữ liệu giả)
+- Mặc định `••••••••`; nút "Hiện" và "Copy".
+- Nếu lần xác thực MFA gần nhất > 5 phút: mở dialog nhập mã MFA (ô mã như trên) trước khi hiện/copy (ADR-018).
+- Đã hiện: tự che lại sau 30 giây, có đếm ngược trên nút ("Che (25)"). Copy: toast "Đã copy — clipboard tự xóa sau 30 giây",
+  sau 30 giây ghi đè clipboard bằng chuỗi rỗng.
+- Không bao giờ đưa giá trị bí mật vào URL, title, log hay thuộc tính `aria-label`.
+
+**Editor sơ đồ** (làm ở Bước 3)
+- Minimap, Controls, panel, nền lưới của React Flow dùng token màu (Light/Dark); panel Problems không đè Controls/minimap.
+- Mọi nhãn qua i18n (react-i18next) — bỏ "Snap to grid", "Fit", "Lock", tên nhóm thiết bị tiếng Anh viết hoa.
+
 ## 9. Thư viện đề xuất
 
 | Thư viện | Lý do | Ghi chú |
@@ -268,6 +309,7 @@ Sửa vai trò/quyền mở **sheet bên phải** (không sửa inline bằng 3 
 | `@fontsource/ibm-plex-sans`, `@fontsource/ibm-plex-mono` | Font đóng gói, chạy không Internet | thay `@fontsource-variable/geist` (gỡ) |
 | `lucide-react` | Icon | **đã có** |
 | `@axe-core/playwright` (dev) | Kiểm tra WCAG AA tự động trên trang thật ở Bước 2 | chỉ dev |
+| `react-i18next` + `i18next` | Nhãn vi/en (đã có trong Stack, cài từ Bước 2 để component mới dùng ngay) | |
 
 Thành phần shadcn/ui (copy vào `src/components/ui`, preset Base UI hiện tại): sidebar, breadcrumb, dropdown-menu, dialog,
 sheet, select, tabs, tooltip, popover, command, badge, skeleton, table, checkbox, input, label, button, separator.
@@ -275,7 +317,7 @@ Lấy **cấu trúc** từ block chính thức (sidebar-07 thu gọn thành icon
 
 ---
 
-## 10. Đề xuất ADR-024 — Hệ thống thiết kế giao diện
+## 10. ADR-024 — Hệ thống thiết kế giao diện (đã ghi vào DECISIONS.md)
 
 - **Quyết định:** giao diện theo `docs/DESIGN.md`: AppShell sidebar thu gọn; bảng là thành phần chính; token màu riêng
   (accent aqua OM3, nền NOC tối) cho Light/Dark; màu trạng thái cố định + icon + chữ; IBM Plex Sans/Mono đóng gói qua
