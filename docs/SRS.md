@@ -21,8 +21,8 @@ nối với nhau thế nào, mua của ai, còn bảo hành không, đăng nhậ
 **Nguyên tắc dữ liệu (ADR-015):** database là nguồn sự thật. Thiết bị, interface, IP, link tồn tại độc lập; sơ đồ là góc nhìn
 lên dữ liệu đó. Sửa IP ở sơ đồ hay ở danh sách thiết bị đều là sửa cùng một bản ghi.
 
-**Phân cấp:** Tổ chức → Đơn vị → Site → Location → Rack → Thiết bị (ADR-026). Ví dụ: Tổ chức CJ → Đơn vị CJ Agri Deheus →
-Site Nhà máy Bình Định → (Location) Phòng server → Rack R1.
+**Phân cấp:** Tổ chức → Đối tác → Đơn vị → Site → Location → Rack → Thiết bị (ADR-026, ADR-031). Ví dụ: Tổ chức CJ →
+Đối tác CJ Agri Deheus → Đơn vị Deheus nhà máy → Site AGRI-BD01 Nhà máy Bình Định → (Location) Phòng server → Rack R1.
 
 ## §2. Giao diện tổng & điều hướng (ADR-020)
 
@@ -37,7 +37,7 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 | Sơ đồ | Danh sách sơ đồ theo site, mở màn hình vẽ | 1 |
 | Thiết bị | Bảng kho thiết bị, lọc/sắp xếp/cột tùy chọn, chi tiết thiết bị | 1 |
 | IPAM | VLAN, Subnet, dải IP, mức sử dụng | 1 |
-| Đơn vị & Sites | Đơn vị → Site → tòa nhà → tầng → phòng → rack | 1 |
+| Đơn vị & Sites | Đối tác → Đơn vị → Site → tòa nhà → tầng → phòng → rack | 1 |
 | Đối tác | Nhà cung cấp, hãng, ISP, đơn vị bảo trì; liên hệ; hợp đồng | 2 |
 | Kho mật khẩu & Cloud | Credential thiết bị, tài khoản cloud | 2 |
 | Giám sát | Trạng thái live, SNMP profile | 3 |
@@ -51,11 +51,13 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 - **Thêm nhanh:** nhấn `/` hoặc double-click canvas → ô tìm kiếm → Enter để đặt thiết bị.
 - **Panel thuộc tính** bên phải; **panel Problems** phía dưới (thu gọn được).
 
-## §3. Tổ chức, Đơn vị, Site, Location
+## §3. Tổ chức, Đối tác, Đơn vị, Site, Location
 
 - **Organization:** tên, loại (internal/customer), logo, ghi chú, cấu hình riêng (SMTP nhận cảnh báo, chu kỳ SNMP).
-- **Đơn vị:** tên, mã (quy tắc ADR-030, vd `AGRI`), loại quan hệ (công ty con / đối tác / khách hàng của tổ chức), người liên hệ, ghi chú. Mỗi đơn vị có nhiều site.
-- **Site:** mã (quy tắc ADR-030, vd `AGRI-BD01`, site dùng chung `SHARED-HCM01`), tên, loại (văn phòng / nhà máy / trung tâm dữ liệu / kho / cửa hàng / khác), đơn vị (hoặc 'dùng chung' cho cả tổ chức),
+- **Đối tác:** tên, mã (vd `AGRI`, duy nhất trong tổ chức), quan hệ với tổ chức (công ty con / đối tác / khách hàng), người liên hệ, ghi chú.
+  Mỗi đối tác có một hoặc nhiều đơn vị (ADR-031).
+- **Đơn vị:** thuộc đúng một đối tác; tên, mã (duy nhất trong đối tác, vd `NM`), người liên hệ, ghi chú. Mỗi đơn vị có nhiều site.
+- **Site:** mã `<MÃ ĐỐI TÁC>-<địa điểm><NN>` (ADR-030/031, vd `AGRI-BD01`, site dùng chung `SHARED-HCM01`), tên, loại (văn phòng / nhà máy / trung tâm dữ liệu / kho / cửa hàng / khác), đơn vị (hoặc 'dùng chung' cho cả tổ chức),
   địa chỉ, múi giờ, người liên hệ tại chỗ, nhà mạng/đường truyền chính, ghi chú.
 - **Location:** cây phân cấp trong site: tòa nhà → tầng → phòng/tủ. Không dùng ô gõ tự do để tránh "Tầng 3"/"T3"/"Floor 3".
 - **Rack:** thuộc location, số U (mặc định 42), view mặt trước với thiết bị chiếm U.
@@ -231,10 +233,11 @@ username, credential (local/external), người giữ thiết bị MFA, gói d�
   khóa tạm sau nhiều lần sai; đặt lại mật khẩu qua email (khi có SMTP). SSO OIDC (Entra ID, Google Workspace, Keycloak) ở Phase 2.
 - **Vai trò theo tổ chức:** owner (toàn quyền, quản lý thanh toán/cài đặt), admin (quản lý user, dữ liệu), editor (sửa dữ liệu), viewer (chỉ xem).
   Quyền bổ sung: `credential.reveal`, `credential.manage`, `user.manage`.
-  Giới hạn phạm vi theo đơn vị (vd IT của CJ Foodville chỉ thấy đơn vị Foodville).
-  **Phân quyền động (ADR-029):** user được giao một hoặc nhiều đơn vị với vai trò `bu_admin`/`editor`/`viewer` (thấy hợp các đơn vị);
-  bu_admin tự mời và phân quyền user trong đơn vị mình; bản ghi (trước mắt là site, vd IDC dùng chung) được chia sẻ cho từng đơn vị
-  với quyền xem/sửa; bộ chọn đơn vị trên topbar để xem theo đối tác. Thay cho giới hạn theo site.
+  Giới hạn phạm vi theo đối tác hoặc đơn vị (vd IT của CJ Agri Deheus thấy mọi đơn vị của Deheus; IT nhà máy chỉ thấy đơn vị nhà máy).
+  **Phân quyền động (ADR-029, ADR-031):** user được giao ở cấp đối tác (`partner_admin`/`editor`/`viewer`, hiệu lực với mọi đơn vị
+  của đối tác) hoặc cấp đơn vị (`unit_admin`/`editor`/`viewer`); thấy hợp các cấp được giao. partner_admin/unit_admin tự mời và phân
+  quyền user, tạo/sửa đơn vị và site trong phạm vi của mình; bản ghi (trước mắt là site, vd IDC dùng chung) được chia sẻ cho đối tác
+  hoặc đơn vị với quyền xem/sửa; bộ chọn đối tác/đơn vị trên topbar. Thay cho giới hạn theo site.
 - **System admin:** quản trị toàn hệ thống (tạo tổ chức, sao lưu, cài đặt chung); dành cho bên vận hành hệ thống/MSP.
 - **Link chia sẻ chỉ xem (P2):** cho một sơ đồ, token có hạn, tùy chọn mật khẩu, tùy chọn ẩn IP; thu hồi được.
 - **Audit log:** mọi thao tác ghi (trước/sau), đăng nhập, xem mật khẩu, export; lọc theo người/thời gian/đối tượng; giữ tối thiểu 1 năm.
@@ -294,8 +297,8 @@ PostgreSQL, dữ liệu quan hệ. Mọi bảng nghiệp vụ có `id` (UUID), `
 
 | Nhóm | Bảng chính |
 | --- | --- |
-| Hệ thống & người dùng | organizations, users, memberships (user, org, role, permissions, site_scope), sessions, mfa_totp, sso_providers (P2), share_links (P2), audit_log |
-| Vị trí | business_units, sites (business_unit_id null được, kind), locations (parent_id, kind: building/floor/room), racks |
+| Hệ thống & người dùng | organizations, users, memberships (user, org, role, permissions), partner_members, business_unit_members, resource_shares (target: partner/unit), sessions, mfa_totp, sso_providers (P2), share_links (P2), audit_log |
+| Vị trí | partners, business_units (partner_id), sites (business_unit_id null được = dùng chung, kind), locations (parent_id, kind: building/floor/room), racks |
 | Kho | device_types/templates, devices, device_clusters, interfaces, ip_addresses (interface_id hoặc device_id, address, vrf, role: primary/secondary/nat/public), custom_field_defs, tags |
 | IPAM | vlans, subnets, ip_ranges |
 | Sơ đồ logic | endpoint_groups, endpoint_members, segments (P2), links (a_kind, a_id, a_interface_id null được; b_…; kind, medium, speed, status…) |

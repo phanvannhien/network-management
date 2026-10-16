@@ -170,6 +170,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   (mặc định lấy theo site; bắt buộc chọn khi site dùng chung). Location (tòa/tầng/phòng) và Rack không bắt buộc.
   Phân quyền: membership có thể giới hạn theo danh sách đơn vị và/hoặc site.
   *(Chi tiết phân quyền: ADR-029 — theo đơn vị + chia sẻ bản ghi, không giới hạn theo site.)*
+  *(Thay đổi sau: thêm cấp Đối tác giữa Tổ chức và Đơn vị — ADR-031.)*
 - **Lý do:** Excel thực tế của khách dùng "Site" = công ty và "Location" = địa điểm; một công ty có nhiều địa điểm và một địa điểm
   (IDC) có thể phục vụ nhiều công ty — phải tách thành hai cấp.
 
@@ -204,6 +205,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     quyền luôn kiểm ở server theo giao quyền + share; bản ghi ngoài quyền → 404.
   - Mọi cấp quyền, share, thu hồi đều ghi audit.
   - **Thay `site_scope`** của ADR-025: bỏ cột `memberships.site_scope` và phần API/giao diện tương ứng.
+- **Thay đổi sau:** giao quyền theo đối tác hoặc đơn vị, partner_admin/unit_admin, share cho đối tác hoặc đơn vị — ADR-031.
 - **Lý do:** đối tác/khách hàng của tổ chức tự quản người dùng của mình; tài nguyên dùng chung (IDC, cặp FortiGate trung tâm)
   phải hiện đúng cho những bên được chia sẻ, cấu hình được theo từng bản ghi thay vì quy tắc cố định.
 - **Chốt:** người dùng xác nhận 2026-10-16.
@@ -214,5 +216,31 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Mã site: `<MÃ ĐƠN VỊ>-<mã địa điểm><STT 2 chữ số>`; mã địa điểm 2–4 chữ cái (gợi ý từ tỉnh/thành: Hưng Yên → `HY`,
     Hà Nội → `HN`, TP.HCM → `HCM`). Vd `AGRI-BD01`, `FOOD-HN01`. Site của tổ chức (dùng chung): tiền tố `SHARED-`, vd `SHARED-HCM01`.
     Duy nhất trong tổ chức. Đổi site sang đơn vị khác → phải đổi mã (hệ thống gợi ý mã mới).
+- **Thay đổi sau:** tiền tố mã site là mã **đối tác**; mã đơn vị duy nhất trong đối tác — ADR-031.
 - **Lý do:** nhìn mã biết ngay đơn vị và địa điểm; tránh trùng giữa các đơn vị cùng tỉnh; khớp cách khách đặt hostname.
+- **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-031 — Ba cấp Tổ chức → Đối tác → Đơn vị; phân quyền theo đối tác hoặc đơn vị
+- **Quyết định:**
+  - Phân cấp: Tổ chức (khách hàng của bên vận hành, vd CJ) → **Đối tác** (vd CJ Foodville, CJ Agri Deheus) → **Đơn vị**
+    (vd Deheus nhà máy, Deheus văn phòng) → Site → Location → Rack → Thiết bị. **Mọi đơn vị bắt buộc thuộc một đối tác**
+    (đối tác chỉ có một đơn vị vẫn được). "Quan hệ với tổ chức" (công ty con / đối tác / khách hàng) chuyển lên cấp đối tác.
+    Site thuộc một đơn vị, hoặc là site dùng chung của tổ chức (không đơn vị).
+  - **Mã:** mã đối tác theo quy tắc mã đơn vị cũ của ADR-030 (2–8 ký tự `A–Z0–9`, bắt đầu bằng chữ, duy nhất trong tổ chức,
+    cấm `SHARED`). Mã đơn vị 2–8 ký tự cùng quy tắc, **duy nhất trong đối tác**, hiển thị kèm đối tác (`AGRI / NM`).
+    **Mã site = `<MÃ ĐỐI TÁC>-<địa điểm><NN>`** (vd `AGRI-BD01`; site dùng chung `SHARED-…`). Chuyển site giữa các đơn vị cùng
+    đối tác không đổi mã; sang đối tác khác thì đổi mã; đổi mã đối tác đổi tiền tố mọi site của đối tác.
+  - **Giao quyền hai cấp:** `partner_members` (partner_admin | editor | viewer) — có hiệu lực với mọi đơn vị của đối tác, kể cả
+    đơn vị tạo sau; `business_unit_members` (unit_admin | editor | viewer) — chỉ đơn vị đó. User thấy **hợp** của mọi cấp được giao.
+    Vai trò cấp tổ chức (owner/admin/editor/viewer) giữ nguyên: owner/admin tổ chức thấy mọi đối tác.
+  - **partner_admin:** mời user (email mới hoặc có sẵn) và cấp quyền ở cấp đối tác hoặc từng đơn vị con; tạo/sửa đơn vị và site
+    của đối tác; share site của đối tác. **unit_admin:** tương tự trong phạm vi một đơn vị. Không ai trong số này đụng được đối
+    tác khác hay cài đặt tổ chức.
+  - **Chia sẻ:** `resource_shares` (ADR-029) có đích là **đối tác hoặc đơn vị** (`target_type`): share site dùng chung cho đối tác →
+    mọi đơn vị của đối tác thấy; share cho một đơn vị → chỉ đơn vị đó.
+  - **Bộ chọn trên topbar:** "Tất cả" / một đối tác / một đơn vị (chỉ là bộ lọc; quyền kiểm ở server; ngoài quyền → 404).
+- **Thay thế một phần:** ADR-026 (đơn vị nằm dưới đối tác; quan hệ chuyển lên đối tác), ADR-029 (giao quyền theo đơn vị → theo
+  đối tác hoặc đơn vị; bu_admin → partner_admin / unit_admin), ADR-030 (tiền tố mã site = mã đối tác; mã đơn vị duy nhất trong đối tác).
+- **Lý do:** một đối tác của khách hàng (vd Deheus) có nhiều công ty/bộ phận; IT của đối tác cần quản lý tất cả cùng lúc, còn
+  từng bộ phận chỉ cần thấy phần của mình.
 - **Chốt:** người dùng xác nhận 2026-10-16.

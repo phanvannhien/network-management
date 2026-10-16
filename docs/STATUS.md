@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Thêm cấp Đối tác: Tổ chức → Đối tác → Đơn vị (ADR-031)
+- Đã làm (chỉ tài liệu, chưa code):
+  - **ADR-031:** đơn vị bắt buộc thuộc một đối tác; quan hệ với tổ chức chuyển lên đối tác; mã đối tác theo quy tắc cũ của mã
+    đơn vị, mã đơn vị duy nhất trong đối tác, **mã site theo mã đối tác** (`AGRI-BD01` giữ nguyên); giao quyền ở cấp đối tác
+    (partner_admin/editor/viewer, có hiệu lực với mọi đơn vị con) hoặc cấp đơn vị (unit_admin/editor/viewer), quyền = hợp;
+    partner_admin/unit_admin quản lý user, đơn vị/site trong phạm vi; share site cho đối tác hoặc đơn vị; bộ chọn đối tác/đơn vị.
+  - Ghi chú "Thay đổi sau" vào ADR-026, 029, 030. SRS §1, §2, §3, §10, §13 cập nhật. PLAN: thêm **P1-07b** (cấp đối tác),
+    viết lại **P1-07c** (phân quyền 2 cấp + share), P1-08 lọc theo đối tác/đơn vị.
+- Ảnh hưởng tới phần đã code (chưa sửa — chờ duyệt):
+  - **P1-07b (~2,5–3 ngày):** migration 000009 — đổi `business_units` hiện có thành `partners` (giữ id, mã, quan hệ, liên hệ);
+    tạo bảng `business_units` mới (`partner_id`, mã duy nhất trong đối tác); mỗi đối tác hiện có tự sinh **một đơn vị mặc định**
+    (mã `MAIN`, tên = tên đối tác) và mọi site đang gắn đối tác chuyển sang đơn vị đó — mã site không đổi. API: CRUD đối tác,
+    CRUD đơn vị dưới đối tác, site gắn đơn vị (tiền tố mã = đối tác), next-code theo đối tác. Giao diện: tab Đối tác, trang đối
+    tác (đơn vị + site), form site chọn đơn vị (nhóm theo đối tác). Test chéo tổ chức cho mọi endpoint mới.
+  - **P1-07c (~3,5–4,5 ngày):** bảng giao quyền 2 cấp + `resource_shares` (đích đối tác/đơn vị); một hàm quyền chung
+    "user xem/sửa được site nào" (owner/admin tổ chức → tất cả; còn lại → site của đơn vị được giao trực tiếp hoặc qua đối tác,
+    cộng site được share); bỏ `site_scope`; màn hình thành viên đối tác/đơn vị cho partner_admin/unit_admin, màn hình share site,
+    bộ chọn trên topbar; test chéo đối tác/đơn vị (user AGRI không đọc/sửa FOOD; unit_admin NM không sửa đơn vị VP cùng đối tác;
+    share xem → không sửa; thu hồi share → 404).
+  - Tổng **~6–7,5 ngày** trước P1-08. Thứ tự: P1-07b → P1-07c → P1-08.
+- Câu hỏi cho người dùng:
+  1. **Trùng tên "Đối tác":** module Phase 2 (SRS §8) "Đối tác & hợp đồng" là hãng / nhà cung cấp / ISP / đơn vị bảo trì — khác
+     với cấp đối tác mới. Đề xuất đổi tên module Phase 2 thành **"Nhà cung cấp & hợp đồng"** (bảng `vendors`), giữ "Đối tác" cho cấp
+     mới. Đồng ý không?
+  2. Đơn vị mặc định khi chuyển dữ liệu cũ đặt mã `MAIN` được không?
+- Đề xuất quyết định cần chốt: 2 câu trên.
+- Task tiếp theo đề xuất: P1-07b — trình kế hoạch chi tiết trước khi code.
+
 ## 2026-10-16 — Làm rõ "tổ chức" trên giao diện; số đơn vị/site trong khu vực Hệ thống
 - Bối cảnh: người dùng hỏi đơn vị thuộc tổ chức nào khi form không có ô chọn tổ chức. Giải thích: tổ chức = khách hàng của
   bên vận hành (GVN), lấy từ đường dẫn `/o/{orgId}` (ADR-023, không lấy từ body); đơn vị luôn thuộc tổ chức đang mở và
