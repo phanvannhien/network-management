@@ -12,7 +12,7 @@ Phase hiện tại: **Phase 0**
 
 ## Phase 0 — Nền móng
 
-- [ ] **P0-01 Khung monorepo**: `/frontend` (Vite + React 19 + TS strict + Tailwind + shadcn/ui + react-router + TanStack Query), `/backend` (Go module, chi, `/healthz`), `/api/openapi.yaml` tối thiểu, `Makefile`, `.editorconfig`, `.gitignore`, README.
+- [x] **P0-01 Khung monorepo**: `/frontend` (Vite + React 19 + TS strict + Tailwind + shadcn/ui + react-router + TanStack Query), `/backend` (Go module, chi, `/healthz`), `/api/openapi.yaml` tối thiểu, `Makefile`, `.editorconfig`, `.gitignore`, README.
   Done khi: `make dev-web` và `make dev-api` chạy; frontend gọi được `/api/healthz` qua proxy Vite.
 - [x] **P0-02 Lint & test**: oxlint + Prettier (ADR-021), Vitest; golangci-lint, `go test`; `make check`.
 - [ ] **P0-03 Sinh code**: `make gen` chạy oapi-codegen (Go), openapi-typescript + openapi-fetch (TS), sqlc. Có một endpoint mẫu đi trọn đường OpenAPI → Go → TS.

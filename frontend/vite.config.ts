@@ -12,4 +12,10 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // Same path layout as nginx in Docker: /api is forwarded untouched to the Go API.
+      '/api': process.env.NTB_API_URL ?? 'http://localhost:8069',
+    },
+  },
 })

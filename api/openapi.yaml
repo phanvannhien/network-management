@@ -1,0 +1,30 @@
+openapi: 3.0.3
+info:
+  title: Network Topology Builder API
+  version: 0.1.0
+  description: Contract between frontend and backend (ADR-017). Edit this file first, then run `make gen`.
+servers:
+  - url: /api
+paths:
+  /healthz:
+    get:
+      operationId: getHealthz
+      summary: Liveness check
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string

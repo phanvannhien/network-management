@@ -22,11 +22,13 @@ Xem `docs/SRS.md` (đặc tả), `docs/PLAN.md` (kế hoạch), `docs/DECISIONS.
 Yêu cầu: Node ≥ 20, Go ≥ 1.25, GNU Make.
 
 ```sh
-make dev-web   # frontend dev server (Vite)
-make dev-api   # backend (hiện là stub, thực từ Phase 2)
+make dev-api   # Go API ở http://localhost:8069 (đổi bằng NTB_HTTP_ADDR)
+make dev-web   # Vite ở http://localhost:5173, proxy /api → API (đổi bằng NTB_API_URL)
 make test      # Vitest + go test
-make check     # lint + typecheck + test (từ P0-02)
+make check     # lint + typecheck + test
 ```
+
+Hợp đồng API: `api/openapi.yaml` (sửa file này trước khi viết handler/frontend).
 
 ## Triển khai
 

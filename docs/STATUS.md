@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Refactor theo PLAN v2: dọn dẹp, cấu trúc lại, P0-01 Khung monorepo
+- Đã làm:
+  - Dọn dẹp: chuyển `dexie`/`fake-indexeddb` khỏi `package.json` gốc repo (lỗi cũ); ADR-021 (giữ oxlint, cổng web 8068), tick P0-02.
+  - Cấu trúc lại: `src/{model,canvas,panels,validation,catalog,io}` → `src/editor/*`; gỡ autosave cả tài liệu + khôi phục phiên + Save/Open file làm lưu chính (ADR-015); giữ đọc/validate `.ntb.json` cho P1-22; gỡ dexie/fake-indexeddb (cài lại ở P1-13).
+  - P0-01: backend chi + `GET /api/healthz` (`internal/api`), config env (`internal/config`, `NTB_HTTP_ADDR` mặc định `:8069`), slog JSON request log, graceful shutdown; `api/openapi.yaml` tối thiểu; frontend react-router (`/` trang tạm gọi healthz qua TanStack Query, `/editor` editor hiện có) + proxy Vite `/api` → `:8069`.
+  - Bỏ `middleware.RealIP` của chi (staticcheck báo deprecated: giả mạo IP qua X-Forwarded-For) — lấy IP client sau proxy tin cậy sẽ làm ở P1-01.
+- Test / cách kiểm tra: chạy thật `make dev-api` + `make dev-web` → `curl localhost:5173/api/healthz` trả `{"status":"ok","version":"dev"}` HTTP 200 qua proxy (Done khi P0-01 ✅). Go test healthz + 404; Vitest: home hiện trạng thái API / báo lỗi khi API sập / route editor render canvas. `make check` pass (89 FE test). ✅
+- Còn dở / lỗi đã biết: `api/openapi.yaml` tạm viết OpenAPI **3.0.3** (ADR-017 ghi 3.1) — sẽ kiểm tra oapi-codegen ở P0-03, nếu hỗ trợ 3.1 thì nâng, nếu không thì ghi ADR. `/editor` vẫn chạy trên store client (`useEnsurePage`, tạo device phía client) cho tới P1-13/P1-15. IDE báo gopls thiếu `go.work` (không ảnh hưởng build).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: OpenAPI 3.0.3 vs 3.1 (sau khi kiểm tra ở P0-03).
+- Task tiếp theo đề xuất: P0-04 Database (migration + golang-migrate) trước P0-03 vì sqlc cần schema DB.
+
 ## 2026-10-16 — Chuyển sang SRS v2.0
 - Đã làm: áp dụng CLAUDE.md mới, SRS v2.0, DECISIONS hợp nhất (ADR-001..020), PLAN v2. Đối chiếu code hiện có với PLAN v2 (chưa sửa code).
   Mọi task "P1-xx" ở các mục STATUS bên dưới là ID của PLAN v1, không trùng nghĩa với ID PLAN v2.
