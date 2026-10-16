@@ -3,6 +3,7 @@ import {
   Building2,
   Languages,
   LayoutDashboard,
+  MapPin,
   Moon,
   Network,
   ScrollText,
@@ -29,6 +30,7 @@ import { setLanguage } from '@/i18n'
 import { usePreferences } from '@/lib/preferences'
 import { useMembers } from '@/modules/admin/members'
 import { SAMPLE_DEVICES } from '@/modules/inventory/sampleDevices'
+import { useSites } from '@/modules/sites/sites'
 import { OrgAvatar } from './OrgAvatar'
 
 interface Entry {
@@ -60,6 +62,7 @@ export function CommandPalette({
   const orgs = useMyOrganizations()
   const org = useOrganization(orgId)
   const members = useMembers(open ? orgId : '')
+  const sites = useSites(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
   const role = org.data?.membership.role
@@ -76,6 +79,7 @@ export function CommandPalette({
       ? [
           { key: 'dash', label: t('nav.dashboard'), icon: <LayoutDashboard />, run: go(base) },
           { key: 'devices', label: t('nav.devices'), icon: <Server />, run: go(`${base}/devices`) },
+          { key: 'sites', label: t('nav.sites'), icon: <MapPin />, run: go(`${base}/sites`) },
           { key: 'diagrams', label: t('nav.diagrams'), icon: <Network />, run: go('/editor') },
           { key: 'members', label: t('nav.members'), icon: <Users />, run: go(`${base}/members`) },
           ...(isAdmin
@@ -143,6 +147,16 @@ export function CommandPalette({
       }))
     : []
 
+  const siteEntries: Entry[] = base
+    ? (sites.data ?? []).map((st) => ({
+        key: `s-${st.id}`,
+        label: `${st.code} · ${st.name}`,
+        keywords: st.address,
+        icon: <MapPin />,
+        run: go(`${base}/sites/${st.id}`),
+      }))
+    : []
+
   const devices: Entry[] = base
     ? SAMPLE_DEVICES.map((d) => ({
         key: `d-${d.id}`,
@@ -173,6 +187,7 @@ export function CommandPalette({
   const groups: { heading: string; entries: Entry[] }[] = [
     { heading: t('palette.pages'), entries: pages },
     { heading: t('palette.organizations'), entries: organizations },
+    { heading: t('palette.sites'), entries: siteEntries },
     { heading: t('palette.members'), entries: people },
     { heading: t('palette.devicesSample'), entries: devices },
     { heading: t('palette.commands'), entries: commands },

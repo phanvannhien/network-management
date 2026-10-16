@@ -210,7 +210,7 @@ func (q *Queries) DeleteUserSessions(ctx context.Context, userID pgtype.UUID) er
 }
 
 const getMember = `-- name: GetMember :one
-SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.version,
+SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.site_scope, m.version,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.disabled_at IS NOT NULL)::boolean AS disabled,
        (u.password_hash = '')::boolean AS pending_invite
@@ -231,6 +231,7 @@ type GetMemberRow struct {
 	DisplayName   string
 	Role          string
 	Permissions   []string
+	SiteScope     []pgtype.UUID
 	Version       int32
 	MfaEnabled    bool
 	Disabled      bool
@@ -246,6 +247,7 @@ func (q *Queries) GetMember(ctx context.Context, arg GetMemberParams) (GetMember
 		&i.DisplayName,
 		&i.Role,
 		&i.Permissions,
+		&i.SiteScope,
 		&i.Version,
 		&i.MfaEnabled,
 		&i.Disabled,
@@ -297,7 +299,7 @@ func (q *Queries) InvalidateUserTokens(ctx context.Context, arg InvalidateUserTo
 
 const listMembers = `-- name: ListMembers :many
 
-SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.version,
+SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.site_scope, m.version,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.disabled_at IS NOT NULL)::boolean AS disabled,
        (u.password_hash = '')::boolean AS pending_invite
@@ -314,6 +316,7 @@ type ListMembersRow struct {
 	DisplayName   string
 	Role          string
 	Permissions   []string
+	SiteScope     []pgtype.UUID
 	Version       int32
 	MfaEnabled    bool
 	Disabled      bool
@@ -336,6 +339,7 @@ func (q *Queries) ListMembers(ctx context.Context, organizationID pgtype.UUID) (
 			&i.DisplayName,
 			&i.Role,
 			&i.Permissions,
+			&i.SiteScope,
 			&i.Version,
 			&i.MfaEnabled,
 			&i.Disabled,
@@ -429,14 +433,19 @@ func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams
 
 const updateMembership = `-- name: UpdateMembership :one
 UPDATE memberships
-SET role = $1, permissions = $2, version = version + 1
-WHERE organization_id = $3 AND user_id = $4 AND version = $5
+SET role = $1, permissions = $2,
+    -- site_scope only changes when the request carries it (ADR-025).
+    site_scope = CASE WHEN $3::boolean THEN $4::uuid[] ELSE site_scope END,
+    version = version + 1
+WHERE organization_id = $5 AND user_id = $6 AND version = $7
 RETURNING id, organization_id, user_id, role, permissions, site_scope, created_at, updated_at, version
 `
 
 type UpdateMembershipParams struct {
 	Role           string
 	Permissions    []string
+	SetSiteScope   bool
+	SiteScope      []pgtype.UUID
 	OrganizationID pgtype.UUID
 	UserID         pgtype.UUID
 	Version        int32
@@ -446,6 +455,8 @@ func (q *Queries) UpdateMembership(ctx context.Context, arg UpdateMembershipPara
 	row := q.db.QueryRow(ctx, updateMembership,
 		arg.Role,
 		arg.Permissions,
+		arg.SetSiteScope,
+		arg.SiteScope,
 		arg.OrganizationID,
 		arg.UserID,
 		arg.Version,

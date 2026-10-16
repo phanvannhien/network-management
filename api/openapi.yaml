@@ -488,6 +488,339 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/sites:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listSites
+      summary: Sites of the organization (filtered by the member site scope)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: createSite
+      summary: Create a site (owner/admin/editor without a site scope)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/{siteId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SiteId'
+    get:
+      operationId: getSite
+      summary: One site
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: updateSite
+      summary: Edit a site (optimistic lock on version)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteSite
+      summary: Soft-delete a site (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/{siteId}/locations:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SiteId'
+    get:
+      operationId: listLocations
+      summary: Location tree of the site as a flat list (parentId links)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: createLocation
+      summary: Add a building, floor or room
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/{siteId}/locations/{locationId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SiteId'
+      - $ref: '#/components/parameters/LocationId'
+    patch:
+      operationId: updateLocation
+      summary: Rename / reorder a location
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteLocation
+      summary: Delete an empty location (409 while it has children or racks)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/{siteId}/racks:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SiteId'
+    get:
+      operationId: listRacks
+      summary: Racks of the site
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RackList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: createRack
+      summary: Add a rack to a location of the site
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RackInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rack'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/sites/{siteId}/racks/{rackId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SiteId'
+      - $ref: '#/components/parameters/RackId'
+    patch:
+      operationId: updateRack
+      summary: Edit / move a rack within the site
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RackUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rack'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteRack
+      summary: Delete an empty rack
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/audit:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -718,6 +1051,27 @@ components:
       schema:
         type: string
         format: date-time
+    SiteId:
+      name: siteId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RackId:
+      name: rackId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     CsrfToken:
       name: X-CSRF-Token
       in: header
@@ -751,7 +1105,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Conflict:
-      description: Request conflicts with the current MFA state
+      description: Conflicts with the current state (stale version, duplicate name, non-empty container, MFA state)
       content:
         application/json:
           schema:
@@ -1060,6 +1414,12 @@ components:
         pendingInvite:
           type: boolean
           description: Invited but has not set a password yet
+        siteScope:
+          description: Sites the member is limited to (null = every site; ignored for owner/admin, ADR-025)
+          type: [array, 'null']
+          items:
+            type: string
+            format: uuid
         version:
           type: integer
           format: int32
@@ -1108,6 +1468,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Permission'
+        siteScope:
+          $ref: '#/components/schemas/SiteScopeInput'
         version:
           type: integer
           format: int32
@@ -1213,6 +1575,230 @@ components:
         pageSize:
           type: integer
           format: int32
+
+    SiteScopeInput:
+      type: object
+      description: Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
+      required: [all, siteIds]
+      properties:
+        all:
+          type: boolean
+        siteIds:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+            format: uuid
+
+    SiteInput:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 200
+        address:
+          type: string
+          maxLength: 500
+        timezone:
+          type: string
+          description: IANA time zone (default Asia/Ho_Chi_Minh)
+        contactName:
+          type: string
+          maxLength: 200
+        contactPhone:
+          type: string
+          maxLength: 50
+        contactEmail:
+          type: string
+          maxLength: 320
+        notes:
+          type: string
+          maxLength: 2000
+
+    SiteUpdate:
+      allOf:
+        - $ref: '#/components/schemas/SiteInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Site:
+      type: object
+      required: [id, code, name, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        notes:
+          type: string
+        locationCount:
+          type: integer
+          format: int64
+        rackCount:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SiteList:
+      type: object
+      required: [sites]
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Site'
+
+    LocationKind:
+      type: string
+      enum: [building, floor, room]
+
+    LocationInput:
+      type: object
+      required: [kind, name]
+      properties:
+        parentId:
+          type: [string, 'null']
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/LocationKind'
+        name:
+          type: string
+          maxLength: 100
+        sortOrder:
+          type: integer
+          format: int32
+
+    LocationUpdate:
+      type: object
+      required: [name, version]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        sortOrder:
+          type: integer
+          format: int32
+        version:
+          type: integer
+          format: int32
+
+    Location:
+      type: object
+      required: [id, parentId, kind, name, sortOrder, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: [string, 'null']
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/LocationKind'
+        name:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
+        version:
+          type: integer
+          format: int32
+
+    LocationList:
+      type: object
+      required: [locations]
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+
+    RackInput:
+      type: object
+      required: [locationId, name]
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        uHeight:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 60
+        notes:
+          type: string
+          maxLength: 2000
+
+    RackUpdate:
+      allOf:
+        - $ref: '#/components/schemas/RackInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Rack:
+      type: object
+      required: [id, locationId, name, uHeight, notes, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        uHeight:
+          type: integer
+          format: int32
+        notes:
+          type: string
+        version:
+          type: integer
+          format: int32
+
+    RackList:
+      type: object
+      required: [racks]
+      properties:
+        racks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rack'
 
     AdminUser:
       type: object

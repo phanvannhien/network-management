@@ -8,6 +8,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   LayoutDashboard,
+  MapPin,
   Network,
   ScrollText,
   Search,
@@ -417,13 +418,14 @@ export function OrgShell() {
   const base = `/o/${orgId}`
   const role = org.data?.membership.role
   const isAdmin = role === 'owner' || role === 'admin'
-  // Unfinished modules (IPAM, Sites, …) stay hidden until they ship (PLAN P1-06).
+  // Unfinished modules (IPAM, Đối tác, …) stay hidden until they ship (PLAN P1-06).
   const nav = [
     {
       items: [
         { to: base, label: t('nav.dashboard'), icon: LayoutDashboard, end: true },
         { to: '/editor', label: t('nav.diagrams'), icon: Network },
         { to: `${base}/devices`, label: t('nav.devices'), icon: Server },
+        { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
       ],
     },
     {

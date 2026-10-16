@@ -118,7 +118,7 @@ Hiển thị một icon với badge "đã dùng/tổng" (vd 3/20). Thành viên 
 - Chọn: click, Shift + click, rubber-band, Ctrl+A; duplicate, lock, sửa hàng loạt; copy/paste giữ link nội bộ, tự đổi hostname trùng.
 - Undo/redo ≥ 100 bước (gộp thao tác kéo). Auto-layout phân tầng. Tìm thiết bị trên sơ đồ (Ctrl+F).
 - Layer: Physical / Logical L2 / Logical L3 (P2). Nhiều trang + off-page connector (P2).
-- Một sơ đồ thuộc một site (hoặc nhiều site cho sơ đồ WAN/VPN). Một thiết bị có thể nằm trên nhiều sơ đồ.
+- Một sơ đồ thuộc đúng một site (ADR-025; sơ đồ WAN/VPN đặt ở site chính). Một thiết bị có thể nằm trên nhiều sơ đồ.
 
 ### 6.2 Kết nối
 

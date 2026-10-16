@@ -320,6 +320,140 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Sites of the organization (filtered by the member site scope) */
+        get: operations["listSites"];
+        put?: never;
+        /** Create a site (owner/admin/editor without a site scope) */
+        post: operations["createSite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/{siteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        /** One site */
+        get: operations["getSite"];
+        put?: never;
+        post?: never;
+        /** Soft-delete a site (owner/admin) */
+        delete: operations["deleteSite"];
+        options?: never;
+        head?: never;
+        /** Edit a site (optimistic lock on version) */
+        patch: operations["updateSite"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/{siteId}/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        /** Location tree of the site as a flat list (parentId links) */
+        get: operations["listLocations"];
+        put?: never;
+        /** Add a building, floor or room */
+        post: operations["createLocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/{siteId}/locations/{locationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                locationId: components["parameters"]["LocationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an empty location (409 while it has children or racks) */
+        delete: operations["deleteLocation"];
+        options?: never;
+        head?: never;
+        /** Rename / reorder a location */
+        patch: operations["updateLocation"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/{siteId}/racks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        /** Racks of the site */
+        get: operations["listRacks"];
+        put?: never;
+        /** Add a rack to a location of the site */
+        post: operations["createRack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/sites/{siteId}/racks/{rackId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                rackId: components["parameters"]["RackId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an empty rack */
+        delete: operations["deleteRack"];
+        options?: never;
+        head?: never;
+        /** Edit / move a rack within the site */
+        patch: operations["updateRack"];
+        trace?: never;
+    };
     "/orgs/{orgId}/audit": {
         parameters: {
             query?: never;
@@ -609,6 +743,8 @@ export interface components {
             disabled: boolean;
             /** @description Invited but has not set a password yet */
             pendingInvite: boolean;
+            /** @description Sites the member is limited to (null = every site; ignored for owner/admin, ADR-025) */
+            siteScope?: string[] | null;
             /** Format: int32 */
             version: number;
         };
@@ -629,6 +765,7 @@ export interface components {
         UpdateMemberRequest: {
             role: components["schemas"]["Role"];
             permissions: components["schemas"]["Permission"][];
+            siteScope?: components["schemas"]["SiteScopeInput"];
             /** Format: int32 */
             version: number;
         };
@@ -681,6 +818,110 @@ export interface components {
             page: number;
             /** Format: int32 */
             pageSize: number;
+        };
+        /** @description Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only). */
+        SiteScopeInput: {
+            all: boolean;
+            siteIds: string[];
+        };
+        SiteInput: {
+            code: string;
+            name: string;
+            address?: string;
+            /** @description IANA time zone (default Asia/Ho_Chi_Minh) */
+            timezone?: string;
+            contactName?: string;
+            contactPhone?: string;
+            contactEmail?: string;
+            notes?: string;
+        };
+        SiteUpdate: components["schemas"]["SiteInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        Site: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            address: string;
+            timezone: string;
+            contactName: string;
+            contactPhone: string;
+            contactEmail: string;
+            notes: string;
+            /** Format: int64 */
+            locationCount: number;
+            /** Format: int64 */
+            rackCount: number;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SiteList: {
+            sites: components["schemas"]["Site"][];
+        };
+        /** @enum {string} */
+        LocationKind: "building" | "floor" | "room";
+        LocationInput: {
+            /** Format: uuid */
+            parentId?: string | null;
+            kind: components["schemas"]["LocationKind"];
+            name: string;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        LocationUpdate: {
+            name: string;
+            /** Format: int32 */
+            sortOrder?: number;
+            /** Format: int32 */
+            version: number;
+        };
+        Location: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: string | null;
+            kind: components["schemas"]["LocationKind"];
+            name: string;
+            /** Format: int32 */
+            sortOrder: number;
+            /** Format: int32 */
+            version: number;
+        };
+        LocationList: {
+            locations: components["schemas"]["Location"][];
+        };
+        RackInput: {
+            /** Format: uuid */
+            locationId: string;
+            name: string;
+            /** Format: int32 */
+            uHeight?: number;
+            notes?: string;
+        };
+        RackUpdate: components["schemas"]["RackInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        Rack: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            locationId: string;
+            name: string;
+            /** Format: int32 */
+            uHeight: number;
+            notes: string;
+            /** Format: int32 */
+            version: number;
+        };
+        RackList: {
+            racks: components["schemas"]["Rack"][];
         };
         AdminUser: {
             /** Format: uuid */
@@ -737,7 +978,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Request conflicts with the current MFA state */
+        /** @description Conflicts with the current state (stale version, duplicate name, non-empty container, MFA state) */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -772,6 +1013,9 @@ export interface components {
         AuditFrom: string;
         /** @description Exclusive upper bound on the event time */
         AuditTo: string;
+        SiteId: string;
+        LocationId: string;
+        RackId: string;
         CsrfToken: string;
     };
     requestBodies: never;
@@ -1394,6 +1638,421 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listSites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createSite: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Site"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getSite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Site"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteSite: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateSite: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Site"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listLocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createLocation: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteLocation: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                locationId: components["parameters"]["LocationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateLocation: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                locationId: components["parameters"]["LocationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listRacks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RackList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createRack: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RackInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rack"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteRack: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                rackId: components["parameters"]["RackId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateRack: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                siteId: components["parameters"]["SiteId"];
+                rackId: components["parameters"]["RackId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RackUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rack"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     listOrgAudit: {

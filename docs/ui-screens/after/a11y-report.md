@@ -1,6 +1,6 @@
 # Kiểm tra truy cập (axe-core + bàn phím)
 
-Chạy: 2026-10-16T07:01:19.273Z · http://localhost:5180
+Chạy: 2026-10-16T07:29:51.224Z · http://localhost:5180
 Tổng vấn đề: **0**
 
 
@@ -32,6 +32,14 @@ Tổng vấn đề: **0**
 ## ✅ 31-audit-org — light
 ## ✅ 32-audit-org-details — light
 ## ✅ 33-audit-system — light
+## ✅ 34-account-menu — light
+## ✅ 35-devices-english — light
+## ✅ 36-sites — light
+## ✅ 37-site-create — light
+## ✅ 38-site-locations — light
+## ✅ 39-site-racks — light
+## ✅ 40-site-info — light
+## ✅ 41-member-site-scope — light
 ## ✅ 01-login — dark
 ## ✅ 02-forgot-password — dark
 ## ✅ 03-mfa-verify — dark
@@ -60,3 +68,11 @@ Tổng vấn đề: **0**
 ## ✅ 31-audit-org — dark
 ## ✅ 32-audit-org-details — dark
 ## ✅ 33-audit-system — dark
+## ✅ 34-account-menu — dark
+## ✅ 35-devices-english — dark
+## ✅ 36-sites — dark
+## ✅ 37-site-create — dark
+## ✅ 38-site-locations — dark
+## ✅ 39-site-racks — dark
+## ✅ 40-site-info — dark
+## ✅ 41-member-site-scope — dark

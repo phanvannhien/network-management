@@ -39,6 +39,12 @@ const DeviceListPage = lazy(() =>
 const AuditLogPage = lazy(() =>
   import('./modules/audit/AuditLogPage').then((m) => ({ default: m.AuditLogPage })),
 )
+const SiteListPage = lazy(() =>
+  import('./modules/sites/SiteListPage').then((m) => ({ default: m.SiteListPage })),
+)
+const SiteDetailPage = lazy(() =>
+  import('./modules/sites/SiteDetailPage').then((m) => ({ default: m.SiteDetailPage })),
+)
 const EditorPage = lazy(() =>
   import('./editor/EditorPage').then((m) => ({ default: m.EditorPage })),
 )
@@ -67,6 +73,8 @@ export function AppRoutes() {
         <Route index element={<OrgHomePage />} />
         <Route path="devices" element={<DeviceListPage />} />
         <Route path="devices/:deviceId" element={<DeviceDetailPage />} />
+        <Route path="sites" element={<SiteListPage />} />
+        <Route path="sites/:siteId" element={<SiteDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage scope="org" />} />
         <Route path="*" element={<NotFoundPage inShell />} />

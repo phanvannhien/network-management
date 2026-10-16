@@ -5,6 +5,44 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-07 Sites / Location / Rack
+- Đã làm:
+  - **ADR-025** (đã chốt): tổ chức (khách hàng) → nhiều site → cây location → rack; mỗi site nhiều thiết bị (P1-08) và nhiều
+    sơ đồ (P1-13); **mỗi sơ đồ thuộc đúng một site** (sửa SRS §6.1: sơ đồ WAN đặt ở site chính); `site_scope` chỉ áp cho
+    editor/viewer; xóa site = xóa mềm, chỉ owner/admin.
+  - Migration 000007: `sites` (mã duy nhất trong tổ chức với site còn sống — xóa mềm giải phóng mã; múi giờ IANA; liên hệ
+    tại chỗ), `locations` (building/floor/room, `parent_id`, tên duy nhất giữa anh em không phân biệt hoa thường), `racks`
+    (1–60U, mặc định 42U, tên duy nhất trong location). **Khóa ngoại kép** `(site_id, organization_id)` /
+    `(parent_id, site_id)` / `(location_id, site_id)` nên DB tự chặn gắn dữ liệu chéo tổ chức hoặc chéo site.
+  - API (OpenAPI trước): CRUD `/orgs/{orgId}/sites`, `…/sites/{siteId}/locations`, `…/sites/{siteId}/racks`; optimistic lock;
+    cây location ép cấp (tòa nhà ngay dưới site; tầng dưới tòa nhà/site; phòng dưới tầng/tòa nhà/site); xóa location còn
+    con/rack → 409 có số lượng; xóa rack còn thiết bị → 409 (FK từ P1-08). Audit trước/sau cho mọi thao tác ghi.
+  - **site_scope**: `PATCH members` nhận `siteScope {all, siteIds}` (chỉ owner/admin; id phải là site còn sống của tổ chức);
+    `Member.siteScope` trả về. Thành viên bị giới hạn: danh sách chỉ có site trong phạm vi, site khác (và location/rack của
+    nó) → 404, không tạo được site mới. `tenant.Membership.SiteFilter()` để P1-08/P1-13 dùng lại.
+  - Giao diện: menu **Sites**; danh sách site (mã, tên, địa chỉ, liên hệ, số location/rack); trang site với tab Location
+    (cây, thêm đúng loại con, đổi tên/xóa tại chỗ), Rack (danh sách + mặt trước rack đánh số U từ dưới lên, ô trống tới P1-08),
+    Thông tin, Thiết bị/Sơ đồ (khung chờ P1-08/P1-13); xóa site phải gõ mã; sheet Thành viên có "Giới hạn site", bảng thành
+    viên có cột phạm vi; Ctrl+K tìm site.
+- Test / cách kiểm tra: `make check` pass (backend + 151 test frontend).
+  - Backend: chéo tổ chức cho mọi endpoint (đọc 404, ghi qua đường dẫn org B và org A đều 404, dữ liệu B không đổi);
+    vai trò (viewer chỉ xem, editor tạo/sửa, chỉ owner/admin xóa site), validation (mã trùng không phân biệt hoa thường 409,
+    múi giờ/email/mã sai 400), xóa mềm + tái dùng mã, cây location (sai cấp, cha ở site khác, trùng tên anh em, xóa bị chặn),
+    rack (location site khác, 61U), site_scope (user.manage không đặt được, id tổ chức khác 400, danh sách lọc, 404 ngoài
+    phạm vi, không tạo site, owner bỏ qua scope, gỡ giới hạn). Mutation: bỏ scope / bỏ ràng buộc cây / bỏ lọc tổ chức trong
+    GetSite → đều có test fail.
+  - Frontend: tạo site, cây location chỉ cho loại con hợp lệ và gửi parentId, rack view 42U, viewer chỉ xem, xóa site gõ mã,
+    đặt giới hạn site cho editor.
+  - Ảnh `docs/ui-screens/after/36..41-*`; `a11y-report.md` 0 vấn đề (36 trang × 2 theme).
+- Còn dở / lỗi đã biết:
+  - Chưa khôi phục site đã xóa mềm qua giao diện (dữ liệu còn trong DB).
+  - Cây location chưa kéo thả đổi cha / sắp xếp (đổi tên được; `sort_order` có sẵn trong API).
+  - Nút "Thêm site" vẫn hiện cho editor bị giới hạn (server trả 403 kèm lý do) — API tổ chức chưa trả phạm vi của chính mình.
+  - Cần `make migrate-up` (000007) trên DB dev.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không (ADR-025 đã chốt).
+- Task tiếp theo đề xuất: P1-08 Kho thiết bị (gắn site + location + rack/U, thay dữ liệu mẫu).
+
 ## 2026-10-16 — P1-06 App shell
 - Đã làm (phần lớn khung đã có từ UI Bước 2–3; task này hoàn thiện phần còn lại theo SRS §2):
   - **Ngôn ngữ vi/en** trong menu tài khoản (tên ngôn ngữ ghi bằng chính ngôn ngữ đó), nhớ theo trình duyệt (`ntb-lang`),

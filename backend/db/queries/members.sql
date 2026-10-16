@@ -1,7 +1,7 @@
 -- Organization members (P1-04). Every query is scoped by organization_id.
 
 -- name: ListMembers :many
-SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.version,
+SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.site_scope, m.version,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.disabled_at IS NOT NULL)::boolean AS disabled,
        (u.password_hash = '')::boolean AS pending_invite
@@ -12,7 +12,7 @@ WHERE m.organization_id = $1
 ORDER BY lower(u.display_name), lower(u.email::text);
 
 -- name: GetMember :one
-SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.version,
+SELECT u.id AS user_id, u.email, u.display_name, m.role, m.permissions, m.site_scope, m.version,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.disabled_at IS NOT NULL)::boolean AS disabled,
        (u.password_hash = '')::boolean AS pending_invite
@@ -26,7 +26,10 @@ SELECT count(*) FROM memberships WHERE organization_id = $1 AND role = 'owner';
 
 -- name: UpdateMembership :one
 UPDATE memberships
-SET role = sqlc.arg(role), permissions = sqlc.arg(permissions), version = version + 1
+SET role = sqlc.arg(role), permissions = sqlc.arg(permissions),
+    -- site_scope only changes when the request carries it (ADR-025).
+    site_scope = CASE WHEN sqlc.arg(set_site_scope)::boolean THEN sqlc.narg(site_scope)::uuid[] ELSE site_scope END,
+    version = version + 1
 WHERE organization_id = sqlc.arg(organization_id) AND user_id = sqlc.arg(user_id) AND version = sqlc.arg(version)
 RETURNING *;
 

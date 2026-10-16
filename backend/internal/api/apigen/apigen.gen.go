@@ -71,6 +71,27 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for LocationKind.
+const (
+	Building LocationKind = "building"
+	Floor    LocationKind = "floor"
+	Room     LocationKind = "room"
+)
+
+// Valid indicates whether the value is a known member of the LocationKind enum.
+func (e LocationKind) Valid() bool {
+	switch e {
+	case Building:
+		return true
+	case Floor:
+		return true
+	case Room:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OrganizationKind.
 const (
 	Customer OrganizationKind = "customer"
@@ -291,6 +312,39 @@ type InviteLink struct {
 	InviteToken string `json:"inviteToken"`
 }
 
+// Location defines model for Location.
+type Location struct {
+	Id        openapi_types.UUID  `json:"id"`
+	Kind      LocationKind        `json:"kind"`
+	Name      string              `json:"name"`
+	ParentId  *openapi_types.UUID `json:"parentId"`
+	SortOrder int32               `json:"sortOrder"`
+	Version   int32               `json:"version"`
+}
+
+// LocationInput defines model for LocationInput.
+type LocationInput struct {
+	Kind      LocationKind        `json:"kind"`
+	Name      string              `json:"name"`
+	ParentId  *openapi_types.UUID `json:"parentId,omitempty"`
+	SortOrder *int32              `json:"sortOrder,omitempty"`
+}
+
+// LocationKind defines model for LocationKind.
+type LocationKind string
+
+// LocationList defines model for LocationList.
+type LocationList struct {
+	Locations []Location `json:"locations"`
+}
+
+// LocationUpdate defines model for LocationUpdate.
+type LocationUpdate struct {
+	Name      string `json:"name"`
+	SortOrder *int32 `json:"sortOrder,omitempty"`
+	Version   int32  `json:"version"`
+}
+
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
 	Email    openapi_types.Email `json:"email"`
@@ -305,11 +359,14 @@ type Member struct {
 	MfaEnabled  bool   `json:"mfaEnabled"`
 
 	// PendingInvite Invited but has not set a password yet
-	PendingInvite bool               `json:"pendingInvite"`
-	Permissions   []Permission       `json:"permissions"`
-	Role          Role               `json:"role"`
-	UserId        openapi_types.UUID `json:"userId"`
-	Version       int32              `json:"version"`
+	PendingInvite bool         `json:"pendingInvite"`
+	Permissions   []Permission `json:"permissions"`
+	Role          Role         `json:"role"`
+
+	// SiteScope Sites the member is limited to (null = every site; ignored for owner/admin, ADR-025)
+	SiteScope *[]openapi_types.UUID `json:"siteScope,omitempty"`
+	UserId    openapi_types.UUID    `json:"userId"`
+	Version   int32                 `json:"version"`
 }
 
 // MemberList defines model for MemberList.
@@ -404,14 +461,107 @@ type PasswordResetLink struct {
 // Permission defines model for Permission.
 type Permission string
 
+// Rack defines model for Rack.
+type Rack struct {
+	Id         openapi_types.UUID `json:"id"`
+	LocationId openapi_types.UUID `json:"locationId"`
+	Name       string             `json:"name"`
+	Notes      string             `json:"notes"`
+	UHeight    int32              `json:"uHeight"`
+	Version    int32              `json:"version"`
+}
+
+// RackInput defines model for RackInput.
+type RackInput struct {
+	LocationId openapi_types.UUID `json:"locationId"`
+	Name       string             `json:"name"`
+	Notes      *string            `json:"notes,omitempty"`
+	UHeight    *int32             `json:"uHeight,omitempty"`
+}
+
+// RackList defines model for RackList.
+type RackList struct {
+	Racks []Rack `json:"racks"`
+}
+
+// RackUpdate defines model for RackUpdate.
+type RackUpdate struct {
+	LocationId openapi_types.UUID `json:"locationId"`
+	Name       string             `json:"name"`
+	Notes      *string            `json:"notes,omitempty"`
+	UHeight    *int32             `json:"uHeight,omitempty"`
+	Version    int32              `json:"version"`
+}
+
 // Role defines model for Role.
 type Role string
+
+// Site defines model for Site.
+type Site struct {
+	Address       string             `json:"address"`
+	Code          string             `json:"code"`
+	ContactEmail  string             `json:"contactEmail"`
+	ContactName   string             `json:"contactName"`
+	ContactPhone  string             `json:"contactPhone"`
+	CreatedAt     time.Time          `json:"createdAt"`
+	Id            openapi_types.UUID `json:"id"`
+	LocationCount int64              `json:"locationCount"`
+	Name          string             `json:"name"`
+	Notes         string             `json:"notes"`
+	RackCount     int64              `json:"rackCount"`
+	Timezone      string             `json:"timezone"`
+	UpdatedAt     time.Time          `json:"updatedAt"`
+	Version       int32              `json:"version"`
+}
+
+// SiteInput defines model for SiteInput.
+type SiteInput struct {
+	Address      *string `json:"address,omitempty"`
+	Code         string  `json:"code"`
+	ContactEmail *string `json:"contactEmail,omitempty"`
+	ContactName  *string `json:"contactName,omitempty"`
+	ContactPhone *string `json:"contactPhone,omitempty"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+
+	// Timezone IANA time zone (default Asia/Ho_Chi_Minh)
+	Timezone *string `json:"timezone,omitempty"`
+}
+
+// SiteList defines model for SiteList.
+type SiteList struct {
+	Sites []Site `json:"sites"`
+}
+
+// SiteScopeInput Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
+type SiteScopeInput struct {
+	All     bool                 `json:"all"`
+	SiteIds []openapi_types.UUID `json:"siteIds"`
+}
+
+// SiteUpdate defines model for SiteUpdate.
+type SiteUpdate struct {
+	Address      *string `json:"address,omitempty"`
+	Code         string  `json:"code"`
+	ContactEmail *string `json:"contactEmail,omitempty"`
+	ContactName  *string `json:"contactName,omitempty"`
+	ContactPhone *string `json:"contactPhone,omitempty"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+
+	// Timezone IANA time zone (default Asia/Ho_Chi_Minh)
+	Timezone *string `json:"timezone,omitempty"`
+	Version  int32   `json:"version"`
+}
 
 // UpdateMemberRequest defines model for UpdateMemberRequest.
 type UpdateMemberRequest struct {
 	Permissions []Permission `json:"permissions"`
 	Role        Role         `json:"role"`
-	Version     int32        `json:"version"`
+
+	// SiteScope Omit to keep the current scope. all=true removes the limit; otherwise only siteIds (owner/admin only).
+	SiteScope *SiteScopeInput `json:"siteScope,omitempty"`
+	Version   int32           `json:"version"`
 }
 
 // UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
@@ -447,8 +597,17 @@ type AuditTo = time.Time
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
 
+// LocationId defines model for LocationId.
+type LocationId = openapi_types.UUID
+
 // OrgId defines model for OrgId.
 type OrgId = openapi_types.UUID
+
+// RackId defines model for RackId.
+type RackId = openapi_types.UUID
+
+// SiteId defines model for SiteId.
+type SiteId = openapi_types.UUID
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
@@ -596,6 +755,51 @@ type RegenerateInviteParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateSiteParams defines parameters for CreateSite.
+type CreateSiteParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteSiteParams defines parameters for DeleteSite.
+type DeleteSiteParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateSiteParams defines parameters for UpdateSite.
+type UpdateSiteParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateLocationParams defines parameters for CreateLocation.
+type CreateLocationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteLocationParams defines parameters for DeleteLocation.
+type DeleteLocationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateLocationParams defines parameters for UpdateLocation.
+type UpdateLocationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateRackParams defines parameters for CreateRack.
+type CreateRackParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteRackParams defines parameters for DeleteRack.
+type DeleteRackParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateRackParams defines parameters for UpdateRack.
+type UpdateRackParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AcceptAccountTokenJSONRequestBody defines body for AcceptAccountToken for application/json ContentType.
 type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
 
@@ -622,6 +826,24 @@ type AddMemberJSONRequestBody = AddMemberRequest
 
 // UpdateMemberJSONRequestBody defines body for UpdateMember for application/json ContentType.
 type UpdateMemberJSONRequestBody = UpdateMemberRequest
+
+// CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
+type CreateSiteJSONRequestBody = SiteInput
+
+// UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
+type UpdateSiteJSONRequestBody = SiteUpdate
+
+// CreateLocationJSONRequestBody defines body for CreateLocation for application/json ContentType.
+type CreateLocationJSONRequestBody = LocationInput
+
+// UpdateLocationJSONRequestBody defines body for UpdateLocation for application/json ContentType.
+type UpdateLocationJSONRequestBody = LocationUpdate
+
+// CreateRackJSONRequestBody defines body for CreateRack for application/json ContentType.
+type CreateRackJSONRequestBody = RackInput
+
+// UpdateRackJSONRequestBody defines body for UpdateRack for application/json ContentType.
+type UpdateRackJSONRequestBody = RackUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -712,6 +934,45 @@ type ServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
+	// ListSites Sites of the organization (filtered by the member site scope)
+	// (GET /orgs/{orgId}/sites)
+	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateSite Create a site (owner/admin/editor without a site scope)
+	// (POST /orgs/{orgId}/sites)
+	CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams)
+	// DeleteSite Soft-delete a site (owner/admin)
+	// (DELETE /orgs/{orgId}/sites/{siteId})
+	DeleteSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params DeleteSiteParams)
+	// GetSite One site
+	// (GET /orgs/{orgId}/sites/{siteId})
+	GetSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId)
+	// UpdateSite Edit a site (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/sites/{siteId})
+	UpdateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params UpdateSiteParams)
+	// ListLocations Location tree of the site as a flat list (parentId links)
+	// (GET /orgs/{orgId}/sites/{siteId}/locations)
+	ListLocations(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId)
+	// CreateLocation Add a building, floor or room
+	// (POST /orgs/{orgId}/sites/{siteId}/locations)
+	CreateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateLocationParams)
+	// DeleteLocation Delete an empty location (409 while it has children or racks)
+	// (DELETE /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+	DeleteLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params DeleteLocationParams)
+	// UpdateLocation Rename / reorder a location
+	// (PATCH /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+	UpdateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params UpdateLocationParams)
+	// ListRacks Racks of the site
+	// (GET /orgs/{orgId}/sites/{siteId}/racks)
+	ListRacks(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId)
+	// CreateRack Add a rack to a location of the site
+	// (POST /orgs/{orgId}/sites/{siteId}/racks)
+	CreateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateRackParams)
+	// DeleteRack Delete an empty rack
+	// (DELETE /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+	DeleteRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params DeleteRackParams)
+	// UpdateRack Edit / move a rack within the site
+	// (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+	UpdateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params UpdateRackParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -889,6 +1150,84 @@ func (_ Unimplemented) UpdateMember(w http.ResponseWriter, r *http.Request, orgI
 // RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 // (POST /orgs/{orgId}/members/{userId}/invite)
 func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSites Sites of the organization (filtered by the member site scope)
+// (GET /orgs/{orgId}/sites)
+func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateSite Create a site (owner/admin/editor without a site scope)
+// (POST /orgs/{orgId}/sites)
+func (_ Unimplemented) CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteSite Soft-delete a site (owner/admin)
+// (DELETE /orgs/{orgId}/sites/{siteId})
+func (_ Unimplemented) DeleteSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params DeleteSiteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetSite One site
+// (GET /orgs/{orgId}/sites/{siteId})
+func (_ Unimplemented) GetSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateSite Edit a site (optimistic lock on version)
+// (PATCH /orgs/{orgId}/sites/{siteId})
+func (_ Unimplemented) UpdateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params UpdateSiteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListLocations Location tree of the site as a flat list (parentId links)
+// (GET /orgs/{orgId}/sites/{siteId}/locations)
+func (_ Unimplemented) ListLocations(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateLocation Add a building, floor or room
+// (POST /orgs/{orgId}/sites/{siteId}/locations)
+func (_ Unimplemented) CreateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateLocationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteLocation Delete an empty location (409 while it has children or racks)
+// (DELETE /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+func (_ Unimplemented) DeleteLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params DeleteLocationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateLocation Rename / reorder a location
+// (PATCH /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+func (_ Unimplemented) UpdateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params UpdateLocationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListRacks Racks of the site
+// (GET /orgs/{orgId}/sites/{siteId}/racks)
+func (_ Unimplemented) ListRacks(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateRack Add a rack to a location of the site
+// (POST /orgs/{orgId}/sites/{siteId}/racks)
+func (_ Unimplemented) CreateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateRackParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteRack Delete an empty rack
+// (DELETE /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+func (_ Unimplemented) DeleteRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params DeleteRackParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateRack Edit / move a rack within the site
+// (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+func (_ Unimplemented) UpdateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params UpdateRackParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2211,6 +2550,731 @@ func (siw *ServerInterfaceWrapper) RegenerateInvite(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListSites operation middleware
+func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSites(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateSite operation middleware
+func (siw *ServerInterfaceWrapper) CreateSite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSiteParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateSite(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteSite operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSiteParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteSite(w, r, orgId, siteId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSite operation middleware
+func (siw *ServerInterfaceWrapper) GetSite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSite(w, r, orgId, siteId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSite operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSiteParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSite(w, r, orgId, siteId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListLocations operation middleware
+func (siw *ServerInterfaceWrapper) ListLocations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLocations(w, r, orgId, siteId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateLocation operation middleware
+func (siw *ServerInterfaceWrapper) CreateLocation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateLocationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateLocation(w, r, orgId, siteId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteLocation operation middleware
+func (siw *ServerInterfaceWrapper) DeleteLocation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "locationId" -------------
+	var locationId LocationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "locationId", chi.URLParam(r, "locationId"), &locationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locationId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteLocationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteLocation(w, r, orgId, siteId, locationId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateLocation operation middleware
+func (siw *ServerInterfaceWrapper) UpdateLocation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "locationId" -------------
+	var locationId LocationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "locationId", chi.URLParam(r, "locationId"), &locationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locationId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateLocationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateLocation(w, r, orgId, siteId, locationId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRacks operation middleware
+func (siw *ServerInterfaceWrapper) ListRacks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRacks(w, r, orgId, siteId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRack operation middleware
+func (siw *ServerInterfaceWrapper) CreateRack(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRackParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRack(w, r, orgId, siteId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRack operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRack(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "rackId" -------------
+	var rackId RackId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rackId", chi.URLParam(r, "rackId"), &rackId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "rackId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRackParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRack(w, r, orgId, siteId, rackId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRack operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRack(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", chi.URLParam(r, "siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "rackId" -------------
+	var rackId RackId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rackId", chi.URLParam(r, "rackId"), &rackId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "rackId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRackParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRack(w, r, orgId, siteId, rackId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -2389,6 +3453,45 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/account-tokens/{token}", wrapper.AcceptAccountToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites", wrapper.ListSites)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/sites", wrapper.CreateSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/sites/{siteId}", wrapper.DeleteSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites/{siteId}", wrapper.GetSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}", wrapper.UpdateSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/locations", wrapper.ListLocations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/locations", wrapper.CreateLocation)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/locations/{locationId}", wrapper.DeleteLocation)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/locations/{locationId}", wrapper.UpdateLocation)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/racks", wrapper.ListRacks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/racks", wrapper.CreateRack)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/racks/{rackId}", wrapper.DeleteRack)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/sites/{siteId}/racks/{rackId}", wrapper.UpdateRack)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/audit", wrapper.ListOrgAudit)
@@ -4167,6 +5270,1214 @@ func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w 
 	return err
 }
 
+type ListSitesRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListSitesResponseObject interface {
+	VisitListSitesResponse(w http.ResponseWriter) error
+}
+
+type ListSites200JSONResponse SiteList
+
+func (response ListSites200JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSites400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListSites400JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSites401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSites401JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSites403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListSites403JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSites404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListSites404JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSites409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListSites409JSONResponse) VisitListSitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSiteRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateSiteParams
+	Body   *CreateSiteJSONRequestBody
+}
+
+type CreateSiteResponseObject interface {
+	VisitCreateSiteResponse(w http.ResponseWriter) error
+}
+
+type CreateSite201JSONResponse Site
+
+func (response CreateSite201JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSite400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateSite400JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSite401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateSite401JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSite403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateSite403JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSite404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateSite404JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSite409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateSite409JSONResponse) VisitCreateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSiteRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	Params DeleteSiteParams
+}
+
+type DeleteSiteResponseObject interface {
+	VisitDeleteSiteResponse(w http.ResponseWriter) error
+}
+
+type DeleteSite204Response struct {
+}
+
+func (response DeleteSite204Response) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteSite400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteSite400JSONResponse) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSite401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteSite401JSONResponse) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSite403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteSite403JSONResponse) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSite404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteSite404JSONResponse) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSite409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteSite409JSONResponse) VisitDeleteSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSiteRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+}
+
+type GetSiteResponseObject interface {
+	VisitGetSiteResponse(w http.ResponseWriter) error
+}
+
+type GetSite200JSONResponse Site
+
+func (response GetSite200JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSite400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetSite400JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSite401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetSite401JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSite403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetSite403JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSite404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSite404JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSite409JSONResponse struct{ ConflictJSONResponse }
+
+func (response GetSite409JSONResponse) VisitGetSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSiteRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	Params UpdateSiteParams
+	Body   *UpdateSiteJSONRequestBody
+}
+
+type UpdateSiteResponseObject interface {
+	VisitUpdateSiteResponse(w http.ResponseWriter) error
+}
+
+type UpdateSite200JSONResponse Site
+
+func (response UpdateSite200JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSite400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSite400JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSite401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateSite401JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSite403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateSite403JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSite404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateSite404JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSite409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateSite409JSONResponse) VisitUpdateSiteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocationsRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+}
+
+type ListLocationsResponseObject interface {
+	VisitListLocationsResponse(w http.ResponseWriter) error
+}
+
+type ListLocations200JSONResponse LocationList
+
+func (response ListLocations200JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocations400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListLocations400JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocations401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListLocations401JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocations403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListLocations403JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocations404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListLocations404JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLocations409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListLocations409JSONResponse) VisitListLocationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocationRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	Params CreateLocationParams
+	Body   *CreateLocationJSONRequestBody
+}
+
+type CreateLocationResponseObject interface {
+	VisitCreateLocationResponse(w http.ResponseWriter) error
+}
+
+type CreateLocation201JSONResponse Location
+
+func (response CreateLocation201JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocation400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateLocation400JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocation401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateLocation401JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocation403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateLocation403JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocation404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateLocation404JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLocation409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateLocation409JSONResponse) VisitCreateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLocationRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	SiteId     SiteId     `json:"siteId"`
+	LocationId LocationId `json:"locationId"`
+	Params     DeleteLocationParams
+}
+
+type DeleteLocationResponseObject interface {
+	VisitDeleteLocationResponse(w http.ResponseWriter) error
+}
+
+type DeleteLocation204Response struct {
+}
+
+func (response DeleteLocation204Response) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteLocation400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteLocation400JSONResponse) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLocation401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteLocation401JSONResponse) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLocation403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteLocation403JSONResponse) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLocation404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteLocation404JSONResponse) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLocation409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteLocation409JSONResponse) VisitDeleteLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocationRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	SiteId     SiteId     `json:"siteId"`
+	LocationId LocationId `json:"locationId"`
+	Params     UpdateLocationParams
+	Body       *UpdateLocationJSONRequestBody
+}
+
+type UpdateLocationResponseObject interface {
+	VisitUpdateLocationResponse(w http.ResponseWriter) error
+}
+
+type UpdateLocation200JSONResponse Location
+
+func (response UpdateLocation200JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocation400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateLocation400JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocation401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateLocation401JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocation403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateLocation403JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocation404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateLocation404JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLocation409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateLocation409JSONResponse) VisitUpdateLocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacksRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+}
+
+type ListRacksResponseObject interface {
+	VisitListRacksResponse(w http.ResponseWriter) error
+}
+
+type ListRacks200JSONResponse RackList
+
+func (response ListRacks200JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacks400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRacks400JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacks401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRacks401JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacks403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListRacks403JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacks404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListRacks404JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRacks409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListRacks409JSONResponse) VisitListRacksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRackRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	Params CreateRackParams
+	Body   *CreateRackJSONRequestBody
+}
+
+type CreateRackResponseObject interface {
+	VisitCreateRackResponse(w http.ResponseWriter) error
+}
+
+type CreateRack201JSONResponse Rack
+
+func (response CreateRack201JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRack400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateRack400JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRack401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateRack401JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRack403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateRack403JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRack404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateRack404JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRack409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateRack409JSONResponse) VisitCreateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRackRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	RackId RackId `json:"rackId"`
+	Params DeleteRackParams
+}
+
+type DeleteRackResponseObject interface {
+	VisitDeleteRackResponse(w http.ResponseWriter) error
+}
+
+type DeleteRack204Response struct {
+}
+
+func (response DeleteRack204Response) VisitDeleteRackResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteRack400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteRack400JSONResponse) VisitDeleteRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRack401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteRack401JSONResponse) VisitDeleteRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRack403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteRack403JSONResponse) VisitDeleteRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRack404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteRack404JSONResponse) VisitDeleteRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRack409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteRack409JSONResponse) VisitDeleteRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRackRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	SiteId SiteId `json:"siteId"`
+	RackId RackId `json:"rackId"`
+	Params UpdateRackParams
+	Body   *UpdateRackJSONRequestBody
+}
+
+type UpdateRackResponseObject interface {
+	VisitUpdateRackResponse(w http.ResponseWriter) error
+}
+
+type UpdateRack200JSONResponse Rack
+
+func (response UpdateRack200JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRack400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateRack400JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRack401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateRack401JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRack403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateRack403JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRack404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateRack404JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRack409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateRack409JSONResponse) VisitUpdateRackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
@@ -4256,6 +6567,45 @@ type StrictServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(ctx context.Context, request RegenerateInviteRequestObject) (RegenerateInviteResponseObject, error)
+	// ListSites Sites of the organization (filtered by the member site scope)
+	// (GET /orgs/{orgId}/sites)
+	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
+	// CreateSite Create a site (owner/admin/editor without a site scope)
+	// (POST /orgs/{orgId}/sites)
+	CreateSite(ctx context.Context, request CreateSiteRequestObject) (CreateSiteResponseObject, error)
+	// DeleteSite Soft-delete a site (owner/admin)
+	// (DELETE /orgs/{orgId}/sites/{siteId})
+	DeleteSite(ctx context.Context, request DeleteSiteRequestObject) (DeleteSiteResponseObject, error)
+	// GetSite One site
+	// (GET /orgs/{orgId}/sites/{siteId})
+	GetSite(ctx context.Context, request GetSiteRequestObject) (GetSiteResponseObject, error)
+	// UpdateSite Edit a site (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/sites/{siteId})
+	UpdateSite(ctx context.Context, request UpdateSiteRequestObject) (UpdateSiteResponseObject, error)
+	// ListLocations Location tree of the site as a flat list (parentId links)
+	// (GET /orgs/{orgId}/sites/{siteId}/locations)
+	ListLocations(ctx context.Context, request ListLocationsRequestObject) (ListLocationsResponseObject, error)
+	// CreateLocation Add a building, floor or room
+	// (POST /orgs/{orgId}/sites/{siteId}/locations)
+	CreateLocation(ctx context.Context, request CreateLocationRequestObject) (CreateLocationResponseObject, error)
+	// DeleteLocation Delete an empty location (409 while it has children or racks)
+	// (DELETE /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+	DeleteLocation(ctx context.Context, request DeleteLocationRequestObject) (DeleteLocationResponseObject, error)
+	// UpdateLocation Rename / reorder a location
+	// (PATCH /orgs/{orgId}/sites/{siteId}/locations/{locationId})
+	UpdateLocation(ctx context.Context, request UpdateLocationRequestObject) (UpdateLocationResponseObject, error)
+	// ListRacks Racks of the site
+	// (GET /orgs/{orgId}/sites/{siteId}/racks)
+	ListRacks(ctx context.Context, request ListRacksRequestObject) (ListRacksResponseObject, error)
+	// CreateRack Add a rack to a location of the site
+	// (POST /orgs/{orgId}/sites/{siteId}/racks)
+	CreateRack(ctx context.Context, request CreateRackRequestObject) (CreateRackResponseObject, error)
+	// DeleteRack Delete an empty rack
+	// (DELETE /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+	DeleteRack(ctx context.Context, request DeleteRackRequestObject) (DeleteRackResponseObject, error)
+	// UpdateRack Edit / move a rack within the site
+	// (PATCH /orgs/{orgId}/sites/{siteId}/racks/{rackId})
+	UpdateRack(ctx context.Context, request UpdateRackRequestObject) (UpdateRackResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -5110,6 +7460,410 @@ func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegenerateInviteResponseObject); ok {
 		if err := validResponse.VisitRegenerateInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSites operation middleware
+func (sh *strictHandler) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListSitesRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSites(ctx, request.(ListSitesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSites")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSitesResponseObject); ok {
+		if err := validResponse.VisitListSitesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateSite operation middleware
+func (sh *strictHandler) CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams) {
+	var request CreateSiteRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateSiteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateSite(ctx, request.(CreateSiteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateSite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateSiteResponseObject); ok {
+		if err := validResponse.VisitCreateSiteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteSite operation middleware
+func (sh *strictHandler) DeleteSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params DeleteSiteParams) {
+	var request DeleteSiteRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteSite(ctx, request.(DeleteSiteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteSite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteSiteResponseObject); ok {
+		if err := validResponse.VisitDeleteSiteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSite operation middleware
+func (sh *strictHandler) GetSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	var request GetSiteRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSite(ctx, request.(GetSiteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSiteResponseObject); ok {
+		if err := validResponse.VisitGetSiteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateSite operation middleware
+func (sh *strictHandler) UpdateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params UpdateSiteParams) {
+	var request UpdateSiteRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.Params = params
+
+	var body UpdateSiteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateSite(ctx, request.(UpdateSiteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateSite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateSiteResponseObject); ok {
+		if err := validResponse.VisitUpdateSiteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListLocations operation middleware
+func (sh *strictHandler) ListLocations(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	var request ListLocationsRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLocations(ctx, request.(ListLocationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLocations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLocationsResponseObject); ok {
+		if err := validResponse.VisitListLocationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateLocation operation middleware
+func (sh *strictHandler) CreateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateLocationParams) {
+	var request CreateLocationRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.Params = params
+
+	var body CreateLocationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateLocation(ctx, request.(CreateLocationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateLocation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateLocationResponseObject); ok {
+		if err := validResponse.VisitCreateLocationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteLocation operation middleware
+func (sh *strictHandler) DeleteLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params DeleteLocationParams) {
+	var request DeleteLocationRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.LocationId = locationId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteLocation(ctx, request.(DeleteLocationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteLocation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteLocationResponseObject); ok {
+		if err := validResponse.VisitDeleteLocationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateLocation operation middleware
+func (sh *strictHandler) UpdateLocation(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, locationId LocationId, params UpdateLocationParams) {
+	var request UpdateLocationRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.LocationId = locationId
+	request.Params = params
+
+	var body UpdateLocationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateLocation(ctx, request.(UpdateLocationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateLocation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateLocationResponseObject); ok {
+		if err := validResponse.VisitUpdateLocationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRacks operation middleware
+func (sh *strictHandler) ListRacks(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId) {
+	var request ListRacksRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRacks(ctx, request.(ListRacksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRacks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRacksResponseObject); ok {
+		if err := validResponse.VisitListRacksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateRack operation middleware
+func (sh *strictHandler) CreateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, params CreateRackParams) {
+	var request CreateRackRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.Params = params
+
+	var body CreateRackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateRack(ctx, request.(CreateRackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateRack")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateRackResponseObject); ok {
+		if err := validResponse.VisitCreateRackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRack operation middleware
+func (sh *strictHandler) DeleteRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params DeleteRackParams) {
+	var request DeleteRackRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.RackId = rackId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRack(ctx, request.(DeleteRackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRack")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRackResponseObject); ok {
+		if err := validResponse.VisitDeleteRackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateRack operation middleware
+func (sh *strictHandler) UpdateRack(w http.ResponseWriter, r *http.Request, orgId OrgId, siteId SiteId, rackId RackId, params UpdateRackParams) {
+	var request UpdateRackRequestObject
+
+	request.OrgId = orgId
+	request.SiteId = siteId
+	request.RackId = rackId
+	request.Params = params
+
+	var body UpdateRackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateRack(ctx, request.(UpdateRackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateRack")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateRackResponseObject); ok {
+		if err := validResponse.VisitUpdateRackResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

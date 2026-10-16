@@ -32,7 +32,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.
 
 ### Dữ liệu hạ tầng
-- [ ] **P1-07 Sites/Location/Rack**: CRUD, cây location, rack view đơn giản; áp dụng giới hạn membership theo site (`site_scope`, chuyển từ P1-04 vì cần bảng sites để kiểm tra).
+- [x] **P1-07 Sites/Location/Rack**: CRUD, cây location, rack view đơn giản; áp dụng giới hạn membership theo site (`site_scope`, chuyển từ P1-04 vì cần bảng sites để kiểm tra).
 - [ ] **P1-08 Kho thiết bị**: bảng devices đủ trường SRS §4.1 (trừ phần Phase 2), danh sách phân trang server + lọc + chọn cột + sửa hàng loạt; trang chi tiết các tab có sẵn dữ liệu; custom fields + tag.
 - [ ] **P1-09 Template & interface**: template theo SRS §4.3 sinh cổng physical; thêm interface ảo; IP theo interface (CIDR, VRF, role); chọn interface quản trị; IP NAT/public; `poll_address`.
 - [ ] **P1-10 IPAM cơ bản**: VLAN, subnet, ip_ranges; mức sử dụng; gợi ý IP trống; tìm IP thuộc ai.

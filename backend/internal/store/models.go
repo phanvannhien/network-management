@@ -25,6 +25,19 @@ type AuditLog struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type Location struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	SiteID         pgtype.UUID
+	ParentID       pgtype.UUID
+	Kind           string
+	Name           string
+	SortOrder      int32
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Membership struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -67,6 +80,19 @@ type Organization struct {
 	DeletedAt pgtype.Timestamptz
 }
 
+type Rack struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	SiteID         pgtype.UUID
+	LocationID     pgtype.UUID
+	Name           string
+	UHeight        int32
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Session struct {
 	TokenHash            []byte
 	UserID               pgtype.UUID
@@ -78,6 +104,23 @@ type Session struct {
 	LastSeenAt           pgtype.Timestamptz
 	ExpiresAt            pgtype.Timestamptz
 	CsrfToken            string
+}
+
+type Site struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Code           string
+	Name           string
+	Address        string
+	Timezone       string
+	ContactName    string
+	ContactPhone   string
+	ContactEmail   string
+	Notes          string
+	DeletedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
 }
 
 type User struct {

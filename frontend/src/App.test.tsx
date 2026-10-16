@@ -542,6 +542,7 @@ describe('members', () => {
       role: 'editor',
       permissions: ['credential.reveal'],
       version: 1,
+      siteScope: { all: true, siteIds: [] },
     })
   })
 
@@ -941,5 +942,143 @@ describe('app shell (P1-06)', () => {
     expect(await screen.findByRole('option', { name: /Thành viên/ })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /Audit log/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /Hệ thống/ })).not.toBeInTheDocument()
+  })
+})
+
+const SITE_ID = '44444444-4444-4444-8444-444444444444'
+const SITE = {
+  id: SITE_ID,
+  code: 'HQ',
+  name: 'HQ Hà Nội',
+  address: '1 Tràng Tiền',
+  timezone: 'Asia/Ho_Chi_Minh',
+  contactName: 'Anh Bảo vệ',
+  contactPhone: '0900000000',
+  contactEmail: '',
+  notes: '',
+  locationCount: 2,
+  rackCount: 1,
+  version: 1,
+  createdAt: '2026-10-16T00:00:00Z',
+  updatedAt: '2026-10-16T00:00:00Z',
+}
+const LOCS = [
+  { id: 'l-b', parentId: null, kind: 'building', name: 'Tòa A', sortOrder: 0, version: 1 },
+  { id: 'l-r', parentId: 'l-b', kind: 'room', name: 'Phòng máy chủ', sortOrder: 0, version: 1 },
+]
+const RACK = { id: 'r-1', locationId: 'l-r', name: 'Rack A1', uHeight: 42, notes: '', version: 1 }
+const siteRoutes = (extra: Record<string, () => Response> = {}) => ({
+  'GET /api/auth/me': () => json(SESSION),
+  'GET /api/healthz': () => json(HEALTH),
+  [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE] }),
+  [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}`]: () => json(SITE),
+  [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}/locations`]: () => json({ locations: LOCS }),
+  [`GET /api/orgs/${ORG_ID}/sites/${SITE_ID}/racks`]: () => json({ racks: [RACK] }),
+  ...extra,
+})
+
+describe('sites (P1-07)', () => {
+  it('creates a site and opens it', async () => {
+    const calls = fakeApi(
+      siteRoutes({
+        [`POST /api/orgs/${ORG_ID}/sites`]: () => json(SITE, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites`)
+    expect(await screen.findByRole('link', { name: 'HQ' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm site' }))
+    fireEvent.change(await screen.findByLabelText('Mã site'), { target: { value: 'HQ' } })
+    fireEvent.change(screen.getByLabelText('Tên site'), { target: { value: 'HQ Hà Nội' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    expect(await screen.findByRole('heading', { name: /HQ · HQ Hà Nội/ })).toBeInTheDocument()
+    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/sites'))!
+    expect(await post.clone().json()).toMatchObject({
+      code: 'HQ',
+      name: 'HQ Hà Nội',
+      timezone: 'Asia/Ho_Chi_Minh',
+    })
+  })
+
+  it('location tree offers only valid child kinds and sends the parent', async () => {
+    const calls = fakeApi(
+      siteRoutes({
+        [`POST /api/orgs/${ORG_ID}/sites/${SITE_ID}/locations`]: () =>
+          json(
+            { id: 'l-f', parentId: 'l-b', kind: 'floor', name: 'Tầng 3', sortOrder: 0, version: 1 },
+            201,
+          ),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
+    expect(await screen.findByText('Phòng máy chủ')).toBeInTheDocument()
+    // A building accepts floors and rooms; a room accepts nothing.
+    expect(screen.getByRole('button', { name: 'Thêm tầng vào Tòa A' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /vào Phòng máy chủ/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm tầng vào Tòa A' }))
+    fireEvent.change(await screen.findByLabelText('Tên Tầng'), { target: { value: 'Tầng 3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    await waitFor(() =>
+      expect(calls.some((r) => r.url.endsWith('/locations') && r.method === 'POST')).toBe(true),
+    )
+    const post = calls.find((r) => r.url.endsWith('/locations') && r.method === 'POST')!
+    expect(await post.clone().json()).toEqual({ kind: 'floor', name: 'Tầng 3', parentId: 'l-b' })
+  })
+
+  it('rack tab shows the front view with numbered units', async () => {
+    fakeApi(siteRoutes())
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}?tab=racks`)
+    const view = await screen.findByRole('list', { name: 'Mặt trước Rack A1' })
+    expect(within(view).getAllByRole('listitem')).toHaveLength(42)
+    expect(screen.getByText(/Tòa A › Phòng máy chủ · 42U/)).toBeInTheDocument()
+  })
+
+  it('viewers get a read-only site', async () => {
+    fakeApi(
+      siteRoutes({
+        [`GET /api/orgs/${ORG_ID}`]: () =>
+          json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
+    expect(await screen.findByText('Bạn chỉ có quyền xem')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Thêm tòa nhà/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sửa site' })).not.toBeInTheDocument()
+  })
+
+  it('deleting a site requires typing its code', async () => {
+    const calls = fakeApi(
+      siteRoutes({
+        [`DELETE /api/orgs/${ORG_ID}/sites/${SITE_ID}`]: () => new Response(null, { status: 204 }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm thao tác' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Xóa site' }))
+    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa site HQ?' })
+    const confirm = within(dialog).getByRole('button', { name: 'Xóa site' })
+    expect(confirm).toBeDisabled()
+    fireEvent.change(within(dialog).getByLabelText(/Gõ chính xác/), { target: { value: 'HQ' } })
+    fireEvent.click(confirm)
+    await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
+  })
+
+  it('owners restrict an editor to some sites', async () => {
+    const editor = { ...MEMBER, role: 'editor' }
+    const calls = fakeApi(
+      siteRoutes({
+        [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [editor] }),
+        [`PATCH /api/orgs/${ORG_ID}/members/${MEMBER.userId}`]: () =>
+          json({ ...editor, siteScope: [SITE_ID], version: 2 }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/members`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho viewer@example.com' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa vai trò và quyền' }))
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Mọi site' }))
+    fireEvent.click(await screen.findByRole('checkbox', { name: /HQ/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+    await waitFor(() => expect(calls.some((r) => r.method === 'PATCH')).toBe(true))
+    const patch = calls.find((r) => r.method === 'PATCH')!
+    expect((await patch.clone().json()).siteScope).toEqual({ all: false, siteIds: [SITE_ID] })
   })
 })

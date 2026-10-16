@@ -65,7 +65,13 @@ export function useAddMember(orgId: string) {
 export function useUpdateMember(orgId: string) {
   return useMemberMutation(
     orgId,
-    async (input: { userId: string; role: Role; permissions: Permission[]; version: number }) => {
+    async (input: {
+      userId: string
+      role: Role
+      permissions: Permission[]
+      version: number
+      siteScope?: { all: boolean; siteIds: string[] }
+    }) => {
       const { userId, ...body } = input
       const r = await api.PATCH('/orgs/{orgId}/members/{userId}', {
         params: { ...csrfParam, path: { orgId, userId } },

@@ -143,3 +143,19 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   phải luôn biết đang ở tổ chức nào; app chạy trong mạng không Internet.
 - **Ràng buộc:** mọi trang mới dùng component dùng chung; không màu/kích thước viết cứng ngoài token; đạt WCAG AA; nhãn qua i18n.
 - **Chốt:** người dùng xác nhận 2026-10-16 (kèm 10 chỉnh sửa ghi trong DESIGN.md §8b, đánh dấu ✎).
+
+### ADR-025 — Site, location, rack; phạm vi site của thành viên; sơ đồ thuộc đúng một site
+- **Quyết định:**
+  - Phân cấp: tổ chức (khách hàng / nội bộ) → nhiều **site** → cây **location** (tòa nhà → tầng → phòng; tầng/phòng có thể
+    nằm thẳng dưới site cho site nhỏ) → **rack** (thuộc một location, 1–60U, mặc định 42U). Mỗi site có nhiều thiết bị (P1-08)
+    và nhiều sơ đồ (P1-13). Mã site duy nhất trong tổ chức; tên location duy nhất giữa các nút anh em.
+  - **Mỗi sơ đồ thuộc đúng một site** (`diagrams.site_id`). Sơ đồ WAN/VPN đặt ở site chính (thường là HQ / đầu VPN); thiết bị
+    của site khác vẫn đặt lên được vì một thiết bị có thể nằm trên nhiều sơ đồ. (Thay câu "hoặc nhiều site" trong SRS §6.1.)
+  - `memberships.site_scope`: NULL = mọi site; có giá trị = chỉ các site đó. Chỉ áp dụng cho editor/viewer — owner/admin luôn
+    thấy toàn tổ chức. Site ngoài phạm vi trả 404 (như chéo tổ chức). Thành viên bị giới hạn không tạo được site mới.
+    Thiết bị/sơ đồ (P1-08, P1-13) dùng lại cùng phạm vi.
+  - Xóa site = **xóa mềm** (`deleted_at`), chỉ owner/admin, xác nhận gõ lại tên; dữ liệu và audit giữ nguyên.
+    Location chỉ xóa được khi không còn nút con/rack; rack chỉ xóa được khi trống (từ P1-08: không còn thiết bị).
+- **Lý do:** MSP quản lý nhiều khách hàng, mỗi khách hàng nhiều chi nhánh; kỹ sư hiện trường chỉ cần (và chỉ nên) thấy site
+  mình phụ trách; cây location chuẩn hóa thay ô gõ tự do (SRS §3); sơ đồ một site giữ phân quyền theo site đơn giản.
+- **Chốt:** người dùng xác nhận 2026-10-16.

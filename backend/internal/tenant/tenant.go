@@ -49,6 +49,24 @@ func (m Membership) CanEdit() bool {
 // CanAdmin: owner and admin manage the organization itself (settings, users).
 func (m Membership) CanAdmin() bool { return m.Role == RoleOwner || m.Role == RoleAdmin }
 
+// SiteFilter is the site restriction to apply to queries (ADR-025): nil = every site. Owner/admin are never
+// restricted; for editors/viewers a non-nil scope (even empty) limits them to exactly those sites.
+func (m Membership) SiteFilter() []pgtype.UUID {
+	if m.CanAdmin() || m.SiteScope == nil {
+		return nil
+	}
+	return m.SiteScope
+}
+
+// Scoped reports whether the member is limited to some sites (and so may not create new ones).
+func (m Membership) Scoped() bool { return m.SiteFilter() != nil }
+
+// SiteAllowed reports whether the member may see the site.
+func (m Membership) SiteAllowed(site pgtype.UUID) bool {
+	f := m.SiteFilter()
+	return f == nil || slices.Contains(f, site)
+}
+
 // Has reports an extra permission (credential.reveal, credential.manage, user.manage).
 func (m Membership) Has(permission string) bool { return slices.Contains(m.Permissions, permission) }
 
