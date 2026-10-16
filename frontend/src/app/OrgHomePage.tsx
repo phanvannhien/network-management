@@ -254,7 +254,7 @@ function QuickLink({ to, icon, label }: { to: string; icon: ReactNode; label: st
 
 /**
  * Organization landing page /o/:orgId; the full dashboard (figures, issues, expiring items) comes
- * with P1-06. Health moved to the system area (DESIGN.md §6).
+ * with P1-24. Health moved to the system area (DESIGN.md §6).
  */
 export function OrgHomePage() {
   const { t } = useTranslation()

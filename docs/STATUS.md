@@ -5,6 +5,30 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-06 App shell
+- Đã làm (phần lớn khung đã có từ UI Bước 2–3; task này hoàn thiện phần còn lại theo SRS §2):
+  - **Ngôn ngữ vi/en** trong menu tài khoản (tên ngôn ngữ ghi bằng chính ngôn ngữ đó), nhớ theo trình duyệt (`ntb-lang`),
+    đồng bộ `<html lang>`. Chuỗi viết cứng còn lại (RequireAuth, RootRedirect, thông báo lỗi dự phòng của các hook) chuyển
+    sang i18n (`errors.*`, `noOrg.*`).
+  - **Ctrl+K** theo nhóm: Trang (chỉ trang được phép mở — Audit log chỉ owner/admin, mục Hệ thống chỉ system admin),
+    Tổ chức khác (đổi tổ chức), Thành viên (mở trang Thành viên đã lọc sẵn qua `?q=`), Thiết bị (dữ liệu mẫu, ghi rõ tới P1-08;
+    tìm theo hostname/IP/MAC/S/N/part number/site), Lệnh (đổi sáng/tối, đổi ngôn ngữ). Dữ liệu chỉ tải khi mở palette.
+  - Đã có từ trước: menu trái theo SRS §2 (module chưa làm thì ẩn: IPAM, Sites, Đối tác, Kho mật khẩu, Giám sát, Báo cáo),
+    thu gọn < 1440px, tên tổ chức luôn hiện + đổi tổ chức, thông báo (khung), Light/Dark/System, mật độ.
+  - Sửa tham chiếu: dashboard đầy đủ là P1-24 (không phải P1-06).
+- Test / cách kiểm tra: `make check` pass (145 test frontend): chuyển ngôn ngữ (menu đổi chữ, `lang`, localStorage), Ctrl+K
+  tìm thành viên → trang Thành viên đã lọc, Ctrl+K đổi tổ chức, viewer không thấy Audit log/Hệ thống trong Ctrl+K.
+  Ảnh `12-*`, `34-account-menu-*`, `35-devices-english-*`; axe-core 0 vấn đề.
+- Còn dở / lỗi đã biết:
+  - Thông báo lỗi do **backend** trả về vẫn là tiếng Việt khi chọn English (cần `Accept-Language` + bản dịch phía server —
+    đề xuất làm khi có nhu cầu dùng tiếng Anh thật).
+  - Định dạng ngày giờ/số vẫn theo vi-VN ở cả hai ngôn ngữ.
+  - Tùy chọn giao diện/ngôn ngữ lưu theo trình duyệt, chưa lưu theo user phía server.
+  - Thông báo (chuông) mới là khung trống — nội dung đến khi có cảnh báo hết hạn (P2) / trạng thái (P3).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-07 Sites/Location/Rack.
+
 ## 2026-10-16 — P1-05 Audit log
 - Đã làm:
   - API (OpenAPI trước): `GET /api/orgs/{orgId}/audit` (owner/admin) và `GET /api/admin/audit` (system admin, chỉ sự kiện

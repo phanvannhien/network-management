@@ -8,6 +8,7 @@ import { buttonVariants, Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api, errorMessage } from '../api/client'
 import { AuthCard, authControl } from './AuthCard'
+import i18n from '@/i18n'
 
 /** Public page for one-time links: accept an invitation or reset a password (P1-04). */
 export function AcceptInvitePage() {
@@ -24,7 +25,7 @@ export function AcceptInvitePage() {
     queryFn: async () => {
       const r = await api.GET('/account-tokens/{token}', { params: { path: { token } } })
       if (r.data) return r.data
-      throw new Error(errorMessage(r.error, r.response.status, 'Link không hợp lệ'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.linkInvalid')))
     },
   })
   const accept = useMutation({
@@ -34,7 +35,7 @@ export function AcceptInvitePage() {
         body: { displayName, password },
       })
       if (r.response.status === 204) return
-      throw new Error(errorMessage(r.error, r.response.status, 'Không đặt được mật khẩu'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.passwordSet')))
     },
   })
 

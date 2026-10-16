@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation } from 'react-router'
 import { mfaStep, useSession } from './auth'
 
@@ -7,16 +8,17 @@ import { mfaStep, useSession } from './auth'
  * enrollment). This is UX only — the backend rejects every request the session may not make (mfaGate).
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const session = useSession()
   const location = useLocation()
 
   if (session.isPending) {
-    return <p className="p-6 text-sm text-muted-foreground">Đang tải…</p>
+    return <p className="p-6 text-muted-foreground">{t('common.loading')}</p>
   }
   if (session.isError) {
     return (
-      <p role="alert" className="p-6 text-sm text-destructive">
-        Không kết nối được máy chủ: {session.error.message}
+      <p role="alert" className="p-6 text-destructive">
+        {t('errors.noServer', { message: session.error.message })}
       </p>
     )
   }

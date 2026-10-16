@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type components } from '../../api/client'
+import i18n from '@/i18n'
 
 export type Member = components['schemas']['Member']
 export type Permission = components['schemas']['Permission']
@@ -31,7 +32,7 @@ export function useMembers(orgId: string) {
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/members', { params: { path: { orgId } } })
       if (r.data) return r.data.members
-      throw new Error(errorMessage(r.error, r.response.status, 'Không tải được thành viên'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.membersLoad')))
     },
   })
 }
@@ -56,7 +57,7 @@ export function useAddMember(orgId: string) {
         body,
       })
       if (r.data) return r.data
-      throw new Error(errorMessage(r.error, r.response.status, 'Không thêm được thành viên'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.memberAdd')))
     },
   )
 }
@@ -71,7 +72,7 @@ export function useUpdateMember(orgId: string) {
         body,
       })
       if (r.data) return r.data
-      throw new Error(errorMessage(r.error, r.response.status, 'Không lưu được'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.save')))
     },
   )
 }
@@ -82,7 +83,7 @@ export function useRemoveMember(orgId: string) {
       params: { ...csrfParam, path: { orgId, userId } },
     })
     if (r.response.status === 204) return
-    throw new Error(errorMessage(r.error, r.response.status, 'Không gỡ được thành viên'))
+    throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.memberRemove')))
   })
 }
 
@@ -92,7 +93,7 @@ export function useRegenerateInvite(orgId: string) {
       params: { ...csrfParam, path: { orgId, userId } },
     })
     if (r.data) return r.data.inviteToken
-    throw new Error(errorMessage(r.error, r.response.status, 'Không tạo được link mời'))
+    throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.inviteLink')))
   })
 }
 
@@ -105,7 +106,7 @@ export function useAdminUsers(enabled = true) {
     queryFn: async () => {
       const r = await api.GET('/admin/users')
       if (r.data) return r.data.users
-      throw new Error(errorMessage(r.error, r.response.status, 'Không tải được người dùng'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.usersLoad')))
     },
   })
 }
@@ -124,7 +125,7 @@ export function useAdminUserAction() {
             ? await api.POST('/admin/users/{userId}/enable', { params })
             : await api.POST('/admin/users/{userId}/reset-mfa', { params })
       if (r.response.status === 204) return
-      throw new Error(errorMessage(r.error, r.response.status, 'Thao tác thất bại'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.actionFailed')))
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: adminUsersKey }),
   })
@@ -137,9 +138,7 @@ export function useAdminPasswordReset() {
         params: { ...csrfParam, path: { userId } },
       })
       if (r.data) return r.data.resetToken
-      throw new Error(
-        errorMessage(r.error, r.response.status, 'Không tạo được link đặt lại mật khẩu'),
-      )
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.resetLink')))
     },
   })
 }

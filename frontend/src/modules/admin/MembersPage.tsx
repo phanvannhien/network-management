@@ -1,7 +1,7 @@
 import { MoreHorizontal, Plus, ShieldCheck, ShieldOff, UserX } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useSession } from '@/app/auth'
 import { useOrganization } from '@/app/orgs'
@@ -273,7 +273,9 @@ export function MembersPage() {
   const orgName = org.data?.organization.name ?? ''
   useBreadcrumbs([{ label: t('nav.admin') }, { label: t('members.title') }])
 
-  const [filter, setFilter] = useState<FilterState>(emptyFilter)
+  const [params] = useSearchParams()
+  // ?q= preselects a search (e.g. from Ctrl+K → member).
+  const [filter, setFilter] = useState<FilterState>({ ...emptyFilter, q: params.get('q') ?? '' })
   const [inviting, setInviting] = useState(false)
   const [editing, setEditing] = useState<Member | null>(null)
   const [removing, setRemoving] = useState<Member | null>(null)

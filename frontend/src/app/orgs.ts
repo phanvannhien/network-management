@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type OrganizationKind } from '../api/client'
+import i18n from '@/i18n'
 
 export const orgKeys = {
   mine: ['orgs', 'mine'] as const,
@@ -16,9 +17,7 @@ export function useMyOrganizations() {
     queryFn: async () => {
       const result = await api.GET('/orgs')
       if (result.data) return result.data.organizations
-      throw new Error(
-        errorMessage(result.error, result.response.status, 'Không tải được danh sách tổ chức'),
-      )
+      throw new Error(errorMessage(result.error, result.response.status, i18n.t('errors.orgsLoad')))
     },
   })
 }
@@ -31,8 +30,8 @@ export function useOrganization(orgId: string) {
     queryFn: async () => {
       const result = await api.GET('/orgs/{orgId}', { params: { path: { orgId } } })
       if (result.data) return result.data
-      if (result.response.status === 404) throw new NotFoundError('Không tìm thấy tổ chức')
-      throw new Error(errorMessage(result.error, result.response.status, 'Không tải được tổ chức'))
+      if (result.response.status === 404) throw new NotFoundError(i18n.t('errors.orgNotFound'))
+      throw new Error(errorMessage(result.error, result.response.status, i18n.t('errors.orgLoad')))
     },
   })
 }
@@ -48,7 +47,7 @@ export function useUpdateOrganization(orgId: string) {
         body,
       })
       if (result.data) return result.data
-      const message = errorMessage(result.error, result.response.status, 'Không lưu được')
+      const message = errorMessage(result.error, result.response.status, i18n.t('errors.save'))
       throw result.response.status === 409 ? new ConflictError(message) : new Error(message)
     },
     onSuccess: (view) => {
@@ -69,9 +68,7 @@ export function useAdminOrganizations() {
     queryFn: async () => {
       const result = await api.GET('/admin/organizations')
       if (result.data) return result.data.organizations
-      throw new Error(
-        errorMessage(result.error, result.response.status, 'Không tải được danh sách tổ chức'),
-      )
+      throw new Error(errorMessage(result.error, result.response.status, i18n.t('errors.orgsLoad')))
     },
   })
 }
@@ -87,7 +84,9 @@ export function useAdminCreateOrganization() {
     }) => {
       const result = await api.POST('/admin/organizations', { params: csrfParam, body })
       if (result.data) return result.data
-      throw new Error(errorMessage(result.error, result.response.status, 'Không tạo được tổ chức'))
+      throw new Error(
+        errorMessage(result.error, result.response.status, i18n.t('errors.orgCreate')),
+      )
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orgKeys.admin })
@@ -104,7 +103,9 @@ export function useAdminDeleteOrganization() {
         params: { ...csrfParam, path: { orgId } },
       })
       if (result.response.status === 204) return
-      throw new Error(errorMessage(result.error, result.response.status, 'Không xóa được tổ chức'))
+      throw new Error(
+        errorMessage(result.error, result.response.status, i18n.t('errors.orgDelete')),
+      )
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orgKeys.admin })

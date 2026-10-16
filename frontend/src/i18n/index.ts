@@ -23,4 +23,15 @@ void i18n.use(initReactI18next).init({
   initAsync: false,
 })
 
+/** Switches the UI language, remembers it per browser and keeps <html lang> in sync (screen readers). */
+export function setLanguage(lang: 'vi' | 'en'): void {
+  globalThis.localStorage?.setItem(LANGUAGE_KEY, lang)
+  void i18n.changeLanguage(lang)
+}
+
+i18n.on('languageChanged', (lng) => {
+  if (globalThis.document) document.documentElement.lang = lng
+})
+if (globalThis.document) document.documentElement.lang = i18n.language
+
 export default i18n

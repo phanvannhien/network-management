@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api, errorMessage, type components } from '@/api/client'
+import i18n from '@/i18n'
 
 export type AuditEntry = components['schemas']['AuditEntry']
 
@@ -30,7 +31,7 @@ export function useAuditLog(orgId: string | undefined, query: AuditQuery) {
         ? await api.GET('/orgs/{orgId}/audit', { params: { path: { orgId }, query: params } })
         : await api.GET('/admin/audit', { params: { query: params } })
       if (r.data) return r.data
-      throw new Error(errorMessage(r.error, r.response.status, 'Không tải được audit log'))
+      throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.auditLoad')))
     },
   })
 }

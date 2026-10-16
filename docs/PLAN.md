@@ -29,7 +29,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module.
 - [x] **P1-04 Người dùng & vai trò**: mời/tạo user, membership nhiều tổ chức, vai trò owner/admin/editor/viewer, giới hạn theo site; kiểm tra quyền ở mọi endpoint.
 - [x] **P1-05 Audit log**: ghi trước/sau cho thao tác ghi, đăng nhập, export; màn hình xem/lọc audit. *(export chưa có phía server — ghi audit `export.*` làm trong P1-22)*
-- [ ] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.
+- [x] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.
 
 ### Dữ liệu hạ tầng
 - [ ] **P1-07 Sites/Location/Rack**: CRUD, cây location, rack view đơn giản; áp dụng giới hạn membership theo site (`site_scope`, chuyển từ P1-04 vì cần bảng sites để kiểm tra).

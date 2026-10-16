@@ -36,6 +36,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { setLanguage } from '@/i18n'
 import { usePreferences, type Density, type Theme } from '@/lib/preferences'
 import { cn } from '@/lib/utils'
 import { useCrumbStore } from './breadcrumbs'
@@ -211,7 +212,7 @@ function Breadcrumbs() {
 }
 
 function AccountMenu() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const session = useSession()
   const logout = useLogout()
   const { theme, density, setTheme, setDensity } = usePreferences()
@@ -259,6 +260,22 @@ function AccountMenu() {
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="comfortable">
               {t('topbar.densityComfortable')}
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t('topbar.language')}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={i18n.language.startsWith('en') ? 'en' : 'vi'}
+            onValueChange={(v) => setLanguage(v as 'vi' | 'en')}
+          >
+            {/* Native names: recognisable whatever the current language is. */}
+            <DropdownMenuRadioItem value="vi" lang="vi">
+              Tiếng Việt
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="en" lang="en">
+              English
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, setCsrfToken, type AuthSession } from '../api/client'
+import i18n from '@/i18n'
 
 export const SESSION_QUERY_KEY = ['auth', 'session'] as const
 
@@ -45,7 +46,9 @@ export function useLogin() {
       const result = await api.POST('/auth/login', { body: credentials })
       if (result.data) return result.data
       // 401 / 429 carry a user-facing message; anything else is generic.
-      throw new LoginError(errorMessage(result.error, result.response.status, 'Đăng nhập thất bại'))
+      throw new LoginError(
+        errorMessage(result.error, result.response.status, i18n.t('errors.loginFailed')),
+      )
     },
     onSuccess: (session) => {
       setCsrfToken(session.csrfToken)
@@ -75,7 +78,9 @@ export function useMfaVerify() {
     mutationFn: async (input: { code?: string; recoveryCode?: string }) => {
       const result = await api.POST('/auth/mfa/verify', { params: csrfParam, body: input })
       if (result.data) return result.data
-      throw new Error(errorMessage(result.error, result.response.status, 'Xác thực thất bại'))
+      throw new Error(
+        errorMessage(result.error, result.response.status, i18n.t('errors.verifyFailed')),
+      )
     },
     onSuccess: (session) => queryClient.setQueryData(SESSION_QUERY_KEY, session),
   })
@@ -86,9 +91,7 @@ export function useMfaSetup() {
     mutationFn: async () => {
       const result = await api.POST('/auth/mfa/setup', { params: csrfParam })
       if (result.data) return result.data
-      throw new Error(
-        errorMessage(result.error, result.response.status, 'Không bắt đầu được thiết lập MFA'),
-      )
+      throw new Error(errorMessage(result.error, result.response.status, i18n.t('errors.mfaSetup')))
     },
   })
 }
@@ -98,7 +101,9 @@ export function useMfaEnable() {
     mutationFn: async (code: string) => {
       const result = await api.POST('/auth/mfa/enable', { params: csrfParam, body: { code } })
       if (result.data) return result.data.recoveryCodes
-      throw new Error(errorMessage(result.error, result.response.status, 'Không bật được MFA'))
+      throw new Error(
+        errorMessage(result.error, result.response.status, i18n.t('errors.mfaEnable')),
+      )
     },
     // Session state is refreshed when the user leaves the recovery-code screen (not here), so the
     // route guard does not navigate away before the codes have been saved.
@@ -111,7 +116,9 @@ export function useMfaDisable() {
     mutationFn: async (code: string) => {
       const result = await api.POST('/auth/mfa/disable', { params: csrfParam, body: { code } })
       if (result.response.status === 204) return
-      throw new Error(errorMessage(result.error, result.response.status, 'Không tắt được MFA'))
+      throw new Error(
+        errorMessage(result.error, result.response.status, i18n.t('errors.mfaDisable')),
+      )
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY }),
   })

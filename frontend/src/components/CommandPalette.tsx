@@ -1,6 +1,21 @@
-import { LayoutDashboard, Network, Server, Users } from 'lucide-react'
+import {
+  Activity,
+  Building2,
+  Languages,
+  LayoutDashboard,
+  Moon,
+  Network,
+  ScrollText,
+  Server,
+  Sun,
+  User,
+  Users,
+} from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
+import { useSession } from '@/app/auth'
+import { activateOrganization, useMyOrganizations, useOrganization } from '@/app/orgs'
 import {
   Command,
   CommandDialog,
@@ -10,11 +25,26 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { setLanguage } from '@/i18n'
+import { usePreferences } from '@/lib/preferences'
+import { useMembers } from '@/modules/admin/members'
 import { SAMPLE_DEVICES } from '@/modules/inventory/sampleDevices'
+import { OrgAvatar } from './OrgAvatar'
+
+interface Entry {
+  key: string
+  label: string
+  /** Extra text matched by the search (IP, email, S/N, …). */
+  keywords?: string
+  icon: ReactNode
+  hint?: ReactNode
+  run: () => void
+}
 
 /**
- * Ctrl+K: jump to pages and devices by hostname / IP / S/N. Device search runs on the sample
- * inventory until the search API exists (P1-08).
+ * Ctrl+K (SRS §2): pages the user may open, organizations to switch to, members, devices and a few
+ * commands. Each group is a provider; modules add theirs as they ship (devices use the sample
+ * inventory until P1-08, then the search API). Data is only fetched while the palette is open.
  */
 export function CommandPalette({
   open,
@@ -23,14 +53,130 @@ export function CommandPalette({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { orgId } = useParams()
-  const go = (to: string) => {
+  const { orgId = '' } = useParams()
+  const session = useSession()
+  const orgs = useMyOrganizations()
+  const org = useOrganization(orgId)
+  const members = useMembers(open ? orgId : '')
+  const { theme, setTheme } = usePreferences()
+  const isSysAdmin = session.data?.user.isSystemAdmin ?? false
+  const role = org.data?.membership.role
+  const isAdmin = role === 'owner' || role === 'admin'
+
+  const go = (to: string) => () => {
     onOpenChange(false)
     navigate(to)
   }
   const base = orgId ? `/o/${orgId}` : null
+
+  const pages: Entry[] = [
+    ...(base
+      ? [
+          { key: 'dash', label: t('nav.dashboard'), icon: <LayoutDashboard />, run: go(base) },
+          { key: 'devices', label: t('nav.devices'), icon: <Server />, run: go(`${base}/devices`) },
+          { key: 'diagrams', label: t('nav.diagrams'), icon: <Network />, run: go('/editor') },
+          { key: 'members', label: t('nav.members'), icon: <Users />, run: go(`${base}/members`) },
+          ...(isAdmin
+            ? [
+                {
+                  key: 'audit',
+                  label: t('nav.audit'),
+                  icon: <ScrollText />,
+                  run: go(`${base}/audit`),
+                },
+              ]
+            : []),
+        ]
+      : []),
+    ...(isSysAdmin
+      ? [
+          {
+            key: 's-orgs',
+            label: `${t('nav.system')} › ${t('nav.systemOrganizations')}`,
+            icon: <Building2 />,
+            run: go('/admin/organizations'),
+          },
+          {
+            key: 's-users',
+            label: `${t('nav.system')} › ${t('nav.systemUsers')}`,
+            icon: <Users />,
+            run: go('/admin/users'),
+          },
+          {
+            key: 's-audit',
+            label: `${t('nav.system')} › ${t('nav.audit')}`,
+            icon: <ScrollText />,
+            run: go('/admin/audit'),
+          },
+          {
+            key: 's-health',
+            label: `${t('nav.system')} › ${t('nav.systemHealth')}`,
+            icon: <Activity />,
+            run: go('/admin/health'),
+          },
+        ]
+      : []),
+  ]
+
+  const organizations: Entry[] = (orgs.data ?? [])
+    .filter((o) => o.id !== orgId)
+    .map((o) => ({
+      key: `org-${o.id}`,
+      label: o.name,
+      icon: <OrgAvatar id={o.id} name={o.name} size="sm" />,
+      run: () => {
+        activateOrganization(o.id)
+        go(`/o/${o.id}`)()
+      },
+    }))
+
+  const people: Entry[] = base
+    ? (members.data ?? []).map((m) => ({
+        key: `m-${m.userId}`,
+        label: m.displayName || m.email,
+        keywords: m.email,
+        icon: <User />,
+        hint: <span className="text-muted-foreground">{m.email}</span>,
+        run: go(`${base}/members?q=${encodeURIComponent(m.email)}`),
+      }))
+    : []
+
+  const devices: Entry[] = base
+    ? SAMPLE_DEVICES.map((d) => ({
+        key: `d-${d.id}`,
+        label: d.hostname,
+        keywords: [d.mgmtIp, d.mac, d.serial, d.partNumber, d.site].join(' '),
+        icon: <Server />,
+        hint: <span className="font-mono text-tech text-muted-foreground">{d.mgmtIp}</span>,
+        run: go(`${base}/devices/${d.id}`),
+      }))
+    : []
+
+  const dark = theme === 'dark'
+  const commands: Entry[] = [
+    {
+      key: 'theme',
+      label: dark ? t('palette.themeLight') : t('palette.themeDark'),
+      icon: dark ? <Sun /> : <Moon />,
+      run: () => setTheme(dark ? 'light' : 'dark'),
+    },
+    {
+      key: 'lang',
+      label: i18n.language.startsWith('en') ? 'Tiếng Việt' : 'English',
+      icon: <Languages />,
+      run: () => setLanguage(i18n.language.startsWith('en') ? 'vi' : 'en'),
+    },
+  ]
+
+  const groups: { heading: string; entries: Entry[] }[] = [
+    { heading: t('palette.pages'), entries: pages },
+    { heading: t('palette.organizations'), entries: organizations },
+    { heading: t('palette.members'), entries: people },
+    { heading: t('palette.devicesSample'), entries: devices },
+    { heading: t('palette.commands'), entries: commands },
+  ]
 
   return (
     <CommandDialog
@@ -44,39 +190,25 @@ export function CommandPalette({
         <CommandInput placeholder={t('palette.placeholder')} />
         <CommandList>
           <CommandEmpty>{t('palette.empty')}</CommandEmpty>
-          {base && (
-            <CommandGroup heading={t('palette.pages')}>
-              <CommandItem onSelect={() => go(base)}>
-                <LayoutDashboard aria-hidden /> {t('nav.dashboard')}
-              </CommandItem>
-              <CommandItem onSelect={() => go(`${base}/devices`)}>
-                <Server aria-hidden /> {t('nav.devices')}
-              </CommandItem>
-              <CommandItem onSelect={() => go('/editor')}>
-                <Network aria-hidden /> {t('nav.diagrams')}
-              </CommandItem>
-              <CommandItem onSelect={() => go(`${base}/members`)}>
-                <Users aria-hidden /> {t('nav.members')}
-              </CommandItem>
-            </CommandGroup>
-          )}
-          {base && (
-            <CommandGroup heading={t('palette.devices')}>
-              {SAMPLE_DEVICES.map((d) => (
-                <CommandItem
-                  key={d.id}
-                  value={`${d.hostname} ${d.mgmtIp} ${d.serial}`}
-                  onSelect={() => go(`${base}/devices/${d.id}`)}
-                >
-                  <Server aria-hidden />
-                  <span className="font-medium">{d.hostname}</span>
-                  <span className="ml-auto font-mono text-tech text-muted-foreground">
-                    {d.mgmtIp}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+          {groups
+            .filter((g) => g.entries.length > 0)
+            .map((g) => (
+              <CommandGroup key={g.heading} heading={g.heading}>
+                {g.entries.map((e) => (
+                  <CommandItem
+                    key={e.key}
+                    value={`${e.label} ${e.keywords ?? ''} ${e.key}`}
+                    onSelect={e.run}
+                  >
+                    <span aria-hidden className="grid size-4 place-items-center [&_svg]:size-4">
+                      {e.icon}
+                    </span>
+                    <span className="font-medium">{e.label}</span>
+                    {e.hint && <span className="ml-auto truncate">{e.hint}</span>}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
         </CommandList>
       </Command>
     </CommandDialog>

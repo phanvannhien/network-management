@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
 import { setCsrfToken } from './api/client'
+import { setLanguage } from './i18n'
 
 // React Flow needs ResizeObserver and client rect geometry, which jsdom lacks.
 class ResizeObserverMock {
@@ -866,5 +867,79 @@ describe('audit log', () => {
     renderAt('/admin/audit')
     expect(await screen.findByRole('heading', { name: 'Audit log hệ thống' })).toBeInTheDocument()
     expect(await screen.findByText('Đăng nhập thất bại')).toBeInTheDocument()
+  })
+})
+
+describe('app shell (P1-06)', () => {
+  afterEach(() => setLanguage('vi'))
+
+  it('switches the UI language from the account menu and remembers it', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt(`/o/${ORG_ID}`)
+    await screen.findByText('Xin chào Admin')
+    fireEvent.click(screen.getByRole('button', { name: 'Tài khoản: Admin' }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'English' }))
+    const nav = await screen.findByRole('navigation', { name: 'Main navigation' })
+    expect(within(nav).getByRole('link', { name: 'Devices' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('en')
+    expect(localStorage.getItem('ntb-lang')).toBe('en')
+  })
+
+  it('Ctrl+K switches organization and finds members', async () => {
+    const OTHER = '33333333-3333-4333-8333-333333333333'
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () => json(HEALTH),
+      'GET /api/orgs': () =>
+        json({
+          organizations: [
+            { id: ORG_ID, name: 'Văn phòng mẫu', kind: 'internal', role: 'owner' },
+            { id: OTHER, name: 'Khách hàng B', kind: 'customer', role: 'viewer' },
+          ],
+        }),
+      [`GET /api/orgs/${OTHER}`]: () =>
+        json({
+          ...ORG_VIEW,
+          organization: { ...ORG_VIEW.organization, id: OTHER, name: 'Khách hàng B' },
+        }),
+      [`POST /api/orgs/${OTHER}/activate`]: () => new Response(null, { status: 204 }),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+    })
+    renderAt(`/o/${ORG_ID}`)
+    await screen.findByText('Xin chào Admin')
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…'), {
+      target: { value: 'viewer@example' },
+    })
+    fireEvent.click(await screen.findByRole('option', { name: /Viewer/ }))
+    expect(await screen.findByRole('searchbox', { name: 'Tìm kiếm' })).toHaveValue(
+      'viewer@example.com',
+    )
+
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…'), {
+      target: { value: 'Khách hàng B' },
+    })
+    fireEvent.click(await screen.findByRole('option', { name: /Khách hàng B/ }))
+    expect(
+      await screen.findByRole('button', { name: /Đổi tổ chức:.*Khách hàng B/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('Ctrl+K only offers pages the user may open', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
+      'GET /api/healthz': () => json(HEALTH),
+      [`GET /api/orgs/${ORG_ID}`]: () =>
+        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [] }),
+    })
+    renderAt(`/o/${ORG_ID}`)
+    await screen.findByText('Xin chào Admin')
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    expect(await screen.findByRole('option', { name: /Thành viên/ })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Audit log/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Hệ thống/ })).not.toBeInTheDocument()
   })
 })
