@@ -6,38 +6,26 @@ export type AccessLevel = components['schemas']['AccessLevel']
 
 const RANK: Record<AccessLevel, number> = { view: 1, edit: 2, admin: 3 }
 
-/** The caller's access on a partner / unit / site (from the API) is at least `need`. */
+/** The caller's access on a record (from the API) is at least `need`. */
 export function atLeast(level: AccessLevel | undefined, need: AccessLevel): boolean {
   return level !== undefined && RANK[level] >= RANK[need]
 }
 
 /**
- * What the caller may do in the organization (ADR-031), for showing or hiding actions only — the server
- * checks every request. Organization owner/admin/editor/viewer act organization-wide; role "member" acts
- * through partner / unit grants.
+ * What the caller may do in the organization (ADR-032): the organization role decides everything — for showing or
+ * hiding actions only, the server checks every request.
  */
 export function useOrgAccess(orgId: string) {
-  const ms = useOrganization(orgId).data?.membership
-  const role = ms?.role
+  const role = useOrganization(orgId).data?.membership.role
   const orgAdmin = role === 'owner' || role === 'admin'
   const orgEdit = orgAdmin || role === 'editor'
-  const partnerGrants = ms?.partnerGrants ?? []
-  const unitGrants = ms?.unitGrants ?? []
-  const partnerAdminOf = (partnerId: string) =>
-    orgAdmin || partnerGrants.some((g) => g.partnerId === partnerId && g.role === 'partner_admin')
   return {
-    ready: ms !== undefined,
-    restricted: role === 'member',
+    ready: role !== undefined,
     orgAdmin,
     orgEdit,
-    partnerAdminOf,
-    /** May add units to at least one partner. */
-    canAddUnits: orgAdmin || partnerGrants.some((g) => g.role === 'partner_admin'),
-    /** May add sites somewhere. */
-    canAddSites:
-      orgEdit ||
-      partnerGrants.some((g) => g.role !== 'viewer') ||
-      unitGrants.some((g) => g.role !== 'viewer'),
+    partnerAdminOf: (_partnerId: string) => orgAdmin,
+    canAddUnits: orgAdmin,
+    canAddSites: orgEdit,
   }
 }
 

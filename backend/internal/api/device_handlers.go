@@ -476,10 +476,8 @@ func deviceLevel(ctx context.Context, q store.Querier, m tenant.Membership, d st
 }
 
 func loadDevice(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetDeviceRow, bool, error) {
-	v := visibilityOf(m)
 	d, err := q.GetDevice(ctx, store.GetDeviceParams{
-		ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: v.restricted,
-		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+		ID: pgUUID(id), OrganizationID: m.OrgID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return d, false, nil
@@ -512,10 +510,8 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		}
 		size = *p.PageSize
 	}
-	v := visibilityOf(m)
 	params := store.ListDevicesParams{
-		OrganizationID: m.OrgID, Restricted: v.restricted, GrantUnits: v.grantUnits, GrantPartners: v.grantPartners,
-		SharePartners: v.sharePts, SiteIds: []pgtype.UUID{}, Types: []string{}, Vendors: []string{}, Lifecycles: []string{},
+		OrganizationID: m.OrgID, SiteIds: []pgtype.UUID{}, Types: []string{}, Vendors: []string{}, Lifecycles: []string{},
 		Roles: []string{}, Tags: []string{}, ClusterIds: []pgtype.UUID{}, SortKey: "hostname", PageLimit: size, PageOffset: (page - 1) * size,
 	}
 	if p.Q != nil {
@@ -580,8 +576,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		return nil, fmt.Errorf("list devices: %w", err)
 	}
 	total, err := s.q.CountDevices(ctx, store.CountDevicesParams{
-		OrganizationID: params.OrganizationID, Restricted: params.Restricted, GrantUnits: params.GrantUnits,
-		GrantPartners: params.GrantPartners, SharePartners: params.SharePartners, Q: params.Q,
+		OrganizationID: params.OrganizationID, Q: params.Q,
 		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
 		ClusterIds: params.ClusterIds,
@@ -590,8 +585,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		return nil, fmt.Errorf("count devices: %w", err)
 	}
 	counts, err := s.q.DeviceFacetCounts(ctx, store.DeviceFacetCountsParams{
-		OrganizationID: params.OrganizationID, Restricted: params.Restricted, GrantUnits: params.GrantUnits,
-		GrantPartners: params.GrantPartners, SharePartners: params.SharePartners, Q: params.Q,
+		OrganizationID: params.OrganizationID, Q: params.Q,
 		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
 		ClusterIds: params.ClusterIds,

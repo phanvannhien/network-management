@@ -20,17 +20,6 @@ LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -73,17 +62,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -107,17 +85,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -139,17 +106,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -171,17 +127,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -203,17 +148,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -235,17 +169,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -268,17 +191,6 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 CROSS JOIN LATERAL unnest(d.tags) AS t(tag)
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -300,17 +212,6 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
@@ -344,18 +245,7 @@ LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
-WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))));
+WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NULL;
 
 -- name: CreateDevice :one
 INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
@@ -468,15 +358,4 @@ LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
-WHERE d.id = ANY (@ids::uuid[]) AND d.organization_id = @organization_id AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT @restricted::boolean
-       OR d.business_unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))));
+WHERE d.id = ANY (@ids::uuid[]) AND d.organization_id = @organization_id AND d.deleted_at IS NULL;

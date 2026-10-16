@@ -16,7 +16,7 @@ export const PERMISSION_KEYS = {
 
 export const ALL_PERMISSIONS = Object.keys(PERMISSION_KEYS) as Permission[]
 
-export const ROLES: Role[] = ['owner', 'admin', 'editor', 'viewer', 'member']
+export const ROLES: Role[] = ['owner', 'admin', 'editor', 'viewer']
 
 /** Link the inviter sends out of band (no SMTP until P2-05). */
 export function accountLink(token: string): string {

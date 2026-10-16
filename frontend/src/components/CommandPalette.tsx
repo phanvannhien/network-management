@@ -74,8 +74,7 @@ export function CommandPalette({
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
   const role = org.data?.membership.role
-  // Grant-only members (ADR-031) have no organization member list.
-  const members = useMembers(open && role && role !== 'member' ? orgId : '')
+  const members = useMembers(open && role ? orgId : '')
   const isAdmin = role === 'owner' || role === 'admin'
 
   const go = (to: string) => () => {
@@ -90,8 +89,13 @@ export function CommandPalette({
           { key: 'dash', label: t('nav.dashboard'), icon: <LayoutDashboard />, run: go(base) },
           { key: 'devices', label: t('nav.devices'), icon: <Server />, run: go(`${base}/devices`) },
           { key: 'sites', label: t('nav.sites'), icon: <MapPin />, run: go(`${base}/sites`) },
-          { key: 'diagrams', label: t('nav.diagrams'), icon: <Network />, run: go('/editor') },
-          ...(role !== 'member'
+          {
+            key: 'diagrams',
+            label: t('nav.diagrams'),
+            icon: <Network />,
+            run: go(`${base}/diagrams`),
+          },
+          ...(role
             ? [
                 {
                   key: 'members',

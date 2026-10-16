@@ -1,4 +1,3 @@
-import { SiteSharesPanel } from './SiteSharesPanel'
 import { atLeast } from './access'
 import { MapPin, MoreHorizontal, Network, Pencil, Plus, Server, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
@@ -43,7 +42,7 @@ import {
   type Rack,
 } from './sites'
 
-const TABS = ['locations', 'racks', 'info', 'devices', 'diagrams', 'shares'] as const
+const TABS = ['locations', 'racks', 'info', 'devices', 'diagrams'] as const
 type Tab = (typeof TABS)[number]
 
 function RackDialog({
@@ -413,7 +412,6 @@ export function SiteDetailPage() {
           <TabsTrigger value="info">{t('sites.tabInfo')}</TabsTrigger>
           <TabsTrigger value="devices">{t('sites.tabDevices')}</TabsTrigger>
           <TabsTrigger value="diagrams">{t('sites.tabDiagrams')}</TabsTrigger>
-          {canAdmin && <TabsTrigger value="shares">{t('shares.tab')}</TabsTrigger>}
         </TabsList>
         <TabsContent value="locations" className="pt-3">
           {locations.isPending ? (
@@ -464,11 +462,6 @@ export function SiteDetailPage() {
             <EmptyState icon={<Server />} title={t('sites.devicesSoon')} />
           </div>
         </TabsContent>
-        {canAdmin && (
-          <TabsContent value="shares" className="pt-3">
-            <SiteSharesPanel orgId={orgId} site={s} />
-          </TabsContent>
-        )}
         <TabsContent value="diagrams" className="pt-3">
           <div className="rounded-lg border border-border bg-card">
             <EmptyState icon={<Network />} title={t('sites.diagramsSoon')} />

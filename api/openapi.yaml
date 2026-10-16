@@ -613,103 +613,6 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
-  /orgs/{orgId}/partners/{partnerId}/members:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/PartnerId'
-    get:
-      operationId: listPartnerMembers
-      summary: Users granted on the partner (organization owner/admin or partner_admin; unknown emails get an invite link)
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrantMemberList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      operationId: addPartnerMember
-      summary: Add (organization owner/admin or partner_admin; unknown emails get an invite link)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PartnerGrantInput'
-      responses:
-        '201':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddGrantResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/partners/{partnerId}/members/{userId}:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/PartnerId'
-      - $ref: '#/components/parameters/UserId'
-    patch:
-      operationId: updatePartnerMember
-      summary: Change a partner grant (optimistic lock on version)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PartnerGrantUpdate'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrantMember'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    delete:
-      operationId: removePartnerMember
-      summary: Revoke a partner grant
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Done
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /orgs/{orgId}/business-units:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -838,103 +741,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/business-units/{businessUnitId}/members:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/BusinessUnitId'
-    get:
-      operationId: listUnitMembers
-      summary: Users granted on the unit (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrantMemberList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      operationId: addUnitMember
-      summary: Add (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UnitGrantInput'
-      responses:
-        '201':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddGrantResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/business-units/{businessUnitId}/members/{userId}:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/BusinessUnitId'
-      - $ref: '#/components/parameters/UserId'
-    patch:
-      operationId: updateUnitMember
-      summary: Change a unit grant (optimistic lock on version)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UnitGrantUpdate'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrantMember'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    delete:
-      operationId: removeUnitMember
-      summary: Revoke a unit grant
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Done
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   /orgs/{orgId}/sites/next-code:
     parameters:
@@ -1114,103 +920,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/sites/{siteId}/shares:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/SiteId'
-    get:
-      operationId: listSiteShares
-      summary: Shares of the site (callers with admin access on the site)
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SiteShareList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      operationId: createSiteShare
-      summary: Add (callers with admin access on the site)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SiteShareInput'
-      responses:
-        '201':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SiteShare'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/sites/{siteId}/shares/{shareId}:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/SiteId'
-      - $ref: '#/components/parameters/ShareId'
-    patch:
-      operationId: updateSiteShare
-      summary: Change a share (optimistic lock on version)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SiteShareUpdate'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SiteShare'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    delete:
-      operationId: deleteSiteShare
-      summary: Revoke a share
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Done
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   /orgs/{orgId}/sites/{siteId}/locations:
     parameters:
@@ -3188,6 +2897,7 @@ components:
       name: ntb_session
 
   parameters:
+
     UserId:
       name: userId
       in: path
@@ -3195,6 +2905,7 @@ components:
       schema:
         type: string
         format: uuid
+
     OrgId:
       name: orgId
       in: path
@@ -3203,6 +2914,7 @@ components:
       schema:
         type: string
         format: uuid
+
     AuditPageNumber:
       name: page
       in: query
@@ -3212,6 +2924,7 @@ components:
         format: int32
         minimum: 1
         default: 1
+
     DeviceQuery:
       name: q
       in: query
@@ -3300,6 +3013,7 @@ components:
         items:
           type: string
           format: uuid
+
     DeviceSort:
       name: sort
       in: query
@@ -3330,6 +3044,7 @@ components:
       schema:
         type: string
         format: uuid
+
     InterfaceId:
       name: interfaceId
       in: path
@@ -3337,6 +3052,7 @@ components:
       schema:
         type: string
         format: uuid
+
     IpId:
       name: ipId
       in: path
@@ -3344,6 +3060,7 @@ components:
       schema:
         type: string
         format: uuid
+
     ClusterId:
       name: clusterId
       in: path
@@ -3351,6 +3068,7 @@ components:
       schema:
         type: string
         format: uuid
+
     GroupId:
       name: groupId
       in: path
@@ -3358,6 +3076,7 @@ components:
       schema:
         type: string
         format: uuid
+
     MemberId:
       name: memberId
       in: path
@@ -3365,6 +3084,7 @@ components:
       schema:
         type: string
         format: uuid
+
     LinkId:
       name: linkId
       in: path
@@ -3372,6 +3092,7 @@ components:
       schema:
         type: string
         format: uuid
+
     DiagramId:
       name: diagramId
       in: path
@@ -3379,6 +3100,7 @@ components:
       schema:
         type: string
         format: uuid
+
     VlanId:
       name: vlanId
       in: path
@@ -3386,6 +3108,7 @@ components:
       schema:
         type: string
         format: uuid
+
     SubnetId:
       name: subnetId
       in: path
@@ -3393,6 +3116,7 @@ components:
       schema:
         type: string
         format: uuid
+
     RangeId:
       name: rangeId
       in: path
@@ -3400,6 +3124,7 @@ components:
       schema:
         type: string
         format: uuid
+
     FieldId:
       name: fieldId
       in: path
@@ -3407,6 +3132,7 @@ components:
       schema:
         type: string
         format: uuid
+
     AuditPageSize:
       name: pageSize
       in: query
@@ -3416,6 +3142,7 @@ components:
         minimum: 1
         maximum: 200
         default: 50
+
     AuditQuery:
       name: q
       in: query
@@ -3423,6 +3150,7 @@ components:
       schema:
         type: string
         maxLength: 200
+
     AuditCategory:
       name: category
       in: query
@@ -3435,12 +3163,14 @@ components:
         items:
           type: string
           pattern: '^[a-z_]{1,40}$'
+
     AuditActor:
       name: actorId
       in: query
       schema:
         type: string
         format: uuid
+
     AuditFrom:
       name: from
       in: query
@@ -3448,6 +3178,7 @@ components:
       schema:
         type: string
         format: date-time
+
     AuditTo:
       name: to
       in: query
@@ -3455,6 +3186,7 @@ components:
       schema:
         type: string
         format: date-time
+
     PartnerId:
       name: partnerId
       in: path
@@ -3462,6 +3194,7 @@ components:
       schema:
         type: string
         format: uuid
+
     BusinessUnitId:
       name: businessUnitId
       in: path
@@ -3469,6 +3202,7 @@ components:
       schema:
         type: string
         format: uuid
+
     SiteId:
       name: siteId
       in: path
@@ -3476,13 +3210,7 @@ components:
       schema:
         type: string
         format: uuid
-    ShareId:
-      name: shareId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
+
     LocationId:
       name: locationId
       in: path
@@ -3490,6 +3218,7 @@ components:
       schema:
         type: string
         format: uuid
+
     RackId:
       name: rackId
       in: path
@@ -3497,6 +3226,7 @@ components:
       schema:
         type: string
         format: uuid
+
     CsrfToken:
       name: X-CSRF-Token
       in: header
@@ -3505,36 +3235,42 @@ components:
         type: string
 
   responses:
+
     NotFound:
       description: Not found (also returned for organizations the caller does not belong to)
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
     Forbidden:
       description: Signed in but not allowed
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
     BadRequest:
       description: Invalid input
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
     Unauthorized:
       description: Not signed in, or wrong credentials
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
     Conflict:
       description: Conflicts with the current state (stale version, duplicate name, non-empty container, MFA state)
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
     InvalidCode:
       description: The code is wrong, expired or already used
       content:
@@ -3543,6 +3279,7 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+
     Health:
       type: object
       required: [status, version, environment, database]
@@ -3677,12 +3414,12 @@ components:
 
     Role:
       type: string
-      description: member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
-      enum: [owner, admin, editor, viewer, member]
+      description: organization role; it decides everything a member may do in the organization (ADR-032)
+      enum: [owner, admin, editor, viewer]
 
     AccessLevel:
       type: string
-      description: The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+      description: The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
       enum: [view, edit, admin]
 
     OrganizationSummary:
@@ -3733,7 +3470,7 @@ components:
 
     MembershipInfo:
       type: object
-      required: [role, permissions, partnerGrants, unitGrants]
+      required: [role, permissions]
       properties:
         role:
           $ref: '#/components/schemas/Role'
@@ -3741,188 +3478,6 @@ components:
           type: array
           items:
             type: string
-        partnerGrants:
-          type: array
-          items:
-            type: object
-            required: [partnerId, role]
-            properties:
-              partnerId:
-                type: string
-                format: uuid
-              role:
-                $ref: '#/components/schemas/PartnerGrantRole'
-        unitGrants:
-          type: array
-          items:
-            type: object
-            required: [businessUnitId, partnerId, role]
-            properties:
-              businessUnitId:
-                type: string
-                format: uuid
-              partnerId:
-                type: string
-                format: uuid
-              role:
-                $ref: '#/components/schemas/UnitGrantRole'
-
-    PartnerGrantRole:
-      type: string
-      enum: [partner_admin, editor, viewer]
-
-    UnitGrantRole:
-      type: string
-      enum: [unit_admin, editor, viewer]
-
-    GrantMember:
-      type: object
-      required: [userId, email, displayName, role, pendingInvite, version, createdAt]
-      properties:
-        userId:
-          type: string
-          format: uuid
-        email:
-          type: string
-        displayName:
-          type: string
-        role:
-          type: string
-          description: PartnerGrantRole or UnitGrantRole
-        pendingInvite:
-          type: boolean
-        version:
-          type: integer
-          format: int32
-        createdAt:
-          type: string
-          format: date-time
-
-    GrantMemberList:
-      type: object
-      required: [members]
-      properties:
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/GrantMember'
-
-    PartnerGrantInput:
-      type: object
-      required: [email, role]
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 320
-        role:
-          $ref: '#/components/schemas/PartnerGrantRole'
-
-    UnitGrantInput:
-      type: object
-      required: [email, role]
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 320
-        role:
-          $ref: '#/components/schemas/UnitGrantRole'
-
-    PartnerGrantUpdate:
-      type: object
-      required: [role, version]
-      properties:
-        role:
-          $ref: '#/components/schemas/PartnerGrantRole'
-        version:
-          type: integer
-          format: int32
-
-    UnitGrantUpdate:
-      type: object
-      required: [role, version]
-      properties:
-        role:
-          $ref: '#/components/schemas/UnitGrantRole'
-        version:
-          type: integer
-          format: int32
-
-    AddGrantResult:
-      type: object
-      required: [member, inviteToken]
-      properties:
-        member:
-          $ref: '#/components/schemas/GrantMember'
-        inviteToken:
-          description: One-time invite token for a new user (link /invite/{token}); null for existing users
-          type: [string, 'null']
-
-    ShareTargetType:
-      type: string
-      enum: [partner, business_unit]
-
-    ShareAccess:
-      type: string
-      enum: [view, edit]
-
-    SiteShare:
-      type: object
-      required: [id, targetType, targetId, targetCode, targetName, access, grantedAt, version]
-      properties:
-        id:
-          type: string
-          format: uuid
-        targetType:
-          $ref: '#/components/schemas/ShareTargetType'
-        targetId:
-          type: string
-          format: uuid
-        targetCode:
-          type: string
-          description: Partner code, or "PARTNER › UNIT" for a unit
-        targetName:
-          type: string
-        access:
-          $ref: '#/components/schemas/ShareAccess'
-        grantedAt:
-          type: string
-          format: date-time
-        version:
-          type: integer
-          format: int32
-
-    SiteShareList:
-      type: object
-      required: [shares]
-      properties:
-        shares:
-          type: array
-          items:
-            $ref: '#/components/schemas/SiteShare'
-
-    SiteShareInput:
-      type: object
-      required: [targetType, targetId, access]
-      properties:
-        targetType:
-          $ref: '#/components/schemas/ShareTargetType'
-        targetId:
-          type: string
-          format: uuid
-        access:
-          $ref: '#/components/schemas/ShareAccess'
-
-    SiteShareUpdate:
-      type: object
-      required: [access, version]
-      properties:
-        access:
-          $ref: '#/components/schemas/ShareAccess'
-        version:
-          type: integer
-          format: int32
 
     OrganizationView:
       type: object

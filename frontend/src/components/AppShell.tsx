@@ -452,10 +452,7 @@ export function OrgShell() {
     {
       label: t('nav.admin'),
       items: [
-        // Grant-only members (ADR-031) do not see the organization's member list.
-        ...(role && role !== 'member'
-          ? [{ to: `${base}/members`, label: t('nav.members'), icon: Users }]
-          : []),
+        ...(role ? [{ to: `${base}/members`, label: t('nav.members'), icon: Users }] : []),
         // Device templates: the organization's library, written by its owners/admins/editors (P1-09); also used
         // from the diagram library panel (P1-15).
         ...(role === 'owner' || role === 'admin' || role === 'editor'

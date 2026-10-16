@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/audit"
@@ -61,30 +60,6 @@ func toView(o store.Organization, m tenant.Membership) apigen.OrganizationView {
 		perms = []string{}
 	}
 	info := apigen.MembershipInfo{Role: apigen.Role(m.Role), Permissions: perms}
-	// Grants let the UI show the partner/unit selector and the actions the caller may take (ADR-031);
-	// the server still checks every request.
-	info.PartnerGrants = make([]struct {
-		PartnerId openapi_types.UUID      `json:"partnerId"`
-		Role      apigen.PartnerGrantRole `json:"role"`
-	}, 0, len(m.Grants.Partners))
-	for id, role := range m.Grants.Partners {
-		info.PartnerGrants = append(info.PartnerGrants, struct {
-			PartnerId openapi_types.UUID      `json:"partnerId"`
-			Role      apigen.PartnerGrantRole `json:"role"`
-		}{uuid.UUID(id.Bytes), apigen.PartnerGrantRole(role)})
-	}
-	info.UnitGrants = make([]struct {
-		BusinessUnitId openapi_types.UUID   `json:"businessUnitId"`
-		PartnerId      openapi_types.UUID   `json:"partnerId"`
-		Role           apigen.UnitGrantRole `json:"role"`
-	}, 0, len(m.Grants.Units))
-	for id, g := range m.Grants.Units {
-		info.UnitGrants = append(info.UnitGrants, struct {
-			BusinessUnitId openapi_types.UUID   `json:"businessUnitId"`
-			PartnerId      openapi_types.UUID   `json:"partnerId"`
-			Role           apigen.UnitGrantRole `json:"role"`
-		}{uuid.UUID(id.Bytes), uuid.UUID(g.Partner.Bytes), apigen.UnitGrantRole(g.Role)})
-	}
 	return apigen.OrganizationView{Organization: toOrganization(o), Membership: info}
 }
 

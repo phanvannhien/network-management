@@ -603,15 +603,6 @@ export const GLOSSARY: GlossaryEntry[] = [
       'A partner is a subsidiary, partner or customer of the organization; a unit is its branch/department owning sites and devices.',
     ],
   ),
-  e(
-    'share',
-    'org',
-    ['Chia sẻ site', 'Site sharing'],
-    [
-      'Cho một đối tác hoặc đơn vị khác thấy (hoặc sửa) một site và mọi thứ trong đó, vd IDC dùng chung.',
-      'Lets another partner or unit see (or edit) a site and all it holds, e.g. a shared data centre.',
-    ],
-  ),
 ]
 
 export const GLOSSARY_BY_ID = new Map(GLOSSARY.map((g) => [g.id, g]))

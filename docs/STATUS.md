@@ -5,6 +5,23 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-28 Quyền chỉ theo tổ chức (ADR-032)
+- Đã làm:
+  - **Migration 000019:** xóa `partner_members`, `business_unit_members`, `resource_shares`; vai trò `member` → `viewer`; ràng buộc
+    vai trò còn owner/admin/editor/viewer.
+  - **Backend:** bỏ bộ lọc hiển thị theo quyền khỏi mọi query (thiết bị, cụm, nhóm, IPAM, site, sơ đồ); mức quyền = vai trò tổ chức
+    (`Membership.Level`); bỏ API giao quyền đối tác/đơn vị và chia sẻ site (OpenAPI + handler); `MembershipInfo` chỉ còn vai trò +
+    quyền bổ sung. Tạm giữ hàm `UnitLevel/PartnerLevel` (trả mức tổ chức) tới khi bỏ đơn vị ở P1-29.
+  - **Frontend:** bỏ panel giao quyền ở trang đối tác/đơn vị, tab chia sẻ ở trang site, vai trò "member" ở trang Thành viên;
+    `useOrgAccess` chỉ dựa vào vai trò; Ctrl+K "Sơ đồ" mở danh sách sơ đồ mới; bỏ thuật ngữ "chia sẻ".
+- Test / cách kiểm tra: test phân quyền viết lại theo vai trò tổ chức (viewer đọc được mọi site, mọi thao tác ghi 403; editor sửa
+  toàn tổ chức; sửa hàng loạt vẫn "tất cả hoặc không"); migration down/up chạy; Go + Vitest 194 pass; `make check` pass.
+  **Cần chạy `make migrate-up` (000019) rồi khởi động lại `make dev-api`.**
+- Còn dở / lỗi đã biết: dữ liệu và màn hình vẫn dùng đối tác/đơn vị cho tới P1-27/P1-29 (làm cùng một lượt tiếp theo).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-27 + P1-29** Cây Danh mục thay đối tác/đơn vị ở mọi nơi, mã site tự sinh.
+
 ## 2026-10-16 — Chốt lại phân cấp & quyền (ADR-032), chia lại task
 - Đã làm (chỉ tài liệu, chưa sửa code): sau trao đổi với người dùng, ghi **ADR-032** thay ADR-026/029/030/031 và một phần
   ADR-025/028:

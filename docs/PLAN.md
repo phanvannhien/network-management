@@ -50,7 +50,7 @@ Phase hiện tại: **Phase 0**
   nhánh; **xem trước đổi mã** (`…/preview` trả site cũ → mới) và áp dụng có xác nhận; màn "Danh mục & Sites" dạng cây (thêm/sửa/
   chuyển/xóa danh mục, site dưới mọi nút). Done khi: tạo được "Công ty → Site" không qua danh mục; cây 3+ cấp; đổi mã danh mục hiện
   danh sách site đổi mã và chỉ đổi sau khi xác nhận; dữ liệu cũ chuyển đúng; test chéo tổ chức cho mọi endpoint mới.
-- [ ] **P1-28 Quyền chỉ theo tổ chức**: bỏ `partner_members`, `business_unit_members`, `resource_shares`, vai trò `member` (→ viewer),
+- [x] **P1-28 Quyền chỉ theo tổ chức**: bỏ `partner_members`, `business_unit_members`, `resource_shares`, vai trò `member` (→ viewer),
   bộ lọc hiển thị trong mọi query (thiết bị, cụm, nhóm, IPAM, link, sơ đồ) và màn giao quyền/chia sẻ; `access` trên bản ghi = vai trò
   tổ chức; bộ chọn topbar = chọn nhánh danh mục (lọc). Done khi: viewer chỉ xem, editor sửa toàn tổ chức, admin quản lý user;
   không còn code/bảng đối tác/đơn vị/chia sẻ; `make check` pass.

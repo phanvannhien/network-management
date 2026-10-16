@@ -1,4 +1,3 @@
-import { GrantMembersPanel } from './GrantMembersPanel'
 import { Building2, MoreHorizontal, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -115,16 +114,6 @@ export function UnitDetailPage() {
           ]}
         />
       </section>
-
-      {canAdmin && (
-        <div className="max-w-4xl">
-          <GrantMembersPanel
-            orgId={orgId}
-            scope={{ kind: 'unit', id: u.id }}
-            code={`${u.partnerCode} › ${u.code}`}
-          />
-        </div>
-      )}
 
       <h2 className="text-sm font-semibold">
         {t('units.sitesOf', { code: u.code })}{' '}

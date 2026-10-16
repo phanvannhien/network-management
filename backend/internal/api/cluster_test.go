@@ -184,23 +184,19 @@ func TestHostnameRuleUnderConcurrency(t *testing.T) {
 }
 
 func TestClusterPermissions(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	if status, _ := w.ue.Do("POST", clustersPath(org), map[string]any{"kind": "ha_active_passive", "name": "NM-FW", "siteId": w.bd}); status != http.StatusCreated {
-		t.Errorf("editor of NM creates a cluster: %d", status)
+	if status, _ := w.editor.Do("POST", clustersPath(org), map[string]any{"kind": "ha_active_passive", "name": "BD-FW", "siteId": w.site}); status != http.StatusCreated {
+		t.Errorf("editor creates a cluster: %d", status)
 	}
-	if status, _ := w.ue.Do("POST", clustersPath(org), map[string]any{"kind": "ha_active_passive", "name": "VP-FW", "siteId": w.hn}); status != http.StatusBadRequest {
-		t.Errorf("editor of NM creates a cluster in VP's site: %d, want 400", status)
+	id := idOf(t, mustCreate(t, w.fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "HN-STACK", "siteId": w.other}))
+	if status, c := w.viewer.Do("GET", clustersPath(org)+"/"+id, nil); status != http.StatusOK || c["access"] != "view" {
+		t.Errorf("viewer reads a cluster: %d", status)
 	}
-	vp := idOf(t, mustCreate(t, w.fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "VP-STACK", "siteId": w.hn}))
-	if status, _ := w.ue.Do("GET", clustersPath(org)+"/"+vp, nil); status != http.StatusNotFound {
-		t.Errorf("editor of NM reads VP's cluster: %d, want 404", status)
+	if status, _ := w.viewer.Do("PATCH", clustersPath(org)+"/"+id, map[string]any{"kind": "stack", "name": "X", "siteId": w.other, "version": 1}); status != http.StatusForbidden {
+		t.Errorf("viewer edits a cluster: %d, want 403", status)
 	}
-	if status, _ := w.uv.Do("PATCH", clustersPath(org)+"/"+vp, map[string]any{"kind": "stack", "name": "X", "siteId": w.hn, "version": 1}); status != http.StatusForbidden {
-		t.Errorf("viewer of VP edits the cluster: %d, want 403", status)
-	}
-	_, list := w.ue.Do("GET", clustersPath(org), nil)
-	if n := len(list["clusters"].([]any)); n != 1 {
-		t.Errorf("editor of NM lists %d clusters, want 1", n)
+	if _, list := w.viewer.Do("GET", clustersPath(org), nil); len(list["clusters"].([]any)) != 2 {
+		t.Errorf("viewer lists %v", list)
 	}
 }

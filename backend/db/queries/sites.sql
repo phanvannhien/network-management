@@ -13,14 +13,6 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = @organization_id AND s.deleted_at IS NULL
-  AND (NOT @restricted::boolean
-       OR b.id = ANY (@grant_units::uuid[]) OR b.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (sqlc.narg('id_filter')::uuid IS NULL OR s.id = sqlc.narg('id_filter'))
   AND (sqlc.narg('bu_filter')::uuid IS NULL OR s.business_unit_id = sqlc.narg('bu_filter'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR b.partner_id = sqlc.narg('partner_filter'))
@@ -33,15 +25,7 @@ SELECT s.*, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '
 FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
-WHERE s.id = @id AND s.organization_id = @organization_id AND s.deleted_at IS NULL
-  AND (NOT @restricted::boolean
-       OR b.id = ANY (@grant_units::uuid[]) OR b.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))));
+WHERE s.id = @id AND s.organization_id = @organization_id AND s.deleted_at IS NULL;
 
 -- name: CreateSite :one
 INSERT INTO sites (organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes,

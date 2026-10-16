@@ -321,55 +321,33 @@ func TestSubnetUsageRangesNextFreeAndLookup(t *testing.T) {
 }
 
 func TestIpamPermissions(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	// Editor of NM works in NM's site only; organization-wide objects need an org role.
-	if status, _ := w.ue.Do("POST", vlansPath(org), map[string]any{"vid": 10, "name": "MGMT", "siteId": w.bd}); status != http.StatusCreated {
-		t.Errorf("editor of NM creates a VLAN in BD: %d", status)
+	if status, _ := w.editor.Do("POST", vlansPath(org), map[string]any{"vid": 10, "name": "MGMT", "siteId": w.site}); status != http.StatusCreated {
+		t.Errorf("editor creates a VLAN: %d", status)
 	}
-	if status, _ := w.ue.Do("POST", vlansPath(org), map[string]any{"vid": 10, "name": "MGMT", "siteId": w.hn}); status != http.StatusBadRequest {
-		t.Errorf("editor of NM creates a VLAN in VP's site: %d, want 400", status)
+	if status, _ := w.editor.Do("POST", subnetsPath(org), map[string]any{"cidr": "10.0.0.0/8"}); status != http.StatusCreated {
+		t.Errorf("editor creates an org-wide subnet: %d", status)
 	}
-	if status, _ := w.ue.Do("POST", subnetsPath(org), map[string]any{"cidr": "10.0.0.0/8"}); status != http.StatusForbidden {
-		t.Errorf("grant-only member creates an org-wide subnet: %d, want 403", status)
-	}
-	bdNet := idOf(t, mustCreate(t, w.ue, subnetsPath(org), map[string]any{"cidr": "10.72.114.0/24", "siteId": w.bd}))
-	hnNet := idOf(t, mustCreate(t, w.fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.120.0/24", "siteId": w.hn}))
-	mustCreate(t, w.fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.0.0/16"})
-	_, list := w.ue.Do("GET", subnetsPath(org), nil)
-	if n := len(list["subnets"].([]any)); n != 1 {
-		t.Errorf("editor of NM lists %d subnets, want 1 (BD only)", n)
-	}
-	if status, _ := w.ue.Do("GET", subnetsPath(org)+"/"+hnNet, nil); status != http.StatusNotFound {
-		t.Errorf("editor of NM reads VP's subnet: %d, want 404", status)
-	}
-	if status, sn := w.uv.Do("GET", subnetsPath(org)+"/"+hnNet, nil); status != http.StatusOK || sn["access"] != "view" {
-		t.Errorf("viewer of VP reads its subnet: %d %v", status, sn["access"])
+	sn := idOf(t, mustCreate(t, w.fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.120.0/24", "siteId": w.other}))
+	addDeviceIP(t, w.fx.A, org, w.other, "HN-SW1", "10.72.120.2/24", "")
+	if status, d := w.viewer.Do("GET", subnetsPath(org)+"/"+sn, nil); status != http.StatusOK || d["access"] != "view" || len(d["ips"].([]any)) != 1 || d["hiddenCount"] != float64(0) {
+		t.Errorf("viewer reads a subnet: %d %v", status, d)
 	}
 	for _, r := range []struct {
 		method, path string
 		body         map[string]any
 	}{
-		{"PATCH", subnetsPath(org) + "/" + hnNet, map[string]any{"cidr": "10.72.120.0/24", "siteId": w.hn, "version": 1}},
-		{"DELETE", subnetsPath(org) + "/" + hnNet, nil},
-		{"POST", subnetsPath(org) + "/" + hnNet + "/ranges", map[string]any{"startIp": "10.72.120.100", "endIp": "10.72.120.200", "kind": "dhcp"}},
+		{"PATCH", subnetsPath(org) + "/" + sn, map[string]any{"cidr": "10.72.120.0/24", "siteId": w.other, "version": 1}},
+		{"DELETE", subnetsPath(org) + "/" + sn, nil},
+		{"POST", subnetsPath(org) + "/" + sn + "/ranges", map[string]any{"startIp": "10.72.120.100", "endIp": "10.72.120.200", "kind": "dhcp"}},
+		{"POST", vlansPath(org), map[string]any{"vid": 20, "name": "CAM"}},
 	} {
-		if status, _ := w.uv.Do(r.method, r.path, r.body); status != http.StatusForbidden {
+		if status, _ := w.viewer.Do(r.method, r.path, r.body); status != http.StatusForbidden {
 			t.Errorf("viewer %s %s: %d, want 403", r.method, r.path, status)
 		}
 	}
-	// A VP device using an address in BD's subnet counts as used but stays hidden from NM's editor.
-	addDeviceIP(t, w.fx.A, org, w.hn, "VP-SW1", "10.72.114.1/24", "")
-	addDeviceIP(t, w.fx.A, org, w.bd, "BD-SW1", "10.72.114.2/24", "")
-	_, d := w.ue.Do("GET", subnetsPath(org)+"/"+bdNet, nil)
-	if d["usedCount"] != float64(2) || d["hiddenCount"] != float64(1) || len(d["ips"].([]any)) != 1 {
-		t.Errorf("NM's view of BD subnet: used %v hidden %v ips %v", d["usedCount"], d["hiddenCount"], d["ips"])
-	}
-	if _, next := w.ue.Do("GET", subnetsPath(org)+"/"+bdNet+"/next-free", nil); next["host"] != "10.72.114.3" {
-		t.Errorf("next free skips the hidden address: %v", next)
-	}
-	_, found := w.ue.Do("GET", lookupPath(org, "10.72.114.1"), nil)
-	if len(found["subnets"].([]any)) != 1 || len(found["assignments"].([]any)) != 0 || found["hiddenCount"] != float64(1) {
-		t.Errorf("NM's lookup of VP's address: %v", found)
+	if _, found := w.viewer.Do("GET", lookupPath(org, "10.72.120.2"), nil); len(found["assignments"].([]any)) != 1 {
+		t.Errorf("viewer lookup: %v", found)
 	}
 }

@@ -237,97 +237,56 @@ func TestDeviceListFiltersSortsAndPages(t *testing.T) {
 	}
 }
 
+// ADR-032: every member sees the whole organization; viewers only read; bulk changes are all or nothing.
 func TestDevicePermissionsAndBulk(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	add := func(host, site, unit string) string {
-		body := map[string]any{"hostname": host, "type": "l2_switch", "siteId": site}
-		if unit != "" {
-			body["businessUnitId"] = unit
-		}
-		return idOf(t, mustCreate(t, w.fx.A, devicesPath(org), body))
+	a := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "BD-SW01", "type": "l2_switch", "siteId": w.site}))
+	b := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "HN-SW01", "type": "l2_switch", "siteId": w.other}))
+	if got := hostnamesOf(t, listDevices(t, w.viewer, org, url.Values{})); !slices.Equal(got, []string{"BD-SW01", "HN-SW01"}) {
+		t.Errorf("viewer sees %v", got)
 	}
-	nmSW := add("NM-SW01", w.bd, "")
-	vpSW := add("VP-SW01", w.hn, "")
-	foodIDC := add("FOOD-IDC-FW01", w.idc, w.foodMain)
-	nmIDC := add("NM-IDC-SW01", w.idc, w.nm)
-
-	// The NM editor sees NM devices, including its device in the (unshared) IDC — not VP's, not FOOD's.
-	if got := hostnamesOf(t, listDevices(t, w.ue, org, url.Values{})); !slices.Equal(got, []string{"NM-IDC-SW01", "NM-SW01"}) {
-		t.Errorf("editor of NM sees %v", got)
+	if _, d := w.viewer.Do("GET", devicesPath(org)+"/"+a, nil); d["access"] != "view" {
+		t.Errorf("viewer access: %v", d["access"])
 	}
-	if got := hostnamesOf(t, listDevices(t, w.pa, org, url.Values{})); !slices.Equal(got, []string{"NM-IDC-SW01", "NM-SW01", "VP-SW01"}) {
-		t.Errorf("partner_admin AGRI sees %v", got)
-	}
-	for _, id := range []string{vpSW, foodIDC} {
-		if status, _ := w.ue.Do("GET", devicesPath(org)+"/"+id, nil); status != http.StatusNotFound {
-			t.Errorf("editor of NM reads %s: %d, want 404", id, status)
+	for _, r := range []struct {
+		method, path string
+		body         map[string]any
+	}{
+		{"POST", devicesPath(org), map[string]any{"hostname": "X", "type": "router", "siteId": w.site}},
+		{"PATCH", devicesPath(org) + "/" + a, map[string]any{"hostname": "BD-SW01", "type": "router", "siteId": w.site, "version": 1}},
+		{"DELETE", devicesPath(org) + "/" + a, nil},
+		{"POST", devicesPath(org) + "/bulk-update", map[string]any{"ids": []string{a}, "lifecycle": "spare"}},
+		{"POST", devicesPath(org) + "/bulk-delete", map[string]any{"ids": []string{a}}},
+	} {
+		if status, _ := w.viewer.Do(r.method, r.path, r.body); status != http.StatusForbidden {
+			t.Errorf("viewer %s %s: %d, want 403", r.method, r.path, status)
 		}
 	}
-	// Writes within the unit; nothing in VP; the viewer of VP reads only.
-	if status, _ := w.ue.Do("POST", devicesPath(org), map[string]any{"hostname": "NM-SW02", "type": "l2_switch", "siteId": w.bd}); status != http.StatusCreated {
-		t.Errorf("editor of NM adds a device: %d", status)
-	}
-	if status, _ := w.ue.Do("POST", devicesPath(org), map[string]any{"hostname": "VP-SW02", "type": "l2_switch", "siteId": w.hn}); status != http.StatusBadRequest {
-		t.Errorf("editor of NM adds a device in VP's site: %d, want 400", status)
-	}
-	if status, _ := w.uv.Do("PATCH", devicesPath(org)+"/"+vpSW, map[string]any{"hostname": "VP-SW01", "type": "router", "siteId": w.hn, "version": 1}); status != http.StatusForbidden {
-		t.Errorf("viewer of VP edits a device: %d, want 403", status)
-	}
-	if status, _ := w.uv.Do("DELETE", devicesPath(org)+"/"+vpSW, nil); status != http.StatusForbidden {
-		t.Errorf("viewer of VP deletes a device: %d, want 403", status)
-	}
-	// Sharing the IDC (editable) to AGRI: AGRI sees and edits every device in it, cannot delete or take FOOD's.
-	mustCreate(t, w.fx.A, sharesPath(org, w.idc), map[string]any{"targetType": "partner", "targetId": w.agri, "access": "edit"})
-	if got := hostnamesOf(t, listDevices(t, w.ue, org, url.Values{"siteId": {w.idc}})); !slices.Equal(got, []string{"FOOD-IDC-FW01", "NM-IDC-SW01"}) {
-		t.Errorf("editor of NM sees in the shared IDC: %v", got)
-	}
-	// In the shared site the owner unit must be one the caller sees; FOOD's is not (400, like a missing unit).
-	if status, _ := w.ue.Do("POST", devicesPath(org), map[string]any{"hostname": "X-IDC", "type": "router", "siteId": w.idc, "businessUnitId": w.foodMain}); status != http.StatusBadRequest {
-		t.Errorf("device for an invisible unit in a shared site: %d, want 400", status)
-	}
-	_, fd := w.ue.Do("GET", devicesPath(org)+"/"+foodIDC, nil)
-	if fd["access"] != "edit" {
-		t.Errorf("access on FOOD's device through the share: %v", fd["access"])
-	}
-	if status, _ := w.ue.Do("PATCH", devicesPath(org)+"/"+foodIDC, map[string]any{"hostname": "FOOD-IDC-FW01", "type": "firewall", "siteId": w.idc, "businessUnitId": w.foodMain, "notes": "patched", "version": 1}); status != http.StatusOK {
-		t.Errorf("edit FOOD's device through the share: %d", status)
-	}
-	if status, _ := w.ue.Do("PATCH", devicesPath(org)+"/"+foodIDC, map[string]any{"hostname": "FOOD-IDC-FW01", "type": "firewall", "siteId": w.idc, "businessUnitId": w.nm, "version": 2}); status != http.StatusForbidden {
-		t.Errorf("take FOOD's device into NM through the share: %d, want 403", status)
-	}
-	if status, _ := w.ue.Do("DELETE", devicesPath(org)+"/"+foodIDC, nil); status != http.StatusForbidden {
-		t.Errorf("delete FOOD's device through the share: %d, want 403", status)
-	}
-
-	// Bulk: all or nothing.
 	bulk := devicesPath(org) + "/bulk-update"
-	if status, _ := w.ue.Do("POST", bulk, map[string]any{"ids": []string{nmSW, vpSW}, "lifecycle": "spare"}); status != http.StatusNotFound {
-		t.Errorf("bulk with an invisible device: %d, want 404", status)
+	if status, _ := w.editor.Do("POST", bulk, map[string]any{"ids": []string{a, uuid.NewString()}, "lifecycle": "spare"}); status != http.StatusNotFound {
+		t.Errorf("bulk with an unknown device: %d, want 404", status)
 	}
-	if status, _ := w.uv.Do("POST", bulk, map[string]any{"ids": []string{vpSW}, "lifecycle": "spare"}); status != http.StatusForbidden {
-		t.Errorf("bulk by a viewer: %d, want 403", status)
-	}
-	if status, body := w.pa.Do("POST", bulk, map[string]any{"ids": []string{nmSW, vpSW, nmSW}, "lifecycle": "spare", "addTags": []string{"audit-2026"}, "ownerName": "Phạm Hùng"}); status != http.StatusOK || body["count"] != float64(2) {
+	if status, body := w.editor.Do("POST", bulk, map[string]any{"ids": []string{a, b, a}, "lifecycle": "spare", "addTags": []string{"audit-2026"}, "ownerName": "Phạm Hùng"}); status != http.StatusOK || body["count"] != float64(2) {
 		t.Fatalf("bulk update: %d %v", status, body)
 	}
-	_, got := w.pa.Do("GET", devicesPath(org)+"/"+vpSW, nil)
+	_, got := w.editor.Do("GET", devicesPath(org)+"/"+b, nil)
 	if got["lifecycle"] != "spare" || got["ownerName"] != "Phạm Hùng" || !slices.Contains(anyStrings(got["tags"]), "audit-2026") {
 		t.Errorf("after bulk: %v", got)
 	}
-	if status, _ := w.pa.Do("POST", bulk, map[string]any{"ids": []string{vpSW}, "removeTags": []string{"AUDIT-2026"}}); status != http.StatusOK {
+	if status, _ := w.editor.Do("POST", bulk, map[string]any{"ids": []string{b}, "removeTags": []string{"AUDIT-2026"}}); status != http.StatusOK {
 		t.Errorf("bulk remove tag: %d", status)
 	}
-	if _, got := w.pa.Do("GET", devicesPath(org)+"/"+vpSW, nil); len(got["tags"].([]any)) != 0 {
+	if _, got := w.editor.Do("GET", devicesPath(org)+"/"+b, nil); len(got["tags"].([]any)) != 0 {
 		t.Errorf("tag not removed: %v", got["tags"])
 	}
-	if status, _ := w.ue.Do("POST", devicesPath(org)+"/bulk-delete", map[string]any{"ids": []string{nmSW, foodIDC}}); status != http.StatusForbidden {
-		t.Errorf("bulk delete including a shared-only device: %d, want 403", status)
+	if status, _ := w.editor.Do("POST", devicesPath(org)+"/bulk-delete", map[string]any{"ids": []string{a, uuid.NewString()}}); status != http.StatusNotFound {
+		t.Errorf("bulk delete with an unknown device: %d, want 404", status)
 	}
-	if _, got := w.ue.Do("GET", devicesPath(org)+"/"+nmSW, nil); got["hostname"] != "NM-SW01" {
-		t.Errorf("all-or-nothing delete removed NM-SW01: %v", got)
+	if _, got := w.editor.Do("GET", devicesPath(org)+"/"+a, nil); got["hostname"] != "BD-SW01" {
+		t.Errorf("all-or-nothing delete removed BD-SW01: %v", got)
 	}
-	if status, body := w.ue.Do("POST", devicesPath(org)+"/bulk-delete", map[string]any{"ids": []string{nmSW, nmIDC}}); status != http.StatusOK || body["count"] != float64(2) {
+	if status, body := w.editor.Do("POST", devicesPath(org)+"/bulk-delete", map[string]any{"ids": []string{a, b}}); status != http.StatusOK || body["count"] != float64(2) {
 		t.Errorf("bulk delete: %d %v", status, body)
 	}
 }

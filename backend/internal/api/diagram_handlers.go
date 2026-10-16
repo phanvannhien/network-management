@@ -170,9 +170,7 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 		}
 	}
 	if len(deviceIDs) > 0 {
-		v := visibilityOf(m)
-		rows, err := q.ListDevicesByIDs(ctx, store.ListDevicesByIDsParams{Ids: deviceIDs, OrganizationID: m.OrgID, Restricted: v.restricted,
-			GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts})
+		rows, err := q.ListDevicesByIDs(ctx, store.ListDevicesByIDsParams{Ids: deviceIDs, OrganizationID: m.OrgID})
 		if err != nil {
 			return out, fmt.Errorf("diagram devices: %w", err)
 		}

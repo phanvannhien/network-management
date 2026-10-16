@@ -364,51 +364,6 @@ export interface paths {
         patch: operations["updatePartner"];
         trace?: never;
     };
-    "/orgs/{orgId}/partners/{partnerId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-            };
-            cookie?: never;
-        };
-        /** Users granted on the partner (organization owner/admin or partner_admin; unknown emails get an invite link) */
-        get: operations["listPartnerMembers"];
-        put?: never;
-        /** Add (organization owner/admin or partner_admin; unknown emails get an invite link) */
-        post: operations["addPartnerMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/orgs/{orgId}/partners/{partnerId}/members/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke a partner grant */
-        delete: operations["removePartnerMember"];
-        options?: never;
-        head?: never;
-        /** Change a partner grant (optimistic lock on version) */
-        patch: operations["updatePartnerMember"];
-        trace?: never;
-    };
     "/orgs/{orgId}/business-units": {
         parameters: {
             query?: never;
@@ -451,51 +406,6 @@ export interface paths {
         head?: never;
         /** Edit a unit (its partner cannot change) */
         patch: operations["updateBusinessUnit"];
-        trace?: never;
-    };
-    "/orgs/{orgId}/business-units/{businessUnitId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        /** Users granted on the unit (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link) */
-        get: operations["listUnitMembers"];
-        put?: never;
-        /** Add (organization owner/admin, partner_admin of its partner or unit_admin; unknown emails get an invite link) */
-        post: operations["addUnitMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/orgs/{orgId}/business-units/{businessUnitId}/members/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke a unit grant */
-        delete: operations["removeUnitMember"];
-        options?: never;
-        head?: never;
-        /** Change a unit grant (optimistic lock on version) */
-        patch: operations["updateUnitMember"];
         trace?: never;
     };
     "/orgs/{orgId}/sites/next-code": {
@@ -560,51 +470,6 @@ export interface paths {
         head?: never;
         /** Edit a site (optimistic lock on version) */
         patch: operations["updateSite"];
-        trace?: never;
-    };
-    "/orgs/{orgId}/sites/{siteId}/shares": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-            };
-            cookie?: never;
-        };
-        /** Shares of the site (callers with admin access on the site) */
-        get: operations["listSiteShares"];
-        put?: never;
-        /** Add (callers with admin access on the site) */
-        post: operations["createSiteShare"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/orgs/{orgId}/sites/{siteId}/shares/{shareId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-                shareId: components["parameters"]["ShareId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke a share */
-        delete: operations["deleteSiteShare"];
-        options?: never;
-        head?: never;
-        /** Change a share (optimistic lock on version) */
-        patch: operations["updateSiteShare"];
         trace?: never;
     };
     "/orgs/{orgId}/sites/{siteId}/locations": {
@@ -1643,12 +1508,12 @@ export interface components {
         /** @enum {string} */
         OrganizationKind: "internal" | "customer";
         /**
-         * @description member = no organization-wide access; sees only partner/unit grants and shares (ADR-031)
+         * @description organization role; it decides everything a member may do in the organization (ADR-032)
          * @enum {string}
          */
-        Role: "owner" | "admin" | "editor" | "viewer" | "member";
+        Role: "owner" | "admin" | "editor" | "viewer";
         /**
-         * @description The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+         * @description The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
          * @enum {string}
          */
         AccessLevel: "view" | "edit" | "admin";
@@ -1678,96 +1543,6 @@ export interface components {
         MembershipInfo: {
             role: components["schemas"]["Role"];
             permissions: string[];
-            partnerGrants: {
-                /** Format: uuid */
-                partnerId: string;
-                role: components["schemas"]["PartnerGrantRole"];
-            }[];
-            unitGrants: {
-                /** Format: uuid */
-                businessUnitId: string;
-                /** Format: uuid */
-                partnerId: string;
-                role: components["schemas"]["UnitGrantRole"];
-            }[];
-        };
-        /** @enum {string} */
-        PartnerGrantRole: "partner_admin" | "editor" | "viewer";
-        /** @enum {string} */
-        UnitGrantRole: "unit_admin" | "editor" | "viewer";
-        GrantMember: {
-            /** Format: uuid */
-            userId: string;
-            email: string;
-            displayName: string;
-            /** @description PartnerGrantRole or UnitGrantRole */
-            role: string;
-            pendingInvite: boolean;
-            /** Format: int32 */
-            version: number;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        GrantMemberList: {
-            members: components["schemas"]["GrantMember"][];
-        };
-        PartnerGrantInput: {
-            /** Format: email */
-            email: string;
-            role: components["schemas"]["PartnerGrantRole"];
-        };
-        UnitGrantInput: {
-            /** Format: email */
-            email: string;
-            role: components["schemas"]["UnitGrantRole"];
-        };
-        PartnerGrantUpdate: {
-            role: components["schemas"]["PartnerGrantRole"];
-            /** Format: int32 */
-            version: number;
-        };
-        UnitGrantUpdate: {
-            role: components["schemas"]["UnitGrantRole"];
-            /** Format: int32 */
-            version: number;
-        };
-        AddGrantResult: {
-            member: components["schemas"]["GrantMember"];
-            /** @description One-time invite token for a new user (link /invite/{token}); null for existing users */
-            inviteToken: string | null;
-        };
-        /** @enum {string} */
-        ShareTargetType: "partner" | "business_unit";
-        /** @enum {string} */
-        ShareAccess: "view" | "edit";
-        SiteShare: {
-            /** Format: uuid */
-            id: string;
-            targetType: components["schemas"]["ShareTargetType"];
-            /** Format: uuid */
-            targetId: string;
-            /** @description Partner code, or "PARTNER › UNIT" for a unit */
-            targetCode: string;
-            targetName: string;
-            access: components["schemas"]["ShareAccess"];
-            /** Format: date-time */
-            grantedAt: string;
-            /** Format: int32 */
-            version: number;
-        };
-        SiteShareList: {
-            shares: components["schemas"]["SiteShare"][];
-        };
-        SiteShareInput: {
-            targetType: components["schemas"]["ShareTargetType"];
-            /** Format: uuid */
-            targetId: string;
-            access: components["schemas"]["ShareAccess"];
-        };
-        SiteShareUpdate: {
-            access: components["schemas"]["ShareAccess"];
-            /** Format: int32 */
-            version: number;
         };
         OrganizationView: {
             organization: components["schemas"]["Organization"];
@@ -3306,7 +3081,6 @@ export interface components {
         PartnerId: string;
         BusinessUnitId: string;
         SiteId: string;
-        ShareId: string;
         LocationId: string;
         RackId: string;
         CsrfToken: string;
@@ -4089,132 +3863,6 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
-    listPartnerMembers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GrantMemberList"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    addPartnerMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartnerGrantInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AddGrantResult"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    removePartnerMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Done */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    updatePartnerMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartnerGrantUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GrantMember"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
     listBusinessUnits: {
         parameters: {
             query?: {
@@ -4363,132 +4011,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BusinessUnit"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    listUnitMembers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GrantMemberList"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    addUnitMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnitGrantInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AddGrantResult"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    removeUnitMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Done */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    updateUnitMember: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnitGrantUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GrantMember"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -4684,132 +4206,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Site"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    listSiteShares: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteShareList"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    createSiteShare: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SiteShareInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteShare"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    deleteSiteShare: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-                shareId: components["parameters"]["ShareId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Done */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    updateSiteShare: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                siteId: components["parameters"]["SiteId"];
-                shareId: components["parameters"]["ShareId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SiteShareUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteShare"];
                 };
             };
             400: components["responses"]["BadRequest"];

@@ -10,14 +10,6 @@ LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.organization_id = @organization_id AND (v.site_id IS NULL OR s.id IS NOT NULL)
   AND (sqlc.narg('site_filter')::uuid IS NULL OR v.site_id = sqlc.narg('site_filter') OR v.site_id IS NULL)
-  AND (NOT @restricted::boolean
-       OR (v.site_id IS NOT NULL AND (sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))))
 ORDER BY s.code NULLS FIRST, v.vid;
 
 -- name: GetVlan :one
@@ -26,15 +18,7 @@ SELECT v.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_
 FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
-WHERE v.id = @id AND v.organization_id = @organization_id AND (v.site_id IS NULL OR s.id IS NOT NULL)
-  AND (NOT @restricted::boolean
-       OR (v.site_id IS NOT NULL AND (sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))));
+WHERE v.id = @id AND v.organization_id = @organization_id AND (v.site_id IS NULL OR s.id IS NOT NULL);
 
 -- name: CreateVlan :one
 INSERT INTO vlans (organization_id, site_id, vid, name, color, description)
@@ -63,14 +47,6 @@ WHERE sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS N
   AND (sqlc.narg('site_filter')::uuid IS NULL OR sn.site_id = sqlc.narg('site_filter'))
   AND (sqlc.narg('vlan_filter')::uuid IS NULL OR sn.vlan_id = sqlc.narg('vlan_filter'))
   AND (@q::text = '' OR sn.cidr::text LIKE @q || '%' OR sn.description ILIKE '%' || @q || '%')
-  AND (NOT @restricted::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))))
 ORDER BY sn.vrf, sn.cidr;
 
 -- name: GetSubnet :one
@@ -83,15 +59,7 @@ FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
-WHERE sn.id = @id AND sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL)
-  AND (NOT @restricted::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))));
+WHERE sn.id = @id AND sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL);
 
 -- name: CreateSubnet :one
 INSERT INTO subnets (organization_id, site_id, vlan_id, cidr, vrf, gateway, description)
@@ -110,15 +78,7 @@ DELETE FROM subnets WHERE id = @id AND organization_id = @organization_id;
 -- Addresses in use inside a subnet (same VRF), with whether the caller may see the device / cluster.
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
        a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
-       (NOT @restricted::boolean
-          OR a.unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-          OR dsb.id = ANY (@grant_units::uuid[]) OR dsb.partner_id = ANY (@grant_partners::uuid[])
-          OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = ds.organization_id AND rs.resource_type = 'site' AND rs.resource_id = ds.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))::boolean AS visible
+       true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
 JOIN business_units du ON du.id = a.unit_id
@@ -157,29 +117,13 @@ LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL) AND sn.cidr >>= @ip::inet
-  AND (NOT @restricted::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))))
 ORDER BY masklen(sn.cidr) DESC, sn.vrf;
 
 -- name: LookupIPs :many
 -- Interfaces and clusters holding the address (any VRF).
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
        a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
-       (NOT @restricted::boolean
-          OR a.unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
-          OR dsb.id = ANY (@grant_units::uuid[]) OR dsb.partner_id = ANY (@grant_partners::uuid[])
-          OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = ds.organization_id AND rs.resource_type = 'site' AND rs.resource_id = ds.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))::boolean AS visible
+       true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
 JOIN business_units du ON du.id = a.unit_id

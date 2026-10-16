@@ -179,10 +179,8 @@ func (s *Server) siteCounts(ctx context.Context, m tenant.Membership, site store
 
 // loadSite returns the site if it is live, in the organization and visible to the caller (ADR-031).
 func loadSite(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetSiteRow, bool, error) {
-	v := visibilityOf(m)
 	site, err := q.GetSite(ctx, store.GetSiteParams{
-		ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: v.restricted,
-		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+		ID: pgUUID(id), OrganizationID: m.OrgID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return store.GetSiteRow{}, false, nil
@@ -198,10 +196,8 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 	if err != nil {
 		return nil, err
 	}
-	v := visibilityOf(m)
 	params := store.ListSitesParams{
-		OrganizationID: m.OrgID, Restricted: v.restricted,
-		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+		OrganizationID: m.OrgID,
 	}
 	if req.Params.BusinessUnitId != nil {
 		params.BuFilter = pgUUID(*req.Params.BusinessUnitId)
@@ -273,7 +269,7 @@ func (s *Server) SuggestSiteCode(ctx context.Context, req apigen.SuggestSiteCode
 	prefix := sharedPrefix
 	if req.Params.PartnerId != nil {
 		partner, err := s.q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(*req.Params.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(partner.ID)) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apigen.SuggestSiteCode404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy đối tác"}}, nil
 		}
 		if err != nil {
@@ -1115,4 +1111,8 @@ func optUUID(id pgtype.UUID) *uuid.UUID {
 	}
 	u := uuid.UUID(id.Bytes)
 	return &u
+}
+
+func notFoundBody(msg string) apigen.NotFoundJSONResponse {
+	return apigen.NotFoundJSONResponse{Message: msg}
 }

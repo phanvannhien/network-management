@@ -1,4 +1,3 @@
-import { GrantMembersPanel } from './GrantMembersPanel'
 import { Handshake, MoreHorizontal, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -104,12 +103,6 @@ export function PartnerDetailPage() {
           ]}
         />
       </section>
-
-      {canAdmin && (
-        <div className="max-w-4xl">
-          <GrantMembersPanel orgId={orgId} scope={{ kind: 'partner', id: u.id }} code={u.code} />
-        </div>
-      )}
 
       <h2 className="text-sm font-semibold">
         {t('partners.unitsOf', { code: u.code })}{' '}

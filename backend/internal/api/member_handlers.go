@@ -50,7 +50,7 @@ func checkRoleChange(actor tenant.Membership, from, to string, permsChanged bool
 	return ""
 }
 
-var validRoles = []string{tenant.RoleOwner, tenant.RoleAdmin, tenant.RoleEditor, tenant.RoleViewer, tenant.RoleMember}
+var validRoles = []string{tenant.RoleOwner, tenant.RoleAdmin, tenant.RoleEditor, tenant.RoleViewer}
 
 // normalizePermissions validates against the enum and removes duplicates (stable order).
 func normalizePermissions(in *[]apigen.Permission) ([]string, bool) {
@@ -96,9 +96,6 @@ func (s *Server) ListMembers(ctx context.Context, req apigen.ListMembersRequestO
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
 		return nil, err
-	}
-	if m.Restricted() {
-		return apigen.ListMembers403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgNoAccess}}, nil
 	}
 	rows, err := s.q.ListMembers(ctx, m.OrgID)
 	if err != nil {

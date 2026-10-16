@@ -36,7 +36,6 @@ type Membership struct {
 	UserID      pgtype.UUID
 	Role        string
 	Permissions []string
-	Grants      Grants
 	OrgName     string
 	OrgKind     string
 }
@@ -68,24 +67,6 @@ func WithMembership(ctx context.Context, m Membership) context.Context {
 // MembershipLoader is the slice of store.Querier the middleware needs.
 type MembershipLoader interface {
 	GetMembership(ctx context.Context, arg store.GetMembershipParams) (store.GetMembershipRow, error)
-	ListAccessGrants(ctx context.Context, arg store.ListAccessGrantsParams) ([]store.ListAccessGrantsRow, error)
-}
-
-// LoadGrants reads the caller's partner and unit grants.
-func LoadGrants(ctx context.Context, q MembershipLoader, org, user pgtype.UUID) (Grants, error) {
-	rows, err := q.ListAccessGrants(ctx, store.ListAccessGrantsParams{OrganizationID: org, UserID: user})
-	if err != nil {
-		return Grants{}, fmt.Errorf("load grants: %w", err)
-	}
-	g := Grants{Partners: map[pgtype.UUID]string{}, Units: map[pgtype.UUID]UnitGrant{}}
-	for _, r := range rows {
-		if r.BusinessUnitID.Valid {
-			g.Units[r.BusinessUnitID] = UnitGrant{Partner: r.PartnerID, Role: r.Role}
-		} else {
-			g.Partners[r.PartnerID] = r.Role
-		}
-	}
-	return g, nil
 }
 
 // UserFunc returns the signed-in user for a request (false = not signed in).
@@ -119,14 +100,9 @@ func Middleware(q MembershipLoader, user UserFunc) func(http.Handler) http.Handl
 				writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
 				return
 			}
-			grants, err := LoadGrants(r.Context(), q, row.OrganizationID, row.UserID)
-			if err != nil {
-				writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
-				return
-			}
 			m := Membership{
 				OrgID: row.OrganizationID, UserID: row.UserID, Role: row.Role, Permissions: row.Permissions,
-				Grants: grants, OrgName: row.OrganizationName, OrgKind: row.OrganizationKind,
+				OrgName: row.OrganizationName, OrgKind: row.OrganizationKind,
 			}
 			next.ServeHTTP(w, r.WithContext(WithMembership(r.Context(), m)))
 		})

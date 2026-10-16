@@ -42,17 +42,6 @@ type BusinessUnit struct {
 	Version        int32
 }
 
-type BusinessUnitMember struct {
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-	UserID         pgtype.UUID
-	Role           string
-	GrantedBy      pgtype.UUID
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
-}
-
 type CustomFieldDef struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -346,17 +335,6 @@ type Partner struct {
 	Version        int32
 }
 
-type PartnerMember struct {
-	OrganizationID pgtype.UUID
-	PartnerID      pgtype.UUID
-	UserID         pgtype.UUID
-	Role           string
-	GrantedBy      pgtype.UUID
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
-}
-
 type Rack struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -368,20 +346,6 @@ type Rack struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
-}
-
-type ResourceShare struct {
-	ID              pgtype.UUID
-	OrganizationID  pgtype.UUID
-	ResourceType    string
-	ResourceID      pgtype.UUID
-	TargetType      string
-	TargetPartnerID pgtype.UUID
-	TargetUnitID    pgtype.UUID
-	Access          string
-	GrantedBy       pgtype.UUID
-	GrantedAt       pgtype.Timestamptz
-	Version         int32
 }
 
 type Session struct {

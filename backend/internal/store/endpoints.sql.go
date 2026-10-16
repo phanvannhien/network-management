@@ -160,24 +160,11 @@ LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.id = $1 AND g.organization_id = $2
-  AND (NOT $3::boolean
-       OR g.business_unit_id = ANY ($4::uuid[]) OR gu.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type GetEndpointGroupParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetEndpointGroupRow struct {
@@ -211,14 +198,7 @@ type GetEndpointGroupRow struct {
 }
 
 func (q *Queries) GetEndpointGroup(ctx context.Context, arg GetEndpointGroupParams) (GetEndpointGroupRow, error) {
-	row := q.db.QueryRow(ctx, getEndpointGroup,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getEndpointGroup, arg.ID, arg.OrganizationID)
 	var i GetEndpointGroupRow
 	err := row.Scan(
 		&i.ID,
@@ -382,25 +362,12 @@ LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.organization_id = $1
   AND ($2::uuid IS NULL OR g.site_id = $2)
-  AND (NOT $3::boolean
-       OR g.business_unit_id = ANY ($4::uuid[]) OR gu.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 ORDER BY s.code, lower(g.name)
 `
 
 type ListEndpointGroupsParams struct {
 	OrganizationID pgtype.UUID
 	SiteFilter     pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type ListEndpointGroupsRow struct {
@@ -436,14 +403,7 @@ type ListEndpointGroupsRow struct {
 // Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
 // the group's unit is granted, or its site is visible.
 func (q *Queries) ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error) {
-	rows, err := q.db.Query(ctx, listEndpointGroups,
-		arg.OrganizationID,
-		arg.SiteFilter,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	rows, err := q.db.Query(ctx, listEndpointGroups, arg.OrganizationID, arg.SiteFilter)
 	if err != nil {
 		return nil, err
 	}

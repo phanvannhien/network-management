@@ -157,35 +157,18 @@ func TestLinkRules(t *testing.T) {
 }
 
 func TestLinkPermissions(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	nmSw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "NM-SW", "type": "l2_switch", "siteId": w.bd}))
-	vpFw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "VP-FW", "type": "firewall", "siteId": w.hn}))
-	vpSw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "VP-SW", "type": "l2_switch", "siteId": w.hn}))
-	cross := idOf(t, mustCreate(t, w.fx.A, linksPath(org), map[string]any{"a": devEnd(nmSw, ""), "b": devEnd(vpFw, ""), "kind": "logical"}))
-	vpOnly := idOf(t, mustCreate(t, w.fx.A, linksPath(org), map[string]any{"a": devEnd(vpSw, ""), "b": devEnd(vpFw, ""), "kind": "ethernet"}))
-	// The NM editor does not see VP's devices: neither the cross-unit link nor VP's own link.
-	if _, l := w.ue.Do("GET", linksPath(org), nil); len(l["links"].([]any)) != 0 {
-		t.Errorf("editor of NM sees %v", l)
+	sw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "BD-SW", "type": "l2_switch", "siteId": w.site}))
+	fw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "HN-FW", "type": "firewall", "siteId": w.other}))
+	vpn := idOf(t, mustCreate(t, w.editor, linksPath(org), map[string]any{"a": devEnd(sw, ""), "b": devEnd(fw, ""), "kind": "logical"}))
+	if _, l := w.viewer.Do("GET", linksPath(org), nil); len(l["links"].([]any)) != 1 || l["links"].([]any)[0].(map[string]any)["access"] != "view" {
+		t.Errorf("viewer sees %v", l)
 	}
-	if status, _ := w.ue.Do("POST", linksPath(org), map[string]any{"a": devEnd(nmSw, ""), "b": devEnd(vpSw, ""), "kind": "ethernet"}); status != http.StatusBadRequest {
-		t.Errorf("editor of NM links to an unseen device: %d, want 400", status)
-	}
-	if status, _ := w.ue.Do("DELETE", linksPath(org)+"/"+cross, nil); status != http.StatusNotFound {
-		t.Errorf("editor of NM deletes a half-hidden link: %d, want 404", status)
-	}
-	// The VP viewer sees VP's link but may not change it.
-	if _, l := w.uv.Do("GET", linksPath(org), nil); len(l["links"].([]any)) != 1 || l["links"].([]any)[0].(map[string]any)["access"] != "view" {
-		t.Errorf("viewer of VP sees %v", l)
-	}
-	if status, _ := w.uv.Do("DELETE", linksPath(org)+"/"+vpOnly, nil); status != http.StatusForbidden {
+	if status, _ := w.viewer.Do("DELETE", linksPath(org)+"/"+vpn, nil); status != http.StatusForbidden {
 		t.Errorf("viewer deletes a link: %d, want 403", status)
 	}
-	if status, _ := w.uv.Do("POST", linksPath(org), map[string]any{"a": devEnd(vpSw, ""), "b": devEnd(vpFw, ""), "kind": "logical"}); status != http.StatusForbidden {
+	if status, _ := w.viewer.Do("POST", linksPath(org), map[string]any{"a": devEnd(sw, ""), "b": devEnd(fw, ""), "kind": "ethernet"}); status != http.StatusForbidden {
 		t.Errorf("viewer creates a link: %d, want 403", status)
-	}
-	// Partner admin of AGRI sees and edits both units: the cross link is editable.
-	if _, l := w.pa.Do("GET", linksPath(org)+"?endId="+nmSw, nil); len(l["links"].([]any)) != 1 || l["links"].([]any)[0].(map[string]any)["access"] != "edit" {
-		t.Errorf("partner admin sees %v", l)
 	}
 }

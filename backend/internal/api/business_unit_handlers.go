@@ -140,7 +140,7 @@ func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusine
 	err = s.withTx(ctx, func(q store.Querier) error {
 		// The partner must be a live partner of this organization (the composite FK backs this up).
 		partner, err = q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(b.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(partner.ID)) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			noPartner = true
 			return errRollback
 		}

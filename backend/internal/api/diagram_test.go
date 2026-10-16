@@ -170,67 +170,25 @@ func TestDiagramSaveWithInventoryChanges(t *testing.T) {
 	}
 }
 
-func TestDiagramPermissionsAndHiddenRefs(t *testing.T) {
-	w := newPermWorld(t)
+func TestDiagramPermissions(t *testing.T) {
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	nmSw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "NM-SW", "type": "l2_switch", "siteId": w.bd}))
-	vpFw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "VP-FW", "type": "firewall", "siteId": w.hn}))
-	vpn := idOf(t, mustCreate(t, w.fx.A, linksPath(org), map[string]any{"a": devEnd(nmSw, ""), "b": devEnd(vpFw, ""), "kind": "logical"}))
-	// The owner draws NM's site with VP's firewall on it (a VPN peer).
-	d := mustCreate(t, w.fx.A, diagramsPath(org), map[string]any{"name": "BD", "scope": "site", "siteId": w.bd})
+	d := mustCreate(t, w.editor, diagramsPath(org), map[string]any{"name": "Tổng quan", "scope": "organization"})
 	id := d["diagram"].(map[string]any)["id"].(string)
-	stored := view([]map[string]any{node("a", "device", nmSw, 0), node("b", "device", vpFw, 300)}, map[string]any{"id": "e", "linkId": vpn})
-	if status, _ := w.fx.A.Do("POST", diagramsPath(org)+"/"+id+"/save", map[string]any{"version": 1, "view": stored}); status != http.StatusOK {
-		t.Fatalf("owner save: %d", status)
-	}
-	// The NM editor sees the diagram but not VP's firewall nor the VPN: they come back as hidden refs only.
-	status, got := w.ue.Do("GET", diagramsPath(org)+"/"+id, nil)
-	if status != http.StatusOK || len(got["devices"].([]any)) != 1 || len(got["links"].([]any)) != 0 || len(got["hiddenRefs"].([]any)) != 2 ||
-		got["diagram"].(map[string]any)["access"] != "edit" {
-		t.Errorf("NM editor's view: %d %v", status, got)
-	}
-	// Saving keeps hidden refs (moved or not); adding a new ref to an unseen object is refused.
-	moved := view([]map[string]any{node("a", "device", nmSw, 50), node("b", "device", vpFw, 400)}, map[string]any{"id": "e", "linkId": vpn})
-	if status, _ := w.ue.Do("POST", diagramsPath(org)+"/"+id+"/save", map[string]any{"version": 2, "view": moved}); status != http.StatusOK {
-		t.Errorf("NM editor saves with hidden refs: %d", status)
-	}
-	vpSw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "VP-SW", "type": "l2_switch", "siteId": w.hn}))
-	sneak := view([]map[string]any{node("a", "device", nmSw, 0), node("c", "device", vpSw, 0)})
-	if status, _ := w.ue.Do("POST", diagramsPath(org)+"/"+id+"/save", map[string]any{"version": 3, "view": sneak}); status != http.StatusBadRequest {
-		t.Errorf("NM editor adds an unseen device: %d, want 400", status)
-	}
-	// Scope rules: NM editor cannot see VP's site diagram or make an organization diagram; VP viewer reads only.
-	vpD := mustCreate(t, w.fx.A, diagramsPath(org), map[string]any{"name": "VP", "scope": "business_unit", "businessUnitId": w.vp})
-	vpID := vpD["diagram"].(map[string]any)["id"].(string)
-	if status, _ := w.ue.Do("GET", diagramsPath(org)+"/"+vpID, nil); status != http.StatusNotFound {
-		t.Errorf("NM editor reads VP's diagram: %d, want 404", status)
-	}
-	if status, _ := w.ue.Do("POST", diagramsPath(org), map[string]any{"name": "Org", "scope": "organization"}); status != http.StatusForbidden {
-		t.Errorf("grant-only member creates an organization diagram: %d, want 403", status)
-	}
-	if status, _ := w.ue.Do("POST", diagramsPath(org), map[string]any{"name": "NM", "scope": "business_unit", "businessUnitId": w.nm}); status != http.StatusCreated {
-		t.Errorf("NM editor creates NM's unit diagram: %d", status)
-	}
-	if status, got := w.uv.Do("GET", diagramsPath(org)+"/"+vpID, nil); status != http.StatusOK || got["diagram"].(map[string]any)["access"] != "view" {
-		t.Errorf("VP viewer reads VP's diagram: %d", status)
+	if status, got := w.viewer.Do("GET", diagramsPath(org)+"/"+id, nil); status != http.StatusOK || got["diagram"].(map[string]any)["access"] != "view" {
+		t.Errorf("viewer reads a diagram: %d", status)
 	}
 	for _, r := range []struct {
 		method, path string
 		body         map[string]any
 	}{
-		{"POST", diagramsPath(org) + "/" + vpID + "/save", map[string]any{"version": 1, "view": view(nil)}},
-		{"PATCH", diagramsPath(org) + "/" + vpID, map[string]any{"name": "X", "version": 1}},
-		{"DELETE", diagramsPath(org) + "/" + vpID, nil},
+		{"POST", diagramsPath(org), map[string]any{"name": "X", "scope": "organization"}},
+		{"POST", diagramsPath(org) + "/" + id + "/save", map[string]any{"version": 1, "view": view(nil)}},
+		{"PATCH", diagramsPath(org) + "/" + id, map[string]any{"name": "X", "version": 1}},
+		{"DELETE", diagramsPath(org) + "/" + id, nil},
 	} {
-		if status, _ := w.uv.Do(r.method, r.path, r.body); status != http.StatusForbidden {
+		if status, _ := w.viewer.Do(r.method, r.path, r.body); status != http.StatusForbidden {
 			t.Errorf("viewer %s %s: %d, want 403", r.method, r.path, status)
 		}
-	}
-	if status, _ := w.uv.Do("GET", diagramsPath(org)+"/"+id, nil); status != http.StatusNotFound {
-		t.Errorf("VP viewer reads NM's site diagram: %d, want 404", status)
-	}
-	_, list := w.ue.Do("GET", diagramsPath(org), nil)
-	if n := len(list["diagrams"].([]any)); n != 2 {
-		t.Errorf("NM editor lists %d diagrams, want 2", n)
 	}
 }

@@ -223,37 +223,29 @@ func TestPromoteEndpointMember(t *testing.T) {
 }
 
 func TestEndpointGroupPermissions(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	nmGroup := mustCreate(t, w.ue, groupsPath(org), map[string]any{"kind": "pc", "name": "PC văn phòng", "siteId": w.bd})
-	if nmGroup["access"] != "edit" {
-		t.Errorf("editor of NM on its group: %v", nmGroup["access"])
+	if g := mustCreate(t, w.editor, groupsPath(org), map[string]any{"kind": "pc", "name": "PC văn phòng", "siteId": w.site}); g["access"] != "edit" {
+		t.Errorf("editor on its group: %v", g["access"])
 	}
-	if status, _ := w.ue.Do("POST", groupsPath(org), map[string]any{"kind": "pc", "name": "PC", "siteId": w.hn}); status != http.StatusBadRequest {
-		t.Errorf("editor of NM creates in VP's site: %d, want 400", status)
-	}
-	vp := idOf(t, mustCreate(t, w.fx.A, groupsPath(org), map[string]any{"kind": "ip_phone", "name": "Điện thoại", "siteId": w.hn}))
-	if status, _ := w.ue.Do("GET", groupsPath(org)+"/"+vp, nil); status != http.StatusNotFound {
-		t.Errorf("editor of NM reads VP's group: %d, want 404", status)
-	}
-	mb := idOf(t, mustCreate(t, w.fx.A, groupsPath(org)+"/"+vp+"/members", map[string]any{"name": "PHONE-01"}))
+	id := idOf(t, mustCreate(t, w.fx.A, groupsPath(org), map[string]any{"kind": "ip_phone", "name": "Điện thoại", "siteId": w.other}))
+	mb := idOf(t, mustCreate(t, w.fx.A, groupsPath(org)+"/"+id+"/members", map[string]any{"name": "PHONE-01"}))
 	for _, r := range []struct {
 		method, path string
 		body         map[string]any
 	}{
-		{"PATCH", groupsPath(org) + "/" + vp, map[string]any{"kind": "ip_phone", "name": "X", "siteId": w.hn, "version": 1}},
-		{"POST", groupsPath(org) + "/" + vp + "/members", map[string]any{"name": "PHONE-02"}},
-		{"PATCH", groupsPath(org) + "/" + vp + "/members/" + mb, map[string]any{"name": "X", "version": 1}},
-		{"POST", groupsPath(org) + "/" + vp + "/members/" + mb + "/promote", map[string]any{}},
-		{"DELETE", groupsPath(org) + "/" + vp + "/members/" + mb, nil},
-		{"DELETE", groupsPath(org) + "/" + vp, nil},
+		{"PATCH", groupsPath(org) + "/" + id, map[string]any{"kind": "ip_phone", "name": "X", "siteId": w.other, "version": 1}},
+		{"POST", groupsPath(org) + "/" + id + "/members", map[string]any{"name": "PHONE-02"}},
+		{"PATCH", groupsPath(org) + "/" + id + "/members/" + mb, map[string]any{"name": "X", "version": 1}},
+		{"POST", groupsPath(org) + "/" + id + "/members/" + mb + "/promote", map[string]any{}},
+		{"DELETE", groupsPath(org) + "/" + id + "/members/" + mb, nil},
+		{"DELETE", groupsPath(org) + "/" + id, nil},
 	} {
-		if status, _ := w.uv.Do(r.method, r.path, r.body); status != http.StatusForbidden {
+		if status, _ := w.viewer.Do(r.method, r.path, r.body); status != http.StatusForbidden {
 			t.Errorf("viewer %s %s: %d, want 403", r.method, r.path, status)
 		}
 	}
-	_, list := w.ue.Do("GET", groupsPath(org), nil)
-	if n := len(list["groups"].([]any)); n != 1 {
-		t.Errorf("editor of NM lists %d groups, want 1", n)
+	if _, list := w.viewer.Do("GET", groupsPath(org), nil); len(list["groups"].([]any)) != 2 {
+		t.Errorf("viewer lists %v", list)
 	}
 }

@@ -76,24 +76,11 @@ JOIN business_units cu ON cu.id = c.business_unit_id
 JOIN partners cp ON cp.id = cu.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE c.id = $1 AND c.organization_id = $2
-  AND (NOT $3::boolean
-       OR c.business_unit_id = ANY ($4::uuid[]) OR cu.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type GetClusterParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetClusterRow struct {
@@ -123,14 +110,7 @@ type GetClusterRow struct {
 }
 
 func (q *Queries) GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error) {
-	row := q.db.QueryRow(ctx, getCluster,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getCluster, arg.ID, arg.OrganizationID)
 	var i GetClusterRow
 	err := row.Scan(
 		&i.ID,
@@ -228,25 +208,12 @@ JOIN partners cp ON cp.id = cu.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE c.organization_id = $1
   AND ($2::uuid IS NULL OR c.site_id = $2)
-  AND (NOT $3::boolean
-       OR c.business_unit_id = ANY ($4::uuid[]) OR cu.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 ORDER BY lower(c.name)
 `
 
 type ListClustersParams struct {
 	OrganizationID pgtype.UUID
 	SiteFilter     pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type ListClustersRow struct {
@@ -278,14 +245,7 @@ type ListClustersRow struct {
 // Device clusters (P1-09b, ADR-027). Every query takes organization_id; visibility follows devices (ADR-031):
 // the cluster's unit is granted, or its site is visible.
 func (q *Queries) ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error) {
-	rows, err := q.db.Query(ctx, listClusters,
-		arg.OrganizationID,
-		arg.SiteFilter,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	rows, err := q.db.Query(ctx, listClusters, arg.OrganizationID, arg.SiteFilter)
 	if err != nil {
 		return nil, err
 	}

@@ -20,38 +20,23 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.type = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.vendor = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.lifecycle = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.role = ANY ($14::text[]))
-  AND (COALESCE(cardinality($15::text[]), 0) = 0 OR d.tags && $15::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($6::uuid[]), 0) = 0 OR d.site_id = ANY ($6::uuid[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.type = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.vendor = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.lifecycle = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 `
 
 type CountDevicesParams struct {
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
 	PartnerFilter  pgtype.UUID
@@ -67,10 +52,6 @@ type CountDevicesParams struct {
 func (q *Queries) CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countDevices,
 		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
 		arg.Q,
 		arg.ClusterIds,
 		arg.PartnerFilter,
@@ -337,29 +318,18 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'type'::text AS facet, d.type AS value, count(*)::bigint AS n
@@ -369,29 +339,18 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'vendor'::text AS facet, d.vendor AS value, count(*)::bigint AS n
@@ -401,29 +360,18 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'lifecycle'::text AS facet, d.lifecycle AS value, count(*)::bigint AS n
@@ -433,29 +381,18 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'role'::text AS facet, d.role AS value, count(*)::bigint AS n
@@ -465,29 +402,18 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'tag'::text AS facet, t.tag AS value, count(*)::bigint AS n
@@ -498,29 +424,18 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 CROSS JOIN LATERAL unnest(d.tags) AS t(tag)
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
 GROUP BY 2
 UNION ALL
 SELECT 'cluster'::text AS facet, d.cluster_id::text AS value, count(*)::bigint AS n
@@ -530,39 +445,24 @@ JOIN business_units du ON du.id = d.business_unit_id
 JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($15::uuid[]), 0) = 0 OR d.site_id = ANY ($15::uuid[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.type = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.vendor = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.lifecycle = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.role = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.tags && $14::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
   AND d.cluster_id IS NOT NULL
 GROUP BY 2
 `
 
 type DeviceFacetCountsParams struct {
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
 	PartnerFilter  pgtype.UUID
@@ -585,10 +485,6 @@ type DeviceFacetCountsRow struct {
 func (q *Queries) DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error) {
 	rows, err := q.db.Query(ctx, deviceFacetCounts,
 		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
 		arg.Q,
 		arg.ClusterIds,
 		arg.PartnerFilter,
@@ -665,26 +561,11 @@ LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = $1 AND d.organization_id = $2 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $3::boolean
-       OR d.business_unit_id = ANY ($4::uuid[]) OR du.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type GetDeviceParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetDeviceRow struct {
@@ -745,14 +626,7 @@ type GetDeviceRow struct {
 }
 
 func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error) {
-	row := q.db.QueryRow(ctx, getDevice,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getDevice, arg.ID, arg.OrganizationID)
 	var i GetDeviceRow
 	err := row.Scan(
 		&i.ID,
@@ -923,58 +797,43 @@ LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $2::boolean
-       OR d.business_unit_id = ANY ($3::uuid[]) OR du.partner_id = ANY ($4::uuid[])
-       OR sb.id = ANY ($3::uuid[]) OR sb.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
-       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($6) || '%'))
-  AND (COALESCE(cardinality($7::uuid[]), 0) = 0 OR d.cluster_id = ANY ($7::uuid[]))
-  AND ($8::uuid IS NULL OR du.partner_id = $8)
-  AND ($9::uuid IS NULL OR d.business_unit_id = $9)
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.type = ANY ($11::text[]))
-  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.vendor = ANY ($12::text[]))
-  AND (COALESCE(cardinality($13::text[]), 0) = 0 OR d.lifecycle = ANY ($13::text[]))
-  AND (COALESCE(cardinality($14::text[]), 0) = 0 OR d.role = ANY ($14::text[]))
-  AND (COALESCE(cardinality($15::text[]), 0) = 0 OR d.tags && $15::text[])
+  AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
+       OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+  AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR du.partner_id = $4)
+  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
+  AND (COALESCE(cardinality($6::uuid[]), 0) = 0 OR d.site_id = ANY ($6::uuid[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.type = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.vendor = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.lifecycle = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 ORDER BY
-  CASE WHEN NOT $16::boolean THEN
-    CASE $17::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+  CASE WHEN NOT $12::boolean THEN
+    CASE $13::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
       WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END ASC NULLS LAST,
-  CASE WHEN $16::boolean THEN
-    CASE $17::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+  CASE WHEN $12::boolean THEN
+    CASE $13::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
       WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END DESC NULLS LAST,
-  CASE WHEN $17::text = 'warranty_end' AND NOT $16::boolean THEN d.warranty_end END ASC NULLS LAST,
-  CASE WHEN $17::text = 'warranty_end' AND $16::boolean THEN d.warranty_end END DESC NULLS LAST,
-  CASE WHEN $17::text = 'mgmt_ip' AND NOT $16::boolean THEN
+  CASE WHEN $13::text = 'warranty_end' AND NOT $12::boolean THEN d.warranty_end END ASC NULLS LAST,
+  CASE WHEN $13::text = 'warranty_end' AND $12::boolean THEN d.warranty_end END DESC NULLS LAST,
+  CASE WHEN $13::text = 'mgmt_ip' AND NOT $12::boolean THEN
     (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
      ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
-  CASE WHEN $17::text = 'mgmt_ip' AND $16::boolean THEN
+  CASE WHEN $13::text = 'mgmt_ip' AND $12::boolean THEN
     (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
      ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
-  CASE WHEN $17::text = 'hostname' AND $16::boolean THEN lower(d.hostname) END DESC,
+  CASE WHEN $13::text = 'hostname' AND $12::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
-LIMIT $19 OFFSET $18
+LIMIT $15 OFFSET $14
 `
 
 type ListDevicesParams struct {
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
 	PartnerFilter  pgtype.UUID
@@ -1053,10 +912,6 @@ type ListDevicesRow struct {
 func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error) {
 	rows, err := q.db.Query(ctx, listDevices,
 		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
 		arg.Q,
 		arg.ClusterIds,
 		arg.PartnerFilter,
@@ -1164,26 +1019,11 @@ LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = ANY ($1::uuid[]) AND d.organization_id = $2 AND d.deleted_at IS NULL
-  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
-  -- to the caller (site's unit granted, or the site shared to the caller).
-  AND (NOT $3::boolean
-       OR d.business_unit_id = ANY ($4::uuid[]) OR du.partner_id = ANY ($5::uuid[])
-       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type ListDevicesByIDsParams struct {
 	Ids            []pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type ListDevicesByIDsRow struct {
@@ -1245,14 +1085,7 @@ type ListDevicesByIDsRow struct {
 
 // Devices placed on a diagram, with the same visibility as GetDevice.
 func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error) {
-	rows, err := q.db.Query(ctx, listDevicesByIDs,
-		arg.Ids,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	rows, err := q.db.Query(ctx, listDevicesByIDs, arg.Ids, arg.OrganizationID)
 	if err != nil {
 		return nil, err
 	}

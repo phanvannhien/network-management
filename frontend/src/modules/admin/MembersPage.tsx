@@ -160,9 +160,6 @@ function EditMemberSheet({
               ))}
               <p className="text-label text-muted-foreground">{t('members.editHint')}</p>
             </fieldset>
-            {role === 'member' && (
-              <p className="text-label text-muted-foreground">{t('members.memberRoleHint')}</p>
-            )}
             {update.isError && (
               <p role="alert" className="text-destructive">
                 {update.error.message}

@@ -203,23 +203,11 @@ LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.id = $1 AND sn.organization_id = $2 AND (sn.site_id IS NULL OR s.id IS NOT NULL)
-  AND (NOT $3::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))))
 `
 
 type GetSubnetParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetSubnetRow struct {
@@ -245,14 +233,7 @@ type GetSubnetRow struct {
 }
 
 func (q *Queries) GetSubnet(ctx context.Context, arg GetSubnetParams) (GetSubnetRow, error) {
-	row := q.db.QueryRow(ctx, getSubnet,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getSubnet, arg.ID, arg.OrganizationID)
 	var i GetSubnetRow
 	err := row.Scan(
 		&i.ID,
@@ -285,23 +266,11 @@ FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.id = $1 AND v.organization_id = $2 AND (v.site_id IS NULL OR s.id IS NOT NULL)
-  AND (NOT $3::boolean
-       OR (v.site_id IS NOT NULL AND (sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))))
 `
 
 type GetVlanParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetVlanRow struct {
@@ -322,14 +291,7 @@ type GetVlanRow struct {
 }
 
 func (q *Queries) GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error) {
-	row := q.db.QueryRow(ctx, getVlan,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getVlan, arg.ID, arg.OrganizationID)
 	var i GetVlanRow
 	err := row.Scan(
 		&i.ID,
@@ -393,28 +355,16 @@ func (q *Queries) ListRanges(ctx context.Context, arg ListRangesParams) ([]IpRan
 const listSubnetIPs = `-- name: ListSubnetIPs :many
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
        a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
-       (NOT $1::boolean
-          OR a.unit_id = ANY ($2::uuid[]) OR du.partner_id = ANY ($3::uuid[])
-          OR dsb.id = ANY ($2::uuid[]) OR dsb.partner_id = ANY ($3::uuid[])
-          OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = ds.organization_id AND rs.resource_type = 'site' AND rs.resource_id = ds.id
-                    AND (rs.target_partner_id = ANY ($4::uuid[])
-                         OR rs.target_unit_id = ANY ($2::uuid[])
-                         OR tu.partner_id = ANY ($3::uuid[]))))::boolean AS visible
+       true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
 JOIN business_units du ON du.id = a.unit_id
 LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
-WHERE a.organization_id = $5 AND a.vrf = $6 AND a.host << $7::cidr
+WHERE a.organization_id = $1 AND a.vrf = $2 AND a.host << $3::cidr
 ORDER BY a.host, a.hostname
 `
 
 type ListSubnetIPsParams struct {
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	OrganizationID pgtype.UUID
 	Vrf            string
 	Cidr           netip.Prefix
@@ -435,15 +385,7 @@ type ListSubnetIPsRow struct {
 
 // Addresses in use inside a subnet (same VRF), with whether the caller may see the device / cluster.
 func (q *Queries) ListSubnetIPs(ctx context.Context, arg ListSubnetIPsParams) ([]ListSubnetIPsRow, error) {
-	rows, err := q.db.Query(ctx, listSubnetIPs,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-		arg.OrganizationID,
-		arg.Vrf,
-		arg.Cidr,
-	)
+	rows, err := q.db.Query(ctx, listSubnetIPs, arg.OrganizationID, arg.Vrf, arg.Cidr)
 	if err != nil {
 		return nil, err
 	}
@@ -487,14 +429,6 @@ WHERE sn.organization_id = $1 AND (sn.site_id IS NULL OR s.id IS NOT NULL)
   AND ($2::uuid IS NULL OR sn.site_id = $2)
   AND ($3::uuid IS NULL OR sn.vlan_id = $3)
   AND ($4::text = '' OR sn.cidr::text LIKE $4 || '%' OR sn.description ILIKE '%' || $4 || '%')
-  AND (NOT $5::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY ($6::uuid[]) OR sb.partner_id = ANY ($7::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($8::uuid[])
-                         OR rs.target_unit_id = ANY ($6::uuid[])
-                         OR tu.partner_id = ANY ($7::uuid[]))))))
 ORDER BY sn.vrf, sn.cidr
 `
 
@@ -503,10 +437,6 @@ type ListSubnetsParams struct {
 	SiteFilter     pgtype.UUID
 	VlanFilter     pgtype.UUID
 	Q              string
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type ListSubnetsRow struct {
@@ -537,10 +467,6 @@ func (q *Queries) ListSubnets(ctx context.Context, arg ListSubnetsParams) ([]Lis
 		arg.SiteFilter,
 		arg.VlanFilter,
 		arg.Q,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
 	)
 	if err != nil {
 		return nil, err
@@ -589,24 +515,12 @@ LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.organization_id = $1 AND (v.site_id IS NULL OR s.id IS NOT NULL)
   AND ($2::uuid IS NULL OR v.site_id = $2 OR v.site_id IS NULL)
-  AND (NOT $3::boolean
-       OR (v.site_id IS NOT NULL AND (sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))))
 ORDER BY s.code NULLS FIRST, v.vid
 `
 
 type ListVlansParams struct {
 	OrganizationID pgtype.UUID
 	SiteFilter     pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type ListVlansRow struct {
@@ -630,14 +544,7 @@ type ListVlansRow struct {
 // visibility (ADR-031); site-less ones are for organization-wide roles. Interface IPs carry a `visible` flag so callers
 // can count addresses of devices they may not see without showing them.
 func (q *Queries) ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVlansRow, error) {
-	rows, err := q.db.Query(ctx, listVlans,
-		arg.OrganizationID,
-		arg.SiteFilter,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	rows, err := q.db.Query(ctx, listVlans, arg.OrganizationID, arg.SiteFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -674,28 +581,16 @@ func (q *Queries) ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVla
 const lookupIPs = `-- name: LookupIPs :many
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
        a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
-       (NOT $1::boolean
-          OR a.unit_id = ANY ($2::uuid[]) OR du.partner_id = ANY ($3::uuid[])
-          OR dsb.id = ANY ($2::uuid[]) OR dsb.partner_id = ANY ($3::uuid[])
-          OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = ds.organization_id AND rs.resource_type = 'site' AND rs.resource_id = ds.id
-                    AND (rs.target_partner_id = ANY ($4::uuid[])
-                         OR rs.target_unit_id = ANY ($2::uuid[])
-                         OR tu.partner_id = ANY ($3::uuid[]))))::boolean AS visible
+       true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
 JOIN business_units du ON du.id = a.unit_id
 LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
-WHERE a.organization_id = $5 AND a.host = $6::inet
+WHERE a.organization_id = $1 AND a.host = $2::inet
 ORDER BY a.hostname
 `
 
 type LookupIPsParams struct {
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	OrganizationID pgtype.UUID
 	Ip             netip.Addr
 }
@@ -715,14 +610,7 @@ type LookupIPsRow struct {
 
 // Interfaces and clusters holding the address (any VRF).
 func (q *Queries) LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error) {
-	rows, err := q.db.Query(ctx, lookupIPs,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-		arg.OrganizationID,
-		arg.Ip,
-	)
+	rows, err := q.db.Query(ctx, lookupIPs, arg.OrganizationID, arg.Ip)
 	if err != nil {
 		return nil, err
 	}
@@ -763,24 +651,12 @@ LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = $1 AND (sn.site_id IS NULL OR s.id IS NOT NULL) AND sn.cidr >>= $2::inet
-  AND (NOT $3::boolean
-       OR (sn.site_id IS NOT NULL AND (sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
-           OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))))
 ORDER BY masklen(sn.cidr) DESC, sn.vrf
 `
 
 type LookupSubnetsParams struct {
 	OrganizationID pgtype.UUID
 	Ip             netip.Addr
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type LookupSubnetsRow struct {
@@ -807,14 +683,7 @@ type LookupSubnetsRow struct {
 
 // Subnets containing the address (any VRF), most specific first.
 func (q *Queries) LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([]LookupSubnetsRow, error) {
-	rows, err := q.db.Query(ctx, lookupSubnets,
-		arg.OrganizationID,
-		arg.Ip,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	rows, err := q.db.Query(ctx, lookupSubnets, arg.OrganizationID, arg.Ip)
 	if err != nil {
 		return nil, err
 	}

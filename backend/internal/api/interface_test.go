@@ -244,30 +244,24 @@ func TestTemplatesInterfacesAndManagementIP(t *testing.T) {
 	}
 }
 
-// Interfaces / IPs follow the device's access (ADR-031).
 func TestInterfacePermissions(t *testing.T) {
-	w := newPermWorld(t)
+	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	nmSW := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "NM-SW01", "type": "l2_switch", "siteId": w.bd}))
-	vpSW := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "VP-SW01", "type": "l2_switch", "siteId": w.hn}))
-	if status, _ := w.ue.Do("POST", devicePath(org, nmSW)+"/interfaces", map[string]any{"name": "Vlan10", "kind": "svi"}); status != http.StatusCreated {
-		t.Errorf("editor of NM adds an interface: %d", status)
+	sw := idOf(t, mustCreate(t, w.fx.A, devicesPath(org), map[string]any{"hostname": "BD-SW01", "type": "l2_switch", "siteId": w.site}))
+	if status, _ := w.editor.Do("POST", devicePath(org, sw)+"/interfaces", map[string]any{"name": "Vlan10", "kind": "svi"}); status != http.StatusCreated {
+		t.Errorf("editor adds an interface: %d", status)
 	}
-	if status, _ := w.ue.Do("GET", devicePath(org, vpSW)+"/interfaces", nil); status != http.StatusNotFound {
-		t.Errorf("editor of NM lists VP's interfaces: %d, want 404", status)
+	if status, _ := w.viewer.Do("POST", devicePath(org, sw)+"/interfaces", map[string]any{"name": "Vlan20", "kind": "svi"}); status != http.StatusForbidden {
+		t.Errorf("viewer adds an interface: %d, want 403", status)
 	}
-	if status, _ := w.uv.Do("POST", devicePath(org, vpSW)+"/interfaces", map[string]any{"name": "Vlan10", "kind": "svi"}); status != http.StatusForbidden {
-		t.Errorf("viewer of VP adds an interface: %d, want 403", status)
+	if status, _ := w.viewer.Do("GET", devicePath(org, sw)+"/ips", nil); status != http.StatusOK {
+		t.Errorf("viewer reads IPs: %d", status)
 	}
-	if status, _ := w.uv.Do("GET", devicePath(org, vpSW)+"/ips", nil); status != http.StatusOK {
-		t.Errorf("viewer of VP reads IPs: %d", status)
+	if status, _ := w.viewer.Do("GET", templatesPath(org), nil); status != http.StatusOK {
+		t.Errorf("viewer reads templates: %d", status)
 	}
-	// Grant-only members read templates but do not write them.
-	if status, _ := w.pa.Do("GET", templatesPath(org), nil); status != http.StatusOK {
-		t.Errorf("member reads templates: %d", status)
-	}
-	if status, _ := w.pa.Do("POST", templatesPath(org), map[string]any{"name": "X", "type": "router"}); status != http.StatusForbidden {
-		t.Errorf("member writes a template: %d, want 403", status)
+	if status, _ := w.viewer.Do("POST", templatesPath(org), map[string]any{"name": "X", "type": "router"}); status != http.StatusForbidden {
+		t.Errorf("viewer writes a template: %d, want 403", status)
 	}
 }
 

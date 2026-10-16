@@ -68,10 +68,8 @@ func checkMemberType(ctx context.Context, q store.Querier, m tenant.Membership, 
 }
 
 func loadCluster(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetClusterRow, bool, error) {
-	v := visibilityOf(m)
 	c, err := q.GetCluster(ctx, store.GetClusterParams{
-		ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: v.restricted,
-		GrantUnits: v.grantUnits, GrantPartners: v.grantPartners, SharePartners: v.sharePts,
+		ID: pgUUID(id), OrganizationID: m.OrgID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return c, false, nil
@@ -193,10 +191,8 @@ func (s *Server) ListClusters(ctx context.Context, req apigen.ListClustersReques
 	if err != nil {
 		return nil, err
 	}
-	v := visibilityOf(m)
 	params := store.ListClustersParams{
-		OrganizationID: m.OrgID, Restricted: v.restricted, GrantUnits: v.grantUnits, GrantPartners: v.grantPartners,
-		SharePartners: v.sharePts,
+		OrganizationID: m.OrgID,
 	}
 	if req.Params.SiteId != nil {
 		params.SiteFilter = pgUUID(*req.Params.SiteId)

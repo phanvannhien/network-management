@@ -73,11 +73,6 @@ func writableSite(ctx context.Context, q store.Querier, m tenant.Membership, sit
 	return s, 0, "", nil
 }
 
-func visParams(m tenant.Membership) (bool, []pgtype.UUID, []pgtype.UUID, []pgtype.UUID) {
-	v := visibilityOf(m)
-	return v.restricted, v.grantUnits, v.grantPartners, v.sharePts
-}
-
 // --- address maths ---
 
 // hostCount is the number of usable host addresses of a prefix (IPv4 /30 → 2, /31 and /32 → all); huge IPv6
@@ -138,8 +133,7 @@ func toVlan(v store.GetVlanRow, level int) apigen.Vlan {
 }
 
 func loadVlan(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetVlanRow, bool, error) {
-	r, u, p, sp := visParams(m)
-	v, err := q.GetVlan(ctx, store.GetVlanParams{ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp})
+	v, err := q.GetVlan(ctx, store.GetVlanParams{ID: pgUUID(id), OrganizationID: m.OrgID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return v, false, nil
 	}
@@ -189,8 +183,7 @@ func (s *Server) ListVlans(ctx context.Context, req apigen.ListVlansRequestObjec
 	if err != nil {
 		return nil, err
 	}
-	r, u, p, sp := visParams(m)
-	params := store.ListVlansParams{OrganizationID: m.OrgID, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp}
+	params := store.ListVlansParams{OrganizationID: m.OrgID}
 	if req.Params.SiteId != nil {
 		params.SiteFilter = pgUUID(*req.Params.SiteId)
 	}
@@ -402,8 +395,7 @@ func (s *Server) DeleteVlan(ctx context.Context, req apigen.DeleteVlanRequestObj
 // --- subnets ---
 
 func loadSubnet(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetSubnetRow, bool, error) {
-	r, u, p, sp := visParams(m)
-	sn, err := q.GetSubnet(ctx, store.GetSubnetParams{ID: pgUUID(id), OrganizationID: m.OrgID, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp})
+	sn, err := q.GetSubnet(ctx, store.GetSubnetParams{ID: pgUUID(id), OrganizationID: m.OrgID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return sn, false, nil
 	}
@@ -490,8 +482,7 @@ func (s *Server) ListSubnets(ctx context.Context, req apigen.ListSubnetsRequestO
 	if err != nil {
 		return nil, err
 	}
-	r, u, p, sp := visParams(m)
-	params := store.ListSubnetsParams{OrganizationID: m.OrgID, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp}
+	params := store.ListSubnetsParams{OrganizationID: m.OrgID}
 	if req.Params.SiteId != nil {
 		params.SiteFilter = pgUUID(*req.Params.SiteId)
 	}
@@ -523,9 +514,7 @@ func (s *Server) subnetDetail(ctx context.Context, q store.Querier, m tenant.Mem
 	if err != nil {
 		return apigen.SubnetDetail{}, err
 	}
-	r, u, p, sp := visParams(m)
-	ips, err := q.ListSubnetIPs(ctx, store.ListSubnetIPsParams{OrganizationID: m.OrgID, Vrf: sn.Vrf, Cidr: sn.Cidr,
-		Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp})
+	ips, err := q.ListSubnetIPs(ctx, store.ListSubnetIPsParams{OrganizationID: m.OrgID, Vrf: sn.Vrf, Cidr: sn.Cidr})
 	if err != nil {
 		return apigen.SubnetDetail{}, fmt.Errorf("subnet ips: %w", err)
 	}
@@ -812,7 +801,7 @@ func (s *Server) NextFreeIp(ctx context.Context, req apigen.NextFreeIpRequestObj
 	if !ok {
 		return apigen.NextFreeIp404JSONResponse{NotFoundJSONResponse: notFoundBody(msgSubnetNotFound)}, nil
 	}
-	ips, err := s.q.ListSubnetIPs(ctx, store.ListSubnetIPsParams{OrganizationID: m.OrgID, Vrf: sn.Vrf, Cidr: sn.Cidr, Restricted: false})
+	ips, err := s.q.ListSubnetIPs(ctx, store.ListSubnetIPsParams{OrganizationID: m.OrgID, Vrf: sn.Vrf, Cidr: sn.Cidr})
 	if err != nil {
 		return nil, fmt.Errorf("subnet ips: %w", err)
 	}
@@ -1113,12 +1102,11 @@ func (s *Server) LookupIp(ctx context.Context, req apigen.LookupIpRequestObject)
 		return apigen.LookupIp400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Nhập một địa chỉ IP, vd 10.72.114.2"}}, nil
 	}
 	a = a.Unmap()
-	r, u, p, sp := visParams(m)
-	subnets, err := s.q.LookupSubnets(ctx, store.LookupSubnetsParams{OrganizationID: m.OrgID, Ip: a, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp})
+	subnets, err := s.q.LookupSubnets(ctx, store.LookupSubnetsParams{OrganizationID: m.OrgID, Ip: a})
 	if err != nil {
 		return nil, fmt.Errorf("lookup subnets: %w", err)
 	}
-	ips, err := s.q.LookupIPs(ctx, store.LookupIPsParams{OrganizationID: m.OrgID, Ip: a, Restricted: r, GrantUnits: u, GrantPartners: p, SharePartners: sp})
+	ips, err := s.q.LookupIPs(ctx, store.LookupIPsParams{OrganizationID: m.OrgID, Ip: a})
 	if err != nil {
 		return nil, fmt.Errorf("lookup ips: %w", err)
 	}

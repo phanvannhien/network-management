@@ -17,15 +17,6 @@ LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.organization_id = @organization_id
   AND (sqlc.narg('site_filter')::uuid IS NULL OR g.site_id = sqlc.narg('site_filter'))
-  AND (NOT @restricted::boolean
-       OR g.business_unit_id = ANY (@grant_units::uuid[]) OR gu.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))))
 ORDER BY s.code, lower(g.name);
 
 -- name: GetEndpointGroup :one
@@ -42,16 +33,7 @@ JOIN partners gp ON gp.id = gu.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
-WHERE g.id = @id AND g.organization_id = @organization_id
-  AND (NOT @restricted::boolean
-       OR g.business_unit_id = ANY (@grant_units::uuid[]) OR gu.partner_id = ANY (@grant_partners::uuid[])
-       OR sb.id = ANY (@grant_units::uuid[]) OR sb.partner_id = ANY (@grant_partners::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY (@share_partners::uuid[])
-                         OR rs.target_unit_id = ANY (@grant_units::uuid[])
-                         OR tu.partner_id = ANY (@grant_partners::uuid[]))));
+WHERE g.id = @id AND g.organization_id = @organization_id;
 
 -- name: CreateEndpointGroup :one
 INSERT INTO endpoint_groups (organization_id, business_unit_id, site_id, kind, name, ip_range_id, expected_count, notes)

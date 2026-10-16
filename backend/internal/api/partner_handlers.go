@@ -102,7 +102,7 @@ func (s *Server) ListPartners(ctx context.Context, req apigen.ListPartnersReques
 	}
 	out := apigen.PartnerList{Partners: make([]apigen.Partner, 0, len(rows))}
 	for _, r := range rows {
-		if m.SeesPartner(r.ID) {
+		{
 			out.Partners = append(out.Partners, toPartner(partnerFromRow(store.GetPartnerRow(r)), r.UnitCount, r.SiteCount, m.PartnerLevel(r.ID)))
 		}
 	}
@@ -115,7 +115,7 @@ func (s *Server) GetPartner(ctx context.Context, req apigen.GetPartnerRequestObj
 		return nil, err
 	}
 	r, err := s.q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(r.ID)) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return apigen.GetPartner404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgPartnerNotFound}}, nil
 	}
 	if err != nil {
@@ -188,7 +188,7 @@ func (s *Server) UpdatePartner(ctx context.Context, req apigen.UpdatePartnerRequ
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err := q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(before.ID)) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			notFound = true
 			return errRollback
 		}
@@ -263,7 +263,7 @@ func (s *Server) DeletePartner(ctx context.Context, req apigen.DeletePartnerRequ
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		before, err := q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(req.PartnerId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !m.SeesPartner(before.ID)) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			notFound = true
 			return errRollback
 		}

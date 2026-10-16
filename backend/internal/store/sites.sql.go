@@ -273,23 +273,11 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = $1 AND s.organization_id = $2 AND s.deleted_at IS NULL
-  AND (NOT $3::boolean
-       OR b.id = ANY ($4::uuid[]) OR b.partner_id = ANY ($5::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($6::uuid[])
-                         OR rs.target_unit_id = ANY ($4::uuid[])
-                         OR tu.partner_id = ANY ($5::uuid[]))))
 `
 
 type GetSiteParams struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 }
 
 type GetSiteRow struct {
@@ -318,14 +306,7 @@ type GetSiteRow struct {
 }
 
 func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error) {
-	row := q.db.QueryRow(ctx, getSite,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
-	)
+	row := q.db.QueryRow(ctx, getSite, arg.ID, arg.OrganizationID)
 	var i GetSiteRow
 	err := row.Scan(
 		&i.ID,
@@ -480,27 +461,15 @@ FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
 LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = $1 AND s.deleted_at IS NULL
-  AND (NOT $2::boolean
-       OR b.id = ANY ($3::uuid[]) OR b.partner_id = ANY ($4::uuid[])
-       OR EXISTS (SELECT 1 FROM resource_shares rs
-                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
-                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
-                    AND (rs.target_partner_id = ANY ($5::uuid[])
-                         OR rs.target_unit_id = ANY ($3::uuid[])
-                         OR tu.partner_id = ANY ($4::uuid[]))))
-  AND ($6::uuid IS NULL OR s.id = $6)
-  AND ($7::uuid IS NULL OR s.business_unit_id = $7)
-  AND ($8::uuid IS NULL OR b.partner_id = $8)
-  AND (NOT $9::boolean OR s.business_unit_id IS NULL)
+  AND ($2::uuid IS NULL OR s.id = $2)
+  AND ($3::uuid IS NULL OR s.business_unit_id = $3)
+  AND ($4::uuid IS NULL OR b.partner_id = $4)
+  AND (NOT $5::boolean OR s.business_unit_id IS NULL)
 ORDER BY s.code
 `
 
 type ListSitesParams struct {
 	OrganizationID pgtype.UUID
-	Restricted     bool
-	GrantUnits     []pgtype.UUID
-	GrantPartners  []pgtype.UUID
-	SharePartners  []pgtype.UUID
 	IDFilter       pgtype.UUID
 	BuFilter       pgtype.UUID
 	PartnerFilter  pgtype.UUID
@@ -541,10 +510,6 @@ type ListSitesRow struct {
 func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error) {
 	rows, err := q.db.Query(ctx, listSites,
 		arg.OrganizationID,
-		arg.Restricted,
-		arg.GrantUnits,
-		arg.GrantPartners,
-		arg.SharePartners,
 		arg.IDFilter,
 		arg.BuFilter,
 		arg.PartnerFilter,
