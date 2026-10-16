@@ -5,6 +5,19 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · module Quản trị người dùng + Tình trạng hệ thống
+- Đã làm: trang Người dùng (khu vực Hệ thống) trên DataTable, lọc trạng thái/MFA, nhãn System admin cùng màu khu vực hệ thống,
+  thao tác trong menu ⋯; vô hiệu hóa và reset MFA qua ConfirmDialog mức 1, link đặt lại mật khẩu trong `OneTimeLinkDialog`
+  (ẩn "Vô hiệu hóa" với chính mình — chỉ là gợi ý UI). Trang mới **Hệ thống › Tình trạng hệ thống** (`/admin/health`):
+  API, CSDL, phiên bản, môi trường, nút kiểm tra lại — thay cho dòng "API: ok" đã bỏ ở Bước 2. Menu Hệ thống thêm
+  "Về tổ chức của tôi". Sửa định dạng giờ thành "09:42 16/10". Không đổi API.
+- Test / cách kiểm tra: `make check` pass; test link đặt lại, xác nhận trước khi vô hiệu hóa, health bình thường và CSDL lỗi (503).
+  Ảnh `docs/ui-screens/after/13-*, 26-*, 27-*`; axe-core + bàn phím: 0 vấn đề.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: trang tổ chức (Tổng quan tạm).
+
 ## 2026-10-16 — UI Bước 3 · module Quản trị tổ chức
 - Đã làm: trang Tất cả tổ chức (khu vực Hệ thống) — DataTable có avatar tổ chức, lọc theo loại, tạo qua dialog,
   xóa mềm qua ConfirmDialog **mức 2** (gõ đúng tên, liệt kê hậu quả: số thành viên mất quyền, link chia sẻ). Không đổi API.

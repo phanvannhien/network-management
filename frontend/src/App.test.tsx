@@ -619,6 +619,18 @@ describe('accept invite', () => {
   })
 })
 
+const ADMIN_USER = {
+  id: 'u1',
+  email: 'ed@example.com',
+  displayName: 'Ed',
+  isSystemAdmin: false,
+  mfaEnabled: true,
+  disabled: false,
+  pendingInvite: false,
+  organizationCount: 1,
+  createdAt: '2026-10-16T00:00:00Z',
+}
+
 describe('admin users', () => {
   it('issues a password-reset link', async () => {
     fakeApi({
@@ -642,8 +654,45 @@ describe('admin users', () => {
       'POST /api/admin/users/u1/password-reset': () => json({ resetToken: 'reset456' }),
     })
     renderAt('/admin/users')
-    fireEvent.click(await screen.findByRole('button', { name: 'Link đặt lại mật khẩu' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho ed@example.com' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Link đặt lại mật khẩu' }))
     expect(await screen.findByText(/\/invite\/reset456$/)).toBeInTheDocument()
+  })
+
+  it('disabling a user asks for confirmation', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/users': () => json({ users: [ADMIN_USER] }),
+      'POST /api/admin/users/u1/disable': () => new Response(null, { status: 204 }),
+    })
+    renderAt('/admin/users')
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho ed@example.com' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Vô hiệu hóa' }))
+    await screen.findByRole('alertdialog', { name: 'Vô hiệu hóa ed@example.com?' })
+    expect(calls.some((r) => r.url.endsWith('/disable'))).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Vô hiệu hóa' }))
+    await waitFor(() => expect(calls.some((r) => r.url.endsWith('/disable'))).toBe(true))
+  })
+})
+
+describe('system health', () => {
+  it('shows API and database state for system admins', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt('/admin/health')
+    expect(await screen.findByRole('heading', { name: 'Tình trạng hệ thống' })).toBeInTheDocument()
+    expect(await screen.findAllByText('Hoạt động')).toHaveLength(2)
+    expect(screen.getByText('development')).toBeInTheDocument()
+  })
+
+  it('reports a database outage (503 still carries the body)', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () =>
+        json({ ...HEALTH, status: 'degraded', database: 'unavailable' }, 503),
+    })
+    renderAt('/admin/health')
+    expect(await screen.findByText('Suy giảm')).toBeInTheDocument()
+    expect(screen.getByText('Không kết nối được')).toBeInTheDocument()
   })
 })
 

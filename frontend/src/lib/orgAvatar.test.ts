@@ -25,3 +25,10 @@ describe('cn', () => {
     expect(cn('text-table', 'text-form')).toBe('text-form')
   })
 })
+
+describe('formatDateTime', () => {
+  it('prints HH:mm dd/MM', async () => {
+    const { formatDateTime } = await import('./format')
+    expect(formatDateTime(new Date(2026, 9, 6, 9, 5).toISOString())).toBe('09:05 06/10')
+  })
+})

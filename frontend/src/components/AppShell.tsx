@@ -1,4 +1,6 @@
 import {
+  Activity,
+  ArrowLeft,
   Bell,
   Building2,
   ChevronDown,
@@ -424,8 +426,10 @@ export function SystemShell() {
       items: [
         { to: '/admin/organizations', label: t('nav.systemOrganizations'), icon: Building2 },
         { to: '/admin/users', label: t('nav.systemUsers'), icon: Users },
+        { to: '/admin/health', label: t('nav.systemHealth'), icon: Activity },
       ],
     },
+    { items: [{ to: '/', label: t('nav.backToOrgs'), icon: ArrowLeft, end: true }] },
   ]
   return (
     <Shell

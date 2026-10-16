@@ -34,6 +34,8 @@ export const en: Strings = {
     admin: 'Administration',
     system: 'System',
     systemOrganizations: 'All organizations',
+    backToOrgs: 'Back to my organizations',
+    systemHealth: 'System health',
     systemUsers: 'Users',
     collapse: 'Collapse menu',
     expand: 'Expand menu',

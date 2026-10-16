@@ -18,6 +18,7 @@ import { Sidebar } from './editor/panels/Sidebar'
 import { AdminOrganizationsPage } from './modules/admin/AdminOrganizationsPage'
 import { AdminUsersPage } from './modules/admin/AdminUsersPage'
 import { MembersPage } from './modules/admin/MembersPage'
+import { SystemHealthPage } from './modules/admin/SystemHealthPage'
 import { DeviceDetailPage } from './modules/inventory/DeviceDetailPage'
 import { DeviceListPage } from './modules/inventory/DeviceListPage'
 
@@ -62,6 +63,7 @@ export function AppRoutes() {
       <Route path="/admin" element={guard(<SystemShell />)}>
         <Route path="organizations" element={<AdminOrganizationsPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="health" element={<SystemHealthPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/editor" element={guard(<EditorPage />)} />

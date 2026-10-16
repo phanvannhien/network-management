@@ -32,6 +32,8 @@ export const vi = {
     admin: 'Quản trị',
     system: 'Hệ thống',
     systemOrganizations: 'Tất cả tổ chức',
+    backToOrgs: 'Về tổ chức của tôi',
+    systemHealth: 'Tình trạng hệ thống',
     systemUsers: 'Người dùng',
     collapse: 'Thu gọn menu',
     expand: 'Mở rộng menu',
