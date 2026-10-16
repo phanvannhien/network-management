@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
 import { setCsrfToken } from './api/client'
 import { setLanguage } from './i18n'
+import { memoryDraftStore, setDraftStore } from './editor/doc/drafts'
 
 // React Flow needs ResizeObserver and client rect geometry, which jsdom lacks.
 class ResizeObserverMock {
@@ -2334,5 +2335,179 @@ describe('endpoint groups (P1-11)', () => {
     expect(await screen.findByRole('heading', { name: 'Camera nhà xưởng' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Thêm thành viên' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Tách thành thiết bị/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('diagrams (P1-13)', () => {
+  const DIAGRAM = {
+    id: 'dg-1',
+    name: 'LAN Bình Định',
+    scope: 'site',
+    businessUnitId: null,
+    siteId: AGRI_SITE.id,
+    partnerCode: 'AGRI',
+    unitCode: 'MAIN',
+    siteCode: 'AGRI-BD01',
+    siteName: 'Nhà máy Bình Định',
+    layer: 'physical',
+    description: '',
+    nodeCount: 1,
+    updatedAt: '2026-10-16T00:00:00Z',
+    access: 'edit',
+    version: 3,
+  }
+  const FW = {
+    id: 'dev-1',
+    hostname: 'AGRI-BD-FW01',
+    type: 'firewall',
+    siteId: AGRI_SITE.id,
+    siteCode: 'AGRI-BD01',
+  }
+  const SW = {
+    id: 'dev-2',
+    hostname: 'AGRI-BD-SW01',
+    type: 'l2_switch',
+    siteId: AGRI_SITE.id,
+    siteCode: 'AGRI-BD01',
+  }
+  const DETAIL = {
+    diagram: DIAGRAM,
+    view: {
+      nodes: [{ id: 'n1', refKind: 'device', refId: 'dev-1', x: 0, y: 0 }],
+      edges: [],
+      annotations: [],
+    },
+    devices: [FW],
+    endpointGroups: [],
+    links: [],
+    hiddenRefs: [],
+  }
+  const routes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ units: [] }),
+      [`GET /api/orgs/${ORG_ID}/diagrams`]: () => json({ diagrams: [DIAGRAM] }),
+      [`GET /api/orgs/${ORG_ID}/diagrams/dg-1`]: () => json(DETAIL),
+      [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [FW, SW], total: 2, facets: {} }),
+      ...extra,
+    })
+  beforeEach(() => setDraftStore(memoryDraftStore()))
+
+  it('lists diagrams and creates one for a site', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/diagrams`]: () =>
+          json({ ...DETAIL, diagram: { ...DIAGRAM, id: 'dg-2' } }, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams`)
+    expect(await screen.findByRole('link', { name: 'LAN Bình Định' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/diagrams/dg-1`,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo sơ đồ' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Tạo sơ đồ' })
+    fireEvent.change(within(dialog).getByLabelText(/Tên sơ đồ/), {
+      target: { value: 'LAN tầng 3' },
+    })
+    const site = within(dialog).getByLabelText(/^Site/)
+    await waitFor(() => expect(site).toContainHTML('AGRI-BD01'))
+    fireEvent.change(site, { target: { value: AGRI_SITE.id } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/diagrams')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      name: 'LAN tầng 3',
+      scope: 'site',
+      siteId: AGRI_SITE.id,
+      businessUnitId: null,
+      layer: 'physical',
+    })
+  })
+
+  it('editor adds a device, undoes / redoes, and saves view + version in one request', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () =>
+          json({
+            detail: { ...DETAIL, diagram: { ...DIAGRAM, version: 4 }, devices: [FW, SW] },
+            idMap: {},
+          }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    expect(await screen.findByRole('heading', { name: 'LAN Bình Định' })).toBeInTheDocument()
+    expect(screen.getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Lưu/ })).toBeDisabled()
+    const pick = screen.getByLabelText('Thêm thiết bị từ kho…')
+    await waitFor(() => expect(pick).toContainHTML('AGRI-BD-SW01'))
+    // Already drawn devices are not offered again.
+    expect(within(pick).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument()
+    fireEvent.change(pick, { target: { value: 'dev-2' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm' }))
+    expect(await screen.findByText('AGRI-BD-SW01', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByText('Có thay đổi chưa lưu')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Hoàn tác' }))
+    expect(screen.queryByText('AGRI-BD-SW01', { selector: 'span' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.version).toBe(3)
+    expect(body.changes).toEqual([])
+    expect(body.view.nodes.map((n: { refId: string }) => n.refId)).toEqual(['dev-1', 'dev-2'])
+    expect(await screen.findByText('Đã lưu')).toBeInTheDocument()
+  })
+
+  it('a stale save shows the conflict; a draft from an earlier session can be restored', async () => {
+    const drafts = memoryDraftStore()
+    setDraftStore(drafts)
+    await drafts.put({
+      diagramId: 'dg-1',
+      baseVersion: 3,
+      savedAt: '2026-10-16T08:00:00Z',
+      doc: {
+        view: { nodes: [], edges: [], annotations: [] },
+        devices: {},
+        groups: {},
+        links: {},
+        hidden: [],
+        newDevices: {},
+        newDeviceOrder: [],
+        deviceEdits: {},
+        deletedDevices: [],
+        newLinks: {},
+        newLinkOrder: [],
+        linkEdits: {},
+        deletedLinks: [],
+      },
+    })
+    fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () =>
+          json({ message: 'Sơ đồ đã được người khác lưu sau khi bạn mở' }, 409),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    expect(await screen.findByText(/Có bản nháp chưa lưu/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Khôi phục nháp' }))
+    expect(await screen.findByText('Sơ đồ trống.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Lưu/ }))
+    expect(await screen.findByText('Sơ đồ đã được người khác lưu')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Tải bản mới/ })).toBeInTheDocument()
+  })
+
+  it('a viewer opens the diagram read-only', async () => {
+    fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/diagrams/dg-1`]: () =>
+          json({ ...DETAIL, diagram: { ...DIAGRAM, access: 'view' } }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    expect(await screen.findByText('Bạn chỉ có quyền xem sơ đồ này.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lưu/ })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Thêm thiết bị từ kho…')).not.toBeInTheDocument()
   })
 })

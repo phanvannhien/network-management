@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-13 Diagram API & store
+- Đã làm:
+  - **Migration 000018:** `diagrams` — phạm vi tổ chức / đơn vị / site (ADR-028), lớp (vật lý, L2, L3, tổng quan), `view` JSONB
+    (node → thiết bị / nhóm / site / sơ đồ con, cạnh → link + đường đi, chú thích, viewport, mẫu nhãn; tối đa 4 MB), version.
+  - **API:** CRUD sơ đồ; `GET` trả view + thiết bị / nhóm / link đang hiện + `hiddenRefs`; **`POST …/save`** gửi một lần view
+    và các thay đổi kho (tạo/sửa/xóa thiết bị, tạo/sửa/xóa link; temp id → id thật trả về `idMap`) trong **một transaction**,
+    khóa lạc quan (409 khi người khác đã lưu). Mọi quy tắc của kho áp dụng y như khi sửa ngoài sơ đồ (hostname, cổng một dây…);
+    một thay đổi lỗi → không gì được lưu, thông báo nói rõ "Thay đổi n: …". Audit `diagram.*` (save ghi số node/cạnh/thay đổi).
+    Tách `writeLink`, `deleteDeviceTx`, `inputFromUpdate` để dùng chung transaction.
+  - **Store editor mới** `frontend/src/editor/doc/`: Zustand + Immer, mọi thay đổi qua command (thêm/di chuyển/gỡ node, tạo/sửa/
+    xóa thiết bị, tạo/sửa/xóa link), undo/redo 200 bước, kéo liên tục gộp một bước; thay đổi kho chờ gửi nằm trong tài liệu nên
+    undo hủy luôn thay đổi; link kho giữa các node luôn được vẽ. **Nháp chưa gửi** lưu IndexedDB (Dexie — có trong Stack, mới
+    cài) 0,6 s sau mỗi thay đổi; mở lại sơ đồ thì hỏi khôi phục / bỏ (báo nếu nháp dựa trên bản cũ).
+  - **Giao diện:** menu **Sơ đồ** → danh sách (lọc phạm vi / lớp, tạo, xóa); trang mở sơ đồ: trạng thái lưu, Hoàn tác / Làm lại /
+    Lưu (Ctrl+Z, Ctrl+Shift+Z, Ctrl+S), banner nháp, banner xung đột (tải bản mới), cảnh báo khi đóng tab còn thay đổi, chế độ chỉ
+    xem. Màn vẽ là bước P1-14 — tạm thời trang liệt kê đối tượng trên sơ đồ, thêm thiết bị từ kho, gỡ khỏi sơ đồ.
+    Prototype editor cũ (`/editor`, mô hình file) vẫn giữ để P1-14 chuyển canvas sang store mới.
+- Test / cách kiểm tra: Go 3 test mới với DB thật (cách ly tổ chức; lưu kèm tạo thiết bị + link bằng temp id; 409 bản cũ; lưu
+  "tất cả hoặc không"; ref sai; xóa khỏi kho kéo link; quyền theo phạm vi + hidden ref). 4/5 mutation bị bắt (mutation còn lại là
+  kiểm tra version đầu — đã có lớp thứ hai trong câu UPDATE). Vitest 198 pass (11 test store: undo hủy thay đổi, gộp kéo, ≥100
+  bước, xóa nháp thiết bị kéo link nháp, nháp round-trip…; 4 test UI). Ảnh chụp + axe: 0 lỗi. `make check` pass.
+  **Cần chạy `make migrate-up` (000018) rồi khởi động lại `make dev-api`.**
+- Còn dở / lỗi đã biết: lịch sử undo bắt đầu lại sau mỗi lần lưu; sơ đồ phạm vi **đối tác** (ADR-031) chưa có — xem đề xuất.
+- Câu hỏi cho người dùng: có cần sơ đồ tổng quan theo **đối tác** (vd tổng quan cả AGRI gồm nhiều đơn vị) không? ADR-028 chỉ ghi
+  tổ chức / đơn vị / site; thêm phạm vi `partner` khá nhỏ (một cột + quyền theo đối tác).
+- Đề xuất quyết định cần chốt: như trên.
+- Task tiếp theo đề xuất: **P1-14** Canvas & toolbar nổi (chuyển canvas React Flow sang store mới).
+
 ## 2026-10-16 — P1-12 Link API
 - Đã làm:
   - **Migration 000017:** bảng `links` — mỗi đầu là thiết bị hoặc nhóm đầu cuối, cổng để trống được (vẽ mức logic, gán sau, ADR-013);

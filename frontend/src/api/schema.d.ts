@@ -1154,6 +1154,71 @@ export interface paths {
         patch: operations["updateLink"];
         trace?: never;
     };
+    "/orgs/{orgId}/diagrams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Diagrams the caller may see (no view data) */
+        get: operations["listDiagrams"];
+        put?: never;
+        /** Create an empty diagram in a scope (organization, business unit or site) */
+        post: operations["createDiagram"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/diagrams/{diagramId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        /** A diagram with its view and the inventory it shows */
+        get: operations["getDiagram"];
+        put?: never;
+        post?: never;
+        /** Delete a diagram (the inventory it shows stays) */
+        delete: operations["deleteDiagram"];
+        options?: never;
+        head?: never;
+        /** Rename / describe a diagram (optimistic lock) */
+        patch: operations["updateDiagram"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/diagrams/{diagramId}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save the view and the inventory changes made in the editor in one transaction (409 when stale) */
+        post: operations["saveDiagram"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/vlans": {
         parameters: {
             query?: never;
@@ -2932,6 +2997,144 @@ export interface components {
         LinkList: {
             links: components["schemas"]["Link"][];
         };
+        /** @enum {string} */
+        DiagramScope: "organization" | "business_unit" | "site";
+        /**
+         * @description overview (organization / unit level), physical, l2, l3 (site detail)
+         * @enum {string}
+         */
+        DiagramLayer: "overview" | "physical" | "l2" | "l3";
+        DiagramInput: {
+            name: string;
+            scope: components["schemas"]["DiagramScope"];
+            /** Format: uuid */
+            businessUnitId?: string | null;
+            /** Format: uuid */
+            siteId?: string | null;
+            layer?: components["schemas"]["DiagramLayer"];
+            description?: string;
+        };
+        DiagramMetaUpdate: {
+            name: string;
+            layer?: components["schemas"]["DiagramLayer"];
+            description?: string;
+            /** Format: int32 */
+            version: number;
+        };
+        Diagram: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            scope: components["schemas"]["DiagramScope"];
+            /** Format: uuid */
+            businessUnitId: string | null;
+            /** Format: uuid */
+            siteId: string | null;
+            partnerCode: string;
+            unitCode: string;
+            siteCode: string;
+            siteName: string;
+            layer: components["schemas"]["DiagramLayer"];
+            description: string;
+            /** Format: int32 */
+            nodeCount: number;
+            /** Format: date-time */
+            updatedAt: string;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        DiagramList: {
+            diagrams: components["schemas"]["Diagram"][];
+        };
+        DiagramPoint: {
+            x: number;
+            y: number;
+        };
+        DiagramNode: {
+            id: string;
+            /** @enum {string} */
+            refKind: "device" | "endpoint_group" | "site" | "diagram";
+            /** Format: uuid */
+            refId: string;
+            x: number;
+            y: number;
+            width?: number;
+            height?: number;
+            locked?: boolean;
+            labelStyle?: {
+                [key: string]: string;
+            };
+        };
+        DiagramEdge: {
+            id: string;
+            /** Format: uuid */
+            linkId: string;
+            /** @enum {string} */
+            routing?: "straight" | "orthogonal" | "curved";
+            waypoints?: components["schemas"]["DiagramPoint"][];
+        };
+        DiagramAnnotation: {
+            id: string;
+            /** @enum {string} */
+            kind: "text" | "arrow" | "zone" | "ipPlan" | "legend";
+            x: number;
+            y: number;
+            width?: number;
+            height?: number;
+            text?: string;
+            color?: string;
+            fontSize?: number;
+            points?: components["schemas"]["DiagramPoint"][];
+        };
+        DiagramViewport: {
+            x: number;
+            y: number;
+            zoom: number;
+        };
+        DiagramView: {
+            nodes: components["schemas"]["DiagramNode"][];
+            edges: components["schemas"]["DiagramEdge"][];
+            annotations: components["schemas"]["DiagramAnnotation"][];
+            viewport?: components["schemas"]["DiagramViewport"];
+            labelTemplate?: string;
+        };
+        DiagramDetail: {
+            diagram: components["schemas"]["Diagram"];
+            view: components["schemas"]["DiagramView"];
+            devices: components["schemas"]["Device"][];
+            endpointGroups: components["schemas"]["EndpointGroup"][];
+            /** @description links whose both ends are nodes of the view */
+            links: components["schemas"]["Link"][];
+            /** @description ids referenced by the view that the caller may not see (kept unchanged when saving) */
+            hiddenRefs: string[];
+        };
+        /** @description One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id. */
+        DiagramChange: {
+            /** @enum {string} */
+            op: "createDevice" | "updateDevice" | "deleteDevice" | "createLink" | "updateLink" | "deleteLink";
+            /** Format: uuid */
+            tempId?: string;
+            /** Format: uuid */
+            id?: string;
+            device?: components["schemas"]["DeviceInput"];
+            deviceUpdate?: components["schemas"]["DeviceUpdate"];
+            link?: components["schemas"]["LinkInput"];
+            linkUpdate?: components["schemas"]["LinkUpdate"];
+        };
+        DiagramSave: {
+            /** Format: int32 */
+            version: number;
+            view: components["schemas"]["DiagramView"];
+            changes?: components["schemas"]["DiagramChange"][];
+        };
+        DiagramSaveResult: {
+            detail: components["schemas"]["DiagramDetail"];
+            /** @description tempId → real id of the objects created by this save */
+            idMap: {
+                [key: string]: string;
+            };
+        };
         /** @description An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet). */
         IpAssignment: {
             address: string;
@@ -3085,6 +3288,7 @@ export interface components {
         GroupId: string;
         MemberId: string;
         LinkId: string;
+        DiagramId: string;
         VlanId: string;
         SubnetId: string;
         RangeId: string;
@@ -6130,6 +6334,188 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Link"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listDiagrams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagramList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDiagram: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagramInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagramDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getDiagram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagramDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteDiagram: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateDiagram: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagramMetaUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Diagram"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    saveDiagram: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagramSave"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagramSaveResult"];
                 };
             };
             400: components["responses"]["BadRequest"];

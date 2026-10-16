@@ -2424,6 +2424,143 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /orgs/{orgId}/diagrams:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listDiagrams
+      summary: Diagrams the caller may see (no view data)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagramList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createDiagram
+      summary: Create an empty diagram in a scope (organization, business unit or site)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagramInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagramDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgId}/diagrams/{diagramId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DiagramId'
+    get:
+      operationId: getDiagram
+      summary: A diagram with its view and the inventory it shows
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagramDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateDiagram
+      summary: Rename / describe a diagram (optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagramMetaUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagram'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteDiagram
+      summary: Delete a diagram (the inventory it shows stays)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orgs/{orgId}/diagrams/{diagramId}/save:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DiagramId'
+    post:
+      operationId: saveDiagram
+      summary: Save the view and the inventory changes made in the editor in one transaction (409 when stale)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagramSave'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagramSaveResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /orgs/{orgId}/vlans:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -3230,6 +3367,13 @@ components:
         format: uuid
     LinkId:
       name: linkId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DiagramId:
+      name: diagramId
       in: path
       required: true
       schema:
@@ -6186,6 +6330,308 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Link'
+
+    DiagramScope:
+      type: string
+      enum: [organization, business_unit, site]
+
+    DiagramLayer:
+      type: string
+      description: overview (organization / unit level), physical, l2, l3 (site detail)
+      enum: [overview, physical, l2, l3]
+
+    DiagramInput:
+      type: object
+      required: [name, scope]
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        scope:
+          $ref: '#/components/schemas/DiagramScope'
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        layer:
+          $ref: '#/components/schemas/DiagramLayer'
+        description:
+          type: string
+          maxLength: 1000
+
+    DiagramMetaUpdate:
+      type: object
+      required: [name, version]
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        layer:
+          $ref: '#/components/schemas/DiagramLayer'
+        description:
+          type: string
+          maxLength: 1000
+        version:
+          type: integer
+          format: int32
+
+    Diagram:
+      type: object
+      required: [id, name, scope, businessUnitId, siteId, partnerCode, unitCode, siteCode, siteName, layer, description,
+                 nodeCount, updatedAt, access, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scope:
+          $ref: '#/components/schemas/DiagramScope'
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        partnerCode:
+          type: string
+        unitCode:
+          type: string
+        siteCode:
+          type: string
+        siteName:
+          type: string
+        layer:
+          $ref: '#/components/schemas/DiagramLayer'
+        description:
+          type: string
+        nodeCount:
+          type: integer
+          format: int32
+        updatedAt:
+          type: string
+          format: date-time
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    DiagramList:
+      type: object
+      required: [diagrams]
+      properties:
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/Diagram'
+
+    DiagramPoint:
+      type: object
+      required: [x, y]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+
+    DiagramNode:
+      type: object
+      required: [id, refKind, refId, x, y]
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        refKind:
+          type: string
+          enum: [device, endpoint_group, site, diagram]
+        refId:
+          type: string
+          format: uuid
+        x:
+          type: number
+        y:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+        locked:
+          type: boolean
+        labelStyle:
+          type: object
+          additionalProperties:
+            type: string
+
+    DiagramEdge:
+      type: object
+      required: [id, linkId]
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        linkId:
+          type: string
+          format: uuid
+        routing:
+          type: string
+          enum: [straight, orthogonal, curved]
+        waypoints:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/DiagramPoint'
+
+    DiagramAnnotation:
+      type: object
+      required: [id, kind, x, y]
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        kind:
+          type: string
+          enum: [text, arrow, zone, ipPlan, legend]
+        x:
+          type: number
+        y:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+        text:
+          type: string
+          maxLength: 2000
+        color:
+          type: string
+          maxLength: 20
+        fontSize:
+          type: number
+        points:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/DiagramPoint'
+
+    DiagramViewport:
+      type: object
+      required: [x, y, zoom]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        zoom:
+          type: number
+
+    DiagramView:
+      type: object
+      required: [nodes, edges, annotations]
+      properties:
+        nodes:
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/DiagramNode'
+        edges:
+          type: array
+          maxItems: 10000
+          items:
+            $ref: '#/components/schemas/DiagramEdge'
+        annotations:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: '#/components/schemas/DiagramAnnotation'
+        viewport:
+          $ref: '#/components/schemas/DiagramViewport'
+        labelTemplate:
+          type: string
+          maxLength: 200
+
+    DiagramDetail:
+      type: object
+      required: [diagram, view, devices, endpointGroups, links, hiddenRefs]
+      properties:
+        diagram:
+          $ref: '#/components/schemas/Diagram'
+        view:
+          $ref: '#/components/schemas/DiagramView'
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        endpointGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointGroup'
+        links:
+          type: array
+          description: links whose both ends are nodes of the view
+          items:
+            $ref: '#/components/schemas/Link'
+        hiddenRefs:
+          type: array
+          description: ids referenced by the view that the caller may not see (kept unchanged when saving)
+          items:
+            type: string
+            format: uuid
+
+    DiagramChange:
+      type: object
+      required: [op]
+      description: >-
+        One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view
+        nodes, edges and later changes may reference; the result maps it to the real id.
+      properties:
+        op:
+          type: string
+          enum: [createDevice, updateDevice, deleteDevice, createLink, updateLink, deleteLink]
+        tempId:
+          type: string
+          format: uuid
+        id:
+          type: string
+          format: uuid
+        device:
+          $ref: '#/components/schemas/DeviceInput'
+        deviceUpdate:
+          $ref: '#/components/schemas/DeviceUpdate'
+        link:
+          $ref: '#/components/schemas/LinkInput'
+        linkUpdate:
+          $ref: '#/components/schemas/LinkUpdate'
+
+    DiagramSave:
+      type: object
+      required: [version, view]
+      properties:
+        version:
+          type: integer
+          format: int32
+        view:
+          $ref: '#/components/schemas/DiagramView'
+        changes:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: '#/components/schemas/DiagramChange'
+
+    DiagramSaveResult:
+      type: object
+      required: [detail, idMap]
+      properties:
+        detail:
+          $ref: '#/components/schemas/DiagramDetail'
+        idMap:
+          type: object
+          description: tempId → real id of the objects created by this save
+          additionalProperties:
+            type: string
+            format: uuid
 
     IpAssignment:
       type: object

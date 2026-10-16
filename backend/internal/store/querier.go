@@ -44,6 +44,7 @@ type Querier interface {
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
+	CreateDiagram(ctx context.Context, arg CreateDiagramParams) (pgtype.UUID, error)
 	CreateEndpointGroup(ctx context.Context, arg CreateEndpointGroupParams) (pgtype.UUID, error)
 	CreateEndpointMember(ctx context.Context, arg CreateEndpointMemberParams) (pgtype.UUID, error)
 	CreateIP(ctx context.Context, arg CreateIPParams) (IpAddress, error)
@@ -69,6 +70,7 @@ type Querier interface {
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
+	DeleteDiagram(ctx context.Context, arg DeleteDiagramParams) (int64, error)
 	DeleteEndpointGroup(ctx context.Context, arg DeleteEndpointGroupParams) (int64, error)
 	DeleteEndpointMember(ctx context.Context, arg DeleteEndpointMemberParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
@@ -101,6 +103,7 @@ type Querier interface {
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
+	GetDiagramView(ctx context.Context, arg GetDiagramViewParams) ([]byte, error)
 	GetEndpointGroup(ctx context.Context, arg GetEndpointGroupParams) (GetEndpointGroupRow, error)
 	GetEndpointMember(ctx context.Context, arg GetEndpointMemberParams) (EndpointMember, error)
 	GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
@@ -136,6 +139,7 @@ type Querier interface {
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
+	LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error)
 	// Partner / unit grants and record shares (P1-07c, ADR-029, ADR-031). Every query takes organization_id.
 	// The caller's grants on live partners/units; business_unit_id is NULL for a partner grant.
 	ListAccessGrants(ctx context.Context, arg ListAccessGrantsParams) ([]ListAccessGrantsRow, error)
@@ -155,11 +159,18 @@ type Querier interface {
 	// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
 	// see devices of their granted units plus every device in a site visible to them.
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
+	// Devices placed on a diagram, with the same visibility as GetDevice.
+	ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error)
+	// Diagrams (P1-13, ADR-015/028). Every query takes organization_id; access follows the scope (organization role,
+	// the business unit, or the site) and is computed by the API from the scope columns returned here.
+	ListDiagrams(ctx context.Context, arg ListDiagramsParams) ([]ListDiagramsRow, error)
 	// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
 	// the group's unit is granted, or its site is visible.
 	ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error)
 	ListEndpointMembers(ctx context.Context, arg ListEndpointMembersParams) ([]ListEndpointMembersRow, error)
 	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
+	// Links whose both ends are among the given objects (the nodes of a diagram).
+	ListLinkIDsAmong(ctx context.Context, arg ListLinkIDsAmongParams) ([]pgtype.UUID, error)
 	// Links (P1-12, SRS §6.2). Every query takes organization_id. Each row carries both ends' names, ownership and
 	// interface so the API can check visibility per end (an end is visible like its device / group, ADR-031).
 	ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLinksRow, error)
@@ -216,6 +227,7 @@ type Querier interface {
 	RenamePartnerSitePrefix(ctx context.Context, arg RenamePartnerSitePrefixParams) (int64, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
+	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
@@ -233,6 +245,7 @@ type Querier interface {
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)
+	UpdateDiagramMeta(ctx context.Context, arg UpdateDiagramMetaParams) (int64, error)
 	UpdateEndpointGroup(ctx context.Context, arg UpdateEndpointGroupParams) (int64, error)
 	UpdateEndpointMember(ctx context.Context, arg UpdateEndpointMemberParams) (int64, error)
 	UpdateIP(ctx context.Context, arg UpdateIPParams) (IpAddress, error)

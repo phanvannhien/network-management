@@ -109,25 +109,25 @@ func (e ClusterRole) Valid() bool {
 
 // Defines values for CustomFieldKind.
 const (
-	Boolean CustomFieldKind = "boolean"
-	Date    CustomFieldKind = "date"
-	Number  CustomFieldKind = "number"
-	Select  CustomFieldKind = "select"
-	Text    CustomFieldKind = "text"
+	CustomFieldKindBoolean CustomFieldKind = "boolean"
+	CustomFieldKindDate    CustomFieldKind = "date"
+	CustomFieldKindNumber  CustomFieldKind = "number"
+	CustomFieldKindSelect  CustomFieldKind = "select"
+	CustomFieldKindText    CustomFieldKind = "text"
 )
 
 // Valid indicates whether the value is a known member of the CustomFieldKind enum.
 func (e CustomFieldKind) Valid() bool {
 	switch e {
-	case Boolean:
+	case CustomFieldKindBoolean:
 		return true
-	case Date:
+	case CustomFieldKindDate:
 		return true
-	case Number:
+	case CustomFieldKindNumber:
 		return true
-	case Select:
+	case CustomFieldKindSelect:
 		return true
-	case Text:
+	case CustomFieldKindText:
 		return true
 	default:
 		return false
@@ -308,6 +308,153 @@ func (e DeviceType) Valid() bool {
 	}
 }
 
+// Defines values for DiagramAnnotationKind.
+const (
+	DiagramAnnotationKindArrow  DiagramAnnotationKind = "arrow"
+	DiagramAnnotationKindIpPlan DiagramAnnotationKind = "ipPlan"
+	DiagramAnnotationKindLegend DiagramAnnotationKind = "legend"
+	DiagramAnnotationKindText   DiagramAnnotationKind = "text"
+	DiagramAnnotationKindZone   DiagramAnnotationKind = "zone"
+)
+
+// Valid indicates whether the value is a known member of the DiagramAnnotationKind enum.
+func (e DiagramAnnotationKind) Valid() bool {
+	switch e {
+	case DiagramAnnotationKindArrow:
+		return true
+	case DiagramAnnotationKindIpPlan:
+		return true
+	case DiagramAnnotationKindLegend:
+		return true
+	case DiagramAnnotationKindText:
+		return true
+	case DiagramAnnotationKindZone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagramChangeOp.
+const (
+	CreateDevice DiagramChangeOp = "createDevice"
+	CreateLink   DiagramChangeOp = "createLink"
+	DeleteDevice DiagramChangeOp = "deleteDevice"
+	DeleteLink   DiagramChangeOp = "deleteLink"
+	UpdateDevice DiagramChangeOp = "updateDevice"
+	UpdateLink   DiagramChangeOp = "updateLink"
+)
+
+// Valid indicates whether the value is a known member of the DiagramChangeOp enum.
+func (e DiagramChangeOp) Valid() bool {
+	switch e {
+	case CreateDevice:
+		return true
+	case CreateLink:
+		return true
+	case DeleteDevice:
+		return true
+	case DeleteLink:
+		return true
+	case UpdateDevice:
+		return true
+	case UpdateLink:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagramEdgeRouting.
+const (
+	Curved     DiagramEdgeRouting = "curved"
+	Orthogonal DiagramEdgeRouting = "orthogonal"
+	Straight   DiagramEdgeRouting = "straight"
+)
+
+// Valid indicates whether the value is a known member of the DiagramEdgeRouting enum.
+func (e DiagramEdgeRouting) Valid() bool {
+	switch e {
+	case Curved:
+		return true
+	case Orthogonal:
+		return true
+	case Straight:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagramLayer.
+const (
+	DiagramLayerL2       DiagramLayer = "l2"
+	DiagramLayerL3       DiagramLayer = "l3"
+	DiagramLayerOverview DiagramLayer = "overview"
+	DiagramLayerPhysical DiagramLayer = "physical"
+)
+
+// Valid indicates whether the value is a known member of the DiagramLayer enum.
+func (e DiagramLayer) Valid() bool {
+	switch e {
+	case DiagramLayerL2:
+		return true
+	case DiagramLayerL3:
+		return true
+	case DiagramLayerOverview:
+		return true
+	case DiagramLayerPhysical:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagramNodeRefKind.
+const (
+	DiagramNodeRefKindDevice        DiagramNodeRefKind = "device"
+	DiagramNodeRefKindDiagram       DiagramNodeRefKind = "diagram"
+	DiagramNodeRefKindEndpointGroup DiagramNodeRefKind = "endpoint_group"
+	DiagramNodeRefKindSite          DiagramNodeRefKind = "site"
+)
+
+// Valid indicates whether the value is a known member of the DiagramNodeRefKind enum.
+func (e DiagramNodeRefKind) Valid() bool {
+	switch e {
+	case DiagramNodeRefKindDevice:
+		return true
+	case DiagramNodeRefKindDiagram:
+		return true
+	case DiagramNodeRefKindEndpointGroup:
+		return true
+	case DiagramNodeRefKindSite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagramScope.
+const (
+	DiagramScopeBusinessUnit DiagramScope = "business_unit"
+	DiagramScopeOrganization DiagramScope = "organization"
+	DiagramScopeSite         DiagramScope = "site"
+)
+
+// Valid indicates whether the value is a known member of the DiagramScope enum.
+func (e DiagramScope) Valid() bool {
+	switch e {
+	case DiagramScopeBusinessUnit:
+		return true
+	case DiagramScopeOrganization:
+		return true
+	case DiagramScopeSite:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EndpointKind.
 const (
 	EndpointKindAccessControl   EndpointKind = "access_control"
@@ -439,28 +586,28 @@ func (e InterfaceInputDuplex) Valid() bool {
 
 // Defines values for InterfaceKind.
 const (
-	Lag          InterfaceKind = "lag"
-	Loopback     InterfaceKind = "loopback"
-	Physical     InterfaceKind = "physical"
-	Subinterface InterfaceKind = "subinterface"
-	Svi          InterfaceKind = "svi"
-	Tunnel       InterfaceKind = "tunnel"
+	InterfaceKindLag          InterfaceKind = "lag"
+	InterfaceKindLoopback     InterfaceKind = "loopback"
+	InterfaceKindPhysical     InterfaceKind = "physical"
+	InterfaceKindSubinterface InterfaceKind = "subinterface"
+	InterfaceKindSvi          InterfaceKind = "svi"
+	InterfaceKindTunnel       InterfaceKind = "tunnel"
 )
 
 // Valid indicates whether the value is a known member of the InterfaceKind enum.
 func (e InterfaceKind) Valid() bool {
 	switch e {
-	case Lag:
+	case InterfaceKindLag:
 		return true
-	case Loopback:
+	case InterfaceKindLoopback:
 		return true
-	case Physical:
+	case InterfaceKindPhysical:
 		return true
-	case Subinterface:
+	case InterfaceKindSubinterface:
 		return true
-	case Svi:
+	case InterfaceKindSvi:
 		return true
-	case Tunnel:
+	case InterfaceKindTunnel:
 		return true
 	default:
 		return false
@@ -1606,6 +1753,170 @@ type DeviceUpdate struct {
 	Vendor      *string             `json:"vendor,omitempty"`
 	Version     int32               `json:"version"`
 	WarrantyEnd *openapi_types.Date `json:"warrantyEnd,omitempty"`
+}
+
+// Diagram defines model for Diagram.
+type Diagram struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel         `json:"access"`
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId"`
+	Description    string              `json:"description"`
+	Id             openapi_types.UUID  `json:"id"`
+
+	// Layer overview (organization / unit level), physical, l2, l3 (site detail)
+	Layer       DiagramLayer        `json:"layer"`
+	Name        string              `json:"name"`
+	NodeCount   int32               `json:"nodeCount"`
+	PartnerCode string              `json:"partnerCode"`
+	Scope       DiagramScope        `json:"scope"`
+	SiteCode    string              `json:"siteCode"`
+	SiteId      *openapi_types.UUID `json:"siteId"`
+	SiteName    string              `json:"siteName"`
+	UnitCode    string              `json:"unitCode"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	Version     int32               `json:"version"`
+}
+
+// DiagramAnnotation defines model for DiagramAnnotation.
+type DiagramAnnotation struct {
+	Color    *string               `json:"color,omitempty"`
+	FontSize *float32              `json:"fontSize,omitempty"`
+	Height   *float32              `json:"height,omitempty"`
+	Id       string                `json:"id"`
+	Kind     DiagramAnnotationKind `json:"kind"`
+	Points   *[]DiagramPoint       `json:"points,omitempty"`
+	Text     *string               `json:"text,omitempty"`
+	Width    *float32              `json:"width,omitempty"`
+	X        float32               `json:"x"`
+	Y        float32               `json:"y"`
+}
+
+// DiagramAnnotationKind defines model for DiagramAnnotation.Kind.
+type DiagramAnnotationKind string
+
+// DiagramChange One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id.
+type DiagramChange struct {
+	Device       *DeviceInput        `json:"device,omitempty"`
+	DeviceUpdate *DeviceUpdate       `json:"deviceUpdate,omitempty"`
+	Id           *openapi_types.UUID `json:"id,omitempty"`
+	Link         *LinkInput          `json:"link,omitempty"`
+	LinkUpdate   *LinkUpdate         `json:"linkUpdate,omitempty"`
+	Op           DiagramChangeOp     `json:"op"`
+	TempId       *openapi_types.UUID `json:"tempId,omitempty"`
+}
+
+// DiagramChangeOp defines model for DiagramChange.Op.
+type DiagramChangeOp string
+
+// DiagramDetail defines model for DiagramDetail.
+type DiagramDetail struct {
+	Devices        []Device        `json:"devices"`
+	Diagram        Diagram         `json:"diagram"`
+	EndpointGroups []EndpointGroup `json:"endpointGroups"`
+
+	// HiddenRefs ids referenced by the view that the caller may not see (kept unchanged when saving)
+	HiddenRefs []openapi_types.UUID `json:"hiddenRefs"`
+
+	// Links links whose both ends are nodes of the view
+	Links []Link      `json:"links"`
+	View  DiagramView `json:"view"`
+}
+
+// DiagramEdge defines model for DiagramEdge.
+type DiagramEdge struct {
+	Id        string              `json:"id"`
+	LinkId    openapi_types.UUID  `json:"linkId"`
+	Routing   *DiagramEdgeRouting `json:"routing,omitempty"`
+	Waypoints *[]DiagramPoint     `json:"waypoints,omitempty"`
+}
+
+// DiagramEdgeRouting defines model for DiagramEdge.Routing.
+type DiagramEdgeRouting string
+
+// DiagramInput defines model for DiagramInput.
+type DiagramInput struct {
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+	Description    *string             `json:"description,omitempty"`
+
+	// Layer overview (organization / unit level), physical, l2, l3 (site detail)
+	Layer  *DiagramLayer       `json:"layer,omitempty"`
+	Name   string              `json:"name"`
+	Scope  DiagramScope        `json:"scope"`
+	SiteId *openapi_types.UUID `json:"siteId,omitempty"`
+}
+
+// DiagramLayer overview (organization / unit level), physical, l2, l3 (site detail)
+type DiagramLayer string
+
+// DiagramList defines model for DiagramList.
+type DiagramList struct {
+	Diagrams []Diagram `json:"diagrams"`
+}
+
+// DiagramMetaUpdate defines model for DiagramMetaUpdate.
+type DiagramMetaUpdate struct {
+	Description *string `json:"description,omitempty"`
+
+	// Layer overview (organization / unit level), physical, l2, l3 (site detail)
+	Layer   *DiagramLayer `json:"layer,omitempty"`
+	Name    string        `json:"name"`
+	Version int32         `json:"version"`
+}
+
+// DiagramNode defines model for DiagramNode.
+type DiagramNode struct {
+	Height     *float32           `json:"height,omitempty"`
+	Id         string             `json:"id"`
+	LabelStyle *map[string]string `json:"labelStyle,omitempty"`
+	Locked     *bool              `json:"locked,omitempty"`
+	RefId      openapi_types.UUID `json:"refId"`
+	RefKind    DiagramNodeRefKind `json:"refKind"`
+	Width      *float32           `json:"width,omitempty"`
+	X          float32            `json:"x"`
+	Y          float32            `json:"y"`
+}
+
+// DiagramNodeRefKind defines model for DiagramNode.RefKind.
+type DiagramNodeRefKind string
+
+// DiagramPoint defines model for DiagramPoint.
+type DiagramPoint struct {
+	X float32 `json:"x"`
+	Y float32 `json:"y"`
+}
+
+// DiagramSave defines model for DiagramSave.
+type DiagramSave struct {
+	Changes *[]DiagramChange `json:"changes,omitempty"`
+	Version int32            `json:"version"`
+	View    DiagramView      `json:"view"`
+}
+
+// DiagramSaveResult defines model for DiagramSaveResult.
+type DiagramSaveResult struct {
+	Detail DiagramDetail `json:"detail"`
+
+	// IdMap tempId → real id of the objects created by this save
+	IdMap map[string]openapi_types.UUID `json:"idMap"`
+}
+
+// DiagramScope defines model for DiagramScope.
+type DiagramScope string
+
+// DiagramView defines model for DiagramView.
+type DiagramView struct {
+	Annotations   []DiagramAnnotation `json:"annotations"`
+	Edges         []DiagramEdge       `json:"edges"`
+	LabelTemplate *string             `json:"labelTemplate,omitempty"`
+	Nodes         []DiagramNode       `json:"nodes"`
+	Viewport      *DiagramViewport    `json:"viewport,omitempty"`
+}
+
+// DiagramViewport defines model for DiagramViewport.
+type DiagramViewport struct {
+	X    float32 `json:"x"`
+	Y    float32 `json:"y"`
+	Zoom float32 `json:"zoom"`
 }
 
 // EndpointGroup defines model for EndpointGroup.
@@ -2798,6 +3109,9 @@ type DeviceUnitFilter = openapi_types.UUID
 // DeviceVendorFilter defines model for DeviceVendorFilter.
 type DeviceVendorFilter = []string
 
+// DiagramId defines model for DiagramId.
+type DiagramId = openapi_types.UUID
+
 // FieldId defines model for FieldId.
 type FieldId = openapi_types.UUID
 
@@ -3145,6 +3459,26 @@ type UpdateDeviceIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateDiagramParams defines parameters for CreateDiagram.
+type CreateDiagramParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteDiagramParams defines parameters for DeleteDiagram.
+type DeleteDiagramParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateDiagramParams defines parameters for UpdateDiagram.
+type UpdateDiagramParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// SaveDiagramParams defines parameters for SaveDiagram.
+type SaveDiagramParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListEndpointGroupsParams defines parameters for ListEndpointGroups.
 type ListEndpointGroupsParams struct {
 	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
@@ -3480,6 +3814,15 @@ type CreateDeviceIpJSONRequestBody = IpAddressInput
 // UpdateDeviceIpJSONRequestBody defines body for UpdateDeviceIp for application/json ContentType.
 type UpdateDeviceIpJSONRequestBody = IpAddressUpdate
 
+// CreateDiagramJSONRequestBody defines body for CreateDiagram for application/json ContentType.
+type CreateDiagramJSONRequestBody = DiagramInput
+
+// UpdateDiagramJSONRequestBody defines body for UpdateDiagram for application/json ContentType.
+type UpdateDiagramJSONRequestBody = DiagramMetaUpdate
+
+// SaveDiagramJSONRequestBody defines body for SaveDiagram for application/json ContentType.
+type SaveDiagramJSONRequestBody = DiagramSave
+
 // CreateEndpointGroupJSONRequestBody defines body for CreateEndpointGroup for application/json ContentType.
 type CreateEndpointGroupJSONRequestBody = EndpointGroupInput
 
@@ -3755,6 +4098,24 @@ type ServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams)
+	// ListDiagrams Diagrams the caller may see (no view data)
+	// (GET /orgs/{orgId}/diagrams)
+	ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateDiagram Create an empty diagram in a scope (organization, business unit or site)
+	// (POST /orgs/{orgId}/diagrams)
+	CreateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDiagramParams)
+	// DeleteDiagram Delete a diagram (the inventory it shows stays)
+	// (DELETE /orgs/{orgId}/diagrams/{diagramId})
+	DeleteDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params DeleteDiagramParams)
+	// GetDiagram A diagram with its view and the inventory it shows
+	// (GET /orgs/{orgId}/diagrams/{diagramId})
+	GetDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId)
+	// UpdateDiagram Rename / describe a diagram (optimistic lock)
+	// (PATCH /orgs/{orgId}/diagrams/{diagramId})
+	UpdateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params UpdateDiagramParams)
+	// SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
+	// (POST /orgs/{orgId}/diagrams/{diagramId}/save)
+	SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams)
 	// ListEndpointGroups Endpoint groups the caller may see
 	// (GET /orgs/{orgId}/endpoint-groups)
 	ListEndpointGroups(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListEndpointGroupsParams)
@@ -4319,6 +4680,42 @@ func (_ Unimplemented) DeleteDeviceIp(w http.ResponseWriter, r *http.Request, or
 // UpdateDeviceIp Update an IP address (optimistic lock on version)
 // (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 func (_ Unimplemented) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDiagrams Diagrams the caller may see (no view data)
+// (GET /orgs/{orgId}/diagrams)
+func (_ Unimplemented) ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDiagram Create an empty diagram in a scope (organization, business unit or site)
+// (POST /orgs/{orgId}/diagrams)
+func (_ Unimplemented) CreateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDiagramParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteDiagram Delete a diagram (the inventory it shows stays)
+// (DELETE /orgs/{orgId}/diagrams/{diagramId})
+func (_ Unimplemented) DeleteDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params DeleteDiagramParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDiagram A diagram with its view and the inventory it shows
+// (GET /orgs/{orgId}/diagrams/{diagramId})
+func (_ Unimplemented) GetDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateDiagram Rename / describe a diagram (optimistic lock)
+// (PATCH /orgs/{orgId}/diagrams/{diagramId})
+func (_ Unimplemented) UpdateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params UpdateDiagramParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
+// (POST /orgs/{orgId}/diagrams/{diagramId}/save)
+func (_ Unimplemented) SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8036,6 +8433,310 @@ func (siw *ServerInterfaceWrapper) UpdateDeviceIp(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateDeviceIp(w, r, orgId, deviceId, ipId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDiagrams operation middleware
+func (siw *ServerInterfaceWrapper) ListDiagrams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDiagrams(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDiagram operation middleware
+func (siw *ServerInterfaceWrapper) CreateDiagram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDiagramParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDiagram(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDiagram operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDiagram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "diagramId" -------------
+	var diagramId DiagramId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "diagramId", chi.URLParam(r, "diagramId"), &diagramId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "diagramId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteDiagramParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDiagram(w, r, orgId, diagramId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDiagram operation middleware
+func (siw *ServerInterfaceWrapper) GetDiagram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "diagramId" -------------
+	var diagramId DiagramId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "diagramId", chi.URLParam(r, "diagramId"), &diagramId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "diagramId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDiagram(w, r, orgId, diagramId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateDiagram operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDiagram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "diagramId" -------------
+	var diagramId DiagramId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "diagramId", chi.URLParam(r, "diagramId"), &diagramId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "diagramId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateDiagramParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateDiagram(w, r, orgId, diagramId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveDiagram operation middleware
+func (siw *ServerInterfaceWrapper) SaveDiagram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "diagramId" -------------
+	var diagramId DiagramId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "diagramId", chi.URLParam(r, "diagramId"), &diagramId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "diagramId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SaveDiagramParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveDiagram(w, r, orgId, diagramId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11827,6 +12528,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/links/{linkId}", wrapper.UpdateLink)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/diagrams", wrapper.ListDiagrams)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/diagrams", wrapper.CreateDiagram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/diagrams/{diagramId}", wrapper.DeleteDiagram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/diagrams/{diagramId}", wrapper.GetDiagram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/diagrams/{diagramId}", wrapper.UpdateDiagram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/diagrams/{diagramId}/save", wrapper.SaveDiagram)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/vlans", wrapper.ListVlans)
@@ -16550,6 +17269,451 @@ func (response UpdateDeviceIp404JSONResponse) VisitUpdateDeviceIpResponse(w http
 type UpdateDeviceIp409JSONResponse struct{ ConflictJSONResponse }
 
 func (response UpdateDeviceIp409JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDiagramsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListDiagramsResponseObject interface {
+	VisitListDiagramsResponse(w http.ResponseWriter) error
+}
+
+type ListDiagrams200JSONResponse DiagramList
+
+func (response ListDiagrams200JSONResponse) VisitListDiagramsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDiagrams401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDiagrams401JSONResponse) VisitListDiagramsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDiagrams404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDiagrams404JSONResponse) VisitListDiagramsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagramRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateDiagramParams
+	Body   *CreateDiagramJSONRequestBody
+}
+
+type CreateDiagramResponseObject interface {
+	VisitCreateDiagramResponse(w http.ResponseWriter) error
+}
+
+type CreateDiagram201JSONResponse DiagramDetail
+
+func (response CreateDiagram201JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagram400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDiagram400JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagram401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDiagram401JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagram403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDiagram403JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagram404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateDiagram404JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDiagram409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDiagram409JSONResponse) VisitCreateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDiagramRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	DiagramId DiagramId `json:"diagramId"`
+	Params    DeleteDiagramParams
+}
+
+type DeleteDiagramResponseObject interface {
+	VisitDeleteDiagramResponse(w http.ResponseWriter) error
+}
+
+type DeleteDiagram204Response struct {
+}
+
+func (response DeleteDiagram204Response) VisitDeleteDiagramResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDiagram401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDiagram401JSONResponse) VisitDeleteDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDiagram403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteDiagram403JSONResponse) VisitDeleteDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDiagram404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDiagram404JSONResponse) VisitDeleteDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiagramRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	DiagramId DiagramId `json:"diagramId"`
+}
+
+type GetDiagramResponseObject interface {
+	VisitGetDiagramResponse(w http.ResponseWriter) error
+}
+
+type GetDiagram200JSONResponse DiagramDetail
+
+func (response GetDiagram200JSONResponse) VisitGetDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiagram401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDiagram401JSONResponse) VisitGetDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiagram404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDiagram404JSONResponse) VisitGetDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagramRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	DiagramId DiagramId `json:"diagramId"`
+	Params    UpdateDiagramParams
+	Body      *UpdateDiagramJSONRequestBody
+}
+
+type UpdateDiagramResponseObject interface {
+	VisitUpdateDiagramResponse(w http.ResponseWriter) error
+}
+
+type UpdateDiagram200JSONResponse Diagram
+
+func (response UpdateDiagram200JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagram400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateDiagram400JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagram401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateDiagram401JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagram403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateDiagram403JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagram404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateDiagram404JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDiagram409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateDiagram409JSONResponse) VisitUpdateDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagramRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	DiagramId DiagramId `json:"diagramId"`
+	Params    SaveDiagramParams
+	Body      *SaveDiagramJSONRequestBody
+}
+
+type SaveDiagramResponseObject interface {
+	VisitSaveDiagramResponse(w http.ResponseWriter) error
+}
+
+type SaveDiagram200JSONResponse DiagramSaveResult
+
+func (response SaveDiagram200JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagram400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SaveDiagram400JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagram401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SaveDiagram401JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagram403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SaveDiagram403JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagram404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SaveDiagram404JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDiagram409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SaveDiagram409JSONResponse) VisitSaveDiagramResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -21732,6 +22896,24 @@ type StrictServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(ctx context.Context, request UpdateDeviceIpRequestObject) (UpdateDeviceIpResponseObject, error)
+	// ListDiagrams Diagrams the caller may see (no view data)
+	// (GET /orgs/{orgId}/diagrams)
+	ListDiagrams(ctx context.Context, request ListDiagramsRequestObject) (ListDiagramsResponseObject, error)
+	// CreateDiagram Create an empty diagram in a scope (organization, business unit or site)
+	// (POST /orgs/{orgId}/diagrams)
+	CreateDiagram(ctx context.Context, request CreateDiagramRequestObject) (CreateDiagramResponseObject, error)
+	// DeleteDiagram Delete a diagram (the inventory it shows stays)
+	// (DELETE /orgs/{orgId}/diagrams/{diagramId})
+	DeleteDiagram(ctx context.Context, request DeleteDiagramRequestObject) (DeleteDiagramResponseObject, error)
+	// GetDiagram A diagram with its view and the inventory it shows
+	// (GET /orgs/{orgId}/diagrams/{diagramId})
+	GetDiagram(ctx context.Context, request GetDiagramRequestObject) (GetDiagramResponseObject, error)
+	// UpdateDiagram Rename / describe a diagram (optimistic lock)
+	// (PATCH /orgs/{orgId}/diagrams/{diagramId})
+	UpdateDiagram(ctx context.Context, request UpdateDiagramRequestObject) (UpdateDiagramResponseObject, error)
+	// SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
+	// (POST /orgs/{orgId}/diagrams/{diagramId}/save)
+	SaveDiagram(ctx context.Context, request SaveDiagramRequestObject) (SaveDiagramResponseObject, error)
 	// ListEndpointGroups Endpoint groups the caller may see
 	// (GET /orgs/{orgId}/endpoint-groups)
 	ListEndpointGroups(ctx context.Context, request ListEndpointGroupsRequestObject) (ListEndpointGroupsResponseObject, error)
@@ -23849,6 +25031,191 @@ func (sh *strictHandler) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateDeviceIpResponseObject); ok {
 		if err := validResponse.VisitUpdateDeviceIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDiagrams operation middleware
+func (sh *strictHandler) ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListDiagramsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDiagrams(ctx, request.(ListDiagramsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDiagrams")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDiagramsResponseObject); ok {
+		if err := validResponse.VisitListDiagramsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDiagram operation middleware
+func (sh *strictHandler) CreateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDiagramParams) {
+	var request CreateDiagramRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateDiagramJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDiagram(ctx, request.(CreateDiagramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDiagram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDiagramResponseObject); ok {
+		if err := validResponse.VisitCreateDiagramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDiagram operation middleware
+func (sh *strictHandler) DeleteDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params DeleteDiagramParams) {
+	var request DeleteDiagramRequestObject
+
+	request.OrgId = orgId
+	request.DiagramId = diagramId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDiagram(ctx, request.(DeleteDiagramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDiagram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDiagramResponseObject); ok {
+		if err := validResponse.VisitDeleteDiagramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDiagram operation middleware
+func (sh *strictHandler) GetDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId) {
+	var request GetDiagramRequestObject
+
+	request.OrgId = orgId
+	request.DiagramId = diagramId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDiagram(ctx, request.(GetDiagramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDiagram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDiagramResponseObject); ok {
+		if err := validResponse.VisitGetDiagramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateDiagram operation middleware
+func (sh *strictHandler) UpdateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params UpdateDiagramParams) {
+	var request UpdateDiagramRequestObject
+
+	request.OrgId = orgId
+	request.DiagramId = diagramId
+	request.Params = params
+
+	var body UpdateDiagramJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateDiagram(ctx, request.(UpdateDiagramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateDiagram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateDiagramResponseObject); ok {
+		if err := validResponse.VisitUpdateDiagramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveDiagram operation middleware
+func (sh *strictHandler) SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams) {
+	var request SaveDiagramRequestObject
+
+	request.OrgId = orgId
+	request.DiagramId = diagramId
+	request.Params = params
+
+	var body SaveDiagramJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveDiagram(ctx, request.(SaveDiagramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveDiagram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveDiagramResponseObject); ok {
+		if err := validResponse.VisitSaveDiagramResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

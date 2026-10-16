@@ -1145,6 +1145,187 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 	return items, nil
 }
 
+const listDevicesByIDs = `-- name: ListDevicesByIDs :many
+SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
+       COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
+       COALESCE((SELECT ip.address::text FROM ip_addresses ip
+                 WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
+FROM devices d
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN business_units du ON du.id = d.business_unit_id
+JOIN partners dp ON dp.id = du.partner_id
+LEFT JOIN business_units sb ON sb.id = s.business_unit_id
+LEFT JOIN locations l ON l.id = d.location_id
+LEFT JOIN racks r ON r.id = d.rack_id
+LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
+LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
+WHERE d.id = ANY ($1::uuid[]) AND d.organization_id = $2 AND d.deleted_at IS NULL
+  -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
+  -- to the caller (site's unit granted, or the site shared to the caller).
+  AND (NOT $3::boolean
+       OR d.business_unit_id = ANY ($4::uuid[]) OR du.partner_id = ANY ($5::uuid[])
+       OR sb.id = ANY ($4::uuid[]) OR sb.partner_id = ANY ($5::uuid[])
+       OR EXISTS (SELECT 1 FROM resource_shares rs
+                  LEFT JOIN business_units tu ON tu.id = rs.target_unit_id AND tu.deleted_at IS NULL
+                  WHERE rs.organization_id = s.organization_id AND rs.resource_type = 'site' AND rs.resource_id = s.id
+                    AND (rs.target_partner_id = ANY ($6::uuid[])
+                         OR rs.target_unit_id = ANY ($4::uuid[])
+                         OR tu.partner_id = ANY ($5::uuid[]))))
+`
+
+type ListDevicesByIDsParams struct {
+	Ids            []pgtype.UUID
+	OrganizationID pgtype.UUID
+	Restricted     bool
+	GrantUnits     []pgtype.UUID
+	GrantPartners  []pgtype.UUID
+	SharePartners  []pgtype.UUID
+}
+
+type ListDevicesByIDsRow struct {
+	ID                pgtype.UUID
+	OrganizationID    pgtype.UUID
+	BusinessUnitID    pgtype.UUID
+	SiteID            pgtype.UUID
+	LocationID        pgtype.UUID
+	RackID            pgtype.UUID
+	RackU             pgtype.Int4
+	UHeight           int32
+	Hostname          string
+	Type              string
+	Vendor            string
+	Model             string
+	PartNumber        string
+	SerialNumber      string
+	AssetTag          string
+	Firmware          string
+	Role              string
+	Lifecycle         string
+	Managed           bool
+	OwnerName         string
+	PurchaseDate      pgtype.Date
+	PoNumber          string
+	WarrantyEnd       pgtype.Date
+	LicenseEnd        pgtype.Date
+	EolDate           pgtype.Date
+	EosDate           pgtype.Date
+	Notes             string
+	Tags              []string
+	CustomFields      []byte
+	DeletedAt         pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Version           int32
+	MgmtInterfaceID   pgtype.UUID
+	PollAddress       *netip.Addr
+	TemplateID        pgtype.UUID
+	ClusterID         pgtype.UUID
+	ClusterRole       pgtype.Text
+	ClusterMemberNo   pgtype.Int4
+	SiteCode          string
+	SiteName          string
+	SiteUnitID        pgtype.UUID
+	SitePartnerID     pgtype.UUID
+	UnitCode          string
+	UnitName          string
+	PartnerID         pgtype.UUID
+	PartnerCode       string
+	PartnerName       string
+	LocationName      string
+	RackName          string
+	MgmtInterfaceName string
+	ClusterName       string
+	ClusterKind       string
+	MgmtIp            string
+}
+
+// Devices placed on a diagram, with the same visibility as GetDevice.
+func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error) {
+	rows, err := q.db.Query(ctx, listDevicesByIDs,
+		arg.Ids,
+		arg.OrganizationID,
+		arg.Restricted,
+		arg.GrantUnits,
+		arg.GrantPartners,
+		arg.SharePartners,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDevicesByIDsRow
+	for rows.Next() {
+		var i ListDevicesByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.BusinessUnitID,
+			&i.SiteID,
+			&i.LocationID,
+			&i.RackID,
+			&i.RackU,
+			&i.UHeight,
+			&i.Hostname,
+			&i.Type,
+			&i.Vendor,
+			&i.Model,
+			&i.PartNumber,
+			&i.SerialNumber,
+			&i.AssetTag,
+			&i.Firmware,
+			&i.Role,
+			&i.Lifecycle,
+			&i.Managed,
+			&i.OwnerName,
+			&i.PurchaseDate,
+			&i.PoNumber,
+			&i.WarrantyEnd,
+			&i.LicenseEnd,
+			&i.EolDate,
+			&i.EosDate,
+			&i.Notes,
+			&i.Tags,
+			&i.CustomFields,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Version,
+			&i.MgmtInterfaceID,
+			&i.PollAddress,
+			&i.TemplateID,
+			&i.ClusterID,
+			&i.ClusterRole,
+			&i.ClusterMemberNo,
+			&i.SiteCode,
+			&i.SiteName,
+			&i.SiteUnitID,
+			&i.SitePartnerID,
+			&i.UnitCode,
+			&i.UnitName,
+			&i.PartnerID,
+			&i.PartnerCode,
+			&i.PartnerName,
+			&i.LocationName,
+			&i.RackName,
+			&i.MgmtInterfaceName,
+			&i.ClusterName,
+			&i.ClusterKind,
+			&i.MgmtIp,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockHostname = `-- name: LockHostname :exec
 SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
 `

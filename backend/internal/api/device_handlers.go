@@ -842,6 +842,19 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 	}
 }
 
+// inputFromUpdate: the fields of a DeviceUpdate that an update writes (template is create-only).
+func inputFromUpdate(b apigen.DeviceUpdate) apigen.DeviceInput {
+	return apigen.DeviceInput{
+		Hostname: b.Hostname, Type: b.Type, Vendor: b.Vendor, Model: b.Model, PartNumber: b.PartNumber, SerialNumber: b.SerialNumber,
+		AssetTag: b.AssetTag, Firmware: b.Firmware, OwnerName: b.OwnerName, PoNumber: b.PoNumber, Notes: b.Notes, Role: b.Role,
+		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
+		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
+		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
+		MgmtInterfaceId: b.MgmtInterfaceId, PollAddress: b.PollAddress,
+		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
+	}
+}
+
 func bodyFromInput(b apigen.DeviceInput) deviceBody {
 	return deviceBody{
 		Hostname: b.Hostname, Type: b.Type, Vendor: b.Vendor, Model: b.Model, PartNumber: b.PartNumber, SerialNumber: b.SerialNumber,
@@ -893,15 +906,7 @@ func (s *Server) UpdateDevice(ctx context.Context, req apigen.UpdateDeviceReques
 		return apigen.UpdateDevice400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	b := req.Body
-	f, msg := validateDevice(bodyFromInput(apigen.DeviceInput{
-		Hostname: b.Hostname, Type: b.Type, Vendor: b.Vendor, Model: b.Model, PartNumber: b.PartNumber, SerialNumber: b.SerialNumber,
-		AssetTag: b.AssetTag, Firmware: b.Firmware, OwnerName: b.OwnerName, PoNumber: b.PoNumber, Notes: b.Notes, Role: b.Role,
-		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
-		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
-		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
-		MgmtInterfaceId: b.MgmtInterfaceId, PollAddress: b.PollAddress,
-		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
-	}))
+	f, msg := validateDevice(bodyFromInput(inputFromUpdate(*b)))
 	if msg != "" {
 		// Unknown / invisible devices answer 404 before validation messages reveal anything.
 		if _, ok, err := loadDevice(ctx, s.q, m, req.DeviceId); err != nil {
@@ -938,34 +943,38 @@ func (s *Server) deleteDevices(ctx context.Context, m tenant.Membership, ids []u
 	code := 0
 	err := s.withTx(ctx, func(q store.Querier) error {
 		for _, id := range ids {
-			d, ok, err := loadDevice(ctx, q, m, id)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				code = 404
-				return errRollback
-			}
-			if m.UnitLevel(d.BusinessUnitID, d.PartnerID) < tenant.LevelEdit {
-				code = 403
-				return errRollback
-			}
-			if _, err := q.SoftDeleteDevice(ctx, store.SoftDeleteDeviceParams{ID: d.ID, OrganizationID: m.OrgID}); err != nil {
-				return fmt.Errorf("delete device: %w", err)
-			}
-			if err := deleteLinksOf(ctx, q, m, "device", d.ID); err != nil {
-				return err
-			}
-			if err := audit.Write(ctx, q, audit.Entry{
-				OrganizationID: m.OrgID, Actor: m.UserID, Action: "device.delete", ObjectType: "device", ObjectID: uuidStr(d.ID),
-				Before: snapDevice(d), Meta: infoFrom(ctx).meta,
-			}); err != nil {
-				return err
+			var err error
+			if code, err = deleteDeviceTx(ctx, q, m, id); err != nil || code != 0 {
+				return orRollback(err)
 			}
 		}
 		return nil
 	})
 	return code, err
+}
+
+// deleteDeviceTx soft-deletes one device with its links inside the caller's transaction; 404 / 403 refuse.
+func deleteDeviceTx(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (int, error) {
+	d, ok, err := loadDevice(ctx, q, m, id)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 404, nil
+	}
+	if m.UnitLevel(d.BusinessUnitID, d.PartnerID) < tenant.LevelEdit {
+		return 403, nil
+	}
+	if _, err := q.SoftDeleteDevice(ctx, store.SoftDeleteDeviceParams{ID: d.ID, OrganizationID: m.OrgID}); err != nil {
+		return 0, fmt.Errorf("delete device: %w", err)
+	}
+	if err := deleteLinksOf(ctx, q, m, "device", d.ID); err != nil {
+		return 0, err
+	}
+	return 0, audit.Write(ctx, q, audit.Entry{
+		OrganizationID: m.OrgID, Actor: m.UserID, Action: "device.delete", ObjectType: "device", ObjectID: uuidStr(d.ID),
+		Before: snapDevice(d), Meta: infoFrom(ctx).meta,
+	})
 }
 
 func (s *Server) DeleteDevice(ctx context.Context, req apigen.DeleteDeviceRequestObject) (apigen.DeleteDeviceResponseObject, error) {

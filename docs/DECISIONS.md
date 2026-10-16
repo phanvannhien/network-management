@@ -201,6 +201,11 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   Node "site" trên sơ đồ tổng quan: double-click mở sơ đồ chi tiết của site đó. Sơ đồ tổng quan có thể tự sinh từ dữ liệu
   (sites + link WAN/VPN), người dùng chỉnh bố cục sau. Một site có thể có nhiều sơ đồ chi tiết (vật lý, L2, L3).
 - **Lý do:** khách nhiều đơn vị × nhiều site; một sơ đồ cho cả đơn vị sẽ quá rối, kỹ sư cần nhìn tổng quan rồi đi sâu.
+- **Chi tiết triển khai (P1-13):** quyền sơ đồ theo phạm vi — tổ chức: vai trò cấp tổ chức; đơn vị: quyền trên đơn vị; site:
+  quyền trên site (gồm chia sẻ). Node trỏ tới đối tượng người xem không thấy được trả về dạng "hidden ref" (chỉ id) và phải giữ
+  nguyên khi lưu; không thêm được ref mới tới đối tượng không thấy. Link trong kho giữa hai đối tượng đang có trên sơ đồ luôn
+  được vẽ (kho là nguồn sự thật); view chỉ lưu đường đi của cạnh. Lưu = một request (view + thay đổi kho), một transaction,
+  khóa lạc quan theo version; sau khi lưu lịch sử undo bắt đầu lại (temp id thành id thật).
 
 ### ADR-029 — Phân quyền theo đơn vị và chia sẻ bản ghi (động, không cố định trong code)
 - **Quyết định:**

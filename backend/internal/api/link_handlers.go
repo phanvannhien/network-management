@@ -288,12 +288,24 @@ func (s *Server) saveLink(ctx context.Context, m tenant.Membership, b apigen.Lin
 		out   writeOutcome
 		saved apigen.Link
 	)
+	err := s.withTx(ctx, func(q store.Querier) error {
+		var err error
+		saved, err = writeLink(ctx, q, m, b, id, version, &out)
+		return err
+	})
+	return saved, out, err
+}
+
+// writeLink creates (id nil) or updates a link inside the caller's transaction; a refusal is reported in out with
+// errRollback.
+func writeLink(ctx context.Context, q store.Querier, m tenant.Membership, b apigen.LinkInput, id *uuid.UUID, version int32, out *writeOutcome) (apigen.Link, error) {
+	var saved apigen.Link
 	f, bad := validateLink(b)
 	if bad != "" {
 		out.bad = bad
-		return saved, out, nil
+		return saved, errRollback
 	}
-	err := s.withTx(ctx, func(q store.Querier) error {
+	err := func() error {
 		var before store.ListLinksRow
 		self := pgtype.UUID{}
 		if id != nil {
@@ -362,8 +374,8 @@ func (s *Server) saveLink(ctx context.Context, m tenant.Membership, b apigen.Lin
 			entry.Action, entry.Before = "link.update", snapLinkRow(before)
 		}
 		return audit.Write(ctx, q, entry)
-	})
-	return saved, out, err
+	}()
+	return saved, err
 }
 
 func (s *Server) CreateLink(ctx context.Context, req apigen.CreateLinkRequestObject) (apigen.CreateLinkResponseObject, error) {

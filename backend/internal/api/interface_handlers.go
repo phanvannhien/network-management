@@ -430,7 +430,7 @@ func validateInterface(name string, kind apigen.InterfaceKind, media *apigen.Int
 		if *vlanTag < 1 || *vlanTag > 4094 {
 			return f, "VLAN tag từ 1 đến 4094"
 		}
-		if kind != apigen.Subinterface {
+		if kind != apigen.InterfaceKindSubinterface {
 			return f, "VLAN tag (802.1Q) chỉ dùng cho sub-interface"
 		}
 		f.vlanTag = pgtype.Int4{Int32: *vlanTag, Valid: true}

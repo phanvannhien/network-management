@@ -140,6 +140,22 @@ type DeviceTemplate struct {
 	Version        int32
 }
 
+type Diagram struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Scope          string
+	BusinessUnitID pgtype.UUID
+	SiteID         pgtype.UUID
+	Name           string
+	Layer          string
+	Description    string
+	View           []byte
+	CreatedBy      pgtype.UUID
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type EndpointGroup struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID

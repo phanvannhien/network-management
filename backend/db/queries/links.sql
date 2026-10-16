@@ -30,6 +30,7 @@ LEFT JOIN business_units bsb ON bsb.id = bsite.business_unit_id
 LEFT JOIN interfaces bi ON bi.id = l.b_interface_id
 WHERE l.organization_id = @organization_id
   AND (sqlc.narg('link_id')::uuid IS NULL OR l.id = sqlc.narg('link_id'))
+  AND (sqlc.narg('link_ids')::uuid[] IS NULL OR l.id = ANY (sqlc.narg('link_ids')::uuid[]))
   AND (sqlc.narg('end_id')::uuid IS NULL OR l.a_id = sqlc.narg('end_id') OR l.b_id = sqlc.narg('end_id'))
   AND (sqlc.narg('site_id')::uuid IS NULL OR COALESCE(ad.site_id, ag.site_id) = sqlc.narg('site_id')
        OR COALESCE(bd.site_id, bg.site_id) = sqlc.narg('site_id'))
@@ -70,3 +71,11 @@ DELETE FROM links WHERE id = @id AND organization_id = @organization_id;
 DELETE FROM links WHERE organization_id = @organization_id
   AND ((a_kind = @end_kind AND a_id = @end_id) OR (b_kind = @end_kind AND b_id = @end_id))
 RETURNING id;
+
+-- name: ListLinkIDsAmong :many
+-- Links whose both ends are among the given objects (the nodes of a diagram).
+SELECT id FROM links
+WHERE organization_id = @organization_id AND a_id = ANY (@ids::uuid[]) AND b_id = ANY (@ids::uuid[]);
+
+-- name: LinkExists :one
+SELECT EXISTS (SELECT 1 FROM links WHERE id = @id AND organization_id = @organization_id)::boolean;

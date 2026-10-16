@@ -162,6 +162,53 @@ func (q *Queries) GetLinkEndInterface(ctx context.Context, arg GetLinkEndInterfa
 	return i, err
 }
 
+const linkExists = `-- name: LinkExists :one
+SELECT EXISTS (SELECT 1 FROM links WHERE id = $1 AND organization_id = $2)::boolean
+`
+
+type LinkExistsParams struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+}
+
+func (q *Queries) LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, linkExists, arg.ID, arg.OrganizationID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const listLinkIDsAmong = `-- name: ListLinkIDsAmong :many
+SELECT id FROM links
+WHERE organization_id = $1 AND a_id = ANY ($2::uuid[]) AND b_id = ANY ($2::uuid[])
+`
+
+type ListLinkIDsAmongParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []pgtype.UUID
+}
+
+// Links whose both ends are among the given objects (the nodes of a diagram).
+func (q *Queries) ListLinkIDsAmong(ctx context.Context, arg ListLinkIDsAmongParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listLinkIDsAmong, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLinks = `-- name: ListLinks :many
 
 SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version,
@@ -192,15 +239,17 @@ LEFT JOIN business_units bsb ON bsb.id = bsite.business_unit_id
 LEFT JOIN interfaces bi ON bi.id = l.b_interface_id
 WHERE l.organization_id = $1
   AND ($2::uuid IS NULL OR l.id = $2)
-  AND ($3::uuid IS NULL OR l.a_id = $3 OR l.b_id = $3)
-  AND ($4::uuid IS NULL OR COALESCE(ad.site_id, ag.site_id) = $4
-       OR COALESCE(bd.site_id, bg.site_id) = $4)
+  AND ($3::uuid[] IS NULL OR l.id = ANY ($3::uuid[]))
+  AND ($4::uuid IS NULL OR l.a_id = $4 OR l.b_id = $4)
+  AND ($5::uuid IS NULL OR COALESCE(ad.site_id, ag.site_id) = $5
+       OR COALESCE(bd.site_id, bg.site_id) = $5)
 ORDER BY COALESCE(ad.hostname, ag.name), COALESCE(ai.name, ''), l.created_at
 `
 
 type ListLinksParams struct {
 	OrganizationID pgtype.UUID
 	LinkID         pgtype.UUID
+	LinkIds        []pgtype.UUID
 	EndID          pgtype.UUID
 	SiteID         pgtype.UUID
 }
@@ -257,6 +306,7 @@ func (q *Queries) ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLin
 	rows, err := q.db.Query(ctx, listLinks,
 		arg.OrganizationID,
 		arg.LinkID,
+		arg.LinkIds,
 		arg.EndID,
 		arg.SiteID,
 	)

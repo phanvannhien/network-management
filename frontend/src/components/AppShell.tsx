@@ -443,7 +443,7 @@ export function OrgShell() {
     {
       items: [
         { to: base, label: t('nav.dashboard'), icon: LayoutDashboard, end: true },
-        { to: '/editor', label: t('nav.diagrams'), icon: Network },
+        { to: `${base}/diagrams`, label: t('nav.diagrams'), icon: Network },
         { to: `${base}/devices`, label: t('nav.devices'), icon: Server },
         { to: `${base}/ipam`, label: t('nav.ipam'), icon: Hash },
         { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
