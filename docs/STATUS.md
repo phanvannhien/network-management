@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · module Thành viên
+- Đã làm: trang Thành viên theo thiết kế mới — DataTable (phân trang/sắp xếp phía client qua `useLocalTable`), FilterBar
+  (vai trò, trạng thái), mời qua dialog, sửa vai trò + quyền bổ sung trong sheet bên phải, gỡ/rời tổ chức qua ConfirmDialog
+  mức 1, link mời một lần trong `OneTimeLinkDialog`. Thêm `NativeSelect`. Nhãn vai trò/quyền chuyển sang i18n.
+  Overlay sheet bỏ hiệu ứng làm mờ. Không đổi logic nghiệp vụ hay API (quy tắc ai sửa được ai giữ nguyên).
+- Test / cách kiểm tra: `make check` pass; test mời / đổi vai trò + quyền (gửi version) / xác nhận trước khi gỡ / viewer không
+  thấy nút quản lý. Ảnh `docs/ui-screens/after/20..22-*`; axe-core + bàn phím: 0 vấn đề.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: module Quản trị tổ chức.
+
 ## 2026-10-16 — UI Bước 2: nền tảng thiết kế (ADR-024) + trang mẫu
 - Đã làm:
   - DESIGN.md cập nhật 10 chỉnh sửa đã duyệt (đánh dấu ✎, §8b); ghi ADR-024; Stack trong CLAUDE.md.

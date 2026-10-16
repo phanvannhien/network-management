@@ -471,7 +471,10 @@ describe('members', () => {
     })
     renderAt(`/o/${ORG_ID}/members`)
     expect(await screen.findByText('viewer@example.com')).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mời thành viên' }))
+    fireEvent.change(await screen.findByLabelText('Email'), {
+      target: { value: 'new@example.com' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Thêm' }))
     expect(await screen.findByText(/\/invite\/tok123$/)).toBeInTheDocument()
     const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/members'))!
@@ -490,12 +493,38 @@ describe('members', () => {
         json({ ...MEMBER, role: 'editor', version: 2 }),
     })
     renderAt(`/o/${ORG_ID}/members`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho viewer@example.com' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Sửa vai trò và quyền' }))
     fireEvent.change(await screen.findByLabelText('Vai trò của viewer@example.com'), {
       target: { value: 'editor' },
     })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Xem mật khẩu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
     await waitFor(() => expect(calls.some((r) => r.method === 'PATCH')).toBe(true))
     const patch = calls.find((r) => r.method === 'PATCH')!
-    expect(await patch.clone().json()).toEqual({ role: 'editor', permissions: [], version: 1 })
+    expect(await patch.clone().json()).toEqual({
+      role: 'editor',
+      permissions: ['credential.reveal'],
+      version: 1,
+    })
+  })
+
+  it('removing a member asks for confirmation first', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+      [`DELETE /api/orgs/${ORG_ID}/members/${MEMBER.userId}`]: () =>
+        new Response(null, { status: 204 }),
+    })
+    renderAt(`/o/${ORG_ID}/members`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho viewer@example.com' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Gỡ khỏi tổ chức' }))
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Gỡ viewer@example.com khỏi tổ chức?' }),
+    ).toBeInTheDocument()
+    expect(calls.some((r) => r.method === 'DELETE')).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Gỡ khỏi tổ chức' }))
+    await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
   })
 
   it('viewers see the list without management controls', async () => {
@@ -508,8 +537,10 @@ describe('members', () => {
     })
     renderAt(`/o/${ORG_ID}/members`)
     expect(await screen.findByText('viewer@example.com')).toBeInTheDocument()
-    expect(screen.queryByRole('form', { name: 'Thêm thành viên' })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Vai trò của viewer@example.com')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Mời thành viên' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Thao tác cho viewer@example.com' }),
+    ).not.toBeInTheDocument()
   })
 })
 

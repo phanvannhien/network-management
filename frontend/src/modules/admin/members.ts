@@ -6,18 +6,16 @@ export type Permission = components['schemas']['Permission']
 export type AdminUser = components['schemas']['AdminUser']
 type Role = components['schemas']['Role']
 
-export const PERMISSION_LABELS: Record<Permission, string> = {
-  'credential.reveal': 'Xem mật khẩu',
-  'credential.manage': 'Quản lý mật khẩu',
-  'user.manage': 'Quản lý thành viên',
-}
+/** i18n keys for permission labels (API names contain dots, which i18next treats as nesting). */
+export const PERMISSION_KEYS = {
+  'credential.reveal': 'permissions.credentialReveal',
+  'credential.manage': 'permissions.credentialManage',
+  'user.manage': 'permissions.userManage',
+} as const satisfies Record<Permission, string>
 
-export const ROLE_OPTIONS: { value: Role; label: string }[] = [
-  { value: 'owner', label: 'Owner' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'editor', label: 'Editor' },
-  { value: 'viewer', label: 'Viewer' },
-]
+export const ALL_PERMISSIONS = Object.keys(PERMISSION_KEYS) as Permission[]
+
+export const ROLES: Role[] = ['owner', 'admin', 'editor', 'viewer']
 
 /** Link the inviter sends out of band (no SMTP until P2-05). */
 export function accountLink(token: string): string {
