@@ -9,6 +9,7 @@ import {
   ChevronsRight,
   LayoutDashboard,
   Network,
+  ScrollText,
   Search,
   Server,
   ShieldCheck,
@@ -397,6 +398,8 @@ export function OrgShell() {
   const session = useSession()
   const org = useOrganization(orgId)
   const base = `/o/${orgId}`
+  const role = org.data?.membership.role
+  const isAdmin = role === 'owner' || role === 'admin'
   // Unfinished modules (IPAM, Sites, …) stay hidden until they ship (PLAN P1-06).
   const nav = [
     {
@@ -410,6 +413,7 @@ export function OrgShell() {
       label: t('nav.admin'),
       items: [
         { to: `${base}/members`, label: t('nav.members'), icon: Users },
+        ...(isAdmin ? [{ to: `${base}/audit`, label: t('nav.audit'), icon: ScrollText }] : []),
         ...(session.data?.user.isSystemAdmin
           ? [{ to: '/admin/organizations', label: t('nav.system'), icon: ShieldCheck }]
           : []),
@@ -439,6 +443,7 @@ export function SystemShell() {
       items: [
         { to: '/admin/organizations', label: t('nav.systemOrganizations'), icon: Building2 },
         { to: '/admin/users', label: t('nav.systemUsers'), icon: Users },
+        { to: '/admin/audit', label: t('nav.audit'), icon: ScrollText },
         { to: '/admin/health', label: t('nav.systemHealth'), icon: Activity },
       ],
     },

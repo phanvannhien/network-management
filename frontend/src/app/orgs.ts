@@ -26,6 +26,7 @@ export function useMyOrganizations() {
 export function useOrganization(orgId: string) {
   return useQuery({
     queryKey: orgKeys.detail(orgId),
+    enabled: orgId !== '',
     retry: false,
     queryFn: async () => {
       const result = await api.GET('/orgs/{orgId}', { params: { path: { orgId } } })

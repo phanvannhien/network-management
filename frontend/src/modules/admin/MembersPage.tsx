@@ -116,7 +116,7 @@ function EditMemberSheet({
 
   return (
     <Sheet open={member !== null} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[420px] sm:max-w-[420px]">
+      <SheetContent className="data-[side=right]:w-[420px] data-[side=right]:sm:max-w-[420px]">
         <form onSubmit={onSubmit} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle>{t('members.editTitle', { name })}</SheetTitle>

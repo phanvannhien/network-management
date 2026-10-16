@@ -27,6 +27,7 @@ const membersKey = (orgId: string) => ['orgs', orgId, 'members'] as const
 export function useMembers(orgId: string) {
   return useQuery({
     queryKey: membersKey(orgId),
+    enabled: orgId !== '',
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/members', { params: { path: { orgId } } })
       if (r.data) return r.data.members
@@ -97,9 +98,10 @@ export function useRegenerateInvite(orgId: string) {
 
 const adminUsersKey = ['admin', 'users'] as const
 
-export function useAdminUsers() {
+export function useAdminUsers(enabled = true) {
   return useQuery({
     queryKey: adminUsersKey,
+    enabled,
     queryFn: async () => {
       const r = await api.GET('/admin/users')
       if (r.data) return r.data.users

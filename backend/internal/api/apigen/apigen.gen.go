@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -195,6 +196,40 @@ type AdminUser struct {
 // AdminUserList defines model for AdminUserList.
 type AdminUserList struct {
 	Users []AdminUser `json:"users"`
+}
+
+// AuditActorRef defines model for AuditActorRef.
+type AuditActorRef struct {
+	DisplayName string             `json:"displayName"`
+	Email       string             `json:"email"`
+	Id          openapi_types.UUID `json:"id"`
+}
+
+// AuditEntry One append-only audit record. before/after never contain secrets.
+type AuditEntry struct {
+	Action string         `json:"action"`
+	Actor  *AuditActorRef `json:"actor"`
+
+	// After Snapshot after the change (null when not applicable)
+	After interface{} `json:"after"`
+
+	// Before Snapshot before the change (null when not applicable)
+	Before     interface{} `json:"before"`
+	CreatedAt  time.Time   `json:"createdAt"`
+	Id         int64       `json:"id"`
+	Ip         string      `json:"ip"`
+	ObjectId   string      `json:"objectId"`
+	ObjectType string      `json:"objectType"`
+	RequestId  string      `json:"requestId"`
+	UserAgent  string      `json:"userAgent"`
+}
+
+// AuditPage defines model for AuditPage.
+type AuditPage struct {
+	Entries  []AuditEntry `json:"entries"`
+	Page     int32        `json:"page"`
+	PageSize int32        `json:"pageSize"`
+	Total    int64        `json:"total"`
 }
 
 // AuthSession defines model for AuthSession.
@@ -388,6 +423,27 @@ type UpdateOrganizationRequest struct {
 	Version int32 `json:"version"`
 }
 
+// AuditActor defines model for AuditActor.
+type AuditActor = openapi_types.UUID
+
+// AuditCategory defines model for AuditCategory.
+type AuditCategory = []string
+
+// AuditFrom defines model for AuditFrom.
+type AuditFrom = time.Time
+
+// AuditPageNumber defines model for AuditPageNumber.
+type AuditPageNumber = int32
+
+// AuditPageSize defines model for AuditPageSize.
+type AuditPageSize = int32
+
+// AuditQuery defines model for AuditQuery.
+type AuditQuery = string
+
+// AuditTo defines model for AuditTo.
+type AuditTo = time.Time
+
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
 
@@ -414,6 +470,26 @@ type NotFound = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
+
+// ListSystemAuditParams defines parameters for ListSystemAudit.
+type ListSystemAuditParams struct {
+	// Page 1-based page number
+	Page     *AuditPageNumber `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *AuditPageSize   `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Q Case-insensitive text in action, object id or actor email
+	Q *AuditQuery `form:"q,omitempty" json:"q,omitempty"`
+
+	// Category Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable
+	Category *AuditCategory `form:"category,omitempty" json:"category,omitempty"`
+	ActorId  *AuditActor    `form:"actorId,omitempty" json:"actorId,omitempty"`
+
+	// From Inclusive lower bound on the event time
+	From *AuditFrom `form:"from,omitempty" json:"from,omitempty"`
+
+	// To Exclusive upper bound on the event time
+	To *AuditTo `form:"to,omitempty" json:"to,omitempty"`
+}
 
 // AdminCreateOrganizationParams defines parameters for AdminCreateOrganization.
 type AdminCreateOrganizationParams struct {
@@ -480,6 +556,26 @@ type ActivateOrganizationParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ListOrgAuditParams defines parameters for ListOrgAudit.
+type ListOrgAuditParams struct {
+	// Page 1-based page number
+	Page     *AuditPageNumber `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *AuditPageSize   `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Q Case-insensitive text in action, object id or actor email
+	Q *AuditQuery `form:"q,omitempty" json:"q,omitempty"`
+
+	// Category Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable
+	Category *AuditCategory `form:"category,omitempty" json:"category,omitempty"`
+	ActorId  *AuditActor    `form:"actorId,omitempty" json:"actorId,omitempty"`
+
+	// From Inclusive lower bound on the event time
+	From *AuditFrom `form:"from,omitempty" json:"from,omitempty"`
+
+	// To Exclusive upper bound on the event time
+	To *AuditTo `form:"to,omitempty" json:"to,omitempty"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -535,6 +631,9 @@ type ServerInterface interface {
 	// AcceptAccountToken Set the password (and name, for invitations) using a one-time link
 	// (POST /account-tokens/{token})
 	AcceptAccountToken(w http.ResponseWriter, r *http.Request, token string)
+	// ListSystemAudit System-level audit events without an organization (system admin), newest first
+	// (GET /admin/audit)
+	ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(w http.ResponseWriter, r *http.Request)
@@ -595,6 +694,9 @@ type ServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams)
+	// ListOrgAudit Audit log of the organization (owner/admin), newest first
+	// (GET /orgs/{orgId}/audit)
+	ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams)
 	// ListMembers Members of the organization
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -625,6 +727,12 @@ func (_ Unimplemented) InspectAccountToken(w http.ResponseWriter, r *http.Reques
 // AcceptAccountToken Set the password (and name, for invitations) using a one-time link
 // (POST /account-tokens/{token})
 func (_ Unimplemented) AcceptAccountToken(w http.ResponseWriter, r *http.Request, token string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSystemAudit System-level audit events without an organization (system admin), newest first
+// (GET /admin/audit)
+func (_ Unimplemented) ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -748,6 +856,12 @@ func (_ Unimplemented) ActivateOrganization(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListOrgAudit Audit log of the organization (owner/admin), newest first
+// (GET /orgs/{orgId}/audit)
+func (_ Unimplemented) ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMembers Members of the organization
 // (GET /orgs/{orgId}/members)
 func (_ Unimplemented) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
@@ -830,6 +944,117 @@ func (siw *ServerInterfaceWrapper) AcceptAccountToken(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AcceptAccountToken(w, r, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListSystemAudit operation middleware
+func (siw *ServerInterfaceWrapper) ListSystemAudit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSystemAuditParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pageSize"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "actorId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "actorId", r.URL.Query(), &params.ActorId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "actorId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "actorId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSystemAudit(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1597,6 +1822,126 @@ func (siw *ServerInterfaceWrapper) ActivateOrganization(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListOrgAudit operation middleware
+func (siw *ServerInterfaceWrapper) ListOrgAudit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrgAuditParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pageSize"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "actorId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "actorId", r.URL.Query(), &params.ActorId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "actorId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "actorId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrgAudit(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -2046,6 +2391,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/account-tokens/{token}", wrapper.AcceptAccountToken)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/audit", wrapper.ListOrgAudit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/audit", wrapper.ListSystemAudit)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/users", wrapper.AdminListUsers)
 	})
 	r.Group(func(r chi.Router) {
@@ -2153,6 +2504,70 @@ func (response AcceptAccountToken404JSONResponse) VisitAcceptAccountTokenRespons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSystemAuditRequestObject struct {
+	Params ListSystemAuditParams
+}
+
+type ListSystemAuditResponseObject interface {
+	VisitListSystemAuditResponse(w http.ResponseWriter) error
+}
+
+type ListSystemAudit200JSONResponse AuditPage
+
+func (response ListSystemAudit200JSONResponse) VisitListSystemAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSystemAudit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListSystemAudit400JSONResponse) VisitListSystemAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSystemAudit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSystemAudit401JSONResponse) VisitListSystemAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSystemAudit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListSystemAudit403JSONResponse) VisitListSystemAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3280,6 +3695,85 @@ func (response ActivateOrganization404JSONResponse) VisitActivateOrganizationRes
 	return err
 }
 
+type ListOrgAuditRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListOrgAuditParams
+}
+
+type ListOrgAuditResponseObject interface {
+	VisitListOrgAuditResponse(w http.ResponseWriter) error
+}
+
+type ListOrgAudit200JSONResponse AuditPage
+
+func (response ListOrgAudit200JSONResponse) VisitListOrgAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAudit400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListOrgAudit400JSONResponse) VisitListOrgAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAudit401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListOrgAudit401JSONResponse) VisitListOrgAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAudit403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListOrgAudit403JSONResponse) VisitListOrgAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAudit404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListOrgAudit404JSONResponse) VisitListOrgAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMembersRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -3681,6 +4175,9 @@ type StrictServerInterface interface {
 	// AcceptAccountToken Set the password (and name, for invitations) using a one-time link
 	// (POST /account-tokens/{token})
 	AcceptAccountToken(ctx context.Context, request AcceptAccountTokenRequestObject) (AcceptAccountTokenResponseObject, error)
+	// ListSystemAudit System-level audit events without an organization (system admin), newest first
+	// (GET /admin/audit)
+	ListSystemAudit(ctx context.Context, request ListSystemAuditRequestObject) (ListSystemAuditResponseObject, error)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(ctx context.Context, request AdminListOrganizationsRequestObject) (AdminListOrganizationsResponseObject, error)
@@ -3741,6 +4238,9 @@ type StrictServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(ctx context.Context, request ActivateOrganizationRequestObject) (ActivateOrganizationResponseObject, error)
+	// ListOrgAudit Audit log of the organization (owner/admin), newest first
+	// (GET /orgs/{orgId}/audit)
+	ListOrgAudit(ctx context.Context, request ListOrgAuditRequestObject) (ListOrgAuditResponseObject, error)
 	// ListMembers Members of the organization
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -3849,6 +4349,32 @@ func (sh *strictHandler) AcceptAccountToken(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AcceptAccountTokenResponseObject); ok {
 		if err := validResponse.VisitAcceptAccountTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSystemAudit operation middleware
+func (sh *strictHandler) ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams) {
+	var request ListSystemAuditRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSystemAudit(ctx, request.(ListSystemAuditRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSystemAudit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSystemAuditResponseObject); ok {
+		if err := validResponse.VisitListSystemAuditResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4406,6 +4932,33 @@ func (sh *strictHandler) ActivateOrganization(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ActivateOrganizationResponseObject); ok {
 		if err := validResponse.VisitActivateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOrgAudit operation middleware
+func (sh *strictHandler) ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams) {
+	var request ListOrgAuditRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOrgAudit(ctx, request.(ListOrgAuditRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOrgAudit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOrgAuditResponseObject); ok {
+		if err := validResponse.VisitListOrgAuditResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -320,6 +320,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Audit log of the organization (owner/admin), newest first */
+        get: operations["listOrgAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System-level audit events without an organization (system admin), newest first */
+        get: operations["listSystemAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/users": {
         parameters: {
             query?: never;
@@ -612,6 +649,39 @@ export interface components {
             displayName?: string;
             password: string;
         };
+        AuditActorRef: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            displayName: string;
+        };
+        /** @description One append-only audit record. before/after never contain secrets. */
+        AuditEntry: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            createdAt: string;
+            actor: components["schemas"]["AuditActorRef"] | null;
+            action: string;
+            objectType: string;
+            objectId: string;
+            /** @description Snapshot before the change (null when not applicable) */
+            before: unknown;
+            /** @description Snapshot after the change (null when not applicable) */
+            after: unknown;
+            ip: string;
+            userAgent: string;
+            requestId: string;
+        };
+        AuditPage: {
+            entries: components["schemas"]["AuditEntry"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+        };
         AdminUser: {
             /** Format: uuid */
             id: string;
@@ -690,6 +760,18 @@ export interface components {
         UserId: string;
         /** @description Organization (tenant) the request is scoped to (ADR-023) */
         OrgId: string;
+        /** @description 1-based page number */
+        AuditPageNumber: number;
+        AuditPageSize: number;
+        /** @description Case-insensitive text in action, object id or actor email */
+        AuditQuery: string;
+        /** @description Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable */
+        AuditCategory: string[];
+        AuditActor: string;
+        /** @description Inclusive lower bound on the event time */
+        AuditFrom: string;
+        /** @description Exclusive upper bound on the event time */
+        AuditTo: string;
         CsrfToken: string;
     };
     requestBodies: never;
@@ -1312,6 +1394,82 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listOrgAudit: {
+        parameters: {
+            query?: {
+                /** @description 1-based page number */
+                page?: components["parameters"]["AuditPageNumber"];
+                pageSize?: components["parameters"]["AuditPageSize"];
+                /** @description Case-insensitive text in action, object id or actor email */
+                q?: components["parameters"]["AuditQuery"];
+                /** @description Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable */
+                category?: components["parameters"]["AuditCategory"];
+                actorId?: components["parameters"]["AuditActor"];
+                /** @description Inclusive lower bound on the event time */
+                from?: components["parameters"]["AuditFrom"];
+                /** @description Exclusive upper bound on the event time */
+                to?: components["parameters"]["AuditTo"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listSystemAudit: {
+        parameters: {
+            query?: {
+                /** @description 1-based page number */
+                page?: components["parameters"]["AuditPageNumber"];
+                pageSize?: components["parameters"]["AuditPageSize"];
+                /** @description Case-insensitive text in action, object id or actor email */
+                q?: components["parameters"]["AuditQuery"];
+                /** @description Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable */
+                category?: components["parameters"]["AuditCategory"];
+                actorId?: components["parameters"]["AuditActor"];
+                /** @description Inclusive lower bound on the event time */
+                from?: components["parameters"]["AuditFrom"];
+                /** @description Exclusive upper bound on the event time */
+                to?: components["parameters"]["AuditTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     adminListUsers: {

@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-05 Audit log
+- Đã làm:
+  - API (OpenAPI trước): `GET /api/orgs/{orgId}/audit` (owner/admin) và `GET /api/admin/audit` (system admin, chỉ sự kiện
+    không thuộc tổ chức — đăng nhập, MFA, tài khoản, quản trị người dùng; ADR-023). Phân trang server (page/pageSize ≤ 200,
+    total), lọc `category` (tiền tố action, nhiều giá trị), `actorId`, `from`/`to`, `q` (action / đối tượng / email,
+    ký tự `%` `_` được escape). Mới nhất trước. Migration 000006: index cho sự kiện hệ thống và theo người thực hiện.
+  - Bổ sung trước/sau cho vô hiệu hóa / kích hoạt lại / reset MFA người dùng (các thao tác ghi khác đã có từ P1-03/04).
+  - Màn hình Audit log (Quản trị › Audit log, chỉ owner/admin thấy mục menu) và Hệ thống › Audit log: DataTable,
+    lọc nhóm / khoảng thời gian (24h, 7 ngày, 30 ngày, 12 tháng) / người thực hiện, tên thao tác tiếng Việt qua i18n
+    (action lạ hiện tên gốc), sheet chi tiết có bảng Trường | Trước | Sau tô dòng thay đổi, IP, trình duyệt, request ID.
+  - Sửa: sheet không nhận độ rộng tùy chỉnh (ảnh hưởng cả sheet Thành viên); hook chỉ gọi API khi cần (`enabled`).
+- Test / cách kiểm tra:
+  - Backend: chặn chéo tổ chức (A không đọc audit B, dòng của B không lọt vào A), editor/viewer 403, admin 200, lọc +
+    phân trang + escape LIKE + 400 khi tham số sai, audit hệ thống chỉ cho system admin và không chứa dòng của tổ chức,
+    system admin không phải thành viên → 404 với audit tổ chức, trước/sau của `user.disable`. Mutation: bỏ escape, bỏ kiểm
+    tra quyền, bỏ lọc tổ chức → đều có test fail.
+  - Frontend: danh sách + sheet diff, filter gửi `category`/`from` lên API, chỉ một khoảng thời gian một lúc, viewer bị
+    chuyển về Dashboard, audit hệ thống. `make check` pass (142 test frontend).
+  - Ảnh `docs/ui-screens/after/31..33-*`; `a11y-report.md` 0 vấn đề (28 trang × 2 theme).
+- Còn dở / lỗi đã biết:
+  - Audit export: chưa có export phía server — ghi `export.*` khi làm P1-22 (đã ghi vào PLAN).
+  - Đổi "tổ chức dùng gần nhất" (`/activate`) là tùy chọn giao diện, không ghi audit.
+  - `object_id` của người dùng lúc là email (sự kiện tài khoản/quản trị), lúc là UUID (thành viên) — giữ như dữ liệu đã ghi.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không (quyền xem audit tổ chức = owner/admin, theo nhóm "Quản trị" của SRS §2).
+- Task tiếp theo đề xuất: P1-06 App shell — phần lớn đã làm ở UI Bước 2–3; còn chuyển ngôn ngữ vi/en trong menu tài khoản
+  và kết quả Ctrl+K từ API. Sau đó P1-07 Sites/Location/Rack.
+
 ## 2026-10-16 — UI Bước 3 · tách bundle theo route (kết thúc Bước 3)
 - Đã làm: các trang module (Thiết bị, Thành viên, Quản trị, Tình trạng hệ thống) và editor tải lười (`React.lazy`);
   shell giữ nguyên khi trang con đang tải (Suspense + skeleton ở Outlet). Bundle chính 1.073 kB → 389 kB, editor 247 kB riêng.

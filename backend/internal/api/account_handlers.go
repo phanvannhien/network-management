@@ -108,7 +108,10 @@ func (s *Server) AdminDisableUser(ctx context.Context, req apigen.AdminDisableUs
 		if err := q.DeleteUserSessions(ctx, target); err != nil {
 			return fmt.Errorf("revoke sessions: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{Actor: sess.UserID, Action: "user.disable", ObjectType: "user", ObjectID: user.Email, Meta: infoFrom(ctx).meta})
+		return audit.Write(ctx, q, audit.Entry{
+			Actor: sess.UserID, Action: "user.disable", ObjectType: "user", ObjectID: user.Email,
+			Before: userState{Disabled: false}, After: userState{Disabled: true}, Meta: infoFrom(ctx).meta,
+		})
 	})
 	switch {
 	case notFound:
@@ -134,7 +137,10 @@ func (s *Server) AdminEnableUser(ctx context.Context, req apigen.AdminEnableUser
 		if err != nil {
 			return fmt.Errorf("enable user: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{Actor: sess.UserID, Action: "user.enable", ObjectType: "user", ObjectID: user.Email, Meta: infoFrom(ctx).meta})
+		return audit.Write(ctx, q, audit.Entry{
+			Actor: sess.UserID, Action: "user.enable", ObjectType: "user", ObjectID: user.Email,
+			Before: userState{Disabled: true}, After: userState{Disabled: false}, Meta: infoFrom(ctx).meta,
+		})
 	})
 	if notFound {
 		return apigen.AdminEnableUser404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy người dùng"}}, nil
@@ -168,7 +174,10 @@ func (s *Server) AdminResetMfa(ctx context.Context, req apigen.AdminResetMfaRequ
 		if err := q.DeleteUserSessions(ctx, target); err != nil {
 			return fmt.Errorf("revoke sessions: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{Actor: sess.UserID, Action: "user.mfa_reset", ObjectType: "user", ObjectID: user.Email, Meta: infoFrom(ctx).meta})
+		return audit.Write(ctx, q, audit.Entry{
+			Actor: sess.UserID, Action: "user.mfa_reset", ObjectType: "user", ObjectID: user.Email,
+			Before: mfaState{MFAEnabled: true}, After: mfaState{MFAEnabled: false}, Meta: infoFrom(ctx).meta,
+		})
 	})
 	if notFound {
 		return apigen.AdminResetMfa404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy người dùng"}}, nil
@@ -209,4 +218,13 @@ func (s *Server) AdminCreatePasswordReset(ctx context.Context, req apigen.AdminC
 		return nil, err
 	}
 	return apigen.AdminCreatePasswordReset200JSONResponse{ResetToken: token}, nil
+}
+
+// Audit snapshots for system user administration (no secrets).
+type userState struct {
+	Disabled bool `json:"disabled"`
+}
+
+type mfaState struct {
+	MFAEnabled bool `json:"mfaEnabled"`
 }

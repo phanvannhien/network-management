@@ -771,3 +771,100 @@ describe('app shell and device pages', () => {
     expect(await screen.findByRole('heading', { name: 'Không tìm thấy trang' })).toBeInTheDocument()
   })
 })
+
+const AUDIT_ENTRY = {
+  id: 42,
+  createdAt: '2026-10-16T02:03:04Z',
+  actor: { id: SESSION.user.id, email: 'admin@example.com', displayName: 'Admin' },
+  action: 'member.update',
+  objectType: 'user',
+  objectId: '00000000-0000-4000-8000-000000000002',
+  before: { email: 'viewer@example.com', role: 'viewer', permissions: [] },
+  after: { email: 'viewer@example.com', role: 'editor', permissions: [] },
+  ip: '10.0.0.5',
+  userAgent: 'Mozilla/5.0',
+  requestId: 'req-1',
+}
+
+describe('audit log', () => {
+  it('lists organization events and shows before/after with changed fields', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+      [`GET /api/orgs/${ORG_ID}/audit`]: () =>
+        json({ entries: [AUDIT_ENTRY], total: 1, page: 1, pageSize: 50 }),
+    })
+    renderAt(`/o/${ORG_ID}/audit`)
+    expect(await screen.findByText('Đổi vai trò/quyền')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Chi tiết #42' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Chi tiết sự kiện #42' })
+    const roleRow = within(sheet).getByText('role').closest('tr')!
+    expect(roleRow).toHaveAttribute('data-changed', 'true')
+    expect(roleRow).toHaveTextContent('"viewer""editor"')
+    expect(within(sheet).getByText('email').closest('tr')).not.toHaveAttribute('data-changed')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Đóng' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    // Server-side filters: category goes to the API as a query parameter.
+    fireEvent.click(screen.getByRole('button', { name: /Nhóm/ }))
+    fireEvent.click(await screen.findByRole('menuitemcheckbox', { name: 'Thành viên' }))
+    await waitFor(() =>
+      expect(
+        calls.some((r) => new URL(r.url).searchParams.getAll('category').includes('member')),
+      ).toBe(true),
+    )
+  })
+
+  it('a period filter sends a from= bound and only one period at a time', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [] }),
+      [`GET /api/orgs/${ORG_ID}/audit`]: () =>
+        json({ entries: [], total: 0, page: 1, pageSize: 50 }),
+    })
+    renderAt(`/o/${ORG_ID}/audit`)
+    expect(await screen.findByText('Không có sự kiện khớp bộ lọc')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Khoảng thời gian/ }))
+    fireEvent.click(await screen.findByRole('menuitemcheckbox', { name: '7 ngày qua' }))
+    fireEvent.click(await screen.findByRole('menuitemcheckbox', { name: '24 giờ qua' }))
+    await waitFor(() => {
+      const last = new URL(calls.filter((r) => r.url.includes('/audit')).at(-1)!.url)
+      const from = Date.parse(last.searchParams.get('from') ?? '')
+      expect(Date.now() - from).toBeGreaterThan(23 * 3600_000)
+      expect(Date.now() - from).toBeLessThan(25 * 3600_000)
+    })
+    expect(screen.getByRole('menuitemcheckbox', { name: '7 ngày qua' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+  })
+
+  it('viewers are sent back to the organization page', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
+      [`GET /api/orgs/${ORG_ID}`]: () =>
+        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+    })
+    renderAt(`/o/${ORG_ID}/audit`)
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+  })
+
+  it('system audit lists events without an organization', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/users': () => json({ users: [] }),
+      'GET /api/admin/audit': () =>
+        json({
+          entries: [
+            { ...AUDIT_ENTRY, id: 7, action: 'auth.login_failed', before: null, after: null },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 50,
+        }),
+    })
+    renderAt('/admin/audit')
+    expect(await screen.findByRole('heading', { name: 'Audit log hệ thống' })).toBeInTheDocument()
+    expect(await screen.findByText('Đăng nhập thất bại')).toBeInTheDocument()
+  })
+})

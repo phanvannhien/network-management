@@ -28,7 +28,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-02 MFA TOTP**: bật/tắt, mã khôi phục; bắt buộc với owner/admin; lưu secret mã hóa (envelope, `NTB_MASTER_KEY`).
 - [x] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module.
 - [x] **P1-04 Người dùng & vai trò**: mời/tạo user, membership nhiều tổ chức, vai trò owner/admin/editor/viewer, giới hạn theo site; kiểm tra quyền ở mọi endpoint.
-- [ ] **P1-05 Audit log**: ghi trước/sau cho thao tác ghi, đăng nhập, export; màn hình xem/lọc audit.
+- [x] **P1-05 Audit log**: ghi trước/sau cho thao tác ghi, đăng nhập, export; màn hình xem/lọc audit. *(export chưa có phía server — ghi audit `export.*` làm trong P1-22)*
 - [ ] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.
 
 ### Dữ liệu hạ tầng
@@ -51,7 +51,7 @@ Phase hiện tại: **Phase 0**
 
 ### Nhập/xuất & tiện ích
 - [ ] **P1-21 Import Excel thiết bị**: file mẫu tải về, ánh xạ cột, xem trước, lỗi từng dòng, tạo mới/cập nhật theo hostname hoặc S/N, chạy nền có tiến trình.
-- [ ] **P1-22 Export**: PNG (1x–4x) / SVG có legend; Excel danh sách thiết bị; `.ntb.json` export/import theo `schema/ntb.schema.json` (không có bí mật).
+- [ ] **P1-22 Export**: PNG (1x–4x) / SVG có legend; Excel danh sách thiết bị; `.ntb.json` export/import theo `schema/ntb.schema.json` (không có bí mật); mỗi lần export ghi audit `export.*` (từ P1-05).
 - [ ] **P1-23 Tìm kiếm toàn cục**: hostname, IP, MAC, S/N, part number, site; kết quả mở đúng trang/zoom tới node trên sơ đồ.
 - [ ] **P1-24 Dashboard cơ bản**: số thiết bị theo site/loại/trạng thái, top vấn đề validation, thiết bị thiếu thông tin.
 - [ ] **P1-25 Dữ liệu mẫu & benchmark**: seed tổ chức mẫu "Văn phòng mẫu" (FortiGate 60F LAN 10.72.114.1/24 + CCTV 192.168.114.1/24 + NAT IP; VPN tới 3 firewall đối tác managed=false; SW01–04 10.72.114.2–5; SW CCTV 192.168.114.2; NVR; nhóm PC (DHCP .20–.199), IP Phone (.201–.220, 3 thành viên), Wi-Fi (.11–.17), WLC (.10), Access Control (.19), Printer (.25), CCTV (192.168.114.11–15); 2 link ISP) — dùng tên công ty giả; script sinh 500/2.000 thiết bị; đo FPS, thời gian mở, thời gian lọc bảng.

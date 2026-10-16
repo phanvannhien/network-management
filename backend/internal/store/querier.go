@@ -20,7 +20,9 @@ type Querier interface {
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
+	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
@@ -57,6 +59,11 @@ type Querier interface {
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
 	ListMyOrganizations(ctx context.Context, userID pgtype.UUID) ([]ListMyOrganizationsRow, error)
+	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
+	// @q must already have LIKE wildcards escaped by the caller.
+	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
+	// System-level events only (no organization): sign-ins, MFA, user administration (ADR-023).
+	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.

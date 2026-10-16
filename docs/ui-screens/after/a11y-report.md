@@ -1,6 +1,6 @@
 # Kiểm tra truy cập (axe-core + bàn phím)
 
-Chạy: 2026-10-16T06:44:59.591Z · http://localhost:5180
+Chạy: 2026-10-16T07:01:19.273Z · http://localhost:5180
 Tổng vấn đề: **0**
 
 
@@ -29,6 +29,9 @@ Tổng vấn đề: **0**
 ## ✅ 27-system-health — light
 ## ✅ 28-org-home-edit — light
 ## ✅ 29-editor — light
+## ✅ 31-audit-org — light
+## ✅ 32-audit-org-details — light
+## ✅ 33-audit-system — light
 ## ✅ 01-login — dark
 ## ✅ 02-forgot-password — dark
 ## ✅ 03-mfa-verify — dark
@@ -54,3 +57,6 @@ Tổng vấn đề: **0**
 ## ✅ 27-system-health — dark
 ## ✅ 28-org-home-edit — dark
 ## ✅ 29-editor — dark
+## ✅ 31-audit-org — dark
+## ✅ 32-audit-org-details — dark
+## ✅ 33-audit-system — dark

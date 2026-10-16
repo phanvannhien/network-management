@@ -488,6 +488,62 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/audit:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listOrgAudit
+      summary: Audit log of the organization (owner/admin), newest first
+      parameters:
+        - $ref: '#/components/parameters/AuditPageNumber'
+        - $ref: '#/components/parameters/AuditPageSize'
+        - $ref: '#/components/parameters/AuditQuery'
+        - $ref: '#/components/parameters/AuditCategory'
+        - $ref: '#/components/parameters/AuditActor'
+        - $ref: '#/components/parameters/AuditFrom'
+        - $ref: '#/components/parameters/AuditTo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/audit:
+    get:
+      operationId: listSystemAudit
+      summary: System-level audit events without an organization (system admin), newest first
+      parameters:
+        - $ref: '#/components/parameters/AuditPageNumber'
+        - $ref: '#/components/parameters/AuditPageSize'
+        - $ref: '#/components/parameters/AuditQuery'
+        - $ref: '#/components/parameters/AuditCategory'
+        - $ref: '#/components/parameters/AuditActor'
+        - $ref: '#/components/parameters/AuditFrom'
+        - $ref: '#/components/parameters/AuditTo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /admin/users:
     get:
       operationId: adminListUsers
@@ -605,6 +661,63 @@ components:
       schema:
         type: string
         format: uuid
+    AuditPageNumber:
+      name: page
+      in: query
+      description: 1-based page number
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 1
+    AuditPageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 200
+        default: 50
+    AuditQuery:
+      name: q
+      in: query
+      description: Case-insensitive text in action, object id or actor email
+      schema:
+        type: string
+        maxLength: 200
+    AuditCategory:
+      name: category
+      in: query
+      description: Action prefix before the dot (auth, mfa, member, organization, user, …); repeatable
+      style: form
+      explode: true
+      schema:
+        type: array
+        maxItems: 20
+        items:
+          type: string
+          pattern: '^[a-z_]{1,40}$'
+    AuditActor:
+      name: actorId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    AuditFrom:
+      name: from
+      in: query
+      description: Inclusive lower bound on the event time
+      schema:
+        type: string
+        format: date-time
+    AuditTo:
+      name: to
+      in: query
+      description: Exclusive upper bound on the event time
+      schema:
+        type: string
+        format: date-time
     CsrfToken:
       name: X-CSRF-Token
       in: header
@@ -1038,6 +1151,68 @@ components:
         password:
           type: string
           maxLength: 1024
+
+    AuditActorRef:
+      type: object
+      required: [id, email, displayName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+
+    AuditEntry:
+      type: object
+      description: One append-only audit record. before/after never contain secrets.
+      required: [id, createdAt, actor, action, objectType, objectId, before, after, ip, userAgent, requestId]
+      properties:
+        id:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        actor:
+          oneOf:
+            - $ref: '#/components/schemas/AuditActorRef'
+            - type: 'null'
+        action:
+          type: string
+        objectType:
+          type: string
+        objectId:
+          type: string
+        before:
+          description: Snapshot before the change (null when not applicable)
+        after:
+          description: Snapshot after the change (null when not applicable)
+        ip:
+          type: string
+        userAgent:
+          type: string
+        requestId:
+          type: string
+
+    AuditPage:
+      type: object
+      required: [entries, total, page, pageSize]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
 
     AdminUser:
       type: object
