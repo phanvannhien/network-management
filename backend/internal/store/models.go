@@ -57,6 +57,7 @@ type Session struct {
 	CreatedAt            pgtype.Timestamptz
 	LastSeenAt           pgtype.Timestamptz
 	ExpiresAt            pgtype.Timestamptz
+	CsrfToken            string
 }
 
 type User struct {

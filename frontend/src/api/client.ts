@@ -1,4 +1,4 @@
-import createClient from 'openapi-fetch'
+import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './schema'
 
 /**
@@ -13,3 +13,23 @@ export const api = createClient<paths>({
 })
 
 export type Health = components['schemas']['Health']
+export type AuthSession = components['schemas']['AuthSession']
+export type CurrentUser = components['schemas']['CurrentUser']
+
+// CSRF token from /auth/login or /auth/me, attached to every state-changing request (SRS §14).
+let csrfToken: string | null = null
+
+export function setCsrfToken(token: string | null): void {
+  csrfToken = token
+}
+
+const csrfMiddleware: Middleware = {
+  onRequest({ request }) {
+    if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+      request.headers.set('X-CSRF-Token', csrfToken)
+    }
+    return request
+  },
+}
+
+api.use(csrfMiddleware)

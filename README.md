@@ -39,5 +39,15 @@ Hợp đồng API: `api/openapi.yaml` (OpenAPI 3.1). Quy trình: sửa `api/open
 ## Triển khai
 
 ```sh
-docker compose -f deploy/docker-compose.yml up -d --build   # từ P0-04
+cp deploy/.env.example deploy/.env    # đổi mật khẩu DB, đặt NTB_MASTER_KEY
+docker compose -f deploy/docker-compose.yml up -d --build   # web :8068, api, db
+```
+
+Tạo system admin đầu tiên (mật khẩu ≥ 12 ký tự, đọc từ stdin để không lộ trong lịch sử shell):
+
+```sh
+# Docker
+docker compose -f deploy/docker-compose.yml exec -T api ntb admin create --email admin@example.com --name "Admin" < matkhau.txt
+# Dev (dùng DB dev ở cổng 5468)
+cd backend && go run ./cmd/ntb admin create --email admin@example.com --name "Admin"
 ```

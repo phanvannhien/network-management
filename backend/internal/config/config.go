@@ -16,6 +16,9 @@ type Config struct {
 	DatabaseURL string
 	// MigrateOnStart applies pending migrations before serving (enabled in Docker Compose).
 	MigrateOnStart bool
+	// TrustedProxies are CIDRs whose X-Forwarded-For / X-Forwarded-Proto headers are honoured
+	// (loopback for the Vite dev proxy; Compose adds the Docker network for nginx).
+	TrustedProxies string
 }
 
 // Load reads settings from the environment, falling back to dev defaults.
@@ -25,6 +28,7 @@ func Load() Config {
 		Version:        getenv("NTB_VERSION", "dev"),
 		DatabaseURL:    getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 		MigrateOnStart: getbool("NTB_MIGRATE_ON_START", false),
+		TrustedProxies: getenv("NTB_TRUSTED_PROXIES", "127.0.0.1/32,::1/128"),
 	}
 }
 

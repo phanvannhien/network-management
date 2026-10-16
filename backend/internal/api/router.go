@@ -10,20 +10,37 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
 )
 
 // NewRouter returns the root handler; every route lives under /api (nginx proxies /api as-is).
-func NewRouter(logger *slog.Logger, server apigen.StrictServerInterface) http.Handler {
+func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResolver) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	// No middleware.RealIP: it trusts client-supplied X-Forwarded-For (IP spoofing).
-	// Client IP behind the trusted nginx proxy is resolved explicitly in P1-01 (rate limit, audit).
 	r.Use(requestLogger(logger))
 	r.Use(middleware.Recoverer)
+	r.Use(withRequestInfo(resolver))
+	r.Use(withSession(server.auth))
+	r.Use(csrfGuard)
 
-	apigen.HandlerWithOptions(apigen.NewStrictHandler(server, nil), apigen.ChiServerOptions{
+	strict := apigen.NewStrictHandlerWithOptions(server, nil, apigen.StrictHTTPServerOptions{
+		// Malformed JSON / params: generic 400, no parser internals echoed back.
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			logger.InfoContext(r.Context(), "bad request", "error", err, "path", r.URL.Path)
+			writeError(w, http.StatusBadRequest, "Yêu cầu không hợp lệ")
+		},
+		// Handler errors: log the detail, return a generic 500 (never leak DB errors to clients).
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			logger.ErrorContext(r.Context(), "handler error", "error", err, "path", r.URL.Path)
+			writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
+		},
+	})
+	apigen.HandlerWithOptions(strict, apigen.ChiServerOptions{
 		BaseURL:    "/api",
 		BaseRouter: r,
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			writeError(w, http.StatusBadRequest, err.Error())
+		},
 	})
 	return r
 }

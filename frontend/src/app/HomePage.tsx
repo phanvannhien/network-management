@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { api, type Health } from '../api/client'
+import { useLogout, useSession } from './auth'
 
 // 503 still carries a Health body (database unavailable), so both branches return it.
 async function fetchHealth(): Promise<Health> {
@@ -12,13 +13,22 @@ async function fetchHealth(): Promise<Health> {
   throw new Error(`healthz: HTTP ${status}`)
 }
 
-/** Temporary landing page; replaced by the app shell + login in P1-01/P1-06. */
+/** Temporary landing page; replaced by the app shell in P1-06. */
 export function HomePage() {
   const health = useQuery({ queryKey: ['healthz'], queryFn: fetchHealth, retry: false })
+  const session = useSession()
+  const logout = useLogout()
+  const user = session.data?.user
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
       <h1 className="text-2xl font-semibold">Network Topology Builder</h1>
+      {user && (
+        <p className="text-sm">
+          Xin chào <strong>{user.displayName || user.email}</strong>
+          {user.isSystemAdmin && <span className="text-muted-foreground"> (system admin)</span>}
+        </p>
+      )}
       <p className="text-sm" data-testid="api-status">
         API:{' '}
         {health.isPending
@@ -27,9 +37,19 @@ export function HomePage() {
             ? `không kết nối được (${health.error.message})`
             : `${health.data.status} · ${health.data.version} · DB ${health.data.database}`}
       </p>
-      <Link to="/editor" className="text-sm text-primary underline">
-        Mở editor sơ đồ (bản đang refactor)
-      </Link>
+      <div className="flex gap-4 text-sm">
+        <Link to="/editor" className="text-primary underline">
+          Mở editor sơ đồ (bản đang refactor)
+        </Link>
+        <button
+          type="button"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+          className="text-muted-foreground underline hover:text-foreground"
+        >
+          Đăng xuất
+        </button>
+      </div>
     </main>
   )
 }

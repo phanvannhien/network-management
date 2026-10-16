@@ -2,14 +2,22 @@ openapi: 3.1.0
 info:
   title: Network Topology Builder API
   version: 0.1.0
-  description: Contract between frontend and backend (ADR-017). Edit this file first, then run `make gen`.
+  description: |
+    Contract between frontend and backend (ADR-017). Edit this file first, then run `make gen`.
+
+    Authentication: session cookie `ntb_session` (HttpOnly, SameSite=Lax) set by POST /auth/login.
+    Every state-changing request except login must send header `X-CSRF-Token` with the token
+    returned by /auth/login or /auth/me.
 servers:
   - url: /api
+security:
+  - sessionCookie: []
 paths:
   /healthz:
     get:
       operationId: getHealthz
       summary: Liveness + database check
+      security: []
       responses:
         '200':
           description: API and database are up
@@ -23,7 +31,91 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Sign in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Signed in; session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Too many attempts; retry later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Sign out and clear the session cookie
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Signed out
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      operationId: getCurrentSession
+      summary: Current user and CSRF token
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: ntb_session
+
+  parameters:
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Not signed in, or wrong credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
   schemas:
     Health:
       type: object
@@ -37,3 +129,45 @@ components:
         database:
           type: string
           enum: [ok, unavailable]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          maxLength: 1024
+
+    CurrentUser:
+      type: object
+      required: [id, email, displayName, isSystemAdmin]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        isSystemAdmin:
+          type: boolean
+
+    AuthSession:
+      type: object
+      required: [user, csrfToken]
+      properties:
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+        csrfToken:
+          type: string
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

@@ -1,5 +1,5 @@
-# Build stage — go.mod requires go >= 1.25.11
-FROM golang:1.25-alpine AS build
+# Build stage — latest stable Go (go.mod minimum is 1.26 via golang.org/x/crypto)
+FROM golang:1.27-alpine AS build
 WORKDIR /src
 ENV CGO_ENABLED=0 GOWORK=off
 COPY backend/go.mod backend/go.sum ./

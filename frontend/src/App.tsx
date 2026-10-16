@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { HomePage } from './app/HomePage'
+import { LoginPage } from './app/LoginPage'
+import { RequireAuth } from './app/RequireAuth'
 import { CanvasView } from './editor/canvas/CanvasView'
 import { Palette } from './editor/panels/Palette'
 import { Sidebar } from './editor/panels/Sidebar'
@@ -23,8 +25,23 @@ function EditorPage() {
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/editor" element={<EditorPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <HomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/editor"
+        element={
+          <RequireAuth>
+            <EditorPage />
+          </RequireAuth>
+        }
+      />
     </Routes>
   )
 }

@@ -6,11 +6,27 @@ package store
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	CreateSession(ctx context.Context, arg CreateSessionParams) error
+	// Users and sessions are global (not tenant-scoped): a user can belong to several organizations.
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExpiredSessions(ctx context.Context) (int64, error)
+	DeleteSession(ctx context.Context, tokenHash []byte) error
+	// Returns the live session joined with its (enabled) user.
+	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
+	// Increments the failure counter and locks the account once it reaches the threshold.
+	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
+	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
+	TouchSession(ctx context.Context, arg TouchSessionParams) error
 }
 
 var _ Querier = (*Queries)(nil)

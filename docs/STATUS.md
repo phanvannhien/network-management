@@ -5,6 +5,26 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-01 Đăng nhập (+ tick P0-05)
+- Đã làm:
+  - Migration `000002_session_csrf` (csrf_token theo session). Query sqlc `auth.sql` (user, lockout, session, audit).
+  - `internal/auth`: argon2id PHC (m=64MiB,t=3,p=2; so sánh constant-time; email lạ vẫn băm giả chống dò thời gian); token 32 byte, DB chỉ lưu SHA-256; session idle 12h / tối đa 7 ngày, gia hạn trượt (ghi DB tối đa 5 phút/lần); khóa 15 phút sau 5 lần sai; rate limit bộ nhớ 10/phút/IP + 5/phút/email (429); `ClientIPResolver` chỉ tin X-Forwarded-For từ `NTB_TRUSTED_PROXIES` và lấy hop không tin cậy ngoài cùng bên phải; audit `auth.login` / `auth.login_failed` / `auth.login_rate_limited` / `auth.logout` / `user.create` (email chuẩn, không bao giờ có mật khẩu).
+  - API (OpenAPI trước): `POST /auth/login` (Set-Cookie `ntb_session` HttpOnly, SameSite=Lax, Secure khi HTTPS qua proxy tin cậy), `POST /auth/logout`, `GET /auth/me` (user + CSRF token). Middleware: request info, nạp session, `csrfGuard` (chặn Sec-Fetch-Site cross-site / Origin≠Host cho mọi request ghi — chặn cả login CSRF; request đã đăng nhập phải có X-CSRF-Token đúng). Lỗi 400/500 trả thông báo chung, không lộ chi tiết nội bộ. Job xóa session hết hạn mỗi giờ.
+  - CLI `ntb admin create --email --name` (mật khẩu từ stdin, ≥ 12 ký tự).
+  - Frontend: `/login` (form, hiện lỗi server, `?next=` chỉ nhận đường dẫn nội bộ — chặn open redirect), `RequireAuth` cho `/` và `/editor`, client openapi-fetch tự gắn X-CSRF-Token, nút Đăng xuất.
+  - Deploy: nginx giữ cổng trong Host (`$http_host`) để kiểm tra Origin khớp; Compose tạo mạng riêng 172.30.68.0/24, nginx IP tĩnh 172.30.68.10 và API **chỉ tin đúng IP đó** (bản đầu tin cả 192.168.0.0/16 — máy LAN có thể giả IP vượt rate limit; đã phát hiện khi kiểm tra và sửa). Docker image build dùng golang:1.27 (go.mod tối thiểu 1.26 do x/crypto).
+- Test / cách kiểm tra:
+  - Go: 15 test auth (băm, token, IP resolver chống giả mạo, rate limit, khóa tạm + mở khóa, rate limit theo email, vòng đời session, không lưu token gốc, session hết hạn, mật khẩu ngắn, audit không chứa mật khẩu + dùng email chuẩn) + 8 test HTTP (login sai/đúng + thuộc tính cookie, /me, logout thiếu/sai/đúng CSRF, chặn cross-origin, body hỏng 400 không lộ nội bộ, healthz). Vitest 8 test (guard, login, lỗi, chặn open redirect, logout gửi CSRF).
+  - Chạy thật với DB tạm `ntb_e2e` (đã xóa): CLI tạo admin → login sai 401 → đúng 200 + cookie → /me → logout thiếu CSRF 403 / có CSRF 204 → /me 401; audit đủ 4 sự kiện.
+  - Docker 8068: `/login` hiển thị trang đăng nhập (Done khi P0-05 ✅), migration 000002 tự chạy, login cùng nguồn gốc 401 / khác nguồn gốc 403, X-Forwarded-For giả bị bỏ qua. `make check` pass.
+- Còn dở / lỗi đã biết:
+  - **Lỗi thiết kế ở migration P0-04:** khóa ngoại `audit_log` dùng ON DELETE SET NULL nhưng trigger append-only chặn UPDATE → user/tổ chức đã có audit thì không xóa được (lỗi khó hiểu). Cần chốt hướng sửa (xem câu hỏi).
+  - Docker Desktop (Mac) hiển thị mọi client là gateway 172.30.68.1 → rate limit theo IP gộp chung mọi người dùng khi chạy Docker trên Mac; server Linux giữ IP thật.
+  - `ntb admin create` gõ tay thì mật khẩu hiện trên màn hình (không ẩn) — ẩn cần `golang.org/x/term` (ngoài Stack).
+  - Rate limit trong bộ nhớ, reset khi restart (phù hợp 1 binary).
+- Câu hỏi cho người dùng: (1) Sửa xung đột audit_log: (a) không bao giờ xóa cứng user/tổ chức, chỉ vô hiệu hóa (`disabled_at`), đổi FK thành RESTRICT; hay (b) bỏ FK của audit_log, giữ actor_user_id + email như dữ liệu lịch sử? (2) Cho thêm `golang.org/x/term` để ẩn mật khẩu khi gõ ở CLI?
+- Task tiếp theo đề xuất: P1-02 MFA TOTP (cần chốt câu hỏi 1 trước khi đụng tới user/tổ chức ở P1-03/P1-04).
+
 ## 2026-10-16 — P0-05 Compose đầy đủ (hạ tầng xong, CHƯA tick)
 - Đã làm:
   - `deploy/api.Dockerfile`: build Go nhiều tầng (golang:1.25-alpine, CGO tắt, GOWORK=off) → alpine, chạy user không root (uid 10001).

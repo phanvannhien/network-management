@@ -5,6 +5,10 @@ services:
       dockerfile: deploy/web.Dockerfile
     ports:
       - "${WEB_PORT:-8068}:80"
+    networks:
+      internal:
+        # Fixed address so the API trusts exactly this proxy hop (NTB_TRUSTED_PROXIES).
+        ipv4_address: 172.30.68.10
     depends_on:
       api:
         condition: service_healthy
@@ -24,8 +28,13 @@ services:
       NTB_VERSION: ${NTB_VERSION:-dev}
       NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:-ntb_dev_password}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
       NTB_MIGRATE_ON_START: "true"
+      # Trust X-Forwarded-For only from the nginx container. Never trust whole private ranges:
+      # LAN clients (often 192.168.x.x) could then spoof their IP and bypass per-IP rate limits.
+      NTB_TRUSTED_PROXIES: "172.30.68.10/32"
       # Envelope-encryption master key for secrets (MFA, credentials; used from P1-02). Required in production.
       NTB_MASTER_KEY: ${NTB_MASTER_KEY:-}
+    networks:
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -47,6 +56,8 @@ services:
     ports:
       # Host port for local dev (make dev-api, make test). 5468 avoids a local Postgres on 5432.
       - "127.0.0.1:${DB_PORT:-5468}:5432"
+    networks:
+      - internal
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -55,6 +66,13 @@ services:
       timeout: 3s
       retries: 10
     restart: unless-stopped
+
+networks:
+  internal:
+    ipam:
+      config:
+        # Change if it collides with an existing network on the host.
+        - subnet: 172.30.68.0/24
 
 volumes:
   db_data:

@@ -1,33 +1,52 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
+const usage = `usage:
+  ntb                                   run the API server
+  ntb admin create --email E [--name N] create a system admin; password is read from stdin`
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if err := run(logger); err != nil {
-		logger.Error("server stopped", "error", err)
+	var err error
+	switch {
+	case len(os.Args) == 1:
+		err = serve(logger)
+	case len(os.Args) >= 3 && os.Args[1] == "admin" && os.Args[2] == "create":
+		err = adminCreate(logger, os.Args[3:], os.Stdin, os.Stderr)
+	default:
+		fmt.Fprintln(os.Stderr, usage)
+		os.Exit(2)
+	}
+	if err != nil {
+		logger.Error("ntb failed", "error", err)
 		os.Exit(1)
 	}
 }
 
-func run(logger *slog.Logger) error {
+func serve(logger *slog.Logger) error {
 	cfg := config.Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -49,11 +68,23 @@ func run(logger *slog.Logger) error {
 		logger.Warn("database not reachable at startup", "error", err)
 	}
 
+	resolver, err := auth.NewClientIPResolver(cfg.TrustedProxies)
+	if err != nil {
+		return fmt.Errorf("NTB_TRUSTED_PROXIES: %w", err)
+	}
+	queries := store.New(pool)
+	authSvc, err := auth.NewService(queries, logger, auth.DefaultArgon2)
+	if err != nil {
+		return fmt.Errorf("init auth: %w", err)
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewRouter(logger, api.NewServer(logger, store.New(pool), cfg.Version)),
+		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, authSvc, cfg.Version), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
+
+	go cleanupExpiredSessions(ctx, logger, queries)
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -76,5 +107,65 @@ func run(logger *slog.Logger) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown: %w", err)
 	}
+	return nil
+}
+
+// cleanupExpiredSessions deletes expired sessions hourly until ctx is cancelled.
+func cleanupExpiredSessions(ctx context.Context, logger *slog.Logger, q *store.Queries) {
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			n, err := q.DeleteExpiredSessions(ctx)
+			if err != nil {
+				logger.Warn("delete expired sessions", "error", err)
+			} else if n > 0 {
+				logger.Info("deleted expired sessions", "count", n)
+			}
+		}
+	}
+}
+
+// adminCreate creates the first system admin (P1-01). The password comes from stdin so it never
+// appears in shell history or the process list: `ntb admin create --email a@b.c < password.txt`.
+func adminCreate(logger *slog.Logger, args []string, stdin io.Reader, stderr io.Writer) error {
+	fs := flag.NewFlagSet("admin create", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	email := fs.String("email", "", "admin email (required)")
+	name := fs.String("name", "", "display name")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if strings.TrimSpace(*email) == "" {
+		return errors.New("--email is required")
+	}
+
+	_, _ = fmt.Fprintf(stderr, "Password for %s (min %d chars, read from stdin): ", *email, auth.MinPasswordLength)
+	line, err := bufio.NewReader(stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("read password: %w", err)
+	}
+	password := strings.TrimRight(line, "\r\n")
+	_, _ = fmt.Fprintln(stderr)
+
+	cfg := config.Load()
+	ctx := context.Background()
+	pool, err := database.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	svc, err := auth.NewService(store.New(pool), logger, auth.DefaultArgon2)
+	if err != nil {
+		return err
+	}
+	user, err := svc.CreateUser(ctx, *email, *name, password, true)
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(stderr, "Created system admin %s (%x)\n", user.Email, user.ID.Bytes)
 	return nil
 }

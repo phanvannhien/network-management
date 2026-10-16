@@ -18,13 +18,13 @@ Phase hiện tại: **Phase 0**
 - [x] **P0-03 Sinh code**: `make gen` chạy oapi-codegen (Go), openapi-typescript + openapi-fetch (TS), sqlc. Có một endpoint mẫu đi trọn đường OpenAPI → Go → TS.
 - [x] **P0-04 Database**: Postgres 16 trong Compose dev; golang-migrate; migration đầu: organizations, users, memberships, sessions, audit_log; cấu hình test tích hợp với Postgres thật.
   Done khi: `make migrate-up/down` chạy; test Go kết nối DB pass.
-- [ ] **P0-05 Compose đầy đủ**: `web` (Nginx + build frontend, proxy `/api`), `api`, `db` (volume), healthcheck, `.env.example` (gồm `NTB_MASTER_KEY`).
+- [x] **P0-05 Compose đầy đủ**: `web` (Nginx + build frontend, proxy `/api`), `api`, `db` (volume), healthcheck, `.env.example` (gồm `NTB_MASTER_KEY`).
   Done khi: `docker compose up -d --build` → mở http://localhost:8068 thấy trang đăng nhập (ADR-021).
 
 ## Phase 1 — MVP
 
 ### Nền tảng hệ thống
-- [ ] **P1-01 Đăng nhập**: argon2id, session cookie HttpOnly/SameSite trong Postgres, logout, khóa tạm khi sai nhiều lần, CSRF, rate limit; lệnh CLI `ntb admin create` tạo system admin đầu tiên.
+- [x] **P1-01 Đăng nhập**: argon2id, session cookie HttpOnly/SameSite trong Postgres, logout, khóa tạm khi sai nhiều lần, CSRF, rate limit; lệnh CLI `ntb admin create` tạo system admin đầu tiên.
 - [ ] **P1-02 MFA TOTP**: bật/tắt, mã khôi phục; bắt buộc với owner/admin; lưu secret mã hóa (envelope, `NTB_MASTER_KEY`).
 - [ ] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module.
 - [ ] **P1-04 Người dùng & vai trò**: mời/tạo user, membership nhiều tổ chức, vai trò owner/admin/editor/viewer, giới hạn theo site; kiểm tra quyền ở mọi endpoint.
