@@ -83,6 +83,33 @@ func (q *Queries) CountDevices(ctx context.Context, arg CountDevicesParams) (int
 	return count, err
 }
 
+const countHostnameConflicts = `-- name: CountHostnameConflicts :one
+SELECT count(*) FROM devices
+WHERE organization_id = $1 AND deleted_at IS NULL AND lower(hostname) = lower($2::text)
+  AND ($3::uuid IS NULL OR id <> $3::uuid)
+  AND ($4::uuid IS NULL OR cluster_id IS NULL OR cluster_id <> $4::uuid)
+`
+
+type CountHostnameConflictsParams struct {
+	OrganizationID pgtype.UUID
+	Hostname       string
+	SelfID         pgtype.UUID
+	ClusterID      pgtype.UUID
+}
+
+// Live devices with the same hostname, other than the device itself and other members of its cluster.
+func (q *Queries) CountHostnameConflicts(ctx context.Context, arg CountHostnameConflictsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countHostnameConflicts,
+		arg.OrganizationID,
+		arg.Hostname,
+		arg.SelfID,
+		arg.ClusterID,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countLiveDevicesInLocation = `-- name: CountLiveDevicesInLocation :one
 SELECT count(*) FROM devices WHERE organization_id = $1 AND location_id = $2 AND deleted_at IS NULL
 `
@@ -195,46 +222,49 @@ const createDevice = `-- name: CreateDevice :one
 INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
-                     template_id, poll_address)
+                     template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
         $18, $19, $20, $21, $22, $23,
         $24, $25, $26, $27, $28, $29,
-        $30)
+        $30, $31, $32, $33)
 RETURNING id
 `
 
 type CreateDeviceParams struct {
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
-	LocationID     pgtype.UUID
-	RackID         pgtype.UUID
-	RackU          pgtype.Int4
-	UHeight        int32
-	Hostname       string
-	Type           string
-	Vendor         string
-	Model          string
-	PartNumber     string
-	SerialNumber   string
-	AssetTag       string
-	Firmware       string
-	Role           string
-	Lifecycle      string
-	Managed        bool
-	OwnerName      string
-	PurchaseDate   pgtype.Date
-	PoNumber       string
-	WarrantyEnd    pgtype.Date
-	LicenseEnd     pgtype.Date
-	EolDate        pgtype.Date
-	EosDate        pgtype.Date
-	Notes          string
-	Tags           []string
-	CustomFields   []byte
-	TemplateID     pgtype.UUID
-	PollAddress    *netip.Addr
+	OrganizationID  pgtype.UUID
+	BusinessUnitID  pgtype.UUID
+	SiteID          pgtype.UUID
+	LocationID      pgtype.UUID
+	RackID          pgtype.UUID
+	RackU           pgtype.Int4
+	UHeight         int32
+	Hostname        string
+	Type            string
+	Vendor          string
+	Model           string
+	PartNumber      string
+	SerialNumber    string
+	AssetTag        string
+	Firmware        string
+	Role            string
+	Lifecycle       string
+	Managed         bool
+	OwnerName       string
+	PurchaseDate    pgtype.Date
+	PoNumber        string
+	WarrantyEnd     pgtype.Date
+	LicenseEnd      pgtype.Date
+	EolDate         pgtype.Date
+	EosDate         pgtype.Date
+	Notes           string
+	Tags            []string
+	CustomFields    []byte
+	TemplateID      pgtype.UUID
+	PollAddress     *netip.Addr
+	ClusterID       pgtype.UUID
+	ClusterRole     pgtype.Text
+	ClusterMemberNo pgtype.Int4
 }
 
 func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error) {
@@ -269,6 +299,9 @@ func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgt
 		arg.CustomFields,
 		arg.TemplateID,
 		arg.PollAddress,
+		arg.ClusterID,
+		arg.ClusterRole,
+		arg.ClusterMemberNo,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
@@ -563,10 +596,11 @@ func (q *Queries) GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefPa
 }
 
 const getDevice = `-- name: GetDevice :one
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
@@ -578,6 +612,7 @@ LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
+LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = $1 AND d.organization_id = $2 AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -638,6 +673,9 @@ type GetDeviceRow struct {
 	MgmtInterfaceID   pgtype.UUID
 	PollAddress       *netip.Addr
 	TemplateID        pgtype.UUID
+	ClusterID         pgtype.UUID
+	ClusterRole       pgtype.Text
+	ClusterMemberNo   pgtype.Int4
 	SiteCode          string
 	SiteName          string
 	SiteUnitID        pgtype.UUID
@@ -650,6 +688,8 @@ type GetDeviceRow struct {
 	LocationName      string
 	RackName          string
 	MgmtInterfaceName string
+	ClusterName       string
+	ClusterKind       string
 	MgmtIp            string
 }
 
@@ -700,6 +740,9 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.MgmtInterfaceID,
 		&i.PollAddress,
 		&i.TemplateID,
+		&i.ClusterID,
+		&i.ClusterRole,
+		&i.ClusterMemberNo,
 		&i.SiteCode,
 		&i.SiteName,
 		&i.SiteUnitID,
@@ -712,6 +755,8 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.LocationName,
 		&i.RackName,
 		&i.MgmtInterfaceName,
+		&i.ClusterName,
+		&i.ClusterKind,
 		&i.MgmtIp,
 	)
 	return i, err
@@ -809,10 +854,11 @@ func (q *Queries) ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryPa
 
 const listDevices = `-- name: ListDevices :many
 
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
@@ -824,6 +870,7 @@ LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
+LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -927,6 +974,9 @@ type ListDevicesRow struct {
 	MgmtInterfaceID   pgtype.UUID
 	PollAddress       *netip.Addr
 	TemplateID        pgtype.UUID
+	ClusterID         pgtype.UUID
+	ClusterRole       pgtype.Text
+	ClusterMemberNo   pgtype.Int4
 	SiteCode          string
 	SiteName          string
 	SiteUnitID        pgtype.UUID
@@ -939,6 +989,8 @@ type ListDevicesRow struct {
 	LocationName      string
 	RackName          string
 	MgmtInterfaceName string
+	ClusterName       string
+	ClusterKind       string
 	MgmtIp            string
 }
 
@@ -1009,6 +1061,9 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.MgmtInterfaceID,
 			&i.PollAddress,
 			&i.TemplateID,
+			&i.ClusterID,
+			&i.ClusterRole,
+			&i.ClusterMemberNo,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.SiteUnitID,
@@ -1021,6 +1076,8 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.LocationName,
 			&i.RackName,
 			&i.MgmtInterfaceName,
+			&i.ClusterName,
+			&i.ClusterKind,
 			&i.MgmtIp,
 		); err != nil {
 			return nil, err
@@ -1031,6 +1088,16 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockHostname = `-- name: LockHostname :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
+func (q *Queries) LockHostname(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockHostname, lockKey)
+	return err
 }
 
 const rackOccupancy = `-- name: RackOccupancy :many
@@ -1162,8 +1229,9 @@ UPDATE devices SET business_unit_id = $1, site_id = $2, location_id = $3,
   purchase_date = $19, po_number = $20, warranty_end = $21,
   license_end = $22, eol_date = $23, eos_date = $24,
   notes = $25, tags = $26, custom_fields = $27, mgmt_interface_id = $28,
-  poll_address = $29, version = version + 1
-WHERE id = $30 AND organization_id = $31 AND deleted_at IS NULL AND version = $32
+  poll_address = $29, cluster_id = $30, cluster_role = $31,
+  cluster_member_no = $32, version = version + 1
+WHERE id = $33 AND organization_id = $34 AND deleted_at IS NULL AND version = $35
 `
 
 type UpdateDeviceParams struct {
@@ -1196,6 +1264,9 @@ type UpdateDeviceParams struct {
 	CustomFields    []byte
 	MgmtInterfaceID pgtype.UUID
 	PollAddress     *netip.Addr
+	ClusterID       pgtype.UUID
+	ClusterRole     pgtype.Text
+	ClusterMemberNo pgtype.Int4
 	ID              pgtype.UUID
 	OrganizationID  pgtype.UUID
 	Version         int32
@@ -1232,6 +1303,9 @@ func (q *Queries) UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int
 		arg.CustomFields,
 		arg.MgmtInterfaceID,
 		arg.PollAddress,
+		arg.ClusterID,
+		arg.ClusterRole,
+		arg.ClusterMemberNo,
 		arg.ID,
 		arg.OrganizationID,
 		arg.Version,

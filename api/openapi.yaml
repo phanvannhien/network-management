@@ -1978,6 +1978,123 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/clusters:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listClusters
+      summary: Device clusters visible to the caller (ADR-027)
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createCluster
+      summary: Create a cluster (edit access on its unit)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/clusters/{clusterId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/ClusterId'
+    get:
+      operationId: getCluster
+      summary: A cluster with its members
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateCluster
+      summary: Update a cluster (optimistic lock; site / unit fixed while it has members)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteCluster
+      summary: Delete an empty cluster
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/custom-fields:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -2376,6 +2493,13 @@ components:
         format: uuid
     IpId:
       name: ipId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ClusterId:
+      name: clusterId
       in: path
       required: true
       schema:
@@ -3760,6 +3884,19 @@ components:
         pollAddress:
           type: [string, 'null']
           description: Address the poller uses (Phase 3); null = the management IP
+        clusterId:
+          type: [string, 'null']
+          format: uuid
+          description: Cluster of the device (same site and unit, ADR-027)
+        clusterRole:
+          oneOf:
+            - $ref: '#/components/schemas/ClusterRole'
+            - type: 'null'
+        clusterMemberNo:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 99
         templateId:
           type: [string, 'null']
           format: uuid
@@ -3777,7 +3914,7 @@ components:
 
     Device:
       type: object
-      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, businessUnitId, unitCode, unitName, partnerId, partnerCode, partnerName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, access, version, createdAt, updatedAt]
+      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, businessUnitId, unitCode, unitName, partnerId, partnerCode, partnerName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, clusterId, clusterName, clusterKind, clusterRole, clusterMemberNo, access, version, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -3878,6 +4015,23 @@ components:
         pollAddress:
           type: [string, 'null']
           description: Address the poller uses (Phase 3); null = the management IP
+        clusterId:
+          type: [string, 'null']
+          format: uuid
+          description: Cluster of the device (same site and unit, ADR-027)
+        clusterRole:
+          oneOf:
+            - $ref: '#/components/schemas/ClusterRole'
+            - type: 'null'
+        clusterMemberNo:
+          type: [integer, 'null']
+          format: int32
+          minimum: 1
+          maximum: 99
+        clusterName:
+          type: string
+        clusterKind:
+          type: string
         mgmtInterfaceName:
           type: string
         mgmtIp:
@@ -4528,3 +4682,163 @@ components:
         added:
           type: integer
           format: int64
+
+    ClusterKind:
+      type: string
+      enum: [ha_active_passive, ha_active_active, stack, vpc, vss, other]
+
+    ClusterRole:
+      type: string
+      enum: [primary, secondary, member]
+
+    ClusterInput:
+      type: object
+      required: [kind, name, siteId]
+      properties:
+        kind:
+          $ref: '#/components/schemas/ClusterKind'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        hostname:
+          type: string
+          maxLength: 253
+          description: Shared hostname of the cluster (optional)
+        mgmtIp:
+          type: [string, 'null']
+          description: Shared management IP (CIDR), e.g. the HA cluster IP
+        notes:
+          type: string
+          maxLength: 2000
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+          description: Owner unit; null = the site's unit (required for shared sites)
+
+    ClusterUpdate:
+      type: object
+      required: [kind, name, siteId, version]
+      properties:
+        kind:
+          $ref: '#/components/schemas/ClusterKind'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        hostname:
+          type: string
+          maxLength: 253
+          description: Shared hostname of the cluster (optional)
+        mgmtIp:
+          type: [string, 'null']
+          description: Shared management IP (CIDR), e.g. the HA cluster IP
+        notes:
+          type: string
+          maxLength: 2000
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+          description: Owner unit; null = the site's unit (required for shared sites)
+        version:
+          type: integer
+          format: int32
+
+    Cluster:
+      type: object
+      required: [id, kind, name, hostname, mgmtIp, notes, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, memberCount, memberHostnames, access, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ClusterKind'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        hostname:
+          type: string
+          maxLength: 253
+          description: Shared hostname of the cluster (optional)
+        mgmtIp:
+          type: [string, 'null']
+          description: Shared management IP (CIDR), e.g. the HA cluster IP
+        notes:
+          type: string
+          maxLength: 2000
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: string
+          format: uuid
+        siteCode:
+          type: string
+        siteName:
+          type: string
+        unitCode:
+          type: string
+        partnerCode:
+          type: string
+        memberCount:
+          type: integer
+          format: int64
+        memberHostnames:
+          type: string
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    ClusterMember:
+      type: object
+      required: [id, hostname, type, model, serialNumber, role, memberNo, lifecycle]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        model:
+          type: string
+        serialNumber:
+          type: string
+        role:
+          oneOf:
+            - $ref: '#/components/schemas/ClusterRole'
+            - type: 'null'
+        memberNo:
+          type: [integer, 'null']
+          format: int32
+        lifecycle:
+          $ref: '#/components/schemas/DeviceLifecycle'
+
+    ClusterDetail:
+      allOf:
+        - $ref: '#/components/schemas/Cluster'
+        - type: object
+          required: [members]
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClusterMember'
+
+    ClusterList:
+      type: object
+      required: [clusters]
+      properties:
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cluster'

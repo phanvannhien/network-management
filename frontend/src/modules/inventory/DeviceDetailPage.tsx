@@ -187,6 +187,20 @@ export function DeviceDetailPage() {
               {t(`devices.types.${d.type}`)} · {t(`devices.lifecycleValues.${d.lifecycle}`)} ·{' '}
               {d.partnerCode} › {d.unitCode}
               {!d.managed && ` · ${t('devices.external')}`}
+              {d.clusterId && (
+                <>
+                  {' · '}
+                  <Link
+                    to={`/o/${orgId}/clusters?id=${d.clusterId}`}
+                    className="hover:text-foreground hover:underline"
+                  >
+                    {t('clusters.cluster')} {d.clusterName} (
+                    {t(`clusters.kinds.${d.clusterKind as 'stack'}`)}
+                    {d.clusterRole && ` · ${t(`clusters.roles.${d.clusterRole}`)}`}
+                    {d.clusterMemberNo && ` #${d.clusterMemberNo}`})
+                  </Link>
+                </>
+              )}
             </p>
           </div>
         </div>

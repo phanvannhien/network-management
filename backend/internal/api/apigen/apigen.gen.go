@@ -56,6 +56,57 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 	}
 }
 
+// Defines values for ClusterKind.
+const (
+	ClusterKindHaActiveActive  ClusterKind = "ha_active_active"
+	ClusterKindHaActivePassive ClusterKind = "ha_active_passive"
+	ClusterKindOther           ClusterKind = "other"
+	ClusterKindStack           ClusterKind = "stack"
+	ClusterKindVpc             ClusterKind = "vpc"
+	ClusterKindVss             ClusterKind = "vss"
+)
+
+// Valid indicates whether the value is a known member of the ClusterKind enum.
+func (e ClusterKind) Valid() bool {
+	switch e {
+	case ClusterKindHaActiveActive:
+		return true
+	case ClusterKindHaActivePassive:
+		return true
+	case ClusterKindOther:
+		return true
+	case ClusterKindStack:
+		return true
+	case ClusterKindVpc:
+		return true
+	case ClusterKindVss:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ClusterRole.
+const (
+	ClusterRoleMember    ClusterRole = "member"
+	ClusterRolePrimary   ClusterRole = "primary"
+	ClusterRoleSecondary ClusterRole = "secondary"
+)
+
+// Valid indicates whether the value is a known member of the ClusterRole enum.
+func (e ClusterRole) Valid() bool {
+	switch e {
+	case ClusterRoleMember:
+		return true
+	case ClusterRolePrimary:
+		return true
+	case ClusterRoleSecondary:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CustomFieldKind.
 const (
 	Boolean CustomFieldKind = "boolean"
@@ -454,22 +505,22 @@ func (e InterfaceUpdateDuplex) Valid() bool {
 
 // Defines values for IpRole.
 const (
-	Nat       IpRole = "nat"
-	Primary   IpRole = "primary"
-	Public    IpRole = "public"
-	Secondary IpRole = "secondary"
+	IpRoleNat       IpRole = "nat"
+	IpRolePrimary   IpRole = "primary"
+	IpRolePublic    IpRole = "public"
+	IpRoleSecondary IpRole = "secondary"
 )
 
 // Valid indicates whether the value is a known member of the IpRole enum.
 func (e IpRole) Valid() bool {
 	switch e {
-	case Nat:
+	case IpRoleNat:
 		return true
-	case Primary:
+	case IpRolePrimary:
 		return true
-	case Public:
+	case IpRolePublic:
 		return true
-	case Secondary:
+	case IpRoleSecondary:
 		return true
 	default:
 		return false
@@ -968,6 +1019,113 @@ type BusinessUnitUpdate struct {
 	Version      int32   `json:"version"`
 }
 
+// Cluster defines model for Cluster.
+type Cluster struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel        `json:"access"`
+	BusinessUnitId openapi_types.UUID `json:"businessUnitId"`
+
+	// Hostname Shared hostname of the cluster (optional)
+	Hostname        string             `json:"hostname"`
+	Id              openapi_types.UUID `json:"id"`
+	Kind            ClusterKind        `json:"kind"`
+	MemberCount     int64              `json:"memberCount"`
+	MemberHostnames string             `json:"memberHostnames"`
+
+	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
+	MgmtIp      *string            `json:"mgmtIp"`
+	Name        string             `json:"name"`
+	Notes       string             `json:"notes"`
+	PartnerCode string             `json:"partnerCode"`
+	SiteCode    string             `json:"siteCode"`
+	SiteId      openapi_types.UUID `json:"siteId"`
+	SiteName    string             `json:"siteName"`
+	UnitCode    string             `json:"unitCode"`
+	Version     int32              `json:"version"`
+}
+
+// ClusterDetail defines model for ClusterDetail.
+type ClusterDetail struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel        `json:"access"`
+	BusinessUnitId openapi_types.UUID `json:"businessUnitId"`
+
+	// Hostname Shared hostname of the cluster (optional)
+	Hostname        string             `json:"hostname"`
+	Id              openapi_types.UUID `json:"id"`
+	Kind            ClusterKind        `json:"kind"`
+	MemberCount     int64              `json:"memberCount"`
+	MemberHostnames string             `json:"memberHostnames"`
+	Members         []ClusterMember    `json:"members"`
+
+	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
+	MgmtIp      *string            `json:"mgmtIp"`
+	Name        string             `json:"name"`
+	Notes       string             `json:"notes"`
+	PartnerCode string             `json:"partnerCode"`
+	SiteCode    string             `json:"siteCode"`
+	SiteId      openapi_types.UUID `json:"siteId"`
+	SiteName    string             `json:"siteName"`
+	UnitCode    string             `json:"unitCode"`
+	Version     int32              `json:"version"`
+}
+
+// ClusterInput defines model for ClusterInput.
+type ClusterInput struct {
+	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// Hostname Shared hostname of the cluster (optional)
+	Hostname *string     `json:"hostname,omitempty"`
+	Kind     ClusterKind `json:"kind"`
+
+	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
+	MgmtIp *string            `json:"mgmtIp,omitempty"`
+	Name   string             `json:"name"`
+	Notes  *string            `json:"notes,omitempty"`
+	SiteId openapi_types.UUID `json:"siteId"`
+}
+
+// ClusterKind defines model for ClusterKind.
+type ClusterKind string
+
+// ClusterList defines model for ClusterList.
+type ClusterList struct {
+	Clusters []Cluster `json:"clusters"`
+}
+
+// ClusterMember defines model for ClusterMember.
+type ClusterMember struct {
+	Hostname     string             `json:"hostname"`
+	Id           openapi_types.UUID `json:"id"`
+	Lifecycle    DeviceLifecycle    `json:"lifecycle"`
+	MemberNo     *int32             `json:"memberNo"`
+	Model        string             `json:"model"`
+	Role         *ClusterRole       `json:"role"`
+	SerialNumber string             `json:"serialNumber"`
+	Type         DeviceType         `json:"type"`
+}
+
+// ClusterRole defines model for ClusterRole.
+type ClusterRole string
+
+// ClusterUpdate defines model for ClusterUpdate.
+type ClusterUpdate struct {
+	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites)
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// Hostname Shared hostname of the cluster (optional)
+	Hostname *string     `json:"hostname,omitempty"`
+	Kind     ClusterKind `json:"kind"`
+
+	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
+	MgmtIp  *string            `json:"mgmtIp,omitempty"`
+	Name    string             `json:"name"`
+	Notes   *string            `json:"notes,omitempty"`
+	SiteId  openapi_types.UUID `json:"siteId"`
+	Version int32              `json:"version"`
+}
+
 // CreateOrganizationRequest defines model for CreateOrganizationRequest.
 type CreateOrganizationRequest struct {
 	// AddMeAsOwner Make the creating system admin an owner (otherwise nobody can access it until P1-04 adds members)
@@ -1030,7 +1188,14 @@ type Device struct {
 	Access         AccessLevel        `json:"access"`
 	AssetTag       string             `json:"assetTag"`
 	BusinessUnitId openapi_types.UUID `json:"businessUnitId"`
-	CreatedAt      time.Time          `json:"createdAt"`
+
+	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	ClusterId       *openapi_types.UUID `json:"clusterId"`
+	ClusterKind     string              `json:"clusterKind"`
+	ClusterMemberNo *int32              `json:"clusterMemberNo"`
+	ClusterName     string              `json:"clusterName"`
+	ClusterRole     *ClusterRole        `json:"clusterRole"`
+	CreatedAt       time.Time           `json:"createdAt"`
 
 	// CustomFields Values by custom field key (string, number, boolean or ISO date)
 	CustomFields map[string]interface{} `json:"customFields"`
@@ -1128,6 +1293,11 @@ type DeviceInput struct {
 
 	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites, ADR-026)
 	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`
+	ClusterMemberNo *int32              `json:"clusterMemberNo,omitempty"`
+	ClusterRole     *ClusterRole        `json:"clusterRole,omitempty"`
 
 	// CustomFields Values by custom field key (string, number, boolean or ISO date)
 	CustomFields *map[string]interface{} `json:"customFields,omitempty"`
@@ -1241,6 +1411,11 @@ type DeviceUpdate struct {
 
 	// BusinessUnitId Owner unit; null = the site's unit (required for shared sites, ADR-026)
 	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+
+	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`
+	ClusterMemberNo *int32              `json:"clusterMemberNo,omitempty"`
+	ClusterRole     *ClusterRole        `json:"clusterRole,omitempty"`
 
 	// CustomFields Values by custom field key (string, number, boolean or ISO date)
 	CustomFields *map[string]interface{} `json:"customFields,omitempty"`
@@ -1931,6 +2106,9 @@ type AuditTo = time.Time
 // BusinessUnitId defines model for BusinessUnitId.
 type BusinessUnitId = openapi_types.UUID
 
+// ClusterId defines model for ClusterId.
+type ClusterId = openapi_types.UUID
+
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
 
@@ -2158,6 +2336,26 @@ type RemoveUnitMemberParams struct {
 
 // UpdateUnitMemberParams defines parameters for UpdateUnitMember.
 type UpdateUnitMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ListClustersParams defines parameters for ListClusters.
+type ListClustersParams struct {
+	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// CreateClusterParams defines parameters for CreateCluster.
+type CreateClusterParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteClusterParams defines parameters for DeleteCluster.
+type DeleteClusterParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateClusterParams defines parameters for UpdateCluster.
+type UpdateClusterParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -2440,6 +2638,12 @@ type AddUnitMemberJSONRequestBody = UnitGrantInput
 // UpdateUnitMemberJSONRequestBody defines body for UpdateUnitMember for application/json ContentType.
 type UpdateUnitMemberJSONRequestBody = UnitGrantUpdate
 
+// CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
+type CreateClusterJSONRequestBody = ClusterInput
+
+// UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
+type UpdateClusterJSONRequestBody = ClusterUpdate
+
 // CreateCustomFieldJSONRequestBody defines body for CreateCustomField for application/json ContentType.
 type CreateCustomFieldJSONRequestBody = CustomFieldInput
 
@@ -2622,6 +2826,21 @@ type ServerInterface interface {
 	// UpdateUnitMember Change a unit grant (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 	UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams)
+	// ListClusters Device clusters visible to the caller (ADR-027)
+	// (GET /orgs/{orgId}/clusters)
+	ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams)
+	// CreateCluster Create a cluster (edit access on its unit)
+	// (POST /orgs/{orgId}/clusters)
+	CreateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateClusterParams)
+	// DeleteCluster Delete an empty cluster
+	// (DELETE /orgs/{orgId}/clusters/{clusterId})
+	DeleteCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params DeleteClusterParams)
+	// GetCluster A cluster with its members
+	// (GET /orgs/{orgId}/clusters/{clusterId})
+	GetCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId)
+	// UpdateCluster Update a cluster (optimistic lock; site / unit fixed while it has members)
+	// (PATCH /orgs/{orgId}/clusters/{clusterId})
+	UpdateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params UpdateClusterParams)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -2997,6 +3216,36 @@ func (_ Unimplemented) RemoveUnitMember(w http.ResponseWriter, r *http.Request, 
 // UpdateUnitMember Change a unit grant (optimistic lock on version)
 // (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 func (_ Unimplemented) UpdateUnitMember(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, userId UserId, params UpdateUnitMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListClusters Device clusters visible to the caller (ADR-027)
+// (GET /orgs/{orgId}/clusters)
+func (_ Unimplemented) ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateCluster Create a cluster (edit access on its unit)
+// (POST /orgs/{orgId}/clusters)
+func (_ Unimplemented) CreateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateClusterParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteCluster Delete an empty cluster
+// (DELETE /orgs/{orgId}/clusters/{clusterId})
+func (_ Unimplemented) DeleteCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params DeleteClusterParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetCluster A cluster with its members
+// (GET /orgs/{orgId}/clusters/{clusterId})
+func (_ Unimplemented) GetCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateCluster Update a cluster (optimistic lock; site / unit fixed while it has members)
+// (PATCH /orgs/{orgId}/clusters/{clusterId})
+func (_ Unimplemented) UpdateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params UpdateClusterParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4888,6 +5137,263 @@ func (siw *ServerInterfaceWrapper) UpdateUnitMember(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateUnitMember(w, r, orgId, businessUnitId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListClusters operation middleware
+func (siw *ServerInterfaceWrapper) ListClusters(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListClustersParams
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListClusters(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCluster operation middleware
+func (siw *ServerInterfaceWrapper) CreateCluster(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateClusterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCluster(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCluster operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCluster(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "clusterId" -------------
+	var clusterId ClusterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clusterId", chi.URLParam(r, "clusterId"), &clusterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "clusterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteClusterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCluster(w, r, orgId, clusterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCluster operation middleware
+func (siw *ServerInterfaceWrapper) GetCluster(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "clusterId" -------------
+	var clusterId ClusterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clusterId", chi.URLParam(r, "clusterId"), &clusterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "clusterId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCluster(w, r, orgId, clusterId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCluster operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCluster(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "clusterId" -------------
+	var clusterId ClusterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clusterId", chi.URLParam(r, "clusterId"), &clusterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "clusterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateClusterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCluster(w, r, orgId, clusterId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8617,6 +9123,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/ips/{ipId}", wrapper.UpdateDeviceIp)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/clusters", wrapper.ListClusters)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/clusters", wrapper.CreateCluster)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/clusters/{clusterId}", wrapper.DeleteCluster)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/clusters/{clusterId}", wrapper.GetCluster)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/clusters/{clusterId}", wrapper.UpdateCluster)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/custom-fields", wrapper.ListCustomFields)
 	})
 	r.Group(func(r chi.Router) {
@@ -10781,6 +11302,385 @@ func (response UpdateUnitMember404JSONResponse) VisitUpdateUnitMemberResponse(w 
 type UpdateUnitMember409JSONResponse struct{ ConflictJSONResponse }
 
 func (response UpdateUnitMember409JSONResponse) VisitUpdateUnitMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListClustersRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListClustersParams
+}
+
+type ListClustersResponseObject interface {
+	VisitListClustersResponse(w http.ResponseWriter) error
+}
+
+type ListClusters200JSONResponse ClusterList
+
+func (response ListClusters200JSONResponse) VisitListClustersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListClusters401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListClusters401JSONResponse) VisitListClustersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListClusters404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListClusters404JSONResponse) VisitListClustersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateClusterRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateClusterParams
+	Body   *CreateClusterJSONRequestBody
+}
+
+type CreateClusterResponseObject interface {
+	VisitCreateClusterResponse(w http.ResponseWriter) error
+}
+
+type CreateCluster201JSONResponse ClusterDetail
+
+func (response CreateCluster201JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCluster400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCluster400JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCluster401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCluster401JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCluster403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateCluster403JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCluster404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateCluster404JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCluster409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCluster409JSONResponse) VisitCreateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteClusterRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	ClusterId ClusterId `json:"clusterId"`
+	Params    DeleteClusterParams
+}
+
+type DeleteClusterResponseObject interface {
+	VisitDeleteClusterResponse(w http.ResponseWriter) error
+}
+
+type DeleteCluster204Response struct {
+}
+
+func (response DeleteCluster204Response) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCluster400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteCluster400JSONResponse) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCluster401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCluster401JSONResponse) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCluster403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteCluster403JSONResponse) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCluster404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCluster404JSONResponse) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCluster409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteCluster409JSONResponse) VisitDeleteClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetClusterRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	ClusterId ClusterId `json:"clusterId"`
+}
+
+type GetClusterResponseObject interface {
+	VisitGetClusterResponse(w http.ResponseWriter) error
+}
+
+type GetCluster200JSONResponse ClusterDetail
+
+func (response GetCluster200JSONResponse) VisitGetClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCluster401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCluster401JSONResponse) VisitGetClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCluster404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCluster404JSONResponse) VisitGetClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateClusterRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	ClusterId ClusterId `json:"clusterId"`
+	Params    UpdateClusterParams
+	Body      *UpdateClusterJSONRequestBody
+}
+
+type UpdateClusterResponseObject interface {
+	VisitUpdateClusterResponse(w http.ResponseWriter) error
+}
+
+type UpdateCluster200JSONResponse ClusterDetail
+
+func (response UpdateCluster200JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCluster400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateCluster400JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCluster401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateCluster401JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCluster403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateCluster403JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCluster404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCluster404JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCluster409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateCluster409JSONResponse) VisitUpdateClusterResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -15834,6 +16734,21 @@ type StrictServerInterface interface {
 	// UpdateUnitMember Change a unit grant (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId}/members/{userId})
 	UpdateUnitMember(ctx context.Context, request UpdateUnitMemberRequestObject) (UpdateUnitMemberResponseObject, error)
+	// ListClusters Device clusters visible to the caller (ADR-027)
+	// (GET /orgs/{orgId}/clusters)
+	ListClusters(ctx context.Context, request ListClustersRequestObject) (ListClustersResponseObject, error)
+	// CreateCluster Create a cluster (edit access on its unit)
+	// (POST /orgs/{orgId}/clusters)
+	CreateCluster(ctx context.Context, request CreateClusterRequestObject) (CreateClusterResponseObject, error)
+	// DeleteCluster Delete an empty cluster
+	// (DELETE /orgs/{orgId}/clusters/{clusterId})
+	DeleteCluster(ctx context.Context, request DeleteClusterRequestObject) (DeleteClusterResponseObject, error)
+	// GetCluster A cluster with its members
+	// (GET /orgs/{orgId}/clusters/{clusterId})
+	GetCluster(ctx context.Context, request GetClusterRequestObject) (GetClusterResponseObject, error)
+	// UpdateCluster Update a cluster (optimistic lock; site / unit fixed while it has members)
+	// (PATCH /orgs/{orgId}/clusters/{clusterId})
+	UpdateCluster(ctx context.Context, request UpdateClusterRequestObject) (UpdateClusterResponseObject, error)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(ctx context.Context, request ListCustomFieldsRequestObject) (ListCustomFieldsResponseObject, error)
@@ -16989,6 +17904,157 @@ func (sh *strictHandler) UpdateUnitMember(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateUnitMemberResponseObject); ok {
 		if err := validResponse.VisitUpdateUnitMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListClusters operation middleware
+func (sh *strictHandler) ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams) {
+	var request ListClustersRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListClusters(ctx, request.(ListClustersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListClusters")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListClustersResponseObject); ok {
+		if err := validResponse.VisitListClustersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCluster operation middleware
+func (sh *strictHandler) CreateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateClusterParams) {
+	var request CreateClusterRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateClusterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCluster(ctx, request.(CreateClusterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCluster")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateClusterResponseObject); ok {
+		if err := validResponse.VisitCreateClusterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCluster operation middleware
+func (sh *strictHandler) DeleteCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params DeleteClusterParams) {
+	var request DeleteClusterRequestObject
+
+	request.OrgId = orgId
+	request.ClusterId = clusterId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCluster(ctx, request.(DeleteClusterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCluster")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteClusterResponseObject); ok {
+		if err := validResponse.VisitDeleteClusterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCluster operation middleware
+func (sh *strictHandler) GetCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId) {
+	var request GetClusterRequestObject
+
+	request.OrgId = orgId
+	request.ClusterId = clusterId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCluster(ctx, request.(GetClusterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCluster")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetClusterResponseObject); ok {
+		if err := validResponse.VisitGetClusterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCluster operation middleware
+func (sh *strictHandler) UpdateCluster(w http.ResponseWriter, r *http.Request, orgId OrgId, clusterId ClusterId, params UpdateClusterParams) {
+	var request UpdateClusterRequestObject
+
+	request.OrgId = orgId
+	request.ClusterId = clusterId
+	request.Params = params
+
+	var body UpdateClusterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCluster(ctx, request.(UpdateClusterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCluster")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateClusterResponseObject); ok {
+		if err := validResponse.VisitUpdateClusterResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

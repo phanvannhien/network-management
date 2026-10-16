@@ -6,6 +6,7 @@ SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
@@ -17,6 +18,7 @@ LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
+LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -280,6 +282,7 @@ SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
@@ -291,6 +294,7 @@ LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
+LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -308,12 +312,12 @@ WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NU
 INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
-                     template_id, poll_address)
+                     template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
 VALUES (@organization_id, @business_unit_id, @site_id, sqlc.narg('location_id'), sqlc.narg('rack_id'), sqlc.narg('rack_u'),
         @u_height, @hostname, @type, @vendor, @model, @part_number, @serial_number, @asset_tag, @firmware, @role, @lifecycle,
         @managed, @owner_name, sqlc.narg('purchase_date'), @po_number, sqlc.narg('warranty_end'), sqlc.narg('license_end'),
         sqlc.narg('eol_date'), sqlc.narg('eos_date'), @notes, @tags, @custom_fields, sqlc.narg('template_id'),
-        sqlc.narg('poll_address'))
+        sqlc.narg('poll_address'), sqlc.narg('cluster_id'), sqlc.narg('cluster_role'), sqlc.narg('cluster_member_no'))
 RETURNING id;
 
 -- name: UpdateDevice :execrows
@@ -324,7 +328,8 @@ UPDATE devices SET business_unit_id = @business_unit_id, site_id = @site_id, loc
   purchase_date = sqlc.narg('purchase_date'), po_number = @po_number, warranty_end = sqlc.narg('warranty_end'),
   license_end = sqlc.narg('license_end'), eol_date = sqlc.narg('eol_date'), eos_date = sqlc.narg('eos_date'),
   notes = @notes, tags = @tags, custom_fields = @custom_fields, mgmt_interface_id = sqlc.narg('mgmt_interface_id'),
-  poll_address = sqlc.narg('poll_address'), version = version + 1
+  poll_address = sqlc.narg('poll_address'), cluster_id = sqlc.narg('cluster_id'), cluster_role = sqlc.narg('cluster_role'),
+  cluster_member_no = sqlc.narg('cluster_member_no'), version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL AND version = @version;
 
 -- name: SoftDeleteDevice :execrows
@@ -383,3 +388,14 @@ DELETE FROM custom_field_defs WHERE id = @id AND organization_id = @organization
 -- name: TouchDevice :exec
 -- Interface / IP changes bump the device version so open device forms see the change.
 UPDATE devices SET version = version + 1 WHERE id = @id AND organization_id = @organization_id;
+
+-- name: LockHostname :exec
+-- Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
+-- name: CountHostnameConflicts :one
+-- Live devices with the same hostname, other than the device itself and other members of its cluster.
+SELECT count(*) FROM devices
+WHERE organization_id = @organization_id AND deleted_at IS NULL AND lower(hostname) = lower(@hostname::text)
+  AND (sqlc.narg('self_id')::uuid IS NULL OR id <> sqlc.narg('self_id')::uuid)
+  AND (sqlc.narg('cluster_id')::uuid IS NULL OR cluster_id IS NULL OR cluster_id <> sqlc.narg('cluster_id')::uuid);

@@ -957,6 +957,50 @@ export interface paths {
         patch: operations["updateDeviceIp"];
         trace?: never;
     };
+    "/orgs/{orgId}/clusters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Device clusters visible to the caller (ADR-027) */
+        get: operations["listClusters"];
+        put?: never;
+        /** Create a cluster (edit access on its unit) */
+        post: operations["createCluster"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/clusters/{clusterId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                clusterId: components["parameters"]["ClusterId"];
+            };
+            cookie?: never;
+        };
+        /** A cluster with its members */
+        get: operations["getCluster"];
+        put?: never;
+        post?: never;
+        /** Delete an empty cluster */
+        delete: operations["deleteCluster"];
+        options?: never;
+        head?: never;
+        /** Update a cluster (optimistic lock; site / unit fixed while it has members) */
+        patch: operations["updateCluster"];
+        trace?: never;
+    };
     "/orgs/{orgId}/custom-fields": {
         parameters: {
             query?: never;
@@ -1766,6 +1810,14 @@ export interface components {
             pollAddress?: string | null;
             /**
              * Format: uuid
+             * @description Cluster of the device (same site and unit, ADR-027)
+             */
+            clusterId?: string | null;
+            clusterRole?: components["schemas"]["ClusterRole"] | null;
+            /** Format: int32 */
+            clusterMemberNo?: number | null;
+            /**
+             * Format: uuid
              * @description Create only — fill empty type/vendor/model/part number from the template and generate its ports
              */
             templateId?: string | null;
@@ -1830,6 +1882,16 @@ export interface components {
             mgmtInterfaceId: string | null;
             /** @description Address the poller uses (Phase 3); null = the management IP */
             pollAddress: string | null;
+            /**
+             * Format: uuid
+             * @description Cluster of the device (same site and unit, ADR-027)
+             */
+            clusterId: string | null;
+            clusterRole: components["schemas"]["ClusterRole"] | null;
+            /** Format: int32 */
+            clusterMemberNo: number | null;
+            clusterName: string;
+            clusterKind: string;
             mgmtInterfaceName: string;
             /** @description Primary IP (CIDR) of the management interface, '' when none */
             mgmtIp: string;
@@ -2134,6 +2196,87 @@ export interface components {
             /** Format: int64 */
             added: number;
         };
+        /** @enum {string} */
+        ClusterKind: "ha_active_passive" | "ha_active_active" | "stack" | "vpc" | "vss" | "other";
+        /** @enum {string} */
+        ClusterRole: "primary" | "secondary" | "member";
+        ClusterInput: {
+            kind: components["schemas"]["ClusterKind"];
+            name: string;
+            /** @description Shared hostname of the cluster (optional) */
+            hostname?: string;
+            /** @description Shared management IP (CIDR), e.g. the HA cluster IP */
+            mgmtIp?: string | null;
+            notes?: string;
+            /** Format: uuid */
+            siteId: string;
+            /**
+             * Format: uuid
+             * @description Owner unit; null = the site's unit (required for shared sites)
+             */
+            businessUnitId?: string | null;
+        };
+        ClusterUpdate: {
+            kind: components["schemas"]["ClusterKind"];
+            name: string;
+            /** @description Shared hostname of the cluster (optional) */
+            hostname?: string;
+            /** @description Shared management IP (CIDR), e.g. the HA cluster IP */
+            mgmtIp?: string | null;
+            notes?: string;
+            /** Format: uuid */
+            siteId: string;
+            /**
+             * Format: uuid
+             * @description Owner unit; null = the site's unit (required for shared sites)
+             */
+            businessUnitId?: string | null;
+            /** Format: int32 */
+            version: number;
+        };
+        Cluster: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ClusterKind"];
+            name: string;
+            /** @description Shared hostname of the cluster (optional) */
+            hostname: string;
+            /** @description Shared management IP (CIDR), e.g. the HA cluster IP */
+            mgmtIp: string | null;
+            notes: string;
+            /** Format: uuid */
+            siteId: string;
+            /** Format: uuid */
+            businessUnitId: string;
+            siteCode: string;
+            siteName: string;
+            unitCode: string;
+            partnerCode: string;
+            /** Format: int64 */
+            memberCount: number;
+            memberHostnames: string;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        ClusterMember: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            model: string;
+            serialNumber: string;
+            role: components["schemas"]["ClusterRole"] | null;
+            /** Format: int32 */
+            memberNo: number | null;
+            lifecycle: components["schemas"]["DeviceLifecycle"];
+        };
+        ClusterDetail: components["schemas"]["Cluster"] & {
+            members: components["schemas"]["ClusterMember"][];
+        };
+        ClusterList: {
+            clusters: components["schemas"]["Cluster"][];
+        };
     };
     responses: {
         /** @description Not found (also returned for organizations the caller does not belong to) */
@@ -2214,6 +2357,7 @@ export interface components {
         TemplateId: string;
         InterfaceId: string;
         IpId: string;
+        ClusterId: string;
         FieldId: string;
         AuditPageSize: number;
         /** @description Case-insensitive text in action, object id or actor email */
@@ -4693,6 +4837,157 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IpAddress"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listClusters: {
+        parameters: {
+            query?: {
+                siteId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createCluster: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClusterInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCluster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                clusterId: components["parameters"]["ClusterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCluster: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                clusterId: components["parameters"]["ClusterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateCluster: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                clusterId: components["parameters"]["ClusterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClusterUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterDetail"];
                 };
             };
             400: components["responses"]["BadRequest"];

@@ -36,6 +36,9 @@ const DeviceDetailPage = lazy(() =>
 const DeviceListPage = lazy(() =>
   import('./modules/inventory/DeviceListPage').then((m) => ({ default: m.DeviceListPage })),
 )
+const ClustersPage = lazy(() =>
+  import('./modules/inventory/ClustersPage').then((m) => ({ default: m.ClustersPage })),
+)
 const TemplatesPage = lazy(() =>
   import('./modules/inventory/TemplatesPage').then((m) => ({ default: m.TemplatesPage })),
 )
@@ -91,6 +94,7 @@ export function AppRoutes() {
         <Route path="units/:unitId" element={<UnitDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage scope="org" />} />
+        <Route path="clusters" element={<ClustersPage />} />
         <Route path="device-templates" element={<TemplatesPage />} />
         <Route path="custom-fields" element={<CustomFieldsPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />

@@ -30,7 +30,7 @@ import (
 
 const (
 	msgDeviceNotFound  = "Không tìm thấy thiết bị"
-	msgDeviceDuplicate = "Hostname đã tồn tại trong tổ chức"
+	msgDeviceDuplicate = "Hostname đã tồn tại trong tổ chức (chỉ thành viên cùng một cụm được trùng hostname)"
 	devicePageDefault  = 50
 	devicePageMax      = 200
 )
@@ -54,6 +54,9 @@ type deviceFields struct {
 	uHeightSet                                                                                              bool
 	mgmt, template                                                                                          *uuid.UUID
 	poll                                                                                                    *netip.Addr
+	cluster                                                                                                 *uuid.UUID
+	clusterRole                                                                                             pgtype.Text
+	clusterNo                                                                                               pgtype.Int4
 }
 
 func pgDate(d *openapi_types.Date) pgtype.Date {
@@ -109,6 +112,9 @@ type deviceBody struct {
 	RackU, UHeight                                                                          *int32
 	MgmtInterfaceId, TemplateId                                                             *uuid.UUID
 	PollAddress                                                                             *string
+	ClusterId                                                                               *uuid.UUID
+	ClusterRole                                                                             *apigen.ClusterRole
+	ClusterMemberNo                                                                         *int32
 }
 
 func validateDevice(b deviceBody) (deviceFields, string) {
@@ -119,7 +125,22 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 		purchase: pgDate(b.PurchaseDate), warranty: pgDate(b.WarrantyEnd), license: pgDate(b.LicenseEnd),
 		eol: pgDate(b.EolDate), eos: pgDate(b.EosDate), site: b.SiteId, unit: b.BusinessUnitId,
 		location: b.LocationId, rack: b.RackId, uHeight: 1, custom: map[string]any{},
-		mgmt: b.MgmtInterfaceId, template: b.TemplateId,
+		mgmt: b.MgmtInterfaceId, template: b.TemplateId, cluster: b.ClusterId,
+	}
+	if b.ClusterRole != nil {
+		if !b.ClusterRole.Valid() {
+			return f, "Vai trò trong cụm không hợp lệ"
+		}
+		f.clusterRole = pgtype.Text{String: string(*b.ClusterRole), Valid: true}
+	}
+	if b.ClusterMemberNo != nil {
+		if *b.ClusterMemberNo < 1 || *b.ClusterMemberNo > 99 {
+			return f, "Số thứ tự thành viên từ 1 đến 99"
+		}
+		f.clusterNo = pgtype.Int4{Int32: *b.ClusterMemberNo, Valid: true}
+	}
+	if b.ClusterId == nil {
+		f.clusterRole, f.clusterNo = pgtype.Text{}, pgtype.Int4{} // no cluster: no role / number
 	}
 	if b.PollAddress != nil && strings.TrimSpace(*b.PollAddress) != "" {
 		a, err := netip.ParseAddr(strings.TrimSpace(*b.PollAddress))
@@ -357,6 +378,8 @@ type deviceSnapshot struct {
 	UHeight      int32          `json:"uHeight"`
 	MgmtIface    string         `json:"mgmtInterface,omitempty"`
 	PollAddress  string         `json:"pollAddress,omitempty"`
+	Cluster      string         `json:"cluster,omitempty"`
+	ClusterRole  string         `json:"clusterRole,omitempty"`
 }
 
 func dateStr(d pgtype.Date) string {
@@ -385,6 +408,7 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 		s.RackU = d.RackU.Int32
 	}
 	s.MgmtIface = d.MgmtInterfaceName
+	s.Cluster, s.ClusterRole = d.ClusterName, d.ClusterRole.String
 	if p := pollString(d.PollAddress); p != nil {
 		s.PollAddress = *p
 	}
@@ -404,7 +428,12 @@ func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 		PartnerId: uuid.UUID(d.PartnerID.Bytes), PartnerCode: d.PartnerCode, PartnerName: d.PartnerName,
 		LocationId: optUUID(d.LocationID), LocationName: d.LocationName, RackId: optUUID(d.RackID), RackName: d.RackName,
 		UHeight: d.UHeight, MgmtInterfaceId: optUUID(d.MgmtInterfaceID), MgmtInterfaceName: d.MgmtInterfaceName,
-		MgmtIp: d.MgmtIp, PollAddress: pollString(d.PollAddress), Access: levelName(level), Version: d.Version, CreatedAt: d.CreatedAt.Time, UpdatedAt: d.UpdatedAt.Time,
+		MgmtIp: d.MgmtIp, PollAddress: pollString(d.PollAddress), ClusterId: optUUID(d.ClusterID), ClusterName: d.ClusterName,
+		ClusterKind: d.ClusterKind, ClusterMemberNo: optInt(d.ClusterMemberNo), Access: levelName(level), Version: d.Version, CreatedAt: d.CreatedAt.Time, UpdatedAt: d.UpdatedAt.Time,
+	}
+	if d.ClusterRole.Valid {
+		role := apigen.ClusterRole(d.ClusterRole.String)
+		out.ClusterRole = &role
 	}
 	if out.Tags == nil {
 		out.Tags = []string{}
@@ -652,6 +681,35 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 			out.forbidden = true
 			return errRollback
 		}
+		// Members sit in the cluster's site and unit (ADR-027).
+		var cluster pgtype.UUID
+		if f.cluster != nil {
+			c, ok, err := loadCluster(ctx, q, m, *f.cluster)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				out.bad = msgClusterNotFound
+				return errRollback
+			}
+			if c.SiteID != p.site.ID || c.BusinessUnitID != p.unit {
+				out.bad = fmt.Sprintf("Thành viên cụm %s phải ở site %s và thuộc đơn vị %s › %s", c.Name, c.SiteCode, c.PartnerCode, c.UnitCode)
+				return errRollback
+			}
+			cluster = c.ID
+		}
+		// Hostnames are unique among live devices except within one cluster (a stack); serialized per hostname.
+		if err := q.LockHostname(ctx, m.OrgID.String()+"/"+strings.ToLower(f.hostname)); err != nil {
+			return fmt.Errorf("lock hostname: %w", err)
+		}
+		if n, err := q.CountHostnameConflicts(ctx, store.CountHostnameConflictsParams{
+			OrganizationID: m.OrgID, Hostname: f.hostname, SelfID: self, ClusterID: cluster,
+		}); err != nil {
+			return fmt.Errorf("check hostname: %w", err)
+		} else if n > 0 {
+			out.conflict = msgDeviceDuplicate
+			return errRollback
+		}
 		// A template fills what the user left empty and later generates the ports (create only, P1-09).
 		var tpl *store.DeviceTemplate
 		if id == nil && f.template != nil {
@@ -712,6 +770,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 				Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner, PurchaseDate: f.purchase, PoNumber: f.po,
 				WarrantyEnd: f.warranty, LicenseEnd: f.license, EolDate: f.eol, EosDate: f.eos, Notes: f.notes, Tags: f.tags,
 				CustomFields: customJSON, TemplateID: templateID(tpl), PollAddress: f.poll,
+				ClusterID: cluster, ClusterRole: f.clusterRole, ClusterMemberNo: f.clusterNo,
 			})
 		} else {
 			devID = before.ID
@@ -723,6 +782,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 				Firmware: f.firmware, Role: f.role, Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner,
 				PurchaseDate: f.purchase, PoNumber: f.po, WarrantyEnd: f.warranty, LicenseEnd: f.license, EolDate: f.eol,
 				EosDate: f.eos, Notes: f.notes, Tags: f.tags, CustomFields: customJSON, MgmtInterfaceID: mgmt, PollAddress: f.poll,
+				ClusterID: cluster, ClusterRole: f.clusterRole, ClusterMemberNo: f.clusterNo,
 			})
 			if err == nil && n == 0 {
 				out.conflict = msgStale
@@ -730,7 +790,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 			}
 		}
 		if isUniqueViolation(err) {
-			out.conflict = msgDeviceDuplicate
+			out.conflict = "Số thứ tự thành viên đã dùng trong cụm"
 			return errRollback
 		}
 		if err != nil {
@@ -771,6 +831,7 @@ func bodyFromInput(b apigen.DeviceInput) deviceBody {
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
 		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
 		MgmtInterfaceId: b.MgmtInterfaceId, TemplateId: b.TemplateId, PollAddress: b.PollAddress,
+		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
 	}
 }
 
@@ -820,6 +881,7 @@ func (s *Server) UpdateDevice(ctx context.Context, req apigen.UpdateDeviceReques
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
 		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
 		MgmtInterfaceId: b.MgmtInterfaceId, PollAddress: b.PollAddress,
+		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
 	}))
 	if msg != "" {
 		// Unknown / invisible devices answer 404 before validation messages reveal anything.
@@ -1013,6 +1075,7 @@ func (s *Server) BulkUpdateDevices(ctx context.Context, req apigen.BulkUpdateDev
 				PurchaseDate: d.PurchaseDate, PoNumber: d.PoNumber, WarrantyEnd: d.WarrantyEnd, LicenseEnd: d.LicenseEnd,
 				EolDate: d.EolDate, EosDate: d.EosDate, Notes: d.Notes, Tags: next.Tags, CustomFields: d.CustomFields,
 				MgmtInterfaceID: d.MgmtInterfaceID, PollAddress: d.PollAddress,
+				ClusterID: d.ClusterID, ClusterRole: d.ClusterRole, ClusterMemberNo: d.ClusterMemberNo,
 			}); err != nil {
 				return fmt.Errorf("bulk update device: %w", err)
 			}

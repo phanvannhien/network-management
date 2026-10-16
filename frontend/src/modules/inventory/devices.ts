@@ -337,6 +337,9 @@ export function deviceToInput(d: Device): DeviceInput {
     uHeight: d.uHeight,
     mgmtInterfaceId: d.mgmtInterfaceId,
     pollAddress: d.pollAddress,
+    clusterId: d.clusterId,
+    clusterRole: d.clusterRole,
+    clusterMemberNo: d.clusterMemberNo,
   }
 }
 
@@ -498,4 +501,89 @@ export function expandPorts(groups: PortGroup[]): string[] {
       g.pattern.replaceAll('{n}', String(g.start + i)),
     ),
   )
+}
+
+// --- clusters (P1-09b, ADR-027) ---
+
+export type Cluster = components['schemas']['Cluster']
+export type ClusterDetail = components['schemas']['ClusterDetail']
+export type ClusterInput = components['schemas']['ClusterInput']
+export type ClusterKind = components['schemas']['ClusterKind']
+export type ClusterRole = components['schemas']['ClusterRole']
+
+export const CLUSTER_KINDS: ClusterKind[] = [
+  'ha_active_passive',
+  'ha_active_active',
+  'stack',
+  'vpc',
+  'vss',
+  'other',
+]
+export const CLUSTER_ROLES: ClusterRole[] = ['primary', 'secondary', 'member']
+
+const clusterKeys = {
+  all: (orgId: string) => ['orgs', orgId, 'clusters'] as const,
+  one: (orgId: string, id: string) => ['orgs', orgId, 'clusters', id] as const,
+}
+
+export function useClusters(orgId: string, enabled = true) {
+  return useQuery({
+    queryKey: clusterKeys.all(orgId),
+    enabled: enabled && orgId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/clusters', { params: { path: { orgId } } })
+      if (r.data) return r.data.clusters
+      fail(r.error, r.response.status, i18n.t('errors.clustersLoad'))
+    },
+  })
+}
+
+export function useCluster(orgId: string, clusterId: string | null) {
+  return useQuery({
+    queryKey: clusterKeys.one(orgId, clusterId ?? ''),
+    enabled: Boolean(clusterId),
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/clusters/{clusterId}', {
+        params: { path: { orgId, clusterId: clusterId ?? '' } },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.clustersLoad'))
+    },
+  })
+}
+
+/** Cluster writes change member lists and device rows: refresh clusters and devices. */
+export function useClusterMutations(orgId: string) {
+  const qc = useQueryClient()
+  const onSettled = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: clusterKeys.all(orgId) }),
+      qc.invalidateQueries({ queryKey: keys.all(orgId) }),
+    ])
+  const save = useMutation({
+    mutationFn: async (input: { cluster?: Cluster; body: ClusterInput }) => {
+      const r = input.cluster
+        ? await api.PATCH('/orgs/{orgId}/clusters/{clusterId}', {
+            params: { ...csrfParam, path: { orgId, clusterId: input.cluster.id } },
+            body: { ...input.body, version: input.cluster.version },
+          })
+        : await api.POST('/orgs/{orgId}/clusters', {
+            params: { ...csrfParam, path: { orgId } },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled,
+  })
+  const remove = useMutation({
+    mutationFn: async (clusterId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/clusters/{clusterId}', {
+        params: { ...csrfParam, path: { orgId, clusterId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled,
+  })
+  return { save, remove }
 }

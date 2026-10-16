@@ -5,6 +5,33 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-09b Cụm thiết bị
+- Đã làm:
+  - **Migration 000013:** `device_clusters` (kiểu HA active-passive / active-active / stack / vPC / VSS / khác; tên duy nhất
+    trong tổ chức; hostname cụm; IP quản trị cụm dạng CIDR; site + đơn vị sở hữu); thiết bị thêm `cluster_id`, `cluster_role`
+    (primary/secondary/member), `cluster_member_no` (duy nhất trong cụm). Unique index hostname thay bằng kiểm tra ở API.
+  - **Quy tắc (ADR-027, ghi "Chi tiết triển khai"):** thành viên cùng site và đơn vị với cụm; **hostname được trùng chỉ giữa các
+    thành viên cùng cụm** (switch stack), kiểm tra dưới khóa transaction; rời cụm khi còn trùng hostname → 409; đổi site/đơn vị
+    cụm khi còn thành viên → 400; xóa cụm còn thành viên → 409. Quyền và hiển thị theo đơn vị/site như thiết bị (ADR-031).
+  - **API:** CRUD cụm (chi tiết kèm danh sách thành viên); gán thành viên qua thiết bị (`clusterId`, `clusterRole`,
+    `clusterMemberNo`); thiết bị trả tên/kiểu cụm. Audit `cluster.*`; thay đổi thành viên nằm trong `device.update`.
+  - **Giao diện:** trang "Cụm thiết bị" (danh sách, thêm/sửa, xem thành viên, xóa); form thiết bị có mục Cụm (chỉ hiện cụm cùng
+    site/đơn vị), vai trò, số thứ tự; trang thiết bị hiện cụm (link); cột Cụm trong danh sách (ẩn mặc định).
+- Test / cách kiểm tra:
+  - Go `cluster_test.go`: test chéo tổ chức cho mọi endpoint cụm (kể cả vào cụm/site của tổ chức khác); stack chung hostname,
+    trùng hostname ngoài cụm → 409, số thứ tự trùng, thành viên khác site, rời cụm khi trùng hostname; 8 request tạo cùng
+    hostname đồng thời → đúng 1 thành công; quyền theo đối tác/đơn vị. Mutation check 8 điểm backend (kể cả bỏ khóa) + 3 điểm
+    frontend — đều bị bắt.
+  - Vitest 167 pass. Ảnh chụp + axe 5 trang × sáng/tối: 0 lỗi. `make check` pass.
+  - Dev DB: chạy `make migrate-up` (000013) rồi khởi động lại `make dev-api`.
+- Còn dở / lỗi đã biết:
+  - Hiển thị cụm gộp/mở rộng trên sơ đồ: làm cùng editor (P1-14, P1-16).
+  - Rule "IP trùng được bỏ qua trong cụm": P1-20 (đã có `cluster_id` để dùng).
+  - IP quản trị cụm là một trường của cụm, chưa có "interface ảo của cụm".
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-10** IPAM cơ bản (VLAN, subnet, mức sử dụng, gợi ý IP trống).
+
 ## 2026-10-16 — P1-09 Template & interface
 - Đã làm:
   - **Migration 000012:** `device_templates` (theo tổ chức: loại, hãng, model, part number, chiều cao U, nhóm cổng dạng mẫu tên

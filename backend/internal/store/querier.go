@@ -23,6 +23,8 @@ type Querier interface {
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
+	// Live devices with the same hostname, other than the device itself and other members of its cluster.
+	CountHostnameConflicts(ctx context.Context, arg CountHostnameConflictsParams) (int64, error)
 	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
 	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
 	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
@@ -35,6 +37,7 @@ type Querier interface {
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error)
+	CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error)
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
@@ -54,6 +57,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
+	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
@@ -76,6 +80,7 @@ type Querier interface {
 	// Returns true when the membership was created by this call.
 	EnsureMembership(ctx context.Context, arg EnsureMembershipParams) (bool, error)
 	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
+	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
@@ -109,6 +114,10 @@ type Querier interface {
 	ListAccessGrants(ctx context.Context, arg ListAccessGrantsParams) ([]ListAccessGrantsRow, error)
 	// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
 	ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error)
+	ListClusterMembers(ctx context.Context, arg ListClusterMembersParams) ([]ListClusterMembersRow, error)
+	// Device clusters (P1-09b, ADR-027). Every query takes organization_id; visibility follows devices (ADR-031):
+	// the cluster's unit is granted, or its site is visible.
+	ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error)
 	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
 	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
 	ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryParams) ([]ListDeviceHistoryRow, error)
@@ -145,6 +154,8 @@ type Querier interface {
 	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
 	ListUnitMembers(ctx context.Context, arg ListUnitMembersParams) ([]ListUnitMembersRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
+	// Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
+	LockHostname(ctx context.Context, lockKey string) error
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	MaxInterfaceSort(ctx context.Context, arg MaxInterfaceSortParams) (int32, error)
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
@@ -169,6 +180,7 @@ type Querier interface {
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
 	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
+	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)

@@ -37,7 +37,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-07c Phân quyền theo đối tác/đơn vị & chia sẻ (ADR-029, ADR-031)**: `partner_members` (partner_admin/editor/viewer) và `business_unit_members` (unit_admin/editor/viewer), quyền = hợp các cấp; partner_admin/unit_admin mời/phân quyền user, tạo/sửa đơn vị/site trong phạm vi; `resource_shares` cho site với đích đối tác hoặc đơn vị (xem/sửa); bộ chọn đối tác/đơn vị trên topbar; bỏ `site_scope`; audit mọi cấp/thu hồi quyền; test chéo đối tác/đơn vị như test chéo tổ chức.
 - [x] **P1-08 Kho thiết bị**: bảng devices đủ trường SRS §4.1 (trừ phần Phase 2), danh sách phân trang server + lọc + chọn cột + sửa hàng loạt; trang chi tiết các tab có sẵn dữ liệu; custom fields + tag; thiết bị có business_unit_id (mặc định theo site, bắt buộc chọn khi site dùng chung); lọc theo đối tác/đơn vị.
 - [x] **P1-09 Template & interface**: template theo SRS §4.3 sinh cổng physical; thêm interface ảo; IP theo interface (CIDR, VRF, role); chọn interface quản trị; IP NAT/public; `poll_address`.
-- [ ] **P1-09b Cụm thiết bị**: device_clusters, gán thành viên, IP/hostname cụm, rule trùng IP/hostname bỏ qua trong cụm; trên sơ đồ hiển thị gộp/mở rộng.
+- [x] **P1-09b Cụm thiết bị**: device_clusters, gán thành viên, IP/hostname cụm, rule trùng IP/hostname bỏ qua trong cụm; trên sơ đồ hiển thị gộp/mở rộng.
 - [ ] **P1-10 IPAM cơ bản**: VLAN, subnet, ip_ranges; mức sử dụng; gợi ý IP trống; tìm IP thuộc ai.
 - [ ] **P1-11 Nhóm thiết bị đầu cuối**: endpoint_groups + members, liên kết dải IP, đã dùng/tổng, tách thành viên thành device.
 - [ ] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.

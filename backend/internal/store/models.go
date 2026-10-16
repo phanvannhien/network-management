@@ -103,6 +103,24 @@ type Device struct {
 	MgmtInterfaceID pgtype.UUID
 	PollAddress     *netip.Addr
 	TemplateID      pgtype.UUID
+	ClusterID       pgtype.UUID
+	ClusterRole     pgtype.Text
+	ClusterMemberNo pgtype.Int4
+}
+
+type DeviceCluster struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	BusinessUnitID pgtype.UUID
+	SiteID         pgtype.UUID
+	Kind           string
+	Name           string
+	Hostname       string
+	MgmtIp         *netip.Prefix
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
 }
 
 type DeviceTemplate struct {

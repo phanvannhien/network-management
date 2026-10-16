@@ -1379,6 +1379,11 @@ describe('device inventory (P1-08)', () => {
     mgmtInterfaceName: '',
     mgmtIp: '',
     pollAddress: null,
+    clusterId: null,
+    clusterName: '',
+    clusterKind: '',
+    clusterRole: null,
+    clusterMemberNo: null,
     access: 'edit',
     version: 3,
     createdAt: '2026-10-16T00:00:00Z',
@@ -1634,5 +1639,83 @@ describe('device inventory (P1-08)', () => {
       partNumber: 'FG-100F',
     })
     expect(body.ports).toHaveLength(4)
+  })
+
+  const CLUSTER = {
+    id: 'cl-1',
+    kind: 'ha_active_passive',
+    name: 'BD-FW-HA',
+    hostname: 'AGRI-BD-FW',
+    mgmtIp: '10.72.114.1/24',
+    notes: '',
+    siteId: AGRI_SITE.id,
+    siteCode: 'AGRI-BD01',
+    siteName: 'Nhà máy Bình Định',
+    businessUnitId: UNIT_ID,
+    unitCode: 'MAIN',
+    partnerCode: 'AGRI',
+    memberCount: 0,
+    memberHostnames: '',
+    access: 'edit',
+    version: 1,
+  }
+
+  it('creates a cluster in a site', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [] }),
+        [`POST /api/orgs/${ORG_ID}/clusters`]: () => json({ ...CLUSTER, members: [] }, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/clusters`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm cụm' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm cụm' })
+    fireEvent.change(within(dialog).getByLabelText('Tên cụm'), { target: { value: 'BD-FW-HA' } })
+    fireEvent.change(within(dialog).getByLabelText(/IP quản trị cụm/), {
+      target: { value: '10.72.114.1/24' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: AGRI_SITE.id } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/clusters')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      kind: 'ha_active_passive',
+      name: 'BD-FW-HA',
+      hostname: '',
+      mgmtIp: '10.72.114.1/24',
+      notes: '',
+      siteId: AGRI_SITE.id,
+      businessUnitId: null,
+    })
+  })
+
+  it('a device joins a cluster of its site from the device form', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [CLUSTER] }),
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () => json({ interfaces: [] }),
+        [`PATCH /api/orgs/${ORG_ID}/devices/dev-1`]: () => json({ ...DEVICE, version: 4 }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Sửa' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Sửa AGRI-BD-FW01' })
+    const select = await within(dialog).findByLabelText('Cụm')
+    await waitFor(() =>
+      expect(within(select).getByRole('option', { name: /BD-FW-HA/ })).toBeInTheDocument(),
+    )
+    fireEvent.change(select, { target: { value: 'cl-1' } })
+    fireEvent.change(within(dialog).getByLabelText('Vai trò trong cụm'), {
+      target: { value: 'primary' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Số thứ tự'), { target: { value: '1' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPatch = (r: Request) => r.method === 'PATCH'
+    await waitFor(() => expect(calls.some(isPatch)).toBe(true))
+    expect(await calls.find(isPatch)!.clone().json()).toMatchObject({
+      clusterId: 'cl-1',
+      clusterRole: 'primary',
+      clusterMemberNo: 1,
+    })
   })
 })

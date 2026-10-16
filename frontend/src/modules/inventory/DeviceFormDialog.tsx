@@ -27,10 +27,13 @@ import {
   DEVICE_ROLES,
   DEVICE_TYPE_GROUPS,
   LIFECYCLES,
+  CLUSTER_ROLES,
+  useClusters,
   useCustomFields,
   useInterfaces,
   useTemplates,
   useSaveDevice,
+  type ClusterRole,
   type CustomField,
   type Device,
   type DeviceInput,
@@ -121,6 +124,7 @@ export function DeviceFormDialog({
   const units = useBusinessUnits(orgId)
   const fields = useCustomFields(orgId)
   const templates = useTemplates(orgId, !device)
+  const clusters = useClusters(orgId)
   const interfaces = useInterfaces(orgId, device?.id ?? '', Boolean(device))
   const [f, setF] = useState({
     hostname: device?.hostname ?? '',
@@ -152,6 +156,9 @@ export function DeviceFormDialog({
     templateId: '',
     mgmtInterfaceId: device?.mgmtInterfaceId ?? '',
     pollAddress: device?.pollAddress ?? '',
+    clusterId: device?.clusterId ?? '',
+    clusterRole: (device?.clusterRole ?? '') as ClusterRole | '',
+    clusterMemberNo: device?.clusterMemberNo ? String(device.clusterMemberNo) : '',
   })
   const [custom, setCustom] = useState<Record<string, CustomValue>>(
     (device?.customFields ?? {}) as Record<string, CustomValue>,
@@ -205,6 +212,9 @@ export function DeviceFormDialog({
       templateId: device ? null : f.templateId || null,
       mgmtInterfaceId: f.mgmtInterfaceId || null,
       pollAddress: f.pollAddress.trim() || null,
+      clusterId: f.clusterId || null,
+      clusterRole: f.clusterId && f.clusterRole ? f.clusterRole : null,
+      clusterMemberNo: f.clusterId && f.clusterMemberNo ? Number(f.clusterMemberNo) : null,
     }
     save.mutate(
       { device, body },
@@ -333,6 +343,7 @@ export function DeviceFormDialog({
                       locationId: '',
                       rackId: '',
                       rackU: '',
+                      clusterId: '',
                     })
                   }
                 >
@@ -452,6 +463,63 @@ export function DeviceFormDialog({
                 )}
               </FormField>
             </div>
+          </fieldset>
+
+          <fieldset className="grid grid-cols-3 gap-3">
+            <legend className={legend}>{t('clusters.cluster')}</legend>
+            <FormField label={t('clusters.cluster')} hint={t('clusters.deviceHint')}>
+              {(p) => (
+                <NativeSelect
+                  {...p}
+                  value={f.clusterId}
+                  disabled={!f.siteId}
+                  onChange={set('clusterId')}
+                >
+                  <option value="">{t('clusters.noCluster')}</option>
+                  {(clusters.data ?? [])
+                    .filter(
+                      (c) =>
+                        c.siteId === f.siteId &&
+                        (!shared || !f.businessUnitId || c.businessUnitId === f.businessUnitId),
+                    )
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({t(`clusters.kinds.${c.kind}`)})
+                      </option>
+                    ))}
+                </NativeSelect>
+              )}
+            </FormField>
+            <FormField label={t('clusters.role')}>
+              {(p) => (
+                <NativeSelect
+                  {...p}
+                  value={f.clusterRole}
+                  disabled={!f.clusterId}
+                  onChange={(e) => setF({ ...f, clusterRole: e.target.value as ClusterRole | '' })}
+                >
+                  <option value="">—</option>
+                  {CLUSTER_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {t(`clusters.roles.${r}`)}
+                    </option>
+                  ))}
+                </NativeSelect>
+              )}
+            </FormField>
+            <FormField label={t('clusters.memberNo')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  min={1}
+                  max={99}
+                  disabled={!f.clusterId}
+                  value={f.clusterMemberNo}
+                  onChange={set('clusterMemberNo')}
+                />
+              )}
+            </FormField>
           </fieldset>
 
           <fieldset className="grid grid-cols-3 gap-3">

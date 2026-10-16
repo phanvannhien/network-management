@@ -282,6 +282,24 @@ export function DeviceListPage() {
         cell: ({ row }) => <WarrantyText date={row.original.warrantyEnd} />,
       },
       {
+        id: 'cluster',
+        accessorKey: 'clusterName',
+        header: t('clusters.cluster'),
+        enableSorting: false,
+        meta: { label: t('clusters.cluster'), width: 150 },
+        cell: ({ row: { original: d } }) =>
+          d.clusterId ? (
+            <span>
+              {d.clusterName}
+              {d.clusterMemberNo && (
+                <span className="text-muted-foreground"> #{d.clusterMemberNo}</span>
+              )}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">{t('common.none')}</span>
+          ),
+      },
+      {
         id: 'firmware',
         accessorKey: 'firmware',
         header: t('devices.firmware'),
@@ -360,7 +378,7 @@ export function DeviceListPage() {
           />
         }
         columns={columns}
-        defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit']}
+        defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit', 'cluster']}
         data={rows}
         total={list.data?.total ?? 0}
         isLoading={list.isPending}

@@ -181,6 +181,11 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   Validation: IP trùng và hostname trùng được bỏ qua khi các thiết bị cùng một cụm. Trên sơ đồ, cụm hiển thị gộp thành 1 node
   (badge "HA" / "Stack ×3") hoặc mở rộng từng thành viên.
 - **Lý do:** cặp FortiGate HA dùng chung IP quản trị; switch stack nhiều S/N chung một hostname/IP.
+- **Chi tiết triển khai (P1-09b, 2026-10-16):** cụm thuộc một site và một đơn vị; thành viên phải cùng site và đơn vị với cụm.
+  Hostname duy nhất trong tổ chức **trừ các thành viên cùng một cụm** — không biểu diễn được bằng unique index nên API kiểm tra
+  dưới khóa transaction theo hostname (`pg_advisory_xact_lock`). Rời cụm khi đang trùng hostname với thành viên khác → phải đổi
+  hostname trước; xóa cụm chỉ khi không còn thành viên. IP quản trị cụm lưu trực tiếp trên cụm (CIDR); "interface ảo của cụm"
+  để sau nếu cần. Hiển thị gộp trên sơ đồ làm cùng editor (P1-14+); bỏ qua IP trùng trong cụm làm ở rule validation (P1-20).
 
 ### ADR-028 — Sơ đồ nhiều cấp và đi sâu (drill-down)
 - **Quyết định:** sơ đồ thuộc tổ chức, có `scope`: organization | business_unit | site (kèm id tương ứng). Ba loại:

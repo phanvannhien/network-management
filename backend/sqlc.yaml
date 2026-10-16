@@ -16,3 +16,9 @@ sql:
           # Interface IPs carry their prefix length (CIDR, ADR-012).
           - column: "ip_addresses.address"
             go_type: "net/netip.Prefix"
+          - column: "device_clusters.mgmt_ip"
+            go_type:
+              import: "net/netip"
+              type: "Prefix"
+              pointer: true
+            nullable: true
