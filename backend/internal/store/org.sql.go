@@ -39,11 +39,10 @@ func (q *Queries) AddMembership(ctx context.Context, arg AddMembershipParams) (M
 
 const adminListOrganizations = `-- name: AdminListOrganizations :many
 
-SELECT o.id, o.name, o.kind, o.notes, o.created_at, o.updated_at, o.version,
+SELECT o.id, o.name, o.code, o.kind, o.notes, o.created_at, o.updated_at, o.version,
        (SELECT count(*) FROM memberships m WHERE m.organization_id = o.id) AS member_count,
        -- Counts only (no content): the system area shows each customer's size without reading its data (ADR-023).
-       (SELECT count(*) FROM partners pa WHERE pa.organization_id = o.id AND pa.deleted_at IS NULL)::bigint AS partner_count,
-       (SELECT count(*) FROM business_units b WHERE b.organization_id = o.id AND b.deleted_at IS NULL)::bigint AS unit_count,
+       (SELECT count(*) FROM categories c WHERE c.organization_id = o.id)::bigint AS category_count,
        (SELECT count(*) FROM sites s WHERE s.organization_id = o.id AND s.deleted_at IS NULL)::bigint AS site_count
 FROM organizations o
 WHERE o.deleted_at IS NULL
@@ -51,17 +50,17 @@ ORDER BY lower(o.name), o.id
 `
 
 type AdminListOrganizationsRow struct {
-	ID           pgtype.UUID
-	Name         string
-	Kind         string
-	Notes        string
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-	Version      int32
-	MemberCount  int64
-	PartnerCount int64
-	UnitCount    int64
-	SiteCount    int64
+	ID            pgtype.UUID
+	Name          string
+	Code          string
+	Kind          string
+	Notes         string
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	Version       int32
+	MemberCount   int64
+	CategoryCount int64
+	SiteCount     int64
 }
 
 // System admin (not tenant-scoped by design: managing the list of organizations).
@@ -77,14 +76,14 @@ func (q *Queries) AdminListOrganizations(ctx context.Context) ([]AdminListOrgani
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Code,
 			&i.Kind,
 			&i.Notes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
 			&i.MemberCount,
-			&i.PartnerCount,
-			&i.UnitCount,
+			&i.CategoryCount,
 			&i.SiteCount,
 		); err != nil {
 			return nil, err
@@ -98,17 +97,23 @@ func (q *Queries) AdminListOrganizations(ctx context.Context) ([]AdminListOrgani
 }
 
 const createOrganization = `-- name: CreateOrganization :one
-INSERT INTO organizations (name, kind, notes) VALUES ($1, $2, $3) RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at
+INSERT INTO organizations (name, code, kind, notes) VALUES ($1, $2, $3, $4) RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at, code
 `
 
 type CreateOrganizationParams struct {
 	Name  string
+	Code  string
 	Kind  string
 	Notes string
 }
 
 func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error) {
-	row := q.db.QueryRow(ctx, createOrganization, arg.Name, arg.Kind, arg.Notes)
+	row := q.db.QueryRow(ctx, createOrganization,
+		arg.Name,
+		arg.Code,
+		arg.Kind,
+		arg.Notes,
+	)
 	var i Organization
 	err := row.Scan(
 		&i.ID,
@@ -119,6 +124,7 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		&i.UpdatedAt,
 		&i.Version,
 		&i.DeletedAt,
+		&i.Code,
 	)
 	return i, err
 }
@@ -164,7 +170,7 @@ func (q *Queries) GetMembership(ctx context.Context, arg GetMembershipParams) (G
 }
 
 const getOrganization = `-- name: GetOrganization :one
-SELECT id, name, kind, notes, created_at, updated_at, version, deleted_at FROM organizations WHERE id = $1 AND deleted_at IS NULL
+SELECT id, name, kind, notes, created_at, updated_at, version, deleted_at, code FROM organizations WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error) {
@@ -179,6 +185,7 @@ func (q *Queries) GetOrganization(ctx context.Context, id pgtype.UUID) (Organiza
 		&i.UpdatedAt,
 		&i.Version,
 		&i.DeletedAt,
+		&i.Code,
 	)
 	return i, err
 }
@@ -240,7 +247,7 @@ func (q *Queries) SetSessionActiveOrganization(ctx context.Context, arg SetSessi
 const softDeleteOrganization = `-- name: SoftDeleteOrganization :one
 UPDATE organizations SET deleted_at = now(), version = version + 1
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at
+RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at, code
 `
 
 func (q *Queries) SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error) {
@@ -255,19 +262,21 @@ func (q *Queries) SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (O
 		&i.UpdatedAt,
 		&i.Version,
 		&i.DeletedAt,
+		&i.Code,
 	)
 	return i, err
 }
 
 const updateOrganization = `-- name: UpdateOrganization :one
 UPDATE organizations
-SET name = $1, notes = $2, version = version + 1
-WHERE id = $3 AND version = $4 AND deleted_at IS NULL
-RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at
+SET name = $1, code = $2, notes = $3, version = version + 1
+WHERE id = $4 AND version = $5 AND deleted_at IS NULL
+RETURNING id, name, kind, notes, created_at, updated_at, version, deleted_at, code
 `
 
 type UpdateOrganizationParams struct {
 	Name    string
+	Code    string
 	Notes   string
 	ID      pgtype.UUID
 	Version int32
@@ -277,6 +286,7 @@ type UpdateOrganizationParams struct {
 func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error) {
 	row := q.db.QueryRow(ctx, updateOrganization,
 		arg.Name,
+		arg.Code,
 		arg.Notes,
 		arg.ID,
 		arg.Version,
@@ -291,6 +301,7 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 		&i.UpdatedAt,
 		&i.Version,
 		&i.DeletedAt,
+		&i.Code,
 	)
 	return i, err
 }

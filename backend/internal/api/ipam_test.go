@@ -28,8 +28,8 @@ func addDeviceIP(t *testing.T, c *tenanttest.Client, org uuid.UUID, site, hostna
 // Cross-tenant isolation for every IPAM endpoint, plus referencing another org's site or VLAN.
 func TestIpamEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	vlanB := idOf(t, mustCreate(t, fx.B, vlansPath(fx.OrgB), map[string]any{"vid": 10, "name": "MGMT", "siteId": siteB}))
 	snB := idOf(t, mustCreate(t, fx.B, subnetsPath(fx.OrgB), map[string]any{"cidr": "10.0.0.0/24", "siteId": siteB, "vlanId": vlanB}))
 	rgB := idOf(t, mustCreate(t, fx.B, subnetsPath(fx.OrgB)+"/"+snB+"/ranges", map[string]any{"startIp": "10.0.0.100", "endIp": "10.0.0.200", "kind": "dhcp"}))
@@ -86,9 +86,9 @@ func TestIpamEndpointsAreTenantIsolated(t *testing.T) {
 func TestVlanRules(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	for name, body := range map[string]map[string]any{
 		"vid 0":     {"vid": 0, "name": "X"},
 		"vid 4095":  {"vid": 4095, "name": "X"},
@@ -100,7 +100,7 @@ func TestVlanRules(t *testing.T) {
 		}
 	}
 	v := mustCreate(t, fx.A, vlansPath(org), map[string]any{"vid": 10, "name": "MGMT", "color": "#0EA5E9", "siteId": bd})
-	if v["color"] != "#0ea5e9" || v["siteCode"] != "AGRI-BD01" || v["access"] != "admin" {
+	if v["color"] != "#0ea5e9" || v["siteCode"] != "ORG-AGRI-BD01" || v["access"] != "admin" {
 		t.Errorf("VLAN stored as %v", v)
 	}
 	if status, _ := fx.A.Do("POST", vlansPath(org), map[string]any{"vid": 10, "name": "DUP", "siteId": bd}); status != http.StatusConflict {
@@ -145,9 +145,9 @@ func TestVlanRules(t *testing.T) {
 func TestSubnetRules(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	vlanHN := idOf(t, mustCreate(t, fx.A, vlansPath(org), map[string]any{"vid": 10, "name": "MGMT", "siteId": hn}))
 	for name, body := range map[string]map[string]any{
 		"not CIDR":          {"cidr": "10.72.114.0"},
@@ -165,7 +165,7 @@ func TestSubnetRules(t *testing.T) {
 	}
 	// A host address is normalised to its network.
 	sn := mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.114.7/24", "gateway": "10.72.114.1", "siteId": bd})
-	if sn["cidr"] != "10.72.114.0/24" || sn["size"] != float64(254) || sn["gateway"] != "10.72.114.1" || sn["siteCode"] != "AGRI-BD01" {
+	if sn["cidr"] != "10.72.114.0/24" || sn["size"] != float64(254) || sn["gateway"] != "10.72.114.1" || sn["siteCode"] != "ORG-AGRI-BD01" {
 		t.Errorf("subnet stored as %v", sn)
 	}
 	if status, _ := fx.A.Do("POST", subnetsPath(org), map[string]any{"cidr": "10.72.114.0/24"}); status != http.StatusConflict {
@@ -209,8 +209,8 @@ func TestSubnetRules(t *testing.T) {
 func TestSubnetUsageRangesNextFreeAndLookup(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	sn := idOf(t, mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.114.0/24", "gateway": "10.72.114.1", "siteId": bd}))
 	path := subnetsPath(org) + "/" + sn
 	addDeviceIP(t, fx.A, org, bd, "BD-SW1", "10.72.114.2/24", "")

@@ -16,31 +16,27 @@ const countDevices = `-- name: CountDevices :one
 SELECT count(*)
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($6::uuid[]), 0) = 0 OR d.site_id = ANY ($6::uuid[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.type = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.vendor = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.lifecycle = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($5::uuid[]), 0) = 0 OR d.site_id = ANY ($5::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 `
 
 type CountDevicesParams struct {
 	OrganizationID pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
-	PartnerFilter  pgtype.UUID
-	UnitFilter     pgtype.UUID
+	CategoryFilter pgtype.UUID
 	SiteIds        []pgtype.UUID
 	Types          []string
 	Vendors        []string
@@ -54,8 +50,7 @@ func (q *Queries) CountDevices(ctx context.Context, arg CountDevicesParams) (int
 		arg.OrganizationID,
 		arg.Q,
 		arg.ClusterIds,
-		arg.PartnerFilter,
-		arg.UnitFilter,
+		arg.CategoryFilter,
 		arg.SiteIds,
 		arg.Types,
 		arg.Vendors,
@@ -143,23 +138,6 @@ func (q *Queries) CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevic
 	return count, err
 }
 
-const countLiveDevicesOfUnit = `-- name: CountLiveDevicesOfUnit :one
-SELECT count(*) FROM devices WHERE organization_id = $1 AND business_unit_id = $2
-  AND deleted_at IS NULL
-`
-
-type CountLiveDevicesOfUnitParams struct {
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-}
-
-func (q *Queries) CountLiveDevicesOfUnit(ctx context.Context, arg CountLiveDevicesOfUnitParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countLiveDevicesOfUnit, arg.OrganizationID, arg.BusinessUnitID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const createCustomFieldDef = `-- name: CreateCustomFieldDef :one
 INSERT INTO custom_field_defs (organization_id, key, label, kind, options, required, sort_order)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -204,21 +182,20 @@ func (q *Queries) CreateCustomFieldDef(ctx context.Context, arg CreateCustomFiel
 }
 
 const createDevice = `-- name: CreateDevice :one
-INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
+INSERT INTO devices (organization_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
                      template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
-VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-        $18, $19, $20, $21, $22, $23,
-        $24, $25, $26, $27, $28, $29,
-        $30, $31, $32, $33)
+VALUES ($1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+        $17, $18, $19, $20, $21, $22,
+        $23, $24, $25, $26, $27, $28,
+        $29, $30, $31, $32)
 RETURNING id
 `
 
 type CreateDeviceParams struct {
 	OrganizationID  pgtype.UUID
-	BusinessUnitID  pgtype.UUID
 	SiteID          pgtype.UUID
 	LocationID      pgtype.UUID
 	RackID          pgtype.UUID
@@ -255,7 +232,6 @@ type CreateDeviceParams struct {
 func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, createDevice,
 		arg.OrganizationID,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.LocationID,
 		arg.RackID,
@@ -314,114 +290,96 @@ const deviceFacetCounts = `-- name: DeviceFacetCounts :many
 SELECT 'site'::text AS facet, d.site_id::text AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'type'::text AS facet, d.type AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'vendor'::text AS facet, d.vendor AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'lifecycle'::text AS facet, d.lifecycle AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'role'::text AS facet, d.role AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'tag'::text AS facet, t.tag AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 CROSS JOIN LATERAL unnest(d.tags) AS t(tag)
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
@@ -429,34 +387,31 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
 GROUP BY 2
 UNION ALL
 SELECT 'cluster'::text AS facet, d.cluster_id::text AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($11::uuid[]), 0) = 0 OR d.site_id = ANY ($11::uuid[]))
-  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
   AND d.cluster_id IS NOT NULL
 GROUP BY 2
 `
@@ -465,8 +420,7 @@ type DeviceFacetCountsParams struct {
 	OrganizationID pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
-	PartnerFilter  pgtype.UUID
-	UnitFilter     pgtype.UUID
+	CategoryFilter pgtype.UUID
 	Types          []string
 	Vendors        []string
 	Lifecycles     []string
@@ -487,8 +441,7 @@ func (q *Queries) DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsPa
 		arg.OrganizationID,
 		arg.Q,
 		arg.ClusterIds,
-		arg.PartnerFilter,
-		arg.UnitFilter,
+		arg.CategoryFilter,
 		arg.Types,
 		arg.Vendors,
 		arg.Lifecycles,
@@ -543,8 +496,8 @@ func (q *Queries) GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefPa
 }
 
 const getDevice = `-- name: GetDevice :one
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -553,9 +506,6 @@ SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
@@ -571,7 +521,6 @@ type GetDeviceParams struct {
 type GetDeviceRow struct {
 	ID                pgtype.UUID
 	OrganizationID    pgtype.UUID
-	BusinessUnitID    pgtype.UUID
 	SiteID            pgtype.UUID
 	LocationID        pgtype.UUID
 	RackID            pgtype.UUID
@@ -610,13 +559,8 @@ type GetDeviceRow struct {
 	ClusterMemberNo   pgtype.Int4
 	SiteCode          string
 	SiteName          string
-	SiteUnitID        pgtype.UUID
-	SitePartnerID     pgtype.UUID
-	UnitCode          string
-	UnitName          string
-	PartnerID         pgtype.UUID
-	PartnerCode       string
-	PartnerName       string
+	CategoryID        pgtype.UUID
+	CategoryPath      string
 	LocationName      string
 	RackName          string
 	MgmtInterfaceName string
@@ -631,7 +575,6 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.BusinessUnitID,
 		&i.SiteID,
 		&i.LocationID,
 		&i.RackID,
@@ -670,13 +613,8 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.ClusterMemberNo,
 		&i.SiteCode,
 		&i.SiteName,
-		&i.SiteUnitID,
-		&i.SitePartnerID,
-		&i.UnitCode,
-		&i.UnitName,
-		&i.PartnerID,
-		&i.PartnerCode,
-		&i.PartnerName,
+		&i.CategoryID,
+		&i.CategoryPath,
 		&i.LocationName,
 		&i.RackName,
 		&i.MgmtInterfaceName,
@@ -779,8 +717,8 @@ func (q *Queries) ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryPa
 
 const listDevices = `-- name: ListDevices :many
 
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -789,9 +727,6 @@ SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
@@ -802,42 +737,41 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
-  AND ($4::uuid IS NULL OR du.partner_id = $4)
-  AND ($5::uuid IS NULL OR d.business_unit_id = $5)
-  AND (COALESCE(cardinality($6::uuid[]), 0) = 0 OR d.site_id = ANY ($6::uuid[]))
-  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.type = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.vendor = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.lifecycle = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
-  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
+  AND ($4::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree($4::uuid)))
+  AND (COALESCE(cardinality($5::uuid[]), 0) = 0 OR d.site_id = ANY ($5::uuid[]))
+  AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
+  AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
+  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
+  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
 ORDER BY
-  CASE WHEN NOT $12::boolean THEN
-    CASE $13::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+  CASE WHEN NOT $11::boolean THEN
+    CASE $12::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
-      WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END ASC NULLS LAST,
-  CASE WHEN $12::boolean THEN
-    CASE $13::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+      WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END ASC NULLS LAST,
+  CASE WHEN $11::boolean THEN
+    CASE $12::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
-      WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END DESC NULLS LAST,
-  CASE WHEN $13::text = 'warranty_end' AND NOT $12::boolean THEN d.warranty_end END ASC NULLS LAST,
-  CASE WHEN $13::text = 'warranty_end' AND $12::boolean THEN d.warranty_end END DESC NULLS LAST,
-  CASE WHEN $13::text = 'mgmt_ip' AND NOT $12::boolean THEN
+      WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END DESC NULLS LAST,
+  CASE WHEN $12::text = 'warranty_end' AND NOT $11::boolean THEN d.warranty_end END ASC NULLS LAST,
+  CASE WHEN $12::text = 'warranty_end' AND $11::boolean THEN d.warranty_end END DESC NULLS LAST,
+  CASE WHEN $12::text = 'mgmt_ip' AND NOT $11::boolean THEN
     (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
      ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
-  CASE WHEN $13::text = 'mgmt_ip' AND $12::boolean THEN
+  CASE WHEN $12::text = 'mgmt_ip' AND $11::boolean THEN
     (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
      ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
-  CASE WHEN $13::text = 'hostname' AND $12::boolean THEN lower(d.hostname) END DESC,
+  CASE WHEN $12::text = 'hostname' AND $11::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
-LIMIT $15 OFFSET $14
+LIMIT $14 OFFSET $13
 `
 
 type ListDevicesParams struct {
 	OrganizationID pgtype.UUID
 	Q              string
 	ClusterIds     []pgtype.UUID
-	PartnerFilter  pgtype.UUID
-	UnitFilter     pgtype.UUID
+	CategoryFilter pgtype.UUID
 	SiteIds        []pgtype.UUID
 	Types          []string
 	Vendors        []string
@@ -853,7 +787,6 @@ type ListDevicesParams struct {
 type ListDevicesRow struct {
 	ID                pgtype.UUID
 	OrganizationID    pgtype.UUID
-	BusinessUnitID    pgtype.UUID
 	SiteID            pgtype.UUID
 	LocationID        pgtype.UUID
 	RackID            pgtype.UUID
@@ -892,13 +825,8 @@ type ListDevicesRow struct {
 	ClusterMemberNo   pgtype.Int4
 	SiteCode          string
 	SiteName          string
-	SiteUnitID        pgtype.UUID
-	SitePartnerID     pgtype.UUID
-	UnitCode          string
-	UnitName          string
-	PartnerID         pgtype.UUID
-	PartnerCode       string
-	PartnerName       string
+	CategoryID        pgtype.UUID
+	CategoryPath      string
 	LocationName      string
 	RackName          string
 	MgmtInterfaceName string
@@ -907,15 +835,13 @@ type ListDevicesRow struct {
 	MgmtIp            string
 }
 
-// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
-// see devices of their granted units plus every device in a site visible to them.
+// Devices (P1-08, SRS §4.1). Every query takes organization_id. A device's category is its site's (ADR-032).
 func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error) {
 	rows, err := q.db.Query(ctx, listDevices,
 		arg.OrganizationID,
 		arg.Q,
 		arg.ClusterIds,
-		arg.PartnerFilter,
-		arg.UnitFilter,
+		arg.CategoryFilter,
 		arg.SiteIds,
 		arg.Types,
 		arg.Vendors,
@@ -937,7 +863,6 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
-			&i.BusinessUnitID,
 			&i.SiteID,
 			&i.LocationID,
 			&i.RackID,
@@ -976,13 +901,8 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.ClusterMemberNo,
 			&i.SiteCode,
 			&i.SiteName,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
-			&i.UnitCode,
-			&i.UnitName,
-			&i.PartnerID,
-			&i.PartnerCode,
-			&i.PartnerName,
+			&i.CategoryID,
+			&i.CategoryPath,
 			&i.LocationName,
 			&i.RackName,
 			&i.MgmtInterfaceName,
@@ -1001,8 +921,8 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 }
 
 const listDevicesByIDs = `-- name: ListDevicesByIDs :many
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -1011,9 +931,6 @@ SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
@@ -1029,7 +946,6 @@ type ListDevicesByIDsParams struct {
 type ListDevicesByIDsRow struct {
 	ID                pgtype.UUID
 	OrganizationID    pgtype.UUID
-	BusinessUnitID    pgtype.UUID
 	SiteID            pgtype.UUID
 	LocationID        pgtype.UUID
 	RackID            pgtype.UUID
@@ -1068,13 +984,8 @@ type ListDevicesByIDsRow struct {
 	ClusterMemberNo   pgtype.Int4
 	SiteCode          string
 	SiteName          string
-	SiteUnitID        pgtype.UUID
-	SitePartnerID     pgtype.UUID
-	UnitCode          string
-	UnitName          string
-	PartnerID         pgtype.UUID
-	PartnerCode       string
-	PartnerName       string
+	CategoryID        pgtype.UUID
+	CategoryPath      string
 	LocationName      string
 	RackName          string
 	MgmtInterfaceName string
@@ -1096,7 +1007,6 @@ func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsPara
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
-			&i.BusinessUnitID,
 			&i.SiteID,
 			&i.LocationID,
 			&i.RackID,
@@ -1135,13 +1045,8 @@ func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsPara
 			&i.ClusterMemberNo,
 			&i.SiteCode,
 			&i.SiteName,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
-			&i.UnitCode,
-			&i.UnitName,
-			&i.PartnerID,
-			&i.PartnerCode,
-			&i.PartnerName,
+			&i.CategoryID,
+			&i.CategoryPath,
 			&i.LocationName,
 			&i.RackName,
 			&i.MgmtInterfaceName,
@@ -1291,20 +1196,19 @@ func (q *Queries) UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFiel
 }
 
 const updateDevice = `-- name: UpdateDevice :execrows
-UPDATE devices SET business_unit_id = $1, site_id = $2, location_id = $3,
-  rack_id = $4, rack_u = $5, u_height = $6, hostname = $7, type = $8,
-  vendor = $9, model = $10, part_number = $11, serial_number = $12, asset_tag = $13,
-  firmware = $14, role = $15, lifecycle = $16, managed = $17, owner_name = $18,
-  purchase_date = $19, po_number = $20, warranty_end = $21,
-  license_end = $22, eol_date = $23, eos_date = $24,
-  notes = $25, tags = $26, custom_fields = $27, mgmt_interface_id = $28,
-  poll_address = $29, cluster_id = $30, cluster_role = $31,
-  cluster_member_no = $32, version = version + 1
-WHERE id = $33 AND organization_id = $34 AND deleted_at IS NULL AND version = $35
+UPDATE devices SET site_id = $1, location_id = $2,
+  rack_id = $3, rack_u = $4, u_height = $5, hostname = $6, type = $7,
+  vendor = $8, model = $9, part_number = $10, serial_number = $11, asset_tag = $12,
+  firmware = $13, role = $14, lifecycle = $15, managed = $16, owner_name = $17,
+  purchase_date = $18, po_number = $19, warranty_end = $20,
+  license_end = $21, eol_date = $22, eos_date = $23,
+  notes = $24, tags = $25, custom_fields = $26, mgmt_interface_id = $27,
+  poll_address = $28, cluster_id = $29, cluster_role = $30,
+  cluster_member_no = $31, version = version + 1
+WHERE id = $32 AND organization_id = $33 AND deleted_at IS NULL AND version = $34
 `
 
 type UpdateDeviceParams struct {
-	BusinessUnitID  pgtype.UUID
 	SiteID          pgtype.UUID
 	LocationID      pgtype.UUID
 	RackID          pgtype.UUID
@@ -1343,7 +1247,6 @@ type UpdateDeviceParams struct {
 
 func (q *Queries) UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateDevice,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.LocationID,
 		arg.RackID,

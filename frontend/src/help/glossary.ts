@@ -577,12 +577,12 @@ export const GLOSSARY: GlossaryEntry[] = [
     'org',
     ['Site', 'Site'],
     [
-      'Một địa điểm vật lý có địa chỉ (văn phòng, nhà máy, IDC). Mã site theo dạng <ĐỐI TÁC>-<địa điểm><số>; site dùng chung bắt đầu bằng SHARED-.',
-      'A physical place with an address (office, factory, data centre). Site codes follow <PARTNER>-<place><nn>; shared sites start with SHARED-.',
+      'Một địa điểm vật lý rõ ràng có địa chỉ (văn phòng, nhà máy, IDC). Mã site tự ghép: mã tổ chức + mã các danh mục + mã riêng của site.',
+      'A physical place with an address (office, factory, data centre). Its code is built from the organization code, the category codes and its own code.',
     ],
     [
-      'AGRI-BD01 = nhà máy số 1 của AGRI ở Bình Định.',
-      "AGRI-BD01 = AGRI's first factory in Binh Dinh.",
+      'CJ-AGRI-BD01 = nhà máy số 1 ở Bình Định thuộc danh mục AGRI của tổ chức CJ.',
+      'CJ-AGRI-BD01 = the first Binh Dinh factory in category AGRI of organization CJ.',
     ],
   ),
   e(
@@ -595,12 +595,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
-    'partner-unit',
+    'category',
     'org',
-    ['Đối tác / Đơn vị', 'Partner / unit'],
+    ['Danh mục', 'Category'],
     [
-      'Đối tác là công ty con, đối tác hoặc khách hàng của tổ chức; đơn vị là chi nhánh/bộ phận của đối tác và sở hữu các site, thiết bị.',
-      'A partner is a subsidiary, partner or customer of the organization; a unit is its branch/department owning sites and devices.',
+      'Nhánh để chia việc quản lý trong tổ chức: công ty con, khách hàng của khách, chi nhánh, bộ phận… Chia bao nhiêu cấp cũng được; site gắn vào danh mục nào cũng được, hoặc gắn thẳng vào tổ chức. Mã danh mục nằm trong mã site.',
+      'A branch to split management inside the organization: subsidiaries, customers of a customer, branches, departments… As many levels as needed; a site can hang under any category or straight under the organization. Category codes are part of site codes.',
+    ],
+    [
+      'Tổ chức CJ → danh mục CJ Feed (CJFEED) → site HCM = CJ-CJFEED-HCM.',
+      'Organization CJ → category CJ Feed (CJFEED) → site HCM = CJ-CJFEED-HCM.',
     ],
   ),
 ]

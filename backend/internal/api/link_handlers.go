@@ -28,31 +28,15 @@ type endKey struct {
 	id   pgtype.UUID
 }
 
-// linkLevels: the caller's level on each end of the rows (None when the end is gone or invisible).
-func linkLevels(ctx context.Context, q store.Querier, m tenant.Membership, rows []store.ListLinksRow) (map[endKey]int, error) {
-	var refs []siteRef
-	seen := map[pgtype.UUID]bool{}
-	add := func(site, unit, partner pgtype.UUID) {
-		if site.Valid && !seen[site] {
-			seen[site] = true
-			refs = append(refs, siteRef{site, unit, partner})
-		}
-	}
-	for _, r := range rows {
-		add(r.ASiteID, r.ASiteUnitID, r.ASitePartnerID)
-		add(r.BSiteID, r.BSiteUnitID, r.BSitePartnerID)
-	}
-	sites, err := siteLevels(ctx, q, m, refs)
-	if err != nil {
-		return nil, err
-	}
+// linkLevels: every end in the organization has the organization level (ADR-032); a deleted end has none.
+func linkLevels(_ context.Context, _ store.Querier, m tenant.Membership, rows []store.ListLinksRow) (map[endKey]int, error) {
 	out := map[endKey]int{}
 	for _, r := range rows {
 		if r.ASiteID.Valid {
-			out[endKey{r.AKind, r.AID}] = max(m.UnitLevel(r.AUnitID, r.APartnerID), sites[r.ASiteID])
+			out[endKey{r.AKind, r.AID}] = m.Level()
 		}
 		if r.BSiteID.Valid {
-			out[endKey{r.BKind, r.BID}] = max(m.UnitLevel(r.BUnitID, r.BPartnerID), sites[r.BSiteID])
+			out[endKey{r.BKind, r.BID}] = m.Level()
 		}
 	}
 	return out, nil

@@ -17,19 +17,19 @@ type Querier interface {
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
 	// System admin: user management (global by design).
 	AdminListUsers(ctx context.Context) ([]AdminListUsersRow, error)
+	CategoryPath(ctx context.Context, id pgtype.UUID) (string, error)
+	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
 	CountEndpointGroupsInSite(ctx context.Context, arg CountEndpointGroupsInSiteParams) (int64, error)
-	CountEndpointGroupsOfUnit(ctx context.Context, arg CountEndpointGroupsOfUnitParams) (int64, error)
 	// Live devices with the same hostname, other than the device itself and other members of its cluster.
 	CountHostnameConflicts(ctx context.Context, arg CountHostnameConflictsParams) (int64, error)
 	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
 	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
 	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
-	CountLiveDevicesOfUnit(ctx context.Context, arg CountLiveDevicesOfUnitParams) (int64, error)
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
@@ -37,7 +37,7 @@ type Querier interface {
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
-	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error)
+	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error)
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
@@ -53,7 +53,6 @@ type Querier interface {
 	CreateLink(ctx context.Context, arg CreateLinkParams) (pgtype.UUID, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
-	CreatePartner(ctx context.Context, arg CreatePartnerParams) (Partner, error)
 	CreateRack(ctx context.Context, arg CreateRackParams) (Rack, error)
 	CreateRange(ctx context.Context, arg CreateRangeParams) (IpRange, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
@@ -64,6 +63,7 @@ type Querier interface {
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
 	CreateVlan(ctx context.Context, arg CreateVlanParams) (pgtype.UUID, error)
+	DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error)
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
@@ -89,7 +89,7 @@ type Querier interface {
 	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
-	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
+	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
@@ -107,7 +107,6 @@ type Querier interface {
 	// The tenant middleware's single source of truth: does this user belong to this (live) organization?
 	GetMembership(ctx context.Context, arg GetMembershipParams) (GetMembershipRow, error)
 	GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
-	GetPartner(ctx context.Context, arg GetPartnerParams) (GetPartnerRow, error)
 	// A switch port a member may plug into: an interface of a live device in the organization.
 	GetPortInterface(ctx context.Context, arg GetPortInterfaceParams) (GetPortInterfaceRow, error)
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
@@ -129,11 +128,10 @@ type Querier interface {
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
 	LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error)
-	// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
-	ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error)
+	// Category tree (P1-27, ADR-032). Every query takes organization_id.
+	ListCategories(ctx context.Context, organizationID pgtype.UUID) ([]ListCategoriesRow, error)
 	ListClusterMembers(ctx context.Context, arg ListClusterMembersParams) ([]ListClusterMembersRow, error)
-	// Device clusters (P1-09b, ADR-027). Every query takes organization_id; visibility follows devices (ADR-031):
-	// the cluster's unit is granted, or its site is visible.
+	// Device clusters (P1-09b, ADR-027). Every query takes organization_id.
 	ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error)
 	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
 	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
@@ -142,16 +140,13 @@ type Querier interface {
 	// Templates, interfaces and IP addresses (P1-09, ADR-012). Every query takes organization_id; interface / IP queries
 	// also take the device, which the API has already checked for visibility.
 	ListDeviceTemplates(ctx context.Context, organizationID pgtype.UUID) ([]DeviceTemplate, error)
-	// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
-	// see devices of their granted units plus every device in a site visible to them.
+	// Devices (P1-08, SRS §4.1). Every query takes organization_id. A device's category is its site's (ADR-032).
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
 	// Devices placed on a diagram, with the same visibility as GetDevice.
 	ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error)
-	// Diagrams (P1-13, ADR-015/028). Every query takes organization_id; access follows the scope (organization role,
-	// the business unit, or the site) and is computed by the API from the scope columns returned here.
+	// Diagrams (P1-13, ADR-015/032). Every query takes organization_id; diagrams belong to the organization.
 	ListDiagrams(ctx context.Context, arg ListDiagramsParams) ([]ListDiagramsRow, error)
-	// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
-	// the group's unit is granted, or its site is visible.
+	// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id.
 	ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error)
 	ListEndpointMembers(ctx context.Context, arg ListEndpointMembersParams) ([]ListEndpointMembersRow, error)
 	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
@@ -167,16 +162,15 @@ type Querier interface {
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
-	// Partners (P1-07b, ADR-031): the organization's subsidiaries / partners / customers. Every query takes organization_id.
-	ListPartners(ctx context.Context, organizationID pgtype.UUID) ([]ListPartnersRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
 	ListRanges(ctx context.Context, arg ListRangesParams) ([]IpRange, error)
+	// Live sites with what their full code is made of, for re-coding after a tree change.
+	ListSiteCodes(ctx context.Context, organizationID pgtype.UUID) ([]ListSiteCodesRow, error)
 	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
 	ListSiteCodesWithPrefix(ctx context.Context, arg ListSiteCodesWithPrefixParams) ([]string, error)
-	// Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id. Restricted callers (role
-	// 'member', ADR-031) see a site when its unit is granted (directly or through the unit's partner) or when the
-	// site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
-	// @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
+	// Sites, locations, racks (P1-07, ADR-025/032). Every query takes organization_id. A site belongs to one category or
+	// straight to the organization; `code` is its full code derived from the category path, `local_code` its own part.
+	// @category_filter: the category and everything below it; @only_root: sites attached straight to the organization.
 	ListSites(ctx context.Context, arg ListSitesParams) ([]ListSitesRow, error)
 	// Addresses in use inside a subnet (same VRF), with whether the caller may see the device / cluster.
 	ListSubnetIPs(ctx context.Context, arg ListSubnetIPsParams) ([]ListSubnetIPsRow, error)
@@ -204,24 +198,21 @@ type Querier interface {
 	RackOccupancy(ctx context.Context, arg RackOccupancyParams) ([]RackOccupancyRow, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
-	// ADR-030/031: site codes carry the partner code; renaming the partner renames the prefix of its live sites.
-	RenamePartnerSitePrefix(ctx context.Context, arg RenamePartnerSitePrefixParams) (int64, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
+	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
-	SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusinessUnitParams) (BusinessUnit, error)
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) (int64, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
-	SoftDeletePartner(ctx context.Context, arg SoftDeletePartnerParams) (Partner, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	// Interface / IP changes bump the device version so open device forms see the change.
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
-	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
+	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (int64, error)
 	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
@@ -236,7 +227,6 @@ type Querier interface {
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
-	UpdatePartner(ctx context.Context, arg UpdatePartnerParams) (Partner, error)
 	UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, error)
 	UpdateRange(ctx context.Context, arg UpdateRangeParams) (IpRange, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)

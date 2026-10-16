@@ -12,8 +12,8 @@ func groupsPath(org uuid.UUID) string { return orgPath(org) + "/endpoint-groups"
 // Cross-tenant isolation for every endpoint-group endpoint, plus linking another org's range or port.
 func TestEndpointGroupEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	snB := idOf(t, mustCreate(t, fx.B, subnetsPath(fx.OrgB), map[string]any{"cidr": "10.0.0.0/24", "siteId": siteB}))
 	rgB := idOf(t, mustCreate(t, fx.B, subnetsPath(fx.OrgB)+"/"+snB+"/ranges", map[string]any{"startIp": "10.0.0.100", "endIp": "10.0.0.200", "kind": "static"}))
 	swB := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-SW1", "type": "poe_switch", "siteId": siteB}))
@@ -42,8 +42,8 @@ func TestEndpointGroupEndpointsAreTenantIsolated(t *testing.T) {
 		}
 	}
 	// Org A cannot link B's range or plug into B's switch port.
-	_, nm := mustPartnerUnit(t, fx.A, fx.OrgA, "AGRI")
-	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "AGRI-BD01", "name": "A", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, fx.OrgA, "AGRI")
+	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "BD01", "name": "A", "categoryId": nm}))
 	if status, _ := fx.A.Do("POST", groupsPath(fx.OrgA), map[string]any{"kind": "pc", "name": "PC", "siteId": siteA, "ipRangeId": rgB}); status != http.StatusBadRequest {
 		t.Errorf("group with another org's range: %d, want 400", status)
 	}
@@ -60,21 +60,20 @@ func TestEndpointGroupEndpointsAreTenantIsolated(t *testing.T) {
 func TestEndpointGroupRulesAndIpam(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	sn := idOf(t, mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.120.0/26", "gateway": "10.72.120.1", "siteId": bd, "vrf": "OT"}))
 	cams := idOf(t, mustCreate(t, fx.A, subnetsPath(org)+"/"+sn+"/ranges", map[string]any{"startIp": "10.72.120.2", "endIp": "10.72.120.21", "kind": "static", "purpose": "Camera"}))
 	other := idOf(t, mustCreate(t, fx.A, subnetsPath(org)+"/"+sn+"/ranges", map[string]any{"startIp": "10.72.120.30", "endIp": "10.72.120.40", "kind": "reserved"}))
 	hnNet := idOf(t, mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "10.80.0.0/24", "siteId": hn}))
 	hnRange := idOf(t, mustCreate(t, fx.A, subnetsPath(org)+"/"+hnNet+"/ranges", map[string]any{"startIp": "10.80.0.10", "endIp": "10.80.0.20", "kind": "static"}))
 	for name, body := range map[string]map[string]any{
-		"bad kind":           {"kind": "router", "name": "X", "siteId": bd},
-		"no name":            {"kind": "pc", "name": " ", "siteId": bd},
-		"negative expected":  {"kind": "pc", "name": "X", "siteId": bd, "expectedCount": -1},
-		"range of HN in BD":  {"kind": "pc", "name": "X", "siteId": bd, "ipRangeId": hnRange},
-		"unknown range":      {"kind": "pc", "name": "X", "siteId": bd, "ipRangeId": uuid.NewString()},
-		"unit of other site": {"kind": "pc", "name": "X", "siteId": bd, "businessUnitId": uuid.NewString()},
+		"bad kind":          {"kind": "router", "name": "X", "siteId": bd},
+		"no name":           {"kind": "pc", "name": " ", "siteId": bd},
+		"negative expected": {"kind": "pc", "name": "X", "siteId": bd, "expectedCount": -1},
+		"range of HN in BD": {"kind": "pc", "name": "X", "siteId": bd, "ipRangeId": hnRange},
+		"unknown range":     {"kind": "pc", "name": "X", "siteId": bd, "ipRangeId": uuid.NewString()},
 	} {
 		if status, _ := fx.A.Do("POST", groupsPath(org), body); status != http.StatusBadRequest {
 			t.Errorf("group %s: %d, want 400", name, status)
@@ -164,8 +163,8 @@ func TestEndpointGroupRulesAndIpam(t *testing.T) {
 func TestPromoteEndpointMember(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	sn := idOf(t, mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "10.72.120.0/24", "siteId": bd, "vrf": "OT"}))
 	rg := idOf(t, mustCreate(t, fx.A, subnetsPath(org)+"/"+sn+"/ranges", map[string]any{"startIp": "10.72.120.2", "endIp": "10.72.120.50", "kind": "static"}))
 	sw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "BD-SW01", "type": "poe_switch", "siteId": bd}))

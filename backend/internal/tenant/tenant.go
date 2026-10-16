@@ -40,7 +40,7 @@ type Membership struct {
 	OrgKind     string
 }
 
-// CanEdit: owner, admin, editor may change business data anywhere in the organization (grants: UnitLevel).
+// CanEdit: owner, admin, editor may change business data anywhere in the organization.
 func (m Membership) CanEdit() bool {
 	return m.Role == RoleOwner || m.Role == RoleAdmin || m.Role == RoleEditor
 }

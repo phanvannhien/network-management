@@ -18,9 +18,9 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
 
-// Diagrams (P1-13, ADR-015/028): a view over the inventory with a scope (organization, business unit, site). The
-// editor saves the view and its inventory changes in one transaction under an optimistic lock. Nodes referring to
-// objects the caller may not see are kept as hidden refs: returned by id only and accepted back unchanged.
+// Diagrams (P1-13, ADR-015/032): a view over the inventory owned by the organization. The editor saves the view and
+// its inventory changes in one transaction under an optimistic lock. References to objects that no longer exist are
+// reported as hidden refs and kept until the user removes them.
 
 const (
 	msgDiagramNotFound = "Không tìm thấy sơ đồ"
@@ -32,26 +32,14 @@ const (
 	maxCoord           = 1e7
 )
 
-func diagramLevel(ctx context.Context, q store.Querier, m tenant.Membership, d store.ListDiagramsRow) (int, error) {
-	switch d.Scope {
-	case "business_unit":
-		return m.UnitLevel(d.BusinessUnitID, d.PartnerID), nil
-	case "site":
-		levels, err := siteLevels(ctx, q, m, []siteRef{{d.SiteID, d.SiteUnitID, d.SitePartnerID}})
-		if err != nil {
-			return 0, err
-		}
-		return levels[d.SiteID], nil
-	}
-	return m.UnitLevel(pgtype.UUID{}, pgtype.UUID{}), nil // organization role
+func diagramLevel(_ context.Context, _ store.Querier, m tenant.Membership, _ store.ListDiagramsRow) (int, error) {
+	return m.Level(), nil // diagrams belong to the organization (ADR-032)
 }
 
 func toDiagram(d store.ListDiagramsRow, level int) apigen.Diagram {
 	return apigen.Diagram{
-		Id: uuid.UUID(d.ID.Bytes), Name: d.Name, Scope: apigen.DiagramScope(d.Scope), BusinessUnitId: optUUID(d.BusinessUnitID),
-		SiteId: optUUID(d.SiteID), PartnerCode: d.PartnerCode, UnitCode: d.UnitCode, SiteCode: d.SiteCode, SiteName: d.SiteName,
-		Layer: apigen.DiagramLayer(d.Layer), Description: d.Description, NodeCount: d.NodeCount, UpdatedAt: d.UpdatedAt.Time,
-		Access: levelName(level), Version: d.Version,
+		Id: uuid.UUID(d.ID.Bytes), Name: d.Name, Layer: apigen.DiagramLayer(d.Layer), Description: d.Description,
+		NodeCount: d.NodeCount, UpdatedAt: d.UpdatedAt.Time, Access: levelName(level), Version: d.Version,
 	}
 }
 
@@ -271,18 +259,10 @@ func (s *Server) GetDiagram(ctx context.Context, req apigen.GetDiagramRequestObj
 
 type diagramSnapshot struct {
 	Name  string `json:"name"`
-	Scope string `json:"scope"`
-	Of    string `json:"of,omitempty"`
 	Layer string `json:"layer"`
 }
 
-func snapDiagram(d store.ListDiagramsRow) diagramSnapshot {
-	of := d.SiteCode
-	if d.Scope == "business_unit" {
-		of = d.PartnerCode + "/" + d.UnitCode
-	}
-	return diagramSnapshot{d.Name, d.Scope, of, d.Layer}
-}
+func snapDiagram(d store.ListDiagramsRow) diagramSnapshot { return diagramSnapshot{d.Name, d.Layer} }
 
 func (s *Server) CreateDiagram(ctx context.Context, req apigen.CreateDiagramRequestObject) (apigen.CreateDiagramResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
@@ -292,6 +272,9 @@ func (s *Server) CreateDiagram(ctx context.Context, req apigen.CreateDiagramRequ
 	b := req.Body
 	bad := func(msg string) (apigen.CreateDiagramResponseObject, error) {
 		return apigen.CreateDiagram400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
+	}
+	if !m.CanEdit() {
+		return apigen.CreateDiagram403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
 	}
 	if b == nil {
 		return bad("Thiếu dữ liệu")
@@ -303,59 +286,18 @@ func (s *Server) CreateDiagram(ctx context.Context, req apigen.CreateDiagramRequ
 	switch {
 	case name == "" || tooLong(name, 120):
 		return bad("Tên sơ đồ bắt buộc, tối đa 120 ký tự")
-	case !b.Scope.Valid() || !apigen.DiagramLayer(layer).Valid():
-		return bad("Phạm vi hoặc lớp sơ đồ không hợp lệ")
+	case !apigen.DiagramLayer(layer).Valid():
+		return bad("Lớp sơ đồ không hợp lệ")
 	case tooLong(desc, 1000):
 		return bad("Mô tả tối đa 1000 ký tự")
 	}
 	var (
-		unit, site pgtype.UUID
-		level      int
-		msg        string
-		detail     apigen.DiagramDetail
-		conflict   bool
+		detail   apigen.DiagramDetail
+		conflict bool
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
-		switch b.Scope {
-		case apigen.DiagramScopeOrganization:
-			level = m.UnitLevel(pgtype.UUID{}, pgtype.UUID{})
-		case apigen.DiagramScopeBusinessUnit:
-			if b.BusinessUnitId == nil {
-				msg = "Chọn đơn vị cho sơ đồ"
-				return errRollback
-			}
-			u, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*b.BusinessUnitId), OrganizationID: m.OrgID})
-			if errors.Is(err, pgx.ErrNoRows) || (err == nil && m.UnitLevel(u.ID, u.PartnerID) == tenant.LevelNone) {
-				msg = msgUnitMissing
-				return errRollback
-			}
-			if err != nil {
-				return fmt.Errorf("load unit: %w", err)
-			}
-			unit, level = u.ID, m.UnitLevel(u.ID, u.PartnerID)
-		case apigen.DiagramScopeSite:
-			if b.SiteId == nil {
-				msg = "Chọn site cho sơ đồ"
-				return errRollback
-			}
-			st, ok, err := loadSite(ctx, q, m, *b.SiteId)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				msg = "Site không tồn tại trong tổ chức"
-				return errRollback
-			}
-			if level, err = siteLevel(ctx, q, m, st); err != nil {
-				return err
-			}
-			site = st.ID
-		}
-		if level < tenant.LevelEdit {
-			return errRollback
-		}
-		id, err := q.CreateDiagram(ctx, store.CreateDiagramParams{OrganizationID: m.OrgID, Scope: string(b.Scope), BusinessUnitID: unit,
-			SiteID: site, Name: name, Layer: layer, Description: desc, CreatedBy: pgUUID(uuid.UUID(m.UserID.Bytes))})
+		id, err := q.CreateDiagram(ctx, store.CreateDiagramParams{OrganizationID: m.OrgID, Name: name, Layer: layer, Description: desc,
+			CreatedBy: pgUUID(uuid.UUID(m.UserID.Bytes))})
 		if isUniqueViolation(err) {
 			conflict = true
 			return errRollback
@@ -377,12 +319,8 @@ func (s *Server) CreateDiagram(ctx context.Context, req apigen.CreateDiagramRequ
 	switch {
 	case err != nil:
 		return nil, err
-	case msg != "":
-		return bad(msg)
 	case conflict:
-		return apigen.CreateDiagram409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: fmt.Sprintf("Đã có sơ đồ tên %s trong phạm vi này", name)}}, nil
-	case level < tenant.LevelEdit:
-		return apigen.CreateDiagram403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
+		return apigen.CreateDiagram409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: fmt.Sprintf("Đã có sơ đồ tên %s", name)}}, nil
 	}
 	return apigen.CreateDiagram201JSONResponse(detail), nil
 }
@@ -418,7 +356,7 @@ func (s *Server) UpdateDiagram(ctx context.Context, req apigen.UpdateDiagramRequ
 	err = s.withTx(ctx, func(q store.Querier) error {
 		n, err := q.UpdateDiagramMeta(ctx, store.UpdateDiagramMetaParams{ID: d.ID, OrganizationID: m.OrgID, Version: b.Version, Name: name, Layer: layer, Description: desc})
 		if isUniqueViolation(err) {
-			conf = fmt.Sprintf("Đã có sơ đồ tên %s trong phạm vi này", name)
+			conf = fmt.Sprintf("Đã có sơ đồ tên %s", name)
 			return errRollback
 		}
 		if err != nil {

@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import type { components } from '@/api/client'
 import { useOrganization } from '@/app/orgs'
+import { subtreeIds, useCategories } from './sites'
 
 export type AccessLevel = components['schemas']['AccessLevel']
 
@@ -30,15 +32,14 @@ export function useOrgAccess(orgId: string) {
 }
 
 /**
- * Topbar partner / unit selector (ADR-031): a display filter only, remembered per organization in this
- * browser. Access is always decided by the server.
+ * Topbar category filter (ADR-032): a display filter only, remembered per organization in this browser.
+ * `categoryId` null = the whole organization.
  */
 export interface Scope {
-  partnerId: string | null
-  unitId: string | null
+  categoryId: string | null
 }
 
-const STORAGE = 'ntb-scope'
+const STORAGE = 'ntb-scope-v2'
 
 function readAll(): Record<string, Scope> {
   try {
@@ -61,18 +62,23 @@ export const useScopeStore = create<{
     }),
 }))
 
-const ALL: Scope = { partnerId: null, unitId: null }
+const ALL: Scope = { categoryId: null }
 
 export function useScope(orgId: string): Scope {
   return useScopeStore((s) => s.scopes[orgId] ?? ALL)
 }
 
-/** Whether a partner / unit / site row passes the topbar filter (shared sites pass only "all"). */
-export function inScope(
-  scope: Scope,
-  row: { partnerId?: string | null; unitId?: string | null },
-): boolean {
-  if (scope.unitId) return row.unitId === scope.unitId
-  if (scope.partnerId) return row.partnerId === scope.partnerId
-  return true
+/**
+ * Whether a record of a site with this category passes the topbar filter: the chosen category or below.
+ * Sites straight under the organization pass only "all".
+ */
+export function useInScope(orgId: string): (siteCategoryId: string | null | undefined) => boolean {
+  const scope = useScope(orgId)
+  const categories = useCategories(orgId, scope.categoryId !== null).data
+  const ids = useMemo(
+    () => (scope.categoryId && categories ? subtreeIds(categories, scope.categoryId) : null),
+    [scope.categoryId, categories],
+  )
+  return (siteCategoryId) =>
+    !scope.categoryId || (ids !== null && !!siteCategoryId && ids.has(siteCategoryId))
 }

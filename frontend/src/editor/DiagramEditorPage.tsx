@@ -147,10 +147,8 @@ export function DiagramEditorPage() {
         <div className="min-w-0">
           <h1 className="text-title font-semibold">{meta.name}</h1>
           <p className="text-muted-foreground">
-            {t(`diagrams.scopes.${meta.scope}`)}
-            {meta.scope === 'site' && ` · ${meta.siteCode}`}
-            {meta.scope === 'business_unit' && ` · ${meta.partnerCode} › ${meta.unitCode}`} ·{' '}
             {t(`diagrams.layers.${meta.layer}`)}
+            {meta.description && ` · ${meta.description}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -257,13 +255,11 @@ function ObjectsPanel({
 }) {
   const { t } = useTranslation()
   const doc = useStore(store, (s) => s.doc)!
-  const meta = useStore(store, (s) => s.meta)!
   const [pick, setPick] = useState('')
   const devices = useDeviceList(orgId, {
     q: '',
-    facets: meta.scope === 'site' && meta.siteId ? { site: [meta.siteId] } : {},
-    partnerId: null,
-    unitId: meta.scope === 'business_unit' ? meta.businessUnitId : null,
+    facets: {},
+    categoryId: null,
     sort: { id: 'hostname', desc: false },
     pageIndex: 0,
     pageSize: 200,

@@ -43,8 +43,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useSubnet, useSubnets } from '@/modules/ipam/ipam'
 import { UsageBar } from '@/modules/ipam/UsageBar'
-import { atLeast, inScope, useScope } from '@/modules/sites/access'
-import { useBusinessUnits, useSites } from '@/modules/sites/sites'
+import { atLeast, useInScope } from '@/modules/sites/access'
+import { useSites } from '@/modules/sites/sites'
 import { useDeviceList, useInterfaces } from './devices'
 import { LinksPanel } from './LinksPanel'
 import {
@@ -87,15 +87,12 @@ export function EndpointGroupsTable({
   const userId = useSession().data?.user.id ?? ''
   const groups = useEndpointGroups(orgId)
   const sites = useSites(orgId)
-  const scope = useScope(orgId)
+  const passes = useInScope(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const scoped = useMemo(() => {
     const byId = new Map((sites.data ?? []).map((s) => [s.id, s]))
-    return groups.data?.filter((g) => {
-      const s = byId.get(g.siteId)
-      return inScope(scope, { partnerId: s?.partnerId ?? null, unitId: g.businessUnitId })
-    })
-  }, [groups.data, sites.data, scope])
+    return groups.data?.filter((g) => passes(byId.get(g.siteId)?.categoryId))
+  }, [groups.data, sites.data, passes])
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
     const siteF = filter.facets.site ?? []
@@ -309,26 +306,19 @@ export function EndpointGroupDialog({
   const { t } = useTranslation()
   const { saveGroup } = useEndpointMutations(orgId)
   const sites = useSites(orgId)
-  const units = useBusinessUnits(orgId)
   const subnets = useSubnets(orgId, '', '')
   const [f, setF] = useState({
     kind: (group?.kind ?? 'ip_camera') as EndpointKind,
     name: group?.name ?? '',
     siteId: group?.siteId ?? '',
-    businessUnitId: group?.businessUnitId ?? '',
     subnetId: group?.subnetId ?? '',
     ipRangeId: group?.ipRangeId ?? '',
     expectedCount: group?.expectedCount != null ? String(group.expectedCount) : '',
     notes: group?.notes ?? '',
   })
   const subnet = useSubnet(orgId, f.subnetId)
-  const site = sites.data?.find((s) => s.id === f.siteId)
-  const shared = site !== undefined && site.businessUnitId === null
   const siteOptions = (sites.data ?? []).filter(
     (s) => atLeast(s.access, 'edit') || s.id === group?.siteId,
-  )
-  const ownerUnits = (units.data ?? []).filter(
-    (u) => atLeast(u.access, 'edit') || u.id === group?.businessUnitId,
   )
   // The group's site's subnets and the organization-wide ones (the server checks the same).
   const subnetOptions = (subnets.data ?? []).filter(
@@ -350,7 +340,6 @@ export function EndpointGroupDialog({
               kind: f.kind,
               name: f.name.trim(),
               siteId: f.siteId,
-              businessUnitId: shared ? f.businessUnitId || null : null,
               ipRangeId: f.ipRangeId || null,
               expectedCount: f.expectedCount === '' ? null : Number(f.expectedCount),
               notes: f.notes,
@@ -405,7 +394,6 @@ export function EndpointGroupDialog({
                 setF({
                   ...f,
                   siteId: e.target.value,
-                  businessUnitId: '',
                   subnetId: '',
                   ipRangeId: '',
                 })
@@ -420,43 +408,18 @@ export function EndpointGroupDialog({
             </NativeSelect>
           )}
         </FormField>
-        {shared ? (
-          <FormField
-            label={t('devices.unit')}
-            required
-            hint={t('devices.sharedSiteUnit')}
-            help="partner-unit"
-          >
-            {(p) => (
-              <NativeSelect
-                {...p}
-                required
-                value={f.businessUnitId}
-                onChange={(e) => setF({ ...f, businessUnitId: e.target.value })}
-              >
-                <option value="">{t('devices.chooseUnit')}</option>
-                {ownerUnits.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.partnerCode} › {u.code} · {u.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            )}
-          </FormField>
-        ) : (
-          <FormField label={t('endpoints.expected')} guide={t('guides.endpointExpected')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                min={0}
-                max={100000}
-                value={f.expectedCount}
-                onChange={(e) => setF({ ...f, expectedCount: e.target.value })}
-              />
-            )}
-          </FormField>
-        )}
+        <FormField label={t('endpoints.expected')} guide={t('guides.endpointExpected')}>
+          {(p) => (
+            <Input
+              {...p}
+              type="number"
+              min={0}
+              max={100000}
+              value={f.expectedCount}
+              onChange={(e) => setF({ ...f, expectedCount: e.target.value })}
+            />
+          )}
+        </FormField>
         <FormField label={t('endpoints.subnet')} help="subnet" guide={t('guides.endpointRange')}>
           {(p) => (
             <NativeSelect
@@ -494,20 +457,6 @@ export function EndpointGroupDialog({
             </NativeSelect>
           )}
         </FormField>
-        {shared && (
-          <FormField label={t('endpoints.expected')} guide={t('guides.endpointExpected')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                min={0}
-                max={100000}
-                value={f.expectedCount}
-                onChange={(e) => setF({ ...f, expectedCount: e.target.value })}
-              />
-            )}
-          </FormField>
-        )}
       </div>
       <FormField label={t('endpoints.notes')}>
         {(p) => (
@@ -549,8 +498,7 @@ function MemberDialog({
     q: '',
     // Devices end devices plug into (switches first; an AP or firewall port also counts).
     facets: { site: [group.siteId], type: PORT_DEVICE_TYPES },
-    partnerId: null,
-    unitId: null,
+    categoryId: null,
     sort: { id: 'hostname', desc: false },
     pageIndex: 0,
     pageSize: 200,
@@ -782,7 +730,8 @@ export function EndpointGroupPage() {
           <div className="min-w-0 space-y-1">
             <h1 className="text-title font-semibold">{g.name}</h1>
             <p className="text-muted-foreground">
-              {t(`devices.types.${g.kind}`)} · {g.siteCode} · {g.partnerCode} › {g.unitCode}
+              {t(`devices.types.${g.kind}`)} · {g.siteCode}
+              {g.categoryPath && ` · ${g.categoryPath}`}
             </p>
           </div>
         </div>

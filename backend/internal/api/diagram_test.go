@@ -23,14 +23,14 @@ func view(nodes []map[string]any, edges ...map[string]any) map[string]any {
 // Cross-tenant isolation for every diagram endpoint, plus placing another org's objects on a diagram.
 func TestDiagramEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	devB := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-SW1", "type": "l2_switch", "siteId": siteB}))
-	dB := mustCreate(t, fx.B, diagramsPath(fx.OrgB), map[string]any{"name": "LAN", "scope": "site", "siteId": siteB})
+	dB := mustCreate(t, fx.B, diagramsPath(fx.OrgB), map[string]any{"name": "LAN"})
 	dID := dB["diagram"].(map[string]any)["id"].(string)
 	d := func(o uuid.UUID) string { return diagramsPath(o) + "/" + dID }
 	fx.AssertCrossTenantDenied(t, "GET", diagramsPath, nil)
-	fx.AssertCrossTenantDenied(t, "POST", diagramsPath, map[string]any{"name": "X", "scope": "organization"})
+	fx.AssertCrossTenantDenied(t, "POST", diagramsPath, map[string]any{"name": "X"})
 	fx.AssertCrossTenantDenied(t, "GET", d, nil)
 	for _, org := range []uuid.UUID{fx.OrgB, fx.OrgA} {
 		for _, r := range []struct {
@@ -47,13 +47,10 @@ func TestDiagramEndpointsAreTenantIsolated(t *testing.T) {
 		}
 	}
 	// A's diagram cannot show B's device or sit in B's site.
-	a := mustCreate(t, fx.A, diagramsPath(fx.OrgA), map[string]any{"name": "Tổng quan", "scope": "organization"})
+	a := mustCreate(t, fx.A, diagramsPath(fx.OrgA), map[string]any{"name": "Tổng quan"})
 	aID := a["diagram"].(map[string]any)["id"].(string)
 	if status, _ := fx.A.Do("POST", diagramsPath(fx.OrgA)+"/"+aID+"/save", map[string]any{"version": 1, "view": view([]map[string]any{node("n1", "device", devB, 0)})}); status != http.StatusBadRequest {
 		t.Errorf("A places B's device: %d, want 400", status)
-	}
-	if status, _ := fx.A.Do("POST", diagramsPath(fx.OrgA), map[string]any{"name": "X", "scope": "site", "siteId": siteB}); status != http.StatusBadRequest {
-		t.Errorf("A's diagram in B's site: %d, want 400", status)
 	}
 	if _, got := fx.B.Do("GET", d(fx.OrgB), nil); got["diagram"].(map[string]any)["name"] != "LAN" {
 		t.Errorf("B's diagram changed: %v", got)
@@ -63,31 +60,26 @@ func TestDiagramEndpointsAreTenantIsolated(t *testing.T) {
 func TestDiagramSaveWithInventoryChanges(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	fw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "BD-FW01", "type": "firewall", "siteId": bd}))
 	for name, body := range map[string]map[string]any{
-		"no name":      {"name": " ", "scope": "organization"},
-		"bad scope":    {"name": "X", "scope": "partner"},
-		"unit missing": {"name": "X", "scope": "business_unit"},
-		"site missing": {"name": "X", "scope": "site"},
-		"unknown site": {"name": "X", "scope": "site", "siteId": uuid.NewString()},
-		"bad layer":    {"name": "X", "scope": "organization", "layer": "l7"},
+		"no name":   {"name": " "},
+		"bad layer": {"name": "X", "layer": "l7"},
 	} {
 		if status, _ := fx.A.Do("POST", diagramsPath(org), body); status != http.StatusBadRequest {
 			t.Errorf("diagram %s: %d, want 400", name, status)
 		}
 	}
-	created := mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "LAN Bình Định", "scope": "site", "siteId": bd, "layer": "physical"})
+	created := mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "LAN Bình Định", "layer": "physical"})
 	dg := created["diagram"].(map[string]any)
-	if dg["siteCode"] != "AGRI-BD01" || dg["access"] != "admin" || len(created["view"].(map[string]any)["nodes"].([]any)) != 0 {
+	if dg["access"] != "admin" || len(created["view"].(map[string]any)["nodes"].([]any)) != 0 {
 		t.Errorf("diagram created as %v", created)
 	}
 	id := dg["id"].(string)
-	if status, _ := fx.A.Do("POST", diagramsPath(org), map[string]any{"name": "lan bình định", "scope": "site", "siteId": bd}); status != http.StatusConflict {
-		t.Errorf("duplicate name in a site: %d, want 409", status)
+	if status, _ := fx.A.Do("POST", diagramsPath(org), map[string]any{"name": "lan bình định"}); status != http.StatusConflict {
+		t.Errorf("duplicate name: %d, want 409", status)
 	}
-	mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "LAN Bình Định", "scope": "business_unit", "businessUnitId": nm})
 	save := diagramsPath(org) + "/" + id + "/save"
 
 	// One save: a new switch (temp id), a link from the firewall to it, both drawn.
@@ -173,7 +165,7 @@ func TestDiagramSaveWithInventoryChanges(t *testing.T) {
 func TestDiagramPermissions(t *testing.T) {
 	w := newRoleWorld(t)
 	org := w.fx.OrgA
-	d := mustCreate(t, w.editor, diagramsPath(org), map[string]any{"name": "Tổng quan", "scope": "organization"})
+	d := mustCreate(t, w.editor, diagramsPath(org), map[string]any{"name": "Tổng quan"})
 	id := d["diagram"].(map[string]any)["id"].(string)
 	if status, got := w.viewer.Do("GET", diagramsPath(org)+"/"+id, nil); status != http.StatusOK || got["diagram"].(map[string]any)["access"] != "view" {
 		t.Errorf("viewer reads a diagram: %d", status)
@@ -182,7 +174,7 @@ func TestDiagramPermissions(t *testing.T) {
 		method, path string
 		body         map[string]any
 	}{
-		{"POST", diagramsPath(org), map[string]any{"name": "X", "scope": "organization"}},
+		{"POST", diagramsPath(org), map[string]any{"name": "X"}},
 		{"POST", diagramsPath(org) + "/" + id + "/save", map[string]any{"version": 1, "view": view(nil)}},
 		{"PATCH", diagramsPath(org) + "/" + id, map[string]any{"name": "X", "version": 1}},
 		{"DELETE", diagramsPath(org) + "/" + id, nil},

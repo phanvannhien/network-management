@@ -81,11 +81,7 @@ func loadCluster(ctx context.Context, q store.Querier, m tenant.Membership, id u
 }
 
 func clusterLevel(ctx context.Context, q store.Querier, m tenant.Membership, c store.GetClusterRow) (int, error) {
-	sites, err := siteLevels(ctx, q, m, []siteRef{{c.SiteID, c.SiteUnitID, c.SitePartnerID}})
-	if err != nil {
-		return 0, err
-	}
-	return max(m.UnitLevel(c.BusinessUnitID, c.PartnerID), sites[c.SiteID]), nil
+	return m.Level(), nil
 }
 
 func prefixString(p *netip.Prefix) *string {
@@ -100,8 +96,7 @@ func toCluster(c store.GetClusterRow, level int) apigen.Cluster {
 	return apigen.Cluster{
 		Id: uuid.UUID(c.ID.Bytes), Kind: apigen.ClusterKind(c.Kind), Name: c.Name, Hostname: c.Hostname,
 		MgmtIp: prefixString(c.MgmtIp), Notes: c.Notes, SiteId: uuid.UUID(c.SiteID.Bytes), SiteCode: c.SiteCode,
-		SiteName: c.SiteName, BusinessUnitId: uuid.UUID(c.BusinessUnitID.Bytes), UnitCode: c.UnitCode,
-		PartnerCode: c.PartnerCode, MemberCount: c.MemberCount, MemberHostnames: c.MemberHostnames, MemberType: c.MemberType,
+		SiteName: c.SiteName, CategoryPath: c.CategoryPath, MemberCount: c.MemberCount, MemberHostnames: c.MemberHostnames, MemberType: c.MemberType,
 		Access: levelName(level), Version: c.Version,
 	}
 }
@@ -117,10 +112,10 @@ func (s *Server) clusterDetail(ctx context.Context, q store.Querier, m tenant.Me
 	}
 	base := toCluster(c, level)
 	out := apigen.ClusterDetail{
-		Access: base.Access, BusinessUnitId: base.BusinessUnitId, Hostname: base.Hostname, Id: base.Id, Kind: base.Kind,
+		Access: base.Access, Hostname: base.Hostname, Id: base.Id, Kind: base.Kind,
 		MemberCount: base.MemberCount, MemberHostnames: base.MemberHostnames, MgmtIp: base.MgmtIp, Name: base.Name, MemberType: base.MemberType,
-		Notes: base.Notes, PartnerCode: base.PartnerCode, SiteCode: base.SiteCode, SiteId: base.SiteId,
-		SiteName: base.SiteName, UnitCode: base.UnitCode, Version: base.Version,
+		Notes: base.Notes, CategoryPath: base.CategoryPath, SiteCode: base.SiteCode, SiteId: base.SiteId,
+		SiteName: base.SiteName, Version: base.Version,
 		Members: make([]apigen.ClusterMember, 0, len(rows)),
 	}
 	for _, r := range rows {
@@ -141,13 +136,12 @@ type clusterFields struct {
 	kind, name, hostname, notes string
 	mgmt                        *netip.Prefix
 	site                        uuid.UUID
-	unit                        *uuid.UUID
 }
 
-func validateCluster(kind apigen.ClusterKind, name string, hostname, mgmtIP, notes *string, site uuid.UUID, unit *uuid.UUID) (clusterFields, string) {
+func validateCluster(kind apigen.ClusterKind, name string, hostname, mgmtIP, notes *string, site uuid.UUID) (clusterFields, string) {
 	f := clusterFields{
 		kind: string(kind), name: strings.TrimSpace(name), hostname: strings.TrimSpace(str(hostname)), notes: str(notes),
-		site: site, unit: unit,
+		site: site,
 	}
 	switch {
 	case !kind.Valid():
@@ -183,7 +177,7 @@ func snapCluster(c store.GetClusterRow) clusterSnapshot {
 	if c.MgmtIp != nil {
 		ip = c.MgmtIp.String()
 	}
-	return clusterSnapshot{c.Kind, c.Name, c.Hostname, ip, c.SiteCode, c.PartnerCode + " › " + c.UnitCode}
+	return clusterSnapshot{c.Kind, c.Name, c.Hostname, ip, c.SiteCode, c.CategoryPath}
 }
 
 func (s *Server) ListClusters(ctx context.Context, req apigen.ListClustersRequestObject) (apigen.ListClustersResponseObject, error) {
@@ -240,7 +234,6 @@ func (s *Server) saveCluster(ctx context.Context, m tenant.Membership, f cluster
 	)
 	err := s.withTx(ctx, func(q store.Querier) error {
 		var before store.GetClusterRow
-		keep := pgtype.UUID{}
 		if id != nil {
 			var ok bool
 			var err error
@@ -257,17 +250,13 @@ func (s *Server) saveCluster(ctx context.Context, m tenant.Membership, f cluster
 				out.code = 403
 				return errRollback
 			}
-			keep = before.BusinessUnitID
 		}
-		// Same owner rule as devices: the site's unit, or a chosen unit in a shared site (ADR-026).
-		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, unit: f.unit, uHeight: 1}, pgtype.UUID{}, keep)
+		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
 		if err != nil || bad != "" {
 			out.bad = bad
 			return orRollback(err)
 		}
-		moved := id == nil || p.unit != before.BusinessUnitID || p.site.ID != before.SiteID
-		if moved && (m.UnitLevel(p.unit, p.unitPartner) < tenant.LevelEdit ||
-			(id != nil && m.UnitLevel(before.BusinessUnitID, before.PartnerID) < tenant.LevelEdit)) {
+		if !m.CanEdit() {
 			out.code = 403
 			return errRollback
 		}
@@ -283,21 +272,21 @@ func (s *Server) saveCluster(ctx context.Context, m tenant.Membership, f cluster
 				}
 			}
 		}
-		if id != nil && moved && before.MemberCount > 0 {
-			out.bad = "Cụm còn thành viên: không đổi site/đơn vị được (thành viên phải cùng site và đơn vị với cụm)"
+		if id != nil && p.site.ID != before.SiteID && before.MemberCount > 0 {
+			out.bad = "Cụm còn thành viên: không đổi site được (thành viên phải cùng site với cụm)"
 			return errRollback
 		}
 		var cid pgtype.UUID
 		if id == nil {
 			cid, err = q.CreateCluster(ctx, store.CreateClusterParams{
-				OrganizationID: m.OrgID, BusinessUnitID: p.unit, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
+				OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
 				Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
 			})
 		} else {
 			cid = before.ID
 			var n int64
 			n, err = q.UpdateCluster(ctx, store.UpdateClusterParams{
-				ID: before.ID, OrganizationID: m.OrgID, Version: version, BusinessUnitID: p.unit, SiteID: p.site.ID,
+				ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
 				Kind: f.kind, Name: f.name, Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
 			})
 			if err == nil && n == 0 {
@@ -342,7 +331,7 @@ func (s *Server) CreateCluster(ctx context.Context, req apigen.CreateClusterRequ
 	if b == nil {
 		return apigen.CreateCluster400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
-	f, msg := validateCluster(b.Kind, b.Name, b.Hostname, b.MgmtIp, b.Notes, b.SiteId, b.BusinessUnitId)
+	f, msg := validateCluster(b.Kind, b.Name, b.Hostname, b.MgmtIp, b.Notes, b.SiteId)
 	if msg != "" {
 		return apigen.CreateCluster400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -369,7 +358,7 @@ func (s *Server) UpdateCluster(ctx context.Context, req apigen.UpdateClusterRequ
 	if b == nil {
 		return apigen.UpdateCluster400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
-	f, msg := validateCluster(b.Kind, b.Name, b.Hostname, b.MgmtIp, b.Notes, b.SiteId, b.BusinessUnitId)
+	f, msg := validateCluster(b.Kind, b.Name, b.Hostname, b.MgmtIp, b.Notes, b.SiteId)
 	if msg != "" {
 		if _, ok, err := loadCluster(ctx, s.q, m, req.ClusterId); err != nil {
 			return nil, err
@@ -410,7 +399,7 @@ func (s *Server) DeleteCluster(ctx context.Context, req apigen.DeleteClusterRequ
 			out.gone = true
 			return errRollback
 		}
-		if m.UnitLevel(c.BusinessUnitID, c.PartnerID) < tenant.LevelEdit {
+		if !m.CanEdit() {
 			out.code = 403
 			return errRollback
 		}

@@ -1,43 +1,35 @@
--- Sites, locations, racks (P1-07, ADR-025). Every query takes organization_id. Restricted callers (role
--- 'member', ADR-031) see a site when its unit is granted (directly or through the unit's partner) or when the
--- site is shared to a granted partner/unit (a share to a unit also reaches admins of its partner).
+-- Sites, locations, racks (P1-07, ADR-025/032). Every query takes organization_id. A site belongs to one category or
+-- straight to the organization; `code` is its full code derived from the category path, `local_code` its own part.
 
 -- name: ListSites :many
--- @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
-SELECT s.*,
-       COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
-       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name,
+-- @category_filter: the category and everything below it; @only_root: sites attached straight to the organization.
+SELECT s.*, category_path(s.category_id)::text AS category_path,
        (SELECT count(*) FROM locations l WHERE l.site_id = s.id)::bigint AS location_count,
        (SELECT count(*) FROM racks r WHERE r.site_id = s.id)::bigint AS rack_count
 FROM sites s
-LEFT JOIN business_units b ON b.id = s.business_unit_id
-LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = @organization_id AND s.deleted_at IS NULL
   AND (sqlc.narg('id_filter')::uuid IS NULL OR s.id = sqlc.narg('id_filter'))
-  AND (sqlc.narg('bu_filter')::uuid IS NULL OR s.business_unit_id = sqlc.narg('bu_filter'))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR b.partner_id = sqlc.narg('partner_filter'))
-  AND (NOT @only_shared::boolean OR s.business_unit_id IS NULL)
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
+  AND (NOT @only_root::boolean OR s.category_id IS NULL)
 ORDER BY s.code;
 
 -- name: GetSite :one
-SELECT s.*, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
-       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name
+SELECT s.*, category_path(s.category_id)::text AS category_path
 FROM sites s
-LEFT JOIN business_units b ON b.id = s.business_unit_id
-LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = @id AND s.organization_id = @organization_id AND s.deleted_at IS NULL;
 
 -- name: CreateSite :one
-INSERT INTO sites (organization_id, code, name, address, timezone, contact_name, contact_phone, contact_email, notes,
-                   kind, business_unit_id, isp)
-VALUES (@organization_id, @code, @name, @address, @timezone, @contact_name, @contact_phone, @contact_email, @notes,
-        @kind, sqlc.narg('business_unit_id'), @isp)
+INSERT INTO sites (organization_id, code, local_code, name, address, timezone, contact_name, contact_phone, contact_email,
+                   notes, kind, category_id, isp)
+VALUES (@organization_id, @code, @local_code, @name, @address, @timezone, @contact_name, @contact_phone, @contact_email,
+        @notes, @kind, sqlc.narg('category_id'), @isp)
 RETURNING *;
 
 -- name: UpdateSite :one
-UPDATE sites SET code = @code, name = @name, address = @address, timezone = @timezone,
+UPDATE sites SET code = @code, local_code = @local_code, name = @name, address = @address, timezone = @timezone,
                  contact_name = @contact_name, contact_phone = @contact_phone, contact_email = @contact_email,
-                 notes = @notes, kind = @kind, business_unit_id = sqlc.narg('business_unit_id'), isp = @isp,
+                 notes = @notes, kind = @kind, category_id = sqlc.narg('category_id'), isp = @isp,
                  version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL AND version = @version
 RETURNING *;

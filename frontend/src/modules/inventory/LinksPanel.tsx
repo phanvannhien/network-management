@@ -152,8 +152,7 @@ function LinkDialog({
   const devices = useDeviceList(orgId, {
     q: search,
     facets: {},
-    partnerId: null,
-    unitId: null,
+    categoryId: null,
     sort: { id: 'hostname', desc: false },
     pageIndex: 0,
     pageSize: 200,

@@ -41,7 +41,13 @@ export class ConflictError extends Error {}
 export function useUpdateOrganization(orgId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (body: { name: string; notes: string; version: number }) => {
+    mutationFn: async (body: {
+      name: string
+      code: string
+      notes: string
+      version: number
+      confirmSiteCodes?: boolean
+    }) => {
       const result = await api.PATCH('/orgs/{orgId}', {
         params: { ...csrfParam, path: { orgId } },
         body,

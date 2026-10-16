@@ -20,8 +20,8 @@ func devEnd(id, iface string) map[string]any {
 // Cross-tenant isolation for every link endpoint, plus linking another org's device or port.
 func TestLinkEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	sw := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-SW1", "type": "l2_switch", "siteId": siteB}))
 	fw := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-FW1", "type": "firewall", "siteId": siteB}))
 	p1 := idOf(t, mustCreate(t, fx.B, devicePath(fx.OrgB, sw)+"/interfaces", map[string]any{"name": "Gi1/0/1", "kind": "physical"}))
@@ -41,8 +41,8 @@ func TestLinkEndpointsAreTenantIsolated(t *testing.T) {
 			}
 		}
 	}
-	_, nm := mustPartnerUnit(t, fx.A, fx.OrgA, "AGRI")
-	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "AGRI-BD01", "name": "A", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, fx.OrgA, "AGRI")
+	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "BD01", "name": "A", "categoryId": nm}))
 	devA := idOf(t, mustCreate(t, fx.A, devicesPath(fx.OrgA), map[string]any{"hostname": "A-SW1", "type": "l2_switch", "siteId": siteA}))
 	if status, _ := fx.A.Do("POST", linksPath(fx.OrgA), map[string]any{"a": devEnd(devA, ""), "b": devEnd(fw, ""), "kind": "ethernet"}); status != http.StatusBadRequest {
 		t.Errorf("link to another org's device: %d, want 400", status)
@@ -61,9 +61,9 @@ func TestLinkEndpointsAreTenantIsolated(t *testing.T) {
 func TestLinkRules(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	sw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "BD-SW01", "type": "l2_switch", "siteId": bd}))
 	fw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "BD-FW01", "type": "firewall", "siteId": bd}))
 	hq := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "HN-FW01", "type": "firewall", "siteId": hn}))
@@ -108,7 +108,7 @@ func TestLinkRules(t *testing.T) {
 	// Logical links do not take ports: a VPN between tunnels, many logical links per device, a link without ports.
 	vpn := mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(fw, fwTun), "b": devEnd(hq, hqTun), "kind": "logical", "medium": "VPN/IPsec",
 		"provider": "VNPT", "circuitId": "VN-123", "bandwidth": "100 Mbps"})
-	if vpn["b"].(map[string]any)["siteCode"] != "AGRI-HN01" || vpn["circuitId"] != "VN-123" {
+	if vpn["b"].(map[string]any)["siteCode"] != "ORG-AGRI-HN01" || vpn["circuitId"] != "VN-123" {
 		t.Errorf("VPN stored as %v", vpn)
 	}
 	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": gEnd(grp), "b": devEnd(sw, ""), "kind": "ethernet"})

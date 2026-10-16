@@ -17,8 +17,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { atLeast, inScope, useOrgAccess, useScope } from '@/modules/sites/access'
-import { useSites, type Site } from '@/modules/sites/sites'
+import { atLeast, useInScope, useOrgAccess } from '@/modules/sites/access'
+import { useSites } from '@/modules/sites/sites'
 import { SubnetDialog, VlanDialog } from './IpamDialogs'
 import {
   useIpLookup,
@@ -35,15 +35,12 @@ const TABS = ['subnets', 'vlans'] as const
 type Tab = (typeof TABS)[number]
 const ORG_WIDE = 'org'
 
-/** Topbar partner/unit filter through the object's site; organization-wide objects pass only "all". */
+/** Topbar category filter through the object's site; organization-wide objects pass only "all". */
 function useSiteScope(orgId: string) {
   const sites = useSites(orgId)
-  const scope = useScope(orgId)
+  const passes = useInScope(orgId)
   const byId = useMemo(() => new Map((sites.data ?? []).map((s) => [s.id, s])), [sites.data])
-  return (siteId: string | null) => {
-    const s: Site | undefined = siteId ? byId.get(siteId) : undefined
-    return inScope(scope, { partnerId: s?.partnerId ?? null, unitId: s?.businessUnitId ?? null })
-  }
+  return (siteId: string | null) => passes(siteId ? byId.get(siteId)?.categoryId : undefined)
 }
 
 function siteFacet(

@@ -35,8 +35,8 @@ func listDevices(t *testing.T, c *tenanttest.Client, org uuid.UUID, q url.Values
 // Cross-tenant isolation for every device and custom-field endpoint, plus placing a device in another org.
 func TestDeviceEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	devB := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-FW01", "type": "firewall", "siteId": siteB}))
 	fieldB := idOf(t, mustCreate(t, fx.B, fieldsPath(fx.OrgB), map[string]any{"key": "cost", "label": "Cost", "kind": "number"}))
 	dev := func(o uuid.UUID) string { return devicesPath(o) + "/" + devB }
@@ -95,11 +95,9 @@ func TestDeviceEndpointsAreTenantIsolated(t *testing.T) {
 func TestDeviceRules(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	agri, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	_, food := mustPartnerUnit(t, fx.A, org, "FOOD")
-	_ = agri
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	idc := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "SHARED-HCM01", "name": "IDC"}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	idc := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "IDC"}))
 	room := idOf(t, mustCreate(t, fx.A, sitesPath(org)+"/"+bd+"/locations", map[string]any{"kind": "room", "name": "Phòng máy"}))
 	rack := idOf(t, mustCreate(t, fx.A, sitesPath(org)+"/"+bd+"/racks", map[string]any{"locationId": room, "name": "R1", "uHeight": 10}))
 	idcRoom := idOf(t, mustCreate(t, fx.A, sitesPath(org)+"/"+idc+"/locations", map[string]any{"kind": "room", "name": "IDC room"}))
@@ -111,7 +109,7 @@ func TestDeviceRules(t *testing.T) {
 		"hostname": "AGRI-BD-FW01", "type": "firewall", "siteId": bd, "rackId": rack, "rackU": 9, "uHeight": 1,
 		"vendor": "Fortinet", "tags": []string{"edge", "Edge", " ha "}, "customFields": cf, "warrantyEnd": "2027-06-30",
 	})
-	if fw["businessUnitId"] != nm || fw["locationId"] != room || fw["unitCode"] != "MAIN" || !slices.Equal(anyStrings(fw["tags"]), []string{"edge", "ha"}) {
+	if fw["categoryId"] != nm || fw["categoryPath"] != "AGRI" || fw["siteCode"] != "ORG-AGRI-BD01" || fw["locationId"] != room || !slices.Equal(anyStrings(fw["tags"]), []string{"edge", "ha"}) {
 		t.Errorf("device stored as %v", fw)
 	}
 	for name, c := range map[string]struct {
@@ -121,8 +119,7 @@ func TestDeviceRules(t *testing.T) {
 		"duplicate hostname (case)":     {map[string]any{"hostname": "agri-bd-fw01", "type": "router", "siteId": bd, "customFields": cf}, http.StatusConflict},
 		"bad hostname":                  {map[string]any{"hostname": "a b", "type": "router", "siteId": bd, "customFields": cf}, http.StatusBadRequest},
 		"bad type":                      {map[string]any{"hostname": "X1", "type": "toaster", "siteId": bd, "customFields": cf}, http.StatusBadRequest},
-		"shared site without unit":      {map[string]any{"hostname": "X2", "type": "router", "siteId": idc, "customFields": cf}, http.StatusBadRequest},
-		"unit site with another unit":   {map[string]any{"hostname": "X3", "type": "router", "siteId": bd, "businessUnitId": food, "customFields": cf}, http.StatusBadRequest},
+		"unknown site":                  {map[string]any{"hostname": "X2", "type": "router", "siteId": uuid.NewString(), "customFields": cf}, http.StatusBadRequest},
 		"location of another site":      {map[string]any{"hostname": "X4", "type": "router", "siteId": bd, "locationId": idcRoom, "customFields": cf}, http.StatusBadRequest},
 		"rack U overlap":                {map[string]any{"hostname": "X5", "type": "router", "siteId": bd, "rackId": rack, "rackU": 9, "customFields": cf}, http.StatusBadRequest},
 		"rack too small":                {map[string]any{"hostname": "X6", "type": "router", "siteId": bd, "rackId": rack, "rackU": 9, "uHeight": 3, "customFields": cf}, http.StatusBadRequest},
@@ -131,7 +128,7 @@ func TestDeviceRules(t *testing.T) {
 		"required custom field missing": {map[string]any{"hostname": "X9", "type": "router", "siteId": bd}, http.StatusBadRequest},
 		"select value not an option":    {map[string]any{"hostname": "X10", "type": "router", "siteId": bd, "customFields": map[string]any{"cost_center": "HR"}}, http.StatusBadRequest},
 		"bad date value":                {map[string]any{"hostname": "X11", "type": "router", "siteId": bd, "customFields": map[string]any{"cost_center": "IT", "bought": "30/06/2027"}}, http.StatusBadRequest},
-		"shared site with unit":         {map[string]any{"hostname": "FOOD-IDC-SW01", "type": "l3_switch", "siteId": idc, "businessUnitId": food, "locationId": idcRoom, "customFields": cf, "lifecycle": "spare"}, http.StatusCreated},
+		"shared site with unit":         {map[string]any{"hostname": "FOOD-IDC-SW01", "type": "l3_switch", "siteId": idc, "locationId": idcRoom, "customFields": cf, "lifecycle": "spare"}, http.StatusCreated},
 		"rack slot right below":         {map[string]any{"hostname": "AGRI-BD-SW01", "type": "l2_switch", "siteId": bd, "rackId": rack, "rackU": 7, "uHeight": 2, "customFields": cf, "tags": []string{"access"}}, http.StatusCreated},
 	} {
 		if status, body := fx.A.Do("POST", devicesPath(org), c.body); status != c.want {
@@ -158,7 +155,6 @@ func TestDeviceRules(t *testing.T) {
 		"rack":     sitesPath(org) + "/" + bd + "/racks/" + rack,
 		"location": sitesPath(org) + "/" + idc + "/locations/" + idcRoom,
 		"site":     sitesPath(org) + "/" + bd,
-		"unit":     unitsPath(org) + "/" + food,
 	} {
 		if status, body := fx.A.Do("DELETE", path, nil); status != http.StatusConflict {
 			t.Errorf("delete %s with devices: %d %v, want 409", name, status, body)
@@ -190,9 +186,9 @@ func anyStrings(v any) []string {
 func TestDeviceListFiltersSortsAndPages(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	for _, d := range []map[string]any{
 		{"hostname": "BD-FW01", "type": "firewall", "siteId": bd, "vendor": "Fortinet", "serialNumber": "FGT60F0001", "tags": []string{"edge"}},
 		{"hostname": "BD-SW01", "type": "l2_switch", "siteId": bd, "vendor": "Cisco", "lifecycle": "spare", "warrantyEnd": "2026-01-01"},

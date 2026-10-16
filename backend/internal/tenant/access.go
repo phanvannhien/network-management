@@ -1,9 +1,5 @@
 package tenant
 
-import (
-	"github.com/jackc/pgx/v5/pgtype"
-)
-
 // Access (ADR-032): the organization role decides everything — every member sees the whole organization; editors
 // change data, owners/admins also manage users and delete. There are no per-branch grants or record shares.
 
@@ -27,7 +23,3 @@ func (m Membership) Level() int {
 	}
 	return LevelNone
 }
-
-// UnitLevel / PartnerLevel are the organization level; kept until business units leave the data model (P1-29).
-func (m Membership) UnitLevel(_, _ pgtype.UUID) int { return m.Level() }
-func (m Membership) PartnerLevel(_ pgtype.UUID) int { return m.Level() }

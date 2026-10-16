@@ -32,8 +32,8 @@ func ifaceNames(t *testing.T, c *tenanttest.Client, org uuid.UUID, dev string) [
 // Cross-tenant isolation for templates, interfaces, IPs and apply-template; plus using another org's template.
 func TestInterfaceEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	tplB := idOf(t, mustCreate(t, fx.B, templatesPath(fx.OrgB), map[string]any{"name": "SW24", "type": "l2_switch",
 		"ports": []map[string]any{{"pattern": "Gi1/0/{n}", "start": 1, "count": 24, "media": "RJ45"}}}))
 	devB := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-SW01", "type": "l2_switch", "siteId": siteB, "templateId": tplB}))
@@ -74,13 +74,12 @@ func TestInterfaceEndpointsAreTenantIsolated(t *testing.T) {
 		}
 	}
 	// A cannot create a device from B's template, nor point A's device at B's interface.
-	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HN01", "name": "A"}))
-	_, unitA := mustPartnerUnit(t, fx.A, fx.OrgA, "AGRI")
-	if status, _ := fx.A.Do("POST", devicesPath(fx.OrgA), map[string]any{"hostname": "A1", "type": "router", "siteId": siteA, "businessUnitId": unitA, "templateId": tplB}); status != http.StatusBadRequest {
+	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "HN01", "name": "A"}))
+	if status, _ := fx.A.Do("POST", devicesPath(fx.OrgA), map[string]any{"hostname": "A1", "type": "router", "siteId": siteA, "templateId": tplB}); status != http.StatusBadRequest {
 		t.Errorf("device from another org's template: %d, want 400", status)
 	}
-	devA := idOf(t, mustCreate(t, fx.A, devicesPath(fx.OrgA), map[string]any{"hostname": "A2", "type": "router", "siteId": siteA, "businessUnitId": unitA}))
-	if status, _ := fx.A.Do("PATCH", devicePath(fx.OrgA, devA), map[string]any{"hostname": "A2", "type": "router", "siteId": siteA, "businessUnitId": unitA, "mgmtInterfaceId": ifB, "version": 1}); status != http.StatusBadRequest {
+	devA := idOf(t, mustCreate(t, fx.A, devicesPath(fx.OrgA), map[string]any{"hostname": "A2", "type": "router", "siteId": siteA}))
+	if status, _ := fx.A.Do("PATCH", devicePath(fx.OrgA, devA), map[string]any{"hostname": "A2", "type": "router", "siteId": siteA, "mgmtInterfaceId": ifB, "version": 1}); status != http.StatusBadRequest {
 		t.Errorf("management interface of another org's device: %d, want 400", status)
 	}
 	if status, _ := fx.A.Do("POST", devicePath(fx.OrgA, devA)+"/ips", map[string]any{"interfaceId": ifB, "address": "10.9.9.9/24", "role": "primary"}); status != http.StatusBadRequest {
@@ -98,8 +97,8 @@ func TestInterfaceEndpointsAreTenantIsolated(t *testing.T) {
 func TestTemplatesInterfacesAndManagementIP(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	viewer := fx.NewUser(t, "v@example.com", false, tenanttest.Member{Org: org, Role: "viewer"})
 
 	// Templates: validation, editors may write, viewers may not.
@@ -269,8 +268,8 @@ func TestInterfacePermissions(t *testing.T) {
 func TestStackPortsMACAndSubinterfaceTag(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	tpl := idOf(t, mustCreate(t, fx.A, templatesPath(org), map[string]any{"name": "C9300-24", "type": "l3_switch",
 		"ports": []map[string]any{{"pattern": "Gi{m}/0/{n}", "start": 1, "count": 24, "media": "RJ45"}}}))
 	stack := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "CORE", "siteId": bd}))

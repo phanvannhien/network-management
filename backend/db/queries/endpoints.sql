@@ -1,18 +1,13 @@
--- Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
--- the group's unit is granted, or its site is visible.
+-- Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id.
 
 -- name: ListEndpointGroups :many
-SELECT g.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       gu.code AS unit_code, gu.partner_id, gp.code AS partner_code,
+SELECT g.*, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        r.start_ip AS range_start, r.end_ip AS range_end, COALESCE(r.kind, '')::text AS range_kind,
        COALESCE(r.purpose, '')::text AS range_purpose, r.subnet_id, sn.cidr AS subnet_cidr,
        COALESCE(sn.vrf, '')::text AS subnet_vrf,
        (SELECT count(*) FROM endpoint_members em WHERE em.group_id = g.id)::bigint AS member_count
 FROM endpoint_groups g
 JOIN sites s ON s.id = g.site_id AND s.deleted_at IS NULL
-JOIN business_units gu ON gu.id = g.business_unit_id
-JOIN partners gp ON gp.id = gu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.organization_id = @organization_id
@@ -20,29 +15,25 @@ WHERE g.organization_id = @organization_id
 ORDER BY s.code, lower(g.name);
 
 -- name: GetEndpointGroup :one
-SELECT g.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       gu.code AS unit_code, gu.partner_id, gp.code AS partner_code,
+SELECT g.*, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        r.start_ip AS range_start, r.end_ip AS range_end, COALESCE(r.kind, '')::text AS range_kind,
        COALESCE(r.purpose, '')::text AS range_purpose, r.subnet_id, sn.cidr AS subnet_cidr,
        COALESCE(sn.vrf, '')::text AS subnet_vrf,
        (SELECT count(*) FROM endpoint_members em WHERE em.group_id = g.id)::bigint AS member_count
 FROM endpoint_groups g
 JOIN sites s ON s.id = g.site_id AND s.deleted_at IS NULL
-JOIN business_units gu ON gu.id = g.business_unit_id
-JOIN partners gp ON gp.id = gu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.id = @id AND g.organization_id = @organization_id;
 
 -- name: CreateEndpointGroup :one
-INSERT INTO endpoint_groups (organization_id, business_unit_id, site_id, kind, name, ip_range_id, expected_count, notes)
-VALUES (@organization_id, @business_unit_id, @site_id, @kind, @name, sqlc.narg('ip_range_id'),
+INSERT INTO endpoint_groups (organization_id, site_id, kind, name, ip_range_id, expected_count, notes)
+VALUES (@organization_id, @site_id, @kind, @name, sqlc.narg('ip_range_id'),
         sqlc.narg('expected_count'), @notes)
 RETURNING id;
 
 -- name: UpdateEndpointGroup :execrows
-UPDATE endpoint_groups SET business_unit_id = @business_unit_id, site_id = @site_id, kind = @kind, name = @name,
+UPDATE endpoint_groups SET site_id = @site_id, kind = @kind, name = @name,
   ip_range_id = sqlc.narg('ip_range_id'), expected_count = sqlc.narg('expected_count'), notes = @notes,
   version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND version = @version;
@@ -92,6 +83,3 @@ UPDATE devices SET mgmt_interface_id = @interface_id WHERE id = @id AND organiza
 
 -- name: CountEndpointGroupsInSite :one
 SELECT count(*) FROM endpoint_groups WHERE organization_id = @organization_id AND site_id = @site_id;
-
--- name: CountEndpointGroupsOfUnit :one
-SELECT count(*) FROM endpoint_groups WHERE organization_id = @organization_id AND business_unit_id = @business_unit_id;

@@ -25,12 +25,55 @@ const (
 // orgSnapshot is what audit before/after records for an organization.
 type orgSnapshot struct {
 	Name  string `json:"name"`
+	Code  string `json:"code"`
 	Kind  string `json:"kind"`
 	Notes string `json:"notes"`
 }
 
 func snapshot(o store.Organization) orgSnapshot {
-	return orgSnapshot{Name: o.Name, Kind: o.Kind, Notes: o.Notes}
+	return orgSnapshot{Name: o.Name, Code: o.Code, Kind: o.Kind, Notes: o.Notes}
+}
+
+// codeFromName suggests an organization code from its name: Vietnamese letters folded to ASCII, A–Z/0–9 only,
+// at most 8 characters ("Văn phòng mẫu" → VANPHONG); ORG when nothing usable remains.
+func codeFromName(name string) string {
+	fold := map[rune]string{'đ': "d", 'Đ': "D"}
+	var b strings.Builder
+	for _, r := range name {
+		if f, ok := fold[r]; ok {
+			b.WriteString(f)
+			continue
+		}
+		switch {
+		case strings.ContainsRune("àáạảãâầấậẩẫăằắặẳẵÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ", r):
+			b.WriteRune('A')
+		case strings.ContainsRune("èéẹẻẽêềếệểễÈÉẸẺẼÊỀẾỆỂỄ", r):
+			b.WriteRune('E')
+		case strings.ContainsRune("ìíịỉĩÌÍỊỈĨ", r):
+			b.WriteRune('I')
+		case strings.ContainsRune("òóọỏõôồốộổỗơờớợởỡÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ", r):
+			b.WriteRune('O')
+		case strings.ContainsRune("ùúụủũưừứựửữÙÚỤỦŨƯỪỨỰỬỮ", r):
+			b.WriteRune('U')
+		case strings.ContainsRune("ỳýỵỷỹỲÝỴỶỸ", r):
+			b.WriteRune('Y')
+		case r < 128:
+			b.WriteRune(r)
+		}
+	}
+	code := strings.Map(func(r rune) rune {
+		if (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return -1
+	}, strings.ToUpper(b.String()))
+	if len(code) > 8 {
+		code = code[:8]
+	}
+	if !categoryCodeRe.MatchString(code) {
+		return "ORG"
+	}
+	return code
 }
 
 // validateOrgFields trims and checks name/notes; returns a user-facing message when invalid.
@@ -49,7 +92,7 @@ func validateOrgFields(name, notes string) (string, string, string) {
 
 func toOrganization(o store.Organization) apigen.Organization {
 	return apigen.Organization{
-		Id: uuid.UUID(o.ID.Bytes), Name: o.Name, Kind: apigen.OrganizationKind(o.Kind), Notes: o.Notes,
+		Id: uuid.UUID(o.ID.Bytes), Name: o.Name, Code: o.Code, Kind: apigen.OrganizationKind(o.Kind), Notes: o.Notes,
 		Version: o.Version, CreatedAt: o.CreatedAt.Time, UpdatedAt: o.UpdatedAt.Time,
 	}
 }
@@ -111,6 +154,10 @@ func (s *Server) UpdateOrganization(ctx context.Context, req apigen.UpdateOrgani
 		return apigen.UpdateOrganization400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	name, notes, msg := validateOrgFields(req.Body.Name, req.Body.Notes)
+	code := strings.ToUpper(strings.TrimSpace(req.Body.Code))
+	if msg == "" && !categoryCodeRe.MatchString(code) {
+		msg = msgOrgCode
+	}
 	if msg != "" {
 		return apigen.UpdateOrganization400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -122,8 +169,27 @@ func (s *Server) UpdateOrganization(ctx context.Context, req apigen.UpdateOrgani
 		if err != nil {
 			return fmt.Errorf("load organization: %w", err)
 		}
+		// A new code re-codes every site (ADR-032): list first, apply only when confirmed.
+		var changes []codeChange
+		if code != before.Code {
+			t, _, err := loadTree(ctx, q, m)
+			if err != nil {
+				return err
+			}
+			var bad string
+			if changes, bad, err = siteCodeChanges(ctx, q, m, code, t); err != nil {
+				return err
+			}
+			if bad == "" && len(changes) > 0 && (req.Body.ConfirmSiteCodes == nil || !*req.Body.ConfirmSiteCodes) {
+				bad = fmt.Sprintf("Đổi mã tổ chức sẽ đổi mã %d site — xem trước và xác nhận", len(changes))
+			}
+			if bad != "" {
+				msg = bad
+				return errRollback
+			}
+		}
 		updated, err = q.UpdateOrganization(ctx, store.UpdateOrganizationParams{
-			ID: m.OrgID, Name: name, Notes: notes, Version: req.Body.Version,
+			ID: m.OrgID, Name: name, Code: code, Notes: notes, Version: req.Body.Version,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			conflict = true
@@ -132,12 +198,18 @@ func (s *Server) UpdateOrganization(ctx context.Context, req apigen.UpdateOrgani
 		if err != nil {
 			return fmt.Errorf("update organization: %w", err)
 		}
+		if err := applyCodeChanges(ctx, q, m, changes); err != nil {
+			return err
+		}
 		return audit.Write(ctx, q, audit.Entry{
 			OrganizationID: m.OrgID, Actor: m.UserID, Action: "organization.update",
 			ObjectType: "organization", ObjectID: uuidStr(m.OrgID),
 			Before: snapshot(before), After: snapshot(updated), Meta: infoFrom(ctx).meta,
 		})
 	})
+	if msg != "" {
+		return apigen.UpdateOrganization400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
+	}
 	if conflict {
 		return apigen.UpdateOrganization409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{
 			Message: "Tổ chức vừa được người khác sửa. Tải lại để xem bản mới nhất rồi sửa lại.",
@@ -166,10 +238,10 @@ func (s *Server) ActivateOrganization(ctx context.Context, req apigen.ActivateOr
 
 // --- System admin (route gated by requireSystemAdmin) ---
 
-func toAdminOrganization(id pgtype.UUID, name, kind, notes string, members, partners, units, sites int64, created pgtype.Timestamptz, version int32) apigen.AdminOrganization {
+func toAdminOrganization(id pgtype.UUID, name, code, kind, notes string, members, categories, sites int64, created pgtype.Timestamptz, version int32) apigen.AdminOrganization {
 	return apigen.AdminOrganization{
-		Id: uuid.UUID(id.Bytes), Name: name, Kind: apigen.OrganizationKind(kind), Notes: notes,
-		MemberCount: members, PartnerCount: partners, UnitCount: units, SiteCount: sites, CreatedAt: created.Time, Version: version,
+		Id: uuid.UUID(id.Bytes), Name: name, Code: code, Kind: apigen.OrganizationKind(kind), Notes: notes,
+		MemberCount: members, CategoryCount: categories, SiteCount: sites, CreatedAt: created.Time, Version: version,
 	}
 }
 
@@ -181,7 +253,7 @@ func (s *Server) AdminListOrganizations(ctx context.Context, _ apigen.AdminListO
 	}
 	out := apigen.AdminOrganizationList{Organizations: make([]apigen.AdminOrganization, 0, len(rows))}
 	for _, r := range rows {
-		out.Organizations = append(out.Organizations, toAdminOrganization(r.ID, r.Name, r.Kind, r.Notes, r.MemberCount, r.PartnerCount, r.UnitCount, r.SiteCount, r.CreatedAt, r.Version))
+		out.Organizations = append(out.Organizations, toAdminOrganization(r.ID, r.Name, r.Code, r.Kind, r.Notes, r.MemberCount, r.CategoryCount, r.SiteCount, r.CreatedAt, r.Version))
 	}
 	return apigen.AdminListOrganizations200JSONResponse(out), nil
 }
@@ -203,13 +275,20 @@ func (s *Server) AdminCreateOrganization(ctx context.Context, req apigen.AdminCr
 	if msg != "" {
 		return apigen.AdminCreateOrganization400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
+	code := codeFromName(name)
+	if req.Body.Code != nil && strings.TrimSpace(*req.Body.Code) != "" {
+		code = strings.ToUpper(strings.TrimSpace(*req.Body.Code))
+		if !categoryCodeRe.MatchString(code) {
+			return apigen.AdminCreateOrganization400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msgOrgCode}}, nil
+		}
+	}
 	addOwner := req.Body.AddMeAsOwner == nil || *req.Body.AddMeAsOwner
 
 	var org store.Organization
 	members := int64(0)
 	err := s.withTx(ctx, func(q store.Querier) error {
 		var err error
-		org, err = q.CreateOrganization(ctx, store.CreateOrganizationParams{Name: name, Kind: string(req.Body.Kind), Notes: notes})
+		org, err = q.CreateOrganization(ctx, store.CreateOrganizationParams{Name: name, Code: code, Kind: string(req.Body.Kind), Notes: notes})
 		if err != nil {
 			return fmt.Errorf("create organization: %w", err)
 		}
@@ -231,7 +310,7 @@ func (s *Server) AdminCreateOrganization(ctx context.Context, req apigen.AdminCr
 		return nil, err
 	}
 	return apigen.AdminCreateOrganization201JSONResponse(
-		toAdminOrganization(org.ID, org.Name, org.Kind, org.Notes, members, 0, 0, 0, org.CreatedAt, org.Version)), nil
+		toAdminOrganization(org.ID, org.Name, org.Code, org.Kind, org.Notes, members, 0, 0, org.CreatedAt, org.Version)), nil
 }
 
 // AdminDeleteOrganization soft-deletes an organization (ADR-022): it disappears for everyone, history stays.

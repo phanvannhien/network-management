@@ -50,10 +50,7 @@ function JoinClusterDialog({
   const [no, setNo] = useState('1')
   const candidates = (clusters.data ?? []).filter(
     (c) =>
-      c.siteId === device.siteId &&
-      c.businessUnitId === device.businessUnitId &&
-      canJoinCluster(c, device.type) &&
-      atLeast(c.access, 'edit'),
+      c.siteId === device.siteId && canJoinCluster(c, device.type) && atLeast(c.access, 'edit'),
   )
   const join = (id: string) =>
     save.mutate(
@@ -82,7 +79,6 @@ function JoinClusterDialog({
       <ClusterDialog
         orgId={orgId}
         defaultSiteId={device.siteId}
-        defaultUnitId={device.businessUnitId}
         onClose={() => setCreating(false)}
         onSaved={(c) => join(c.id)}
       />

@@ -490,32 +490,26 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /orgs/{orgId}/partners:
+  /orgs/{orgId}/categories:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
-      operationId: listPartners
-      summary: Partners of the organization (ADR-031)
+      operationId: listCategories
+      summary: The whole category tree of the organization (flat, with parent ids)
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartnerList'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: '#/components/schemas/CategoryList'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
     post:
-      operationId: createPartner
-      summary: Create a partner (owner/admin)
+      operationId: createCategory
+      summary: Create a category under another one or under the organization
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
@@ -523,14 +517,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PartnerInput'
+              $ref: '#/components/schemas/CategoryInput'
       responses:
         '201':
-          description: OK
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Partner'
+                $ref: '#/components/schemas/Category'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -541,34 +535,13 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/partners/{partnerId}:
+  /orgs/{orgId}/categories/{categoryId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/PartnerId'
-    get:
-      operationId: getPartner
-      summary: One partner
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Partner'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
+      - $ref: '#/components/parameters/CategoryId'
     patch:
-      operationId: updatePartner
-      summary: Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
+      operationId: updateCategory
+      summary: Rename / re-code / move a category; changed site codes need confirmSiteCodes (see preview)
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
@@ -576,14 +549,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PartnerUpdate'
+              $ref: '#/components/schemas/CategoryUpdate'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Partner'
+                $ref: '#/components/schemas/Category'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -595,15 +568,13 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
     delete:
-      operationId: deletePartner
-      summary: Soft-delete a partner without live units (owner/admin)
+      operationId: deleteCategory
+      summary: Delete an empty category (no child category, no site)
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       responses:
         '204':
           description: Done
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -612,146 +583,72 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/business-units:
+  /orgs/{orgId}/categories/{categoryId}/preview:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CategoryId'
+    post:
+      operationId: previewCategoryUpdate
+      summary: Site codes an update would change (nothing is written)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteCodeChanges'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orgs/{orgId}/code-preview:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
-      operationId: listBusinessUnits
-      summary: Business units of the organization, each under a partner (ADR-031)
+      operationId: previewOrganizationCode
+      summary: Site codes a new organization code would change (nothing is written)
       parameters:
-        - name: partnerId
+        - name: code
           in: query
+          required: true
           schema:
             type: string
-            format: uuid
+            maxLength: 12
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BusinessUnitList'
+                $ref: '#/components/schemas/SiteCodeChanges'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    post:
-      operationId: createBusinessUnit
-      summary: Create a unit under a partner (owner/admin)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BusinessUnitInput'
-      responses:
-        '201':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessUnit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /orgs/{orgId}/business-units/{businessUnitId}:
-    parameters:
-      - $ref: '#/components/parameters/OrgId'
-      - $ref: '#/components/parameters/BusinessUnitId'
-    get:
-      operationId: getBusinessUnit
-      summary: One business unit
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessUnit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    patch:
-      operationId: updateBusinessUnit
-      summary: Edit a unit (its partner cannot change)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BusinessUnitUpdate'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessUnit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    delete:
-      operationId: deleteBusinessUnit
-      summary: Soft-delete a unit without live sites (owner/admin)
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Done
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
   /orgs/{orgId}/sites/next-code:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
       operationId: suggestSiteCode
-      summary: Next free site code for a partner and place (ADR-030/031)
+      summary: Next free own site code for a place within a category (ADR-032), e.g. HY01
       parameters:
-        - name: partnerId
+        - name: categoryId
           in: query
-          description: Partner of the site's unit; omit for a shared site (SHARED- prefix)
+          description: the category of the site; omit for a site straight under the organization
           schema:
             type: string
             format: uuid
@@ -785,23 +682,17 @@ paths:
       - $ref: '#/components/parameters/OrgId'
     get:
       operationId: listSites
-      summary: Sites of the organization (filtered by the member site scope)
+      summary: Sites of the organization
       parameters:
-        - name: businessUnitId
+        - name: categoryId
           in: query
-          description: Only sites of this business unit
+          description: Only sites of this category and the categories below it
           schema:
             type: string
             format: uuid
-        - name: partnerId
+        - name: root
           in: query
-          description: Only sites of this partner (all its units)
-          schema:
-            type: string
-            format: uuid
-        - name: shared
-          in: query
-          description: Only organization-wide (shared) sites
+          description: Only sites attached straight to the organization
           schema:
             type: boolean
       responses:
@@ -1139,8 +1030,7 @@ paths:
       summary: Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
       parameters:
         - $ref: '#/components/parameters/DeviceQuery'
-        - $ref: '#/components/parameters/DevicePartnerFilter'
-        - $ref: '#/components/parameters/DeviceUnitFilter'
+        - $ref: '#/components/parameters/DeviceCategoryFilter'
         - $ref: '#/components/parameters/DeviceSiteFilter'
         - $ref: '#/components/parameters/DeviceTypeFilter'
         - $ref: '#/components/parameters/DeviceVendorFilter'
@@ -2933,16 +2823,10 @@ components:
         type: string
         maxLength: 200
 
-    DevicePartnerFilter:
-      name: partnerId
+    DeviceCategoryFilter:
+      name: categoryId
       in: query
-      schema:
-        type: string
-        format: uuid
-
-    DeviceUnitFilter:
-      name: businessUnitId
-      in: query
+      description: devices of sites in this category or below it
       schema:
         type: string
         format: uuid
@@ -3019,7 +2903,7 @@ components:
       in: query
       schema:
         type: string
-        enum: [hostname, mgmtIp, type, vendor, model, serial, site, unit, lifecycle, warrantyEnd]
+        enum: [hostname, mgmtIp, type, vendor, model, serial, site, category, lifecycle, warrantyEnd]
         default: hostname
 
     DeviceSortDesc:
@@ -3101,6 +2985,13 @@ components:
         type: string
         format: uuid
 
+    CategoryId:
+      name: categoryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     VlanId:
       name: vlanId
       in: path
@@ -3186,22 +3077,6 @@ components:
       schema:
         type: string
         format: date-time
-
-    PartnerId:
-      name: partnerId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-
-    BusinessUnitId:
-      name: businessUnitId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
 
     SiteId:
       name: siteId
@@ -3447,8 +3322,11 @@ components:
 
     Organization:
       type: object
-      required: [id, name, kind, notes, version, createdAt, updatedAt]
+      required: [id, name, kind, notes, version, createdAt, updatedAt, code]
       properties:
+        code:
+          type: string
+          description: prefix of every site code (A-Z, 0-9, 2-12, starting with a letter)
         id:
           type: string
           format: uuid
@@ -3490,8 +3368,14 @@ components:
 
     UpdateOrganizationRequest:
       type: object
-      required: [name, notes, version]
+      required: [name, notes, version, code]
       properties:
+        code:
+          type: string
+          maxLength: 12
+        confirmSiteCodes:
+          type: boolean
+          description: required when the new code changes site codes (preview first)
         name:
           type: string
           minLength: 1
@@ -3506,8 +3390,14 @@ components:
 
     AdminOrganization:
       type: object
-      required: [id, name, kind, notes, memberCount, partnerCount, unitCount, siteCount, createdAt, version]
+      required: [id, name, kind, notes, memberCount, siteCount, createdAt, version, code, categoryCount]
       properties:
+        code:
+          type: string
+        categoryCount:
+          type: integer
+          format: int64
+          description: Categories (count only)
         id:
           type: string
           format: uuid
@@ -3520,14 +3410,6 @@ components:
         memberCount:
           type: integer
           format: int64
-        partnerCount:
-          type: integer
-          format: int64
-          description: Live partners (count only)
-        unitCount:
-          type: integer
-          format: int64
-          description: Live business units (count only)
         siteCount:
           type: integer
           format: int64
@@ -3552,6 +3434,10 @@ components:
       type: object
       required: [name, kind]
       properties:
+        code:
+          type: string
+          maxLength: 12
+          description: defaults to the name's letters
         name:
           type: string
           minLength: 1
@@ -3748,23 +3634,21 @@ components:
           type: integer
           format: int32
 
-    PartnerRelation:
-      type: string
-      enum: [subsidiary, partner, customer]
-
-    PartnerInput:
+    CategoryInput:
       type: object
-      required: [code, name]
+      required: [name, code]
       properties:
-        code:
-          type: string
-          description: "ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)"
-          maxLength: 8
+        parentId:
+          type: [string, 'null']
+          format: uuid
+          description: parent category; null = straight under the organization
         name:
           type: string
           maxLength: 200
-        relation:
-          $ref: '#/components/schemas/PartnerRelation'
+        code:
+          type: string
+          maxLength: 12
+          description: A-Z, 0-9, 2-12, starting with a letter; unique among siblings; part of site codes
         contactName:
           type: string
           maxLength: 200
@@ -3778,31 +3662,36 @@ components:
           type: string
           maxLength: 2000
 
-    PartnerUpdate:
+    CategoryUpdate:
       allOf:
-        - $ref: '#/components/schemas/PartnerInput'
+        - $ref: '#/components/schemas/CategoryInput'
         - type: object
           required: [version]
           properties:
             version:
               type: integer
               format: int32
+            confirmSiteCodes:
+              type: boolean
+              description: required when the update changes site codes
 
-    Partner:
+    Category:
       type: object
-      required: [id, code, name, relation, contactName, contactPhone, contactEmail, notes, unitCount, siteCount, version, createdAt, access]
+      required: [id, parentId, name, code, path, contactName, contactPhone, contactEmail, notes, childCount, siteCount, version]
       properties:
-        access:
-          $ref: '#/components/schemas/AccessLevel'
         id:
           type: string
           format: uuid
-        code:
-          type: string
+        parentId:
+          type: [string, 'null']
+          format: uuid
         name:
           type: string
-        relation:
-          $ref: '#/components/schemas/PartnerRelation'
+        code:
+          type: string
+        path:
+          type: string
+          description: names from the root, e.g. "CJ Feed › Nhà máy Deheus"
         contactName:
           type: string
         contactPhone:
@@ -3811,127 +3700,45 @@ components:
           type: string
         notes:
           type: string
-        unitCount:
+        childCount:
           type: integer
           format: int64
         siteCount:
           type: integer
           format: int64
+          description: sites directly in this category
         version:
           type: integer
           format: int32
-        createdAt:
-          type: string
-          format: date-time
 
-    PartnerList:
+    CategoryList:
       type: object
-      required: [partners]
+      required: [categories]
       properties:
-        partners:
+        categories:
           type: array
           items:
-            $ref: '#/components/schemas/Partner'
+            $ref: '#/components/schemas/Category'
 
-    BusinessUnitInput:
+    SiteCodeChanges:
       type: object
-      required: [partnerId, code, name]
+      required: [changes]
       properties:
-        partnerId:
-          type: string
-          format: uuid
-        code:
-          type: string
-          description: "2-8 characters A-Z/0-9 starting with a letter, unique within the partner (ADR-031)"
-          maxLength: 8
-        name:
-          type: string
-          maxLength: 200
-        contactName:
-          type: string
-          maxLength: 200
-        contactPhone:
-          type: string
-          maxLength: 50
-        contactEmail:
-          type: string
-          maxLength: 320
-        notes:
-          type: string
-          maxLength: 2000
-
-    BusinessUnitUpdate:
-      type: object
-      required: [code, name, version]
-      properties:
-        code:
-          type: string
-          maxLength: 8
-        name:
-          type: string
-          maxLength: 200
-        contactName:
-          type: string
-          maxLength: 200
-        contactPhone:
-          type: string
-          maxLength: 50
-        contactEmail:
-          type: string
-          maxLength: 320
-        notes:
-          type: string
-          maxLength: 2000
-        version:
-          type: integer
-          format: int32
-
-    BusinessUnit:
-      type: object
-      required: [id, partnerId, partnerCode, partnerName, code, name, contactName, contactPhone, contactEmail, notes, siteCount, version, createdAt, access]
-      properties:
-        access:
-          $ref: '#/components/schemas/AccessLevel'
-        id:
-          type: string
-          format: uuid
-        partnerId:
-          type: string
-          format: uuid
-        partnerCode:
-          type: string
-        partnerName:
-          type: string
-        code:
-          type: string
-        name:
-          type: string
-        contactName:
-          type: string
-        contactPhone:
-          type: string
-        contactEmail:
-          type: string
-        notes:
-          type: string
-        siteCount:
-          type: integer
-          format: int64
-        version:
-          type: integer
-          format: int32
-        createdAt:
-          type: string
-          format: date-time
-
-    BusinessUnitList:
-      type: object
-      required: [businessUnits]
-      properties:
-        businessUnits:
+        changes:
           type: array
           items:
-            $ref: '#/components/schemas/BusinessUnit'
+            type: object
+            required: [siteId, name, from, to]
+            properties:
+              siteId:
+                type: string
+                format: uuid
+              name:
+                type: string
+              from:
+                type: string
+              to:
+                type: string
 
     SiteCodeSuggestion:
       type: object
@@ -3948,16 +3755,16 @@ components:
       type: object
       required: [code, name]
       properties:
-        code:
-          type: string
-          maxLength: 32
-          description: "ADR-030/031: <PARTNER>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>"
-        kind:
-          $ref: '#/components/schemas/SiteKind'
-        businessUnitId:
-          description: Owning business unit (its partner gives the code prefix); null = shared by the whole organization (e.g. an IDC)
+        categoryId:
           type: [string, 'null']
           format: uuid
+          description: the category the site belongs to; null = straight under the organization (ADR-032)
+        code:
+          type: string
+          maxLength: 12
+          description: "The site's own code (A-Z, 0-9, up to 12), e.g. HCM or BD01; the full code is derived from the category path (ADR-032)"
+        kind:
+          $ref: '#/components/schemas/SiteKind'
         isp:
           type: string
           maxLength: 200
@@ -3995,8 +3802,18 @@ components:
 
     Site:
       type: object
-      required: [id, code, name, kind, businessUnitId, businessUnitCode, businessUnitName, partnerId, partnerCode, partnerName, isp, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt, access]
+      required: [id, code, name, kind, isp, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt, access, localCode, categoryId, categoryPath]
       properties:
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+          description: the site's category (null = attached straight to the organization)
+        categoryPath:
+          type: string
+          description: category names from the root, e.g. "CJ Feed › Nhà máy Deheus" (empty at the organization level)
+        localCode:
+          type: string
+          description: the site's own part of the code
         access:
           $ref: '#/components/schemas/AccessLevel'
         id:
@@ -4006,22 +3823,6 @@ components:
           type: string
         kind:
           $ref: '#/components/schemas/SiteKind'
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-        businessUnitCode:
-          type: string
-          description: Empty for shared sites
-        businessUnitName:
-          type: string
-        partnerId:
-          type: [string, 'null']
-          format: uuid
-        partnerCode:
-          type: string
-          description: Empty for shared sites; the site code prefix (ADR-031)
-        partnerName:
-          type: string
         isp:
           type: string
         name:
@@ -4306,10 +4107,6 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-          description: Owner unit; null = the site's unit (required for shared sites, ADR-026)
         locationId:
           type: [string, 'null']
           format: uuid
@@ -4364,8 +4161,15 @@ components:
 
     Device:
       type: object
-      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, businessUnitId, unitCode, unitName, partnerId, partnerCode, partnerName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, clusterId, clusterName, clusterKind, clusterRole, clusterMemberNo, access, version, createdAt, updatedAt]
+      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, clusterId, clusterName, clusterKind, clusterRole, clusterMemberNo, access, version, createdAt, updatedAt, categoryId, categoryPath]
       properties:
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+          description: the site's category (null = attached straight to the organization)
+        categoryPath:
+          type: string
+          description: category names from the root, e.g. "CJ Feed › Nhà máy Deheus" (empty at the organization level)
         id:
           type: string
           format: uuid
@@ -4438,9 +4242,6 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: string
-          format: uuid
         locationId:
           type: [string, 'null']
           format: uuid
@@ -4490,17 +4291,6 @@ components:
         siteCode:
           type: string
         siteName:
-          type: string
-        unitCode:
-          type: string
-        unitName:
-          type: string
-        partnerId:
-          type: string
-          format: uuid
-        partnerCode:
-          type: string
-        partnerName:
           type: string
         locationName:
           type: string
@@ -5191,11 +4981,6 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-          description: Owner unit; null = the site's unit (required for shared sites)
-
     ClusterUpdate:
       type: object
       required: [kind, name, siteId, version]
@@ -5219,18 +5004,16 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-          description: Owner unit; null = the site's unit (required for shared sites)
         version:
           type: integer
           format: int32
 
     Cluster:
       type: object
-      required: [id, kind, name, hostname, mgmtIp, notes, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, memberCount, memberHostnames, memberType, access, version]
+      required: [id, kind, name, hostname, mgmtIp, notes, siteId, siteCode, siteName, memberCount, memberHostnames, memberType, access, version, categoryPath]
       properties:
+        categoryPath:
+          type: string
         id:
           type: string
           format: uuid
@@ -5253,16 +5036,9 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: string
-          format: uuid
         siteCode:
           type: string
         siteName:
-          type: string
-        unitCode:
-          type: string
-        partnerCode:
           type: string
         memberCount:
           type: integer
@@ -5549,10 +5325,6 @@ components:
         siteId:
           type: string
           format: uuid
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-          description: owner unit, only for a shared site
         ipRangeId:
           type: [string, 'null']
           format: uuid
@@ -5578,10 +5350,10 @@ components:
 
     EndpointGroup:
       type: object
-      required: [id, kind, name, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, ipRangeId, rangeStart,
-                 rangeEnd, rangeKind, rangePurpose, subnetId, subnetCidr, vrf, expectedCount, memberCount, total, notes,
-                 access, version]
+      required: [id, kind, name, siteId, siteCode, siteName, ipRangeId, rangeStart, rangeEnd, rangeKind, rangePurpose, subnetId, subnetCidr, vrf, expectedCount, memberCount, total, notes, access, version, categoryPath]
       properties:
+        categoryPath:
+          type: string
         id:
           type: string
           format: uuid
@@ -5595,13 +5367,6 @@ components:
         siteCode:
           type: string
         siteName:
-          type: string
-        businessUnitId:
-          type: string
-          format: uuid
-        unitCode:
-          type: string
-        partnerCode:
           type: string
         ipRangeId:
           type: [string, 'null']
@@ -5886,10 +5651,6 @@ components:
           items:
             $ref: '#/components/schemas/Link'
 
-    DiagramScope:
-      type: string
-      enum: [organization, business_unit, site]
-
     DiagramLayer:
       type: string
       description: overview (organization / unit level), physical, l2, l3 (site detail)
@@ -5897,19 +5658,11 @@ components:
 
     DiagramInput:
       type: object
-      required: [name, scope]
+      required: [name]
       properties:
         name:
           type: string
           maxLength: 120
-        scope:
-          $ref: '#/components/schemas/DiagramScope'
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-        siteId:
-          type: [string, 'null']
-          format: uuid
         layer:
           $ref: '#/components/schemas/DiagramLayer'
         description:
@@ -5934,29 +5687,12 @@ components:
 
     Diagram:
       type: object
-      required: [id, name, scope, businessUnitId, siteId, partnerCode, unitCode, siteCode, siteName, layer, description,
-                 nodeCount, updatedAt, access, version]
+      required: [id, name, layer, description, nodeCount, updatedAt, access, version]
       properties:
         id:
           type: string
           format: uuid
         name:
-          type: string
-        scope:
-          $ref: '#/components/schemas/DiagramScope'
-        businessUnitId:
-          type: [string, 'null']
-          format: uuid
-        siteId:
-          type: [string, 'null']
-          format: uuid
-        partnerCode:
-          type: string
-        unitCode:
-          type: string
-        siteCode:
-          type: string
-        siteName:
           type: string
         layer:
           $ref: '#/components/schemas/DiagramLayer'

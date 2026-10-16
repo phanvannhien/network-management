@@ -325,17 +325,13 @@ export function SiteDetailPage() {
     : 'locations'
   const s = site.data
   useBreadcrumbs([
-    { label: t('units.hub'), to: `/o/${orgId}/sites` },
-    ...(s?.businessUnitId && s.partnerId
-      ? [
-          { label: s.partnerCode, to: `/o/${orgId}/partners/${s.partnerId}` },
-          { label: s.businessUnitCode, to: `/o/${orgId}/units/${s.businessUnitId}` },
-        ]
-      : [{ label: t('units.sharedShort'), to: `/o/${orgId}/sites?tab=sites` }]),
+    { label: t('nav.sites'), to: `/o/${orgId}/sites` },
+    ...(s?.categoryId
+      ? [{ label: s.categoryPath, to: `/o/${orgId}/sites?category=${s.categoryId}` }]
+      : []),
     { label: s?.code ?? '…' },
   ])
 
-  // Access on this site (ADR-031): its unit's grants, the organization role, or a share.
   const canEdit = atLeast(s?.access, 'edit')
   const canAdmin = atLeast(s?.access, 'admin')
 
@@ -363,10 +359,7 @@ export function SiteDetailPage() {
               </h1>
             </div>
             <p className="text-muted-foreground">
-              {t(`sites.siteKinds.${s.kind}`)} ·{' '}
-              {s.businessUnitId
-                ? `${s.partnerCode} › ${s.businessUnitCode} · ${s.businessUnitName}`
-                : t('units.shared')}
+              {t(`sites.siteKinds.${s.kind}`)} · {s.categoryPath || t('categories.orgShort')}
               {s.address && ` · ${s.address}`}
             </p>
           </div>
@@ -437,10 +430,8 @@ export function SiteDetailPage() {
                 { label: t('sites.code'), value: s.code },
                 { label: t('sites.name'), value: s.name },
                 {
-                  label: t('sites.unit'),
-                  value: s.businessUnitId
-                    ? `${s.businessUnitCode} · ${s.businessUnitName}`
-                    : t('units.shared'),
+                  label: t('sites.category'),
+                  value: s.categoryPath || t('categories.orgShort'),
                 },
                 { label: t('sites.kind'), value: t(`sites.siteKinds.${s.kind}`) },
                 { label: t('sites.isp'), value: s.isp || t('common.none') },

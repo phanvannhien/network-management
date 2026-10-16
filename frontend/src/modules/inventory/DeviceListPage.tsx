@@ -130,8 +130,7 @@ export function DeviceListPage() {
   const list = useDeviceList(orgId, {
     q,
     facets: filter.facets,
-    partnerId: scope.unitId ? null : scope.partnerId,
-    unitId: scope.unitId,
+    categoryId: scope.categoryId,
     sort: sorting[0] ? { id: sorting[0].id as DeviceSort, desc: sorting[0].desc } : null,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
@@ -263,10 +262,10 @@ export function DeviceListPage() {
           ),
       },
       {
-        id: 'unit',
-        accessorFn: (d) => `${d.partnerCode} › ${d.unitCode}`,
-        header: t('devices.unit'),
-        meta: { label: t('devices.unit'), width: 130 },
+        id: 'category',
+        accessorFn: (d) => d.categoryPath,
+        header: t('sites.category'),
+        meta: { label: t('sites.category'), width: 180 },
       },
       {
         id: 'site',
@@ -426,7 +425,7 @@ export function DeviceListPage() {
               />
             }
             columns={columns}
-            defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit', 'cluster']}
+            defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'category', 'cluster']}
             data={rows}
             total={list.data?.total ?? 0}
             isLoading={list.isPending}

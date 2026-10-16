@@ -44,7 +44,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.
 
 ### Tái cấu trúc phân cấp & quyền (ADR-032, chốt 2026-10-16) — làm trước P1-14
-- [ ] **P1-27 Cây Danh mục & mã site tự sinh**: migration `categories` (cây cha–con, mã duy nhất giữa anh em), `organizations.code`,
+- [x] **P1-27 Cây Danh mục & mã site tự sinh**: migration `categories` (cây cha–con, mã duy nhất giữa anh em), `organizations.code`,
   `sites.category_id` (null = gắn vào tổ chức) + mã riêng + `full_code` (duy nhất trong tổ chức); chuyển dữ liệu theo ADR-032
   (đối tác → danh mục, đơn vị → danh mục con trừ `MAIN`, `SHARED-…` → gắn tổ chức, bỏ tiền tố mã site); API CRUD danh mục, chuyển
   nhánh; **xem trước đổi mã** (`…/preview` trả site cũ → mới) và áp dụng có xác nhận; màn "Danh mục & Sites" dạng cây (thêm/sửa/
@@ -54,7 +54,7 @@ Phase hiện tại: **Phase 0**
   bộ lọc hiển thị trong mọi query (thiết bị, cụm, nhóm, IPAM, link, sơ đồ) và màn giao quyền/chia sẻ; `access` trên bản ghi = vai trò
   tổ chức; bộ chọn topbar = chọn nhánh danh mục (lọc). Done khi: viewer chỉ xem, editor sửa toàn tổ chức, admin quản lý user;
   không còn code/bảng đối tác/đơn vị/chia sẻ; `make check` pass.
-- [ ] **P1-29 Gỡ Đơn vị khỏi thiết bị, cụm, nhóm, sơ đồ**: bỏ `business_unit_id` ở devices / device_clusters / endpoint_groups
+- [x] **P1-29 Gỡ Đơn vị khỏi thiết bị, cụm, nhóm, sơ đồ**: bỏ `business_unit_id` ở devices / device_clusters / endpoint_groups
   (danh mục suy từ site; lọc thiết bị theo nhánh danh mục); sơ đồ thuộc tổ chức (bỏ scope, bỏ hidden refs); form và danh sách cập
   nhật; i18n, hướng dẫn, glossary ("Danh mục" thay "Đối tác/Đơn vị", bỏ "site dùng chung"). Done khi: không còn trường đơn vị ở
   giao diện/API; test cũ viết lại theo mô hình mới pass.

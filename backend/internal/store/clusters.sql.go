@@ -13,14 +13,13 @@ import (
 )
 
 const createCluster = `-- name: CreateCluster :one
-INSERT INTO device_clusters (organization_id, business_unit_id, site_id, kind, name, hostname, mgmt_ip, notes)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO device_clusters (organization_id, site_id, kind, name, hostname, mgmt_ip, notes)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `
 
 type CreateClusterParams struct {
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -32,7 +31,6 @@ type CreateClusterParams struct {
 func (q *Queries) CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, createCluster,
 		arg.OrganizationID,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.Kind,
 		arg.Name,
@@ -63,8 +61,7 @@ func (q *Queries) DeleteCluster(ctx context.Context, arg DeleteClusterParams) (i
 }
 
 const getCluster = `-- name: GetCluster :one
-SELECT c.id, c.organization_id, c.business_unit_id, c.site_id, c.kind, c.name, c.hostname, c.mgmt_ip, c.notes, c.created_at, c.updated_at, c.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       cu.code AS unit_code, cu.name AS unit_name, cu.partner_id, cp.code AS partner_code,
+SELECT c.id, c.organization_id, c.site_id, c.kind, c.name, c.hostname, c.mgmt_ip, c.notes, c.created_at, c.updated_at, c.version, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        (SELECT count(*) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL)::bigint AS member_count,
        COALESCE((SELECT string_agg(m.hostname, ', ' ORDER BY m.cluster_member_no NULLS LAST, m.hostname)
                  FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames,
@@ -72,9 +69,6 @@ SELECT c.id, c.organization_id, c.business_unit_id, c.site_id, c.kind, c.name, c
          AS member_type
 FROM device_clusters c
 JOIN sites s ON s.id = c.site_id AND s.deleted_at IS NULL
-JOIN business_units cu ON cu.id = c.business_unit_id
-JOIN partners cp ON cp.id = cu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE c.id = $1 AND c.organization_id = $2
 `
 
@@ -86,7 +80,6 @@ type GetClusterParams struct {
 type GetClusterRow struct {
 	ID              pgtype.UUID
 	OrganizationID  pgtype.UUID
-	BusinessUnitID  pgtype.UUID
 	SiteID          pgtype.UUID
 	Kind            string
 	Name            string
@@ -98,12 +91,8 @@ type GetClusterRow struct {
 	Version         int32
 	SiteCode        string
 	SiteName        string
-	SiteUnitID      pgtype.UUID
-	SitePartnerID   pgtype.UUID
-	UnitCode        string
-	UnitName        string
-	PartnerID       pgtype.UUID
-	PartnerCode     string
+	CategoryID      pgtype.UUID
+	CategoryPath    string
 	MemberCount     int64
 	MemberHostnames string
 	MemberType      string
@@ -115,7 +104,6 @@ func (q *Queries) GetCluster(ctx context.Context, arg GetClusterParams) (GetClus
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.BusinessUnitID,
 		&i.SiteID,
 		&i.Kind,
 		&i.Name,
@@ -127,12 +115,8 @@ func (q *Queries) GetCluster(ctx context.Context, arg GetClusterParams) (GetClus
 		&i.Version,
 		&i.SiteCode,
 		&i.SiteName,
-		&i.SiteUnitID,
-		&i.SitePartnerID,
-		&i.UnitCode,
-		&i.UnitName,
-		&i.PartnerID,
-		&i.PartnerCode,
+		&i.CategoryID,
+		&i.CategoryPath,
 		&i.MemberCount,
 		&i.MemberHostnames,
 		&i.MemberType,
@@ -194,8 +178,7 @@ func (q *Queries) ListClusterMembers(ctx context.Context, arg ListClusterMembers
 
 const listClusters = `-- name: ListClusters :many
 
-SELECT c.id, c.organization_id, c.business_unit_id, c.site_id, c.kind, c.name, c.hostname, c.mgmt_ip, c.notes, c.created_at, c.updated_at, c.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       cu.code AS unit_code, cu.name AS unit_name, cu.partner_id, cp.code AS partner_code,
+SELECT c.id, c.organization_id, c.site_id, c.kind, c.name, c.hostname, c.mgmt_ip, c.notes, c.created_at, c.updated_at, c.version, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        (SELECT count(*) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL)::bigint AS member_count,
        COALESCE((SELECT string_agg(m.hostname, ', ' ORDER BY m.cluster_member_no NULLS LAST, m.hostname)
                  FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames,
@@ -203,9 +186,6 @@ SELECT c.id, c.organization_id, c.business_unit_id, c.site_id, c.kind, c.name, c
          AS member_type
 FROM device_clusters c
 JOIN sites s ON s.id = c.site_id AND s.deleted_at IS NULL
-JOIN business_units cu ON cu.id = c.business_unit_id
-JOIN partners cp ON cp.id = cu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE c.organization_id = $1
   AND ($2::uuid IS NULL OR c.site_id = $2)
 ORDER BY lower(c.name)
@@ -219,7 +199,6 @@ type ListClustersParams struct {
 type ListClustersRow struct {
 	ID              pgtype.UUID
 	OrganizationID  pgtype.UUID
-	BusinessUnitID  pgtype.UUID
 	SiteID          pgtype.UUID
 	Kind            string
 	Name            string
@@ -231,19 +210,14 @@ type ListClustersRow struct {
 	Version         int32
 	SiteCode        string
 	SiteName        string
-	SiteUnitID      pgtype.UUID
-	SitePartnerID   pgtype.UUID
-	UnitCode        string
-	UnitName        string
-	PartnerID       pgtype.UUID
-	PartnerCode     string
+	CategoryID      pgtype.UUID
+	CategoryPath    string
 	MemberCount     int64
 	MemberHostnames string
 	MemberType      string
 }
 
-// Device clusters (P1-09b, ADR-027). Every query takes organization_id; visibility follows devices (ADR-031):
-// the cluster's unit is granted, or its site is visible.
+// Device clusters (P1-09b, ADR-027). Every query takes organization_id.
 func (q *Queries) ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error) {
 	rows, err := q.db.Query(ctx, listClusters, arg.OrganizationID, arg.SiteFilter)
 	if err != nil {
@@ -256,7 +230,6 @@ func (q *Queries) ListClusters(ctx context.Context, arg ListClustersParams) ([]L
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
-			&i.BusinessUnitID,
 			&i.SiteID,
 			&i.Kind,
 			&i.Name,
@@ -268,12 +241,8 @@ func (q *Queries) ListClusters(ctx context.Context, arg ListClustersParams) ([]L
 			&i.Version,
 			&i.SiteCode,
 			&i.SiteName,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
-			&i.UnitCode,
-			&i.UnitName,
-			&i.PartnerID,
-			&i.PartnerCode,
+			&i.CategoryID,
+			&i.CategoryPath,
 			&i.MemberCount,
 			&i.MemberHostnames,
 			&i.MemberType,
@@ -289,13 +258,12 @@ func (q *Queries) ListClusters(ctx context.Context, arg ListClustersParams) ([]L
 }
 
 const updateCluster = `-- name: UpdateCluster :execrows
-UPDATE device_clusters SET business_unit_id = $1, site_id = $2, kind = $3, name = $4,
-  hostname = $5, mgmt_ip = $6, notes = $7, version = version + 1
-WHERE id = $8 AND organization_id = $9 AND version = $10
+UPDATE device_clusters SET site_id = $1, kind = $2, name = $3,
+  hostname = $4, mgmt_ip = $5, notes = $6, version = version + 1
+WHERE id = $7 AND organization_id = $8 AND version = $9
 `
 
 type UpdateClusterParams struct {
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -309,7 +277,6 @@ type UpdateClusterParams struct {
 
 func (q *Queries) UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateCluster,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.Kind,
 		arg.Name,

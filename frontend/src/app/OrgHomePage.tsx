@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { type AuthSession, type OrganizationView } from '../api/client'
 import { useMfaDisable, useSession } from './auth'
 import { NotFoundPage } from './NotFoundPage'
+import { SiteCodeChangesDialog } from '@/modules/sites/CategoryDialogs'
+import { previewOrgCode, type SiteCodeChange } from '@/modules/sites/sites'
 import { ConflictError, NotFoundError, useOrganization, useUpdateOrganization } from './orgs'
 
 function Panel({
@@ -44,7 +46,10 @@ function Panel({
   )
 }
 
-/** Owner/admin edit name + notes; a 409 means someone else saved first (optimistic lock). */
+/**
+ * Owner/admin edit name, code and notes; a 409 means someone else saved first (optimistic lock). A new code
+ * re-codes every site (ADR-032): the changes are listed for confirmation first.
+ */
 function EditOrganizationDialog({
   orgId,
   view,
@@ -59,67 +64,101 @@ function EditOrganizationDialog({
   const { t } = useTranslation()
   const update = useUpdateOrganization(orgId)
   const [name, setName] = useState(view.organization.name)
+  const [code, setCode] = useState(view.organization.code)
   const [notes, setNotes] = useState(view.organization.notes)
+  const [changes, setChanges] = useState<SiteCodeChange[] | null>(null)
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
+  const submit = (confirmSiteCodes: boolean) =>
     update.mutate(
-      { name, notes, version: view.organization.version },
+      { name, code, notes, version: view.organization.version, confirmSiteCodes },
       {
         onSuccess: () => {
           toast.success(t('members.saved'))
           onClose()
         },
+        onSettled: () => setChanges(null),
       },
     )
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (code !== view.organization.code) {
+      const list = await previewOrgCode(orgId, code).catch(() => null)
+      if (list && list.length > 0) {
+        setChanges(list)
+        return
+      }
+    }
+    submit(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={onSubmit} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle>{t('home.edit')}</DialogTitle>
-          </DialogHeader>
-          <FormField label={t('home.name')} required>
-            {(f) => (
-              <Input
-                {...f}
-                required
-                maxLength={200}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+    <>
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={onSubmit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{t('home.edit')}</DialogTitle>
+            </DialogHeader>
+            <FormField label={t('home.name')} required>
+              {(f) => (
+                <Input
+                  {...f}
+                  required
+                  maxLength={200}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
+            </FormField>
+            <FormField label={t('home.code')} required hint={t('home.codeHint')}>
+              {(f) => (
+                <Input
+                  {...f}
+                  required
+                  maxLength={12}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  className="font-mono uppercase"
+                />
+              )}
+            </FormField>
+            <FormField label={t('home.notes')}>
+              {(f) => (
+                <Textarea
+                  {...f}
+                  rows={4}
+                  maxLength={2000}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              )}
+            </FormField>
+            {update.isError && (
+              <p role="alert" className="text-destructive">
+                {update.error.message}
+                {update.error instanceof ConflictError && ` ${t('home.conflict')}`}
+              </p>
             )}
-          </FormField>
-          <FormField label={t('home.notes')}>
-            {(f) => (
-              <Textarea
-                {...f}
-                rows={4}
-                maxLength={2000}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            )}
-          </FormField>
-          {update.isError && (
-            <p role="alert" className="text-destructive">
-              {update.error.message}
-              {update.error instanceof ConflictError && ` ${t('home.conflict')}`}
-            </p>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={update.isPending}>
-              {t('common.save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={update.isPending}>
+                {t('common.save')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {changes && (
+        <SiteCodeChangesDialog
+          changes={changes}
+          pending={update.isPending}
+          onConfirm={() => submit(true)}
+          onCancel={() => setChanges(null)}
+        />
+      )}
+    </>
   )
 }
 

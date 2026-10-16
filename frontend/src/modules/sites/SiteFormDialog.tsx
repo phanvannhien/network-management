@@ -16,13 +16,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useOrganization } from '@/app/orgs'
 import { placeCode } from '@/lib/placeCode'
-import { atLeast, useOrgAccess } from './access'
 import {
   SITE_KINDS,
-  siteCodeError,
+  buildTree,
+  flattenTree,
+  previewSiteCode,
   suggestSiteCode,
-  useBusinessUnits,
-  usePartners,
+  useCategories,
   useSaveSite,
   type Site,
   type SiteKind,
@@ -39,36 +39,35 @@ const TIMEZONES = [
 ]
 
 /**
- * Create (site undefined) or edit a site. The code follows ADR-030/031 (<PARTNER>-<PLACE><NN>, the
- * partner of the chosen unit): while the user has not typed a code, it is suggested from the partner +
- * place via the API (next free number).
+ * Create (site undefined) or edit a site (ADR-032). The site sits in a category or straight under the
+ * organization and has its own short code; the full code <ORG>-<categories>-<site> is shown live. While the
+ * user has not typed a code, the next free <PLACE><NN> is suggested from the place.
  */
 export function SiteFormDialog({
   orgId,
   site,
-  defaultUnitId,
+  defaultCategoryId,
   open,
   onClose,
   onSaved,
 }: {
   orgId: string
   site?: Site
-  defaultUnitId?: string | null
+  defaultCategoryId?: string | null
   open: boolean
   onClose: () => void
   onSaved?: (site: Site) => void
 }) {
   const { t } = useTranslation()
   const save = useSaveSite(orgId)
-  const units = useBusinessUnits(orgId)
-  const partners = usePartners(orgId)
-  const access = useOrgAccess(orgId)
-  const orgName = useOrganization(orgId).data?.organization.name ?? ''
+  const categories = useCategories(orgId)
+  const org = useOrganization(orgId).data?.organization
+  const orgName = org?.name ?? ''
   const [f, setF] = useState({
-    code: site?.code ?? '',
+    code: site?.localCode ?? '',
     name: site?.name ?? '',
     kind: (site?.kind ?? 'office') as SiteKind,
-    businessUnitId: site ? site.businessUnitId : (defaultUnitId ?? null),
+    categoryId: site ? site.categoryId : (defaultCategoryId ?? null),
     isp: site?.isp ?? '',
     address: site?.address ?? '',
     timezone: site?.timezone ?? 'Asia/Ho_Chi_Minh',
@@ -78,32 +77,31 @@ export function SiteFormDialog({
     notes: site?.notes ?? '',
   })
   const [place, setPlace] = useState(
-    site ? (/^[A-Z0-9]+-([A-Z]{2,4})\d{2}$/.exec(site.code)?.[1] ?? '') : '',
+    site ? (/^([A-Z]{2,4})\d{2}$/.exec(site.localCode)?.[1] ?? '') : '',
   )
   const [placeTouched, setPlaceTouched] = useState(Boolean(site))
   const codeTouched = useRef(Boolean(site))
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
-  const unit = units.data?.find((u) => u.id === f.businessUnitId)
-  const partnerId = unit?.partnerId ?? null
-  const partnerCode = unit?.partnerCode ?? null
+  const tree = flattenTree(buildTree(categories.data ?? []))
+  const fullCode = previewSiteCode(org?.code ?? '', categories.data ?? [], f.categoryId, f.code)
 
   // The place is derived from the name/address until the user types one.
   const effectivePlace = placeTouched ? place : placeCode(`${f.name} ${f.address}`).slice(0, 4)
 
   const suggest = async (force = false) => {
     if ((!force && codeTouched.current) || !/^[A-Z]{2,4}$/.test(effectivePlace)) return
-    const code = await suggestSiteCode(orgId, partnerId, effectivePlace)
+    const code = await suggestSiteCode(orgId, f.categoryId, effectivePlace)
     if (code) setF((cur) => ({ ...cur, code }))
     if (force) codeTouched.current = false
   }
   useEffect(() => {
     void suggest()
-    // re-suggest when the partner or place changes (not on every keystroke elsewhere)
+    // re-suggest when the category or place changes (not on every keystroke elsewhere)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, effectivePlace])
+  }, [f.categoryId, effectivePlace])
 
-  const codeProblem = f.code ? siteCodeError(f.code, partnerCode) : null
+  const codeProblem = f.code !== '' && !/^[A-Z0-9]{1,12}$/.test(f.code.toUpperCase())
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -131,42 +129,19 @@ export function SiteFormDialog({
             <DialogTitle>{site ? t('sites.edit') : t('sites.addTo', { org: orgName })}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <FormField
-              label={t('sites.unit')}
-              help="partner-unit"
-              hint={f.businessUnitId ? undefined : t('units.sharedHint')}
-            >
+            <FormField label={t('sites.category')} help="category" guide={t('guides.siteCategory')}>
               {(p) => (
                 <NativeSelect
                   {...p}
-                  value={f.businessUnitId ?? ''}
-                  onChange={(e) => setF({ ...f, businessUnitId: e.target.value || null })}
+                  value={f.categoryId ?? ''}
+                  onChange={(e) => setF({ ...f, categoryId: e.target.value || null })}
                 >
-                  {/* Shared sites need an organization-wide editor; units need edit access (ADR-031).
-                      The site's current owner stays listed so editing through a share keeps it. */}
-                  {(access.orgEdit || (site && !site.businessUnitId)) && (
-                    <option value="">{t('units.shared')}</option>
-                  )}
-                  {site?.businessUnitId &&
-                    !units.data?.some((u) => u.id === site.businessUnitId) && (
-                      <option value={site.businessUnitId}>
-                        {site.partnerCode} › {site.businessUnitCode} · {site.businessUnitName}
-                      </option>
-                    )}
-                  {(partners.data ?? []).map((pt) => (
-                    <optgroup key={pt.id} label={`${pt.code} · ${pt.name}`}>
-                      {(units.data ?? [])
-                        .filter(
-                          (u) =>
-                            u.partnerId === pt.id &&
-                            (atLeast(u.access, 'edit') || u.id === site?.businessUnitId),
-                        )
-                        .map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {pt.code} › {u.code} · {u.name}
-                          </option>
-                        ))}
-                    </optgroup>
+                  <option value="">{t('categories.orgLevel', { org: orgName })}</option>
+                  {tree.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {'\u00a0\u00a0'.repeat(c.depth + 1)}
+                      {c.name} ({c.code})
+                    </option>
                   ))}
                 </NativeSelect>
               )}
@@ -218,21 +193,22 @@ export function SiteFormDialog({
               label={t('sites.code')}
               help="site"
               required
-              hint={t('sites.codeRule')}
-              error={
-                codeProblem === 'prefix'
-                  ? `${t('sites.codeRule')} (${partnerCode ?? 'SHARED'}-…)`
-                  : codeProblem === 'format'
-                    ? t('sites.codeRule')
-                    : undefined
+              hint={
+                <>
+                  {t('sites.codeRule')}{' '}
+                  <span className="font-medium text-foreground">
+                    {t('sites.fullCode')}: <span className="font-mono">{fullCode}</span>
+                  </span>
+                </>
               }
+              error={codeProblem ? t('sites.codeRule') : undefined}
             >
               {(p) => (
                 <div className="flex gap-2">
                   <Input
                     {...p}
                     required
-                    maxLength={32}
+                    maxLength={12}
                     value={f.code}
                     onChange={(e) => {
                       codeTouched.current = true
@@ -322,7 +298,7 @@ export function SiteFormDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={save.isPending || codeProblem !== null}>
+            <Button type="submit" disabled={save.isPending || codeProblem}>
               {t('common.save')}
             </Button>
           </DialogFooter>

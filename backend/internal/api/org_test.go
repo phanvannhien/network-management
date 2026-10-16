@@ -83,21 +83,21 @@ func TestUpdateOrganizationRolesVersionAndAudit(t *testing.T) {
 	editor := fx.NewUser(t, "editor@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "editor"})
 
 	for name, c := range map[string]*tenanttest.Client{"viewer": viewer, "editor": editor} {
-		if status, _ := c.Do("PATCH", orgPath(fx.OrgA), map[string]any{"name": "X", "notes": "", "version": 1}); status != http.StatusForbidden {
+		if status, _ := c.Do("PATCH", orgPath(fx.OrgA), map[string]any{"code": "ORG", "name": "X", "notes": "", "version": 1}); status != http.StatusForbidden {
 			t.Errorf("%s PATCH: status %d, want 403 (checked in the backend, not just hidden in the UI)", name, status)
 		}
 	}
-	if status, _ := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"name": "   ", "notes": "", "version": 1}); status != http.StatusBadRequest {
+	if status, _ := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"code": "ORG", "name": "   ", "notes": "", "version": 1}); status != http.StatusBadRequest {
 		t.Fatalf("blank name: status %d, want 400", status)
 	}
 
-	status, body := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"name": "  Công ty A  ", "notes": "HQ", "version": 1})
+	status, body := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"code": "ORG", "name": "  Công ty A  ", "notes": "HQ", "version": 1})
 	org := body["organization"].(map[string]any)
 	if status != 200 || org["name"] != "Công ty A" || org["version"].(float64) != 2 {
 		t.Fatalf("owner PATCH: status=%d body=%v", status, body)
 	}
 	// Stale version (another tab saved first) → 409, data unchanged.
-	if status, _ := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"name": "Stale", "notes": "", "version": 1}); status != http.StatusConflict {
+	if status, _ := fx.A.Do("PATCH", orgPath(fx.OrgA), map[string]any{"code": "ORG", "name": "Stale", "notes": "", "version": 1}); status != http.StatusConflict {
 		t.Fatalf("stale version: status %d, want 409", status)
 	}
 	if n := auditCount(t, fx.Pool, "organization.update", fx.OrgA); n != 1 {
@@ -161,15 +161,15 @@ func TestAdminOrganizations(t *testing.T) {
 	if n := len(list["organizations"].([]any)); n != 4 {
 		t.Fatalf("admin list = %d orgs, want 4", n)
 	}
-	// Partner / unit / site counts (counts only — the system admin is not a member of OrgA).
-	food, _ := mustPartnerUnit(t, fx.A, fx.OrgA, "FOOD")
-	mustCreate(t, fx.A, unitsPath(fx.OrgA), map[string]any{"code": "HN", "name": "Food HN", "partnerId": food})
-	mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HCM01", "name": "IDC"})
+	// Category / site counts (counts only — the system admin is not a member of OrgA).
+	food := mustCategory(t, fx.A, fx.OrgA, "FOOD")
+	mustCreate(t, fx.A, categoriesPath(fx.OrgA), map[string]any{"code": "HN", "name": "Food HN", "parentId": food})
+	mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "HCM01", "name": "IDC"})
 	_, list = root.Do("GET", "/api/admin/organizations", nil)
 	for _, o := range list["organizations"].([]any) {
 		org := o.(map[string]any)
-		if org["id"] == fx.OrgA.String() && (org["partnerCount"] != float64(1) || org["unitCount"] != float64(2) || org["siteCount"] != float64(1)) {
-			t.Errorf("OrgA counts = %v / %v / %v, want 1 / 2 / 1", org["partnerCount"], org["unitCount"], org["siteCount"])
+		if org["id"] == fx.OrgA.String() && (org["categoryCount"] != float64(2) || org["siteCount"] != float64(1)) {
+			t.Errorf("OrgA counts = %v / %v, want 2 / 1", org["categoryCount"], org["siteCount"])
 		}
 	}
 

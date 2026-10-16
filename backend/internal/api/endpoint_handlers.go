@@ -41,11 +41,7 @@ func loadGroup(ctx context.Context, q store.Querier, m tenant.Membership, id uui
 
 // groupLevel: like a device, the owner unit's level raised by the site's.
 func groupLevel(ctx context.Context, q store.Querier, m tenant.Membership, g store.GetEndpointGroupRow) (int, error) {
-	sites, err := siteLevels(ctx, q, m, []siteRef{{g.SiteID, g.SiteUnitID, g.SitePartnerID}})
-	if err != nil {
-		return 0, err
-	}
-	return max(m.UnitLevel(g.BusinessUnitID, g.PartnerID), sites[g.SiteID]), nil
+	return m.Level(), nil
 }
 
 // groupTotal is the badge total: the expected count, else the range size, else the members themselves.
@@ -70,8 +66,7 @@ func addrPtr(a *netip.Addr) *string {
 func toGroup(g store.GetEndpointGroupRow, level int) apigen.EndpointGroup {
 	return apigen.EndpointGroup{
 		Id: uuid.UUID(g.ID.Bytes), Kind: apigen.EndpointKind(g.Kind), Name: g.Name, SiteId: uuid.UUID(g.SiteID.Bytes),
-		SiteCode: g.SiteCode, SiteName: g.SiteName, BusinessUnitId: uuid.UUID(g.BusinessUnitID.Bytes), UnitCode: g.UnitCode,
-		PartnerCode: g.PartnerCode, IpRangeId: optUUID(g.IpRangeID), RangeStart: addrPtr(g.RangeStart), RangeEnd: addrPtr(g.RangeEnd),
+		SiteCode: g.SiteCode, SiteName: g.SiteName, CategoryPath: g.CategoryPath, IpRangeId: optUUID(g.IpRangeID), RangeStart: addrPtr(g.RangeStart), RangeEnd: addrPtr(g.RangeEnd),
 		RangeKind: g.RangeKind, RangePurpose: g.RangePurpose, SubnetId: optUUID(g.SubnetID), SubnetCidr: prefixString(g.SubnetCidr),
 		Vrf: g.SubnetVrf, ExpectedCount: optInt(g.ExpectedCount), MemberCount: g.MemberCount, Total: groupTotal(g),
 		Notes: g.Notes, Access: levelName(level), Version: g.Version,
@@ -111,7 +106,7 @@ func (s *Server) groupDetail(ctx context.Context, q store.Querier, m tenant.Memb
 	b := toGroup(g, level)
 	out := apigen.EndpointGroupDetail{
 		Id: b.Id, Kind: b.Kind, Name: b.Name, SiteId: b.SiteId, SiteCode: b.SiteCode, SiteName: b.SiteName,
-		BusinessUnitId: b.BusinessUnitId, UnitCode: b.UnitCode, PartnerCode: b.PartnerCode, IpRangeId: b.IpRangeId,
+		CategoryPath: b.CategoryPath, IpRangeId: b.IpRangeId,
 		RangeStart: b.RangeStart, RangeEnd: b.RangeEnd, RangeKind: b.RangeKind, RangePurpose: b.RangePurpose,
 		SubnetId: b.SubnetId, SubnetCidr: b.SubnetCidr, Vrf: b.Vrf, ExpectedCount: b.ExpectedCount,
 		MemberCount: b.MemberCount, Total: b.Total, Notes: b.Notes, Access: b.Access, Version: b.Version,
@@ -128,12 +123,12 @@ func (s *Server) groupDetail(ctx context.Context, q store.Querier, m tenant.Memb
 type groupFields struct {
 	kind, name, notes string
 	site              uuid.UUID
-	unit, rng         *uuid.UUID
+	rng               *uuid.UUID
 	expected          pgtype.Int4
 }
 
-func validateGroup(kind apigen.EndpointKind, name string, site uuid.UUID, unit, rng *uuid.UUID, expected *int32, notes *string) (groupFields, string) {
-	f := groupFields{kind: string(kind), name: strings.TrimSpace(name), notes: str(notes), site: site, unit: unit, rng: rng}
+func validateGroup(kind apigen.EndpointKind, name string, site uuid.UUID, rng *uuid.UUID, expected *int32, notes *string) (groupFields, string) {
+	f := groupFields{kind: string(kind), name: strings.TrimSpace(name), notes: str(notes), site: site, rng: rng}
 	if expected != nil {
 		f.expected = pgtype.Int4{Int32: *expected, Valid: true}
 	}
@@ -164,7 +159,7 @@ func snapGroup(g store.GetEndpointGroupRow) groupSnapshot {
 	if g.RangeStart != nil && g.RangeEnd != nil {
 		r = g.RangeStart.String() + "-" + g.RangeEnd.String()
 	}
-	return groupSnapshot{g.Kind, g.Name, g.SiteCode, g.PartnerCode + "/" + g.UnitCode, r, g.ExpectedCount.Int32}
+	return groupSnapshot{g.Kind, g.Name, g.SiteCode, g.CategoryPath, r, g.ExpectedCount.Int32}
 }
 
 // linkRange checks a range for a group in a site: it exists, its subnet is visible and belongs to the site or the
@@ -239,7 +234,6 @@ func (s *Server) saveGroup(ctx context.Context, m tenant.Membership, f groupFiel
 	)
 	err := s.withTx(ctx, func(q store.Querier) error {
 		var before store.GetEndpointGroupRow
-		keep := pgtype.UUID{}
 		if id != nil {
 			var ok bool
 			var err error
@@ -256,16 +250,13 @@ func (s *Server) saveGroup(ctx context.Context, m tenant.Membership, f groupFiel
 				out.code = 403
 				return errRollback
 			}
-			keep = before.BusinessUnitID
 		}
-		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, unit: f.unit, uHeight: 1}, pgtype.UUID{}, keep)
+		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
 		if err != nil || bad != "" {
 			out.bad = bad
 			return orRollback(err)
 		}
-		moved := id == nil || p.unit != before.BusinessUnitID || p.site.ID != before.SiteID
-		if moved && (m.UnitLevel(p.unit, p.unitPartner) < tenant.LevelEdit ||
-			(id != nil && m.UnitLevel(before.BusinessUnitID, before.PartnerID) < tenant.LevelEdit)) {
+		if !m.CanEdit() {
 			out.code = 403
 			return errRollback
 		}
@@ -294,14 +285,14 @@ func (s *Server) saveGroup(ctx context.Context, m tenant.Membership, f groupFiel
 		var gid pgtype.UUID
 		if id == nil {
 			gid, err = q.CreateEndpointGroup(ctx, store.CreateEndpointGroupParams{
-				OrganizationID: m.OrgID, BusinessUnitID: p.unit, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
+				OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
 				IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
 			})
 		} else {
 			gid = before.ID
 			var n int64
 			n, err = q.UpdateEndpointGroup(ctx, store.UpdateEndpointGroupParams{
-				ID: before.ID, OrganizationID: m.OrgID, Version: version, BusinessUnitID: p.unit, SiteID: p.site.ID,
+				ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
 				Kind: f.kind, Name: f.name, IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
 			})
 			if err == nil && n == 0 {
@@ -344,7 +335,7 @@ func (s *Server) CreateEndpointGroup(ctx context.Context, req apigen.CreateEndpo
 	if b == nil {
 		return apigen.CreateEndpointGroup400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
-	f, msg := validateGroup(b.Kind, b.Name, b.SiteId, b.BusinessUnitId, b.IpRangeId, b.ExpectedCount, b.Notes)
+	f, msg := validateGroup(b.Kind, b.Name, b.SiteId, b.IpRangeId, b.ExpectedCount, b.Notes)
 	if msg != "" {
 		return apigen.CreateEndpointGroup400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -376,7 +367,7 @@ func (s *Server) UpdateEndpointGroup(ctx context.Context, req apigen.UpdateEndpo
 	} else if !ok {
 		return apigen.UpdateEndpointGroup404JSONResponse{NotFoundJSONResponse: notFoundBody(msgGroupNotFound)}, nil
 	}
-	f, msg := validateGroup(b.Kind, b.Name, b.SiteId, b.BusinessUnitId, b.IpRangeId, b.ExpectedCount, b.Notes)
+	f, msg := validateGroup(b.Kind, b.Name, b.SiteId, b.IpRangeId, b.ExpectedCount, b.Notes)
 	if msg != "" {
 		return apigen.UpdateEndpointGroup400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -761,9 +752,8 @@ func (s *Server) PromoteEndpointMember(ctx context.Context, req apigen.PromoteEn
 				}
 			}
 		}
-		unit := uuid.UUID(g.BusinessUnitID.Bytes)
 		f, bad := validateDevice(deviceBody{Hostname: hostname, Type: apigen.DeviceType(g.Kind), SiteId: uuid.UUID(g.SiteID.Bytes),
-			BusinessUnitId: &unit, Notes: &notes})
+			Notes: &notes})
 		if bad != "" {
 			out.bad = bad + " (đặt hostname khác khi tách)"
 			return errRollback

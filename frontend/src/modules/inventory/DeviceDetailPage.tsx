@@ -187,7 +187,7 @@ export function DeviceDetailPage() {
             </div>
             <p className="text-muted-foreground">
               {t(`devices.types.${d.type}`)} · {t(`devices.lifecycleValues.${d.lifecycle}`)} ·{' '}
-              {d.partnerCode} › {d.unitCode}
+              {d.categoryPath || t('categories.orgShort')}
               {!d.managed && ` · ${t('devices.external')}`}
               {d.clusterId && (
                 <>
@@ -267,8 +267,8 @@ export function DeviceDetailPage() {
               wrap
               items={[
                 {
-                  label: t('devices.unit'),
-                  value: `${d.partnerCode} › ${d.unitCode} · ${d.unitName}`,
+                  label: t('sites.category'),
+                  value: d.categoryPath || t('categories.orgShort'),
                 },
                 { label: t('devices.site'), value: `${d.siteCode} · ${d.siteName}` },
                 { label: t('devices.location'), value: none(d.locationName, dash) },

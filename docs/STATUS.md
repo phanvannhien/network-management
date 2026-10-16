@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-27 Cây Danh mục & mã site tự sinh + P1-29 Gỡ Đơn vị (ADR-032)
+- Đã làm:
+  - **Migration 000020:** bảng `categories` (cây cha–con tự do, tối đa 8 cấp, mã `A-Z0-9` duy nhất giữa anh em),
+    `organizations.code`, `sites.category_id` (null = gắn thẳng tổ chức) + `local_code`; `sites.code` = mã đầy đủ
+    `<mã tổ chức>-<mã các danh mục>-<mã riêng>`. Chuyển dữ liệu: đối tác → danh mục, đơn vị → danh mục con (trừ `MAIN` duy nhất),
+    site `SHARED-…` → gắn tổ chức. Bỏ `business_unit_id` ở thiết bị/cụm/nhóm/site, bỏ scope sơ đồ (sơ đồ thuộc tổ chức, tên duy
+    nhất), xóa bảng partners/business_units; view `ipam_addresses` dựng lại. Hàm SQL `category_path`, `category_subtree`.
+  - **API:** `/categories` CRUD, `/categories/{id}/preview` (site nào đổi mã), `/code-preview?code=` (đổi mã tổ chức); sửa danh
+    mục/tổ chức làm đổi mã site phải gửi `confirmSiteCodes: true`, nếu không trả 409 kèm danh sách; đổi mã ghi audit `site.recode`.
+    Lọc site/thiết bị theo nhánh (`categoryId`, gồm cả danh mục con); gợi ý mã site theo danh mục.
+  - **Frontend:** màn "Danh mục & Sites" (cây bên trái, site của nhánh bên phải), dialog danh mục có xem trước → xác nhận đổi mã,
+    form site chọn danh mục + mã riêng + xem trước mã đầy đủ; sửa tổ chức có mã; bộ chọn topbar chọn nhánh danh mục; bỏ hết
+    trang/trường đối tác & đơn vị; cột "Danh mục" ở danh sách thiết bị/site; tạo sơ đồ chỉ cần tên + lớp; i18n, hướng dẫn, glossary.
+- Test / cách kiểm tra: `make check` pass (Go: category_test.go — cách ly tổ chức, cây nhiều cấp, đổi mã có/không xác nhận,
+  chuyển nhánh, xóa; vitest 193 test). Migration up/down/up đã chạy trên DB thử có dữ liệu mẫu.
+  Trên máy anh: `make migrate-up` (000019, 000020) rồi khởi động lại `make dev-api`.
+- Còn dở / lỗi đã biết: migration down của 000020 mất dữ liệu (không khôi phục đối tác/đơn vị). Ảnh chụp màn hình/axe trên môi
+  trường riêng chưa chạy lại cho màn mới.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-14 Canvas editor.
+
 ## 2026-10-16 — P1-28 Quyền chỉ theo tổ chức (ADR-032)
 - Đã làm:
   - **Migration 000019:** xóa `partner_members`, `business_unit_members`, `resource_shares`; vai trò `member` → `viewer`; ràng buộc

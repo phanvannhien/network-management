@@ -24,13 +24,6 @@ function detail(): DiagramDetail {
     diagram: {
       id: 'd1',
       name: 'LAN',
-      scope: 'site',
-      businessUnitId: null,
-      siteId: SITE,
-      partnerCode: 'AGRI',
-      unitCode: 'MAIN',
-      siteCode: 'AGRI-BD01',
-      siteName: 'BD',
       layer: 'physical',
       description: '',
       nodeCount: 2,

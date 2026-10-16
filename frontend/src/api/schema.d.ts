@@ -320,7 +320,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orgs/{orgId}/partners": {
+    "/orgs/{orgId}/categories": {
         parameters: {
             query?: never;
             header?: never;
@@ -330,82 +330,78 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Partners of the organization (ADR-031) */
-        get: operations["listPartners"];
+        /** The whole category tree of the organization (flat, with parent ids) */
+        get: operations["listCategories"];
         put?: never;
-        /** Create a partner (owner/admin) */
-        post: operations["createPartner"];
+        /** Create a category under another one or under the organization */
+        post: operations["createCategory"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/orgs/{orgId}/partners/{partnerId}": {
+    "/orgs/{orgId}/categories/{categoryId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */
                 orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
+                categoryId: components["parameters"]["CategoryId"];
             };
             cookie?: never;
         };
-        /** One partner */
-        get: operations["getPartner"];
+        get?: never;
         put?: never;
         post?: never;
-        /** Soft-delete a partner without live units (owner/admin) */
-        delete: operations["deletePartner"];
+        /** Delete an empty category (no child category, no site) */
+        delete: operations["deleteCategory"];
         options?: never;
         head?: never;
-        /** Edit a partner; a code change renames the prefix of its site codes (ADR-030/031) */
-        patch: operations["updatePartner"];
+        /** Rename / re-code / move a category; changed site codes need confirmSiteCodes (see preview) */
+        patch: operations["updateCategory"];
         trace?: never;
     };
-    "/orgs/{orgId}/business-units": {
+    "/orgs/{orgId}/categories/{categoryId}/preview": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */
                 orgId: components["parameters"]["OrgId"];
+                categoryId: components["parameters"]["CategoryId"];
             };
             cookie?: never;
         };
-        /** Business units of the organization, each under a partner (ADR-031) */
-        get: operations["listBusinessUnits"];
+        get?: never;
         put?: never;
-        /** Create a unit under a partner (owner/admin) */
-        post: operations["createBusinessUnit"];
+        /** Site codes an update would change (nothing is written) */
+        post: operations["previewCategoryUpdate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/orgs/{orgId}/business-units/{businessUnitId}": {
+    "/orgs/{orgId}/code-preview": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */
                 orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
             };
             cookie?: never;
         };
-        /** One business unit */
-        get: operations["getBusinessUnit"];
+        /** Site codes a new organization code would change (nothing is written) */
+        get: operations["previewOrganizationCode"];
         put?: never;
         post?: never;
-        /** Soft-delete a unit without live sites (owner/admin) */
-        delete: operations["deleteBusinessUnit"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** Edit a unit (its partner cannot change) */
-        patch: operations["updateBusinessUnit"];
+        patch?: never;
         trace?: never;
     };
     "/orgs/{orgId}/sites/next-code": {
@@ -418,7 +414,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Next free site code for a partner and place (ADR-030/031) */
+        /** Next free own site code for a place within a category (ADR-032), e.g. HY01 */
         get: operations["suggestSiteCode"];
         put?: never;
         post?: never;
@@ -438,7 +434,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Sites of the organization (filtered by the member site scope) */
+        /** Sites of the organization */
         get: operations["listSites"];
         put?: never;
         /** Create a site (owner/admin/editor without a site scope) */
@@ -1528,6 +1524,8 @@ export interface components {
             organizations: components["schemas"]["OrganizationSummary"][];
         };
         Organization: {
+            /** @description prefix of every site code (A-Z, 0-9, 2-12, starting with a letter) */
+            code: string;
             /** Format: uuid */
             id: string;
             name: string;
@@ -1549,6 +1547,9 @@ export interface components {
             membership: components["schemas"]["MembershipInfo"];
         };
         UpdateOrganizationRequest: {
+            code: string;
+            /** @description required when the new code changes site codes (preview first) */
+            confirmSiteCodes?: boolean;
             name: string;
             notes: string;
             /**
@@ -1558,6 +1559,12 @@ export interface components {
             version: number;
         };
         AdminOrganization: {
+            code: string;
+            /**
+             * Format: int64
+             * @description Categories (count only)
+             */
+            categoryCount: number;
             /** Format: uuid */
             id: string;
             name: string;
@@ -1565,16 +1572,6 @@ export interface components {
             notes: string;
             /** Format: int64 */
             memberCount: number;
-            /**
-             * Format: int64
-             * @description Live partners (count only)
-             */
-            partnerCount: number;
-            /**
-             * Format: int64
-             * @description Live business units (count only)
-             */
-            unitCount: number;
             /**
              * Format: int64
              * @description Live sites (count only)
@@ -1589,6 +1586,8 @@ export interface components {
             organizations: components["schemas"]["AdminOrganization"][];
         };
         CreateOrganizationRequest: {
+            /** @description defaults to the name's letters */
+            code?: string;
             name: string;
             kind: components["schemas"]["OrganizationKind"];
             notes?: string;
@@ -1684,89 +1683,60 @@ export interface components {
             /** Format: int32 */
             pageSize: number;
         };
-        /** @enum {string} */
-        PartnerRelation: "subsidiary" | "partner" | "customer";
-        PartnerInput: {
-            /** @description ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case) */
-            code: string;
+        CategoryInput: {
+            /**
+             * Format: uuid
+             * @description parent category; null = straight under the organization
+             */
+            parentId?: string | null;
             name: string;
-            relation?: components["schemas"]["PartnerRelation"];
+            /** @description A-Z, 0-9, 2-12, starting with a letter; unique among siblings; part of site codes */
+            code: string;
             contactName?: string;
             contactPhone?: string;
             contactEmail?: string;
             notes?: string;
         };
-        PartnerUpdate: components["schemas"]["PartnerInput"] & {
+        CategoryUpdate: components["schemas"]["CategoryInput"] & {
             /** Format: int32 */
             version: number;
+            /** @description required when the update changes site codes */
+            confirmSiteCodes?: boolean;
         };
-        Partner: {
-            access: components["schemas"]["AccessLevel"];
+        Category: {
             /** Format: uuid */
             id: string;
-            code: string;
+            /** Format: uuid */
+            parentId: string | null;
             name: string;
-            relation: components["schemas"]["PartnerRelation"];
+            code: string;
+            /** @description names from the root, e.g. "CJ Feed › Nhà máy Deheus" */
+            path: string;
             contactName: string;
             contactPhone: string;
             contactEmail: string;
             notes: string;
             /** Format: int64 */
-            unitCount: number;
-            /** Format: int64 */
+            childCount: number;
+            /**
+             * Format: int64
+             * @description sites directly in this category
+             */
             siteCount: number;
             /** Format: int32 */
             version: number;
-            /** Format: date-time */
-            createdAt: string;
         };
-        PartnerList: {
-            partners: components["schemas"]["Partner"][];
+        CategoryList: {
+            categories: components["schemas"]["Category"][];
         };
-        BusinessUnitInput: {
-            /** Format: uuid */
-            partnerId: string;
-            /** @description 2-8 characters A-Z/0-9 starting with a letter, unique within the partner (ADR-031) */
-            code: string;
-            name: string;
-            contactName?: string;
-            contactPhone?: string;
-            contactEmail?: string;
-            notes?: string;
-        };
-        BusinessUnitUpdate: {
-            code: string;
-            name: string;
-            contactName?: string;
-            contactPhone?: string;
-            contactEmail?: string;
-            notes?: string;
-            /** Format: int32 */
-            version: number;
-        };
-        BusinessUnit: {
-            access: components["schemas"]["AccessLevel"];
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            partnerId: string;
-            partnerCode: string;
-            partnerName: string;
-            code: string;
-            name: string;
-            contactName: string;
-            contactPhone: string;
-            contactEmail: string;
-            notes: string;
-            /** Format: int64 */
-            siteCount: number;
-            /** Format: int32 */
-            version: number;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        BusinessUnitList: {
-            businessUnits: components["schemas"]["BusinessUnit"][];
+        SiteCodeChanges: {
+            changes: {
+                /** Format: uuid */
+                siteId: string;
+                name: string;
+                from: string;
+                to: string;
+            }[];
         };
         SiteCodeSuggestion: {
             code: string;
@@ -1774,14 +1744,14 @@ export interface components {
         /** @enum {string} */
         SiteKind: "office" | "factory" | "datacenter" | "warehouse" | "store" | "other";
         SiteInput: {
-            /** @description ADR-030/031: <PARTNER>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN> */
-            code: string;
-            kind?: components["schemas"]["SiteKind"];
             /**
              * Format: uuid
-             * @description Owning business unit (its partner gives the code prefix); null = shared by the whole organization (e.g. an IDC)
+             * @description the category the site belongs to; null = straight under the organization (ADR-032)
              */
-            businessUnitId?: string | null;
+            categoryId?: string | null;
+            /** @description The site's own code (A-Z, 0-9, up to 12), e.g. HCM or BD01; the full code is derived from the category path (ADR-032) */
+            code: string;
+            kind?: components["schemas"]["SiteKind"];
             isp?: string;
             name: string;
             address?: string;
@@ -1797,21 +1767,20 @@ export interface components {
             version: number;
         };
         Site: {
+            /**
+             * Format: uuid
+             * @description the site's category (null = attached straight to the organization)
+             */
+            categoryId: string | null;
+            /** @description category names from the root, e.g. "CJ Feed › Nhà máy Deheus" (empty at the organization level) */
+            categoryPath: string;
+            /** @description the site's own part of the code */
+            localCode: string;
             access: components["schemas"]["AccessLevel"];
             /** Format: uuid */
             id: string;
             code: string;
             kind: components["schemas"]["SiteKind"];
-            /** Format: uuid */
-            businessUnitId: string | null;
-            /** @description Empty for shared sites */
-            businessUnitCode: string;
-            businessUnitName: string;
-            /** Format: uuid */
-            partnerId: string | null;
-            /** @description Empty for shared sites; the site code prefix (ADR-031) */
-            partnerCode: string;
-            partnerName: string;
             isp: string;
             name: string;
             address: string;
@@ -1950,11 +1919,6 @@ export interface components {
             };
             /** Format: uuid */
             siteId: string;
-            /**
-             * Format: uuid
-             * @description Owner unit; null = the site's unit (required for shared sites, ADR-026)
-             */
-            businessUnitId?: string | null;
             /** Format: uuid */
             locationId?: string | null;
             /** Format: uuid */
@@ -1992,6 +1956,13 @@ export interface components {
             version: number;
         };
         Device: {
+            /**
+             * Format: uuid
+             * @description the site's category (null = attached straight to the organization)
+             */
+            categoryId: string | null;
+            /** @description category names from the root, e.g. "CJ Feed › Nhà máy Deheus" (empty at the organization level) */
+            categoryPath: string;
             /** Format: uuid */
             id: string;
             hostname: string;
@@ -2028,8 +1999,6 @@ export interface components {
             /** Format: uuid */
             siteId: string;
             /** Format: uuid */
-            businessUnitId: string;
-            /** Format: uuid */
             locationId: string | null;
             /** Format: uuid */
             rackId: string | null;
@@ -2062,12 +2031,6 @@ export interface components {
             mgmtIp: string;
             siteCode: string;
             siteName: string;
-            unitCode: string;
-            unitName: string;
-            /** Format: uuid */
-            partnerId: string;
-            partnerCode: string;
-            partnerName: string;
             locationName: string;
             rackName: string;
             access: components["schemas"]["AccessLevel"];
@@ -2396,11 +2359,6 @@ export interface components {
             notes?: string;
             /** Format: uuid */
             siteId: string;
-            /**
-             * Format: uuid
-             * @description Owner unit; null = the site's unit (required for shared sites)
-             */
-            businessUnitId?: string | null;
         };
         ClusterUpdate: {
             kind: components["schemas"]["ClusterKind"];
@@ -2412,15 +2370,11 @@ export interface components {
             notes?: string;
             /** Format: uuid */
             siteId: string;
-            /**
-             * Format: uuid
-             * @description Owner unit; null = the site's unit (required for shared sites)
-             */
-            businessUnitId?: string | null;
             /** Format: int32 */
             version: number;
         };
         Cluster: {
+            categoryPath: string;
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["ClusterKind"];
@@ -2432,12 +2386,8 @@ export interface components {
             notes: string;
             /** Format: uuid */
             siteId: string;
-            /** Format: uuid */
-            businessUnitId: string;
             siteCode: string;
             siteName: string;
-            unitCode: string;
-            partnerCode: string;
             /** Format: int64 */
             memberCount: number;
             memberHostnames: string;
@@ -2592,11 +2542,6 @@ export interface components {
             siteId: string;
             /**
              * Format: uuid
-             * @description owner unit, only for a shared site
-             */
-            businessUnitId?: string | null;
-            /**
-             * Format: uuid
              * @description planned IP range of a subnet of the same site (or organization-wide)
              */
             ipRangeId?: string | null;
@@ -2609,6 +2554,7 @@ export interface components {
             version: number;
         };
         EndpointGroup: {
+            categoryPath: string;
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["EndpointKind"];
@@ -2617,10 +2563,6 @@ export interface components {
             siteId: string;
             siteCode: string;
             siteName: string;
-            /** Format: uuid */
-            businessUnitId: string;
-            unitCode: string;
-            partnerCode: string;
             /** Format: uuid */
             ipRangeId: string | null;
             rangeStart: string | null;
@@ -2772,8 +2714,6 @@ export interface components {
         LinkList: {
             links: components["schemas"]["Link"][];
         };
-        /** @enum {string} */
-        DiagramScope: "organization" | "business_unit" | "site";
         /**
          * @description overview (organization / unit level), physical, l2, l3 (site detail)
          * @enum {string}
@@ -2781,11 +2721,6 @@ export interface components {
         DiagramLayer: "overview" | "physical" | "l2" | "l3";
         DiagramInput: {
             name: string;
-            scope: components["schemas"]["DiagramScope"];
-            /** Format: uuid */
-            businessUnitId?: string | null;
-            /** Format: uuid */
-            siteId?: string | null;
             layer?: components["schemas"]["DiagramLayer"];
             description?: string;
         };
@@ -2800,15 +2735,6 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
-            scope: components["schemas"]["DiagramScope"];
-            /** Format: uuid */
-            businessUnitId: string | null;
-            /** Format: uuid */
-            siteId: string | null;
-            partnerCode: string;
-            unitCode: string;
-            siteCode: string;
-            siteName: string;
             layer: components["schemas"]["DiagramLayer"];
             description: string;
             /** Format: int32 */
@@ -3042,8 +2968,8 @@ export interface components {
         AuditPageNumber: number;
         /** @description Substring of hostname, serial, part number, model or asset tag */
         DeviceQuery: string;
-        DevicePartnerFilter: string;
-        DeviceUnitFilter: string;
+        /** @description devices of sites in this category or below it */
+        DeviceCategoryFilter: string;
         DeviceSiteFilter: string[];
         DeviceTypeFilter: components["schemas"]["DeviceType"][];
         DeviceVendorFilter: string[];
@@ -3053,7 +2979,7 @@ export interface components {
         DeviceTagFilter: string[];
         /** @description Devices in any of the clusters */
         DeviceClusterFilter: string[];
-        DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "unit" | "lifecycle" | "warrantyEnd";
+        DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "category" | "lifecycle" | "warrantyEnd";
         DeviceSortDesc: boolean;
         DeviceId: string;
         TemplateId: string;
@@ -3064,6 +2990,7 @@ export interface components {
         MemberId: string;
         LinkId: string;
         DiagramId: string;
+        CategoryId: string;
         VlanId: string;
         SubnetId: string;
         RangeId: string;
@@ -3078,8 +3005,6 @@ export interface components {
         AuditFrom: string;
         /** @description Exclusive upper bound on the event time */
         AuditTo: string;
-        PartnerId: string;
-        BusinessUnitId: string;
         SiteId: string;
         LocationId: string;
         RackId: string;
@@ -3708,7 +3633,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    listPartners: {
+    listCategories: {
         parameters: {
             query?: never;
             header?: never;
@@ -3726,17 +3651,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PartnerList"];
+                    "application/json": components["schemas"]["CategoryList"];
                 };
             };
-            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
         };
     };
-    createPartner: {
+    createCategory: {
         parameters: {
             query?: never;
             header: {
@@ -3750,17 +3672,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PartnerInput"];
+                "application/json": components["schemas"]["CategoryInput"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Partner"];
+                    "application/json": components["schemas"]["Category"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -3770,36 +3692,7 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
-    getPartner: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Partner"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    deletePartner: {
+    deleteCategory: {
         parameters: {
             query?: never;
             header: {
@@ -3808,7 +3701,7 @@ export interface operations {
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */
                 orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
+                categoryId: components["parameters"]["CategoryId"];
             };
             cookie?: never;
         };
@@ -3821,14 +3714,13 @@ export interface operations {
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
         };
     };
-    updatePartner: {
+    updateCategory: {
         parameters: {
             query?: never;
             header: {
@@ -3837,13 +3729,13 @@ export interface operations {
             path: {
                 /** @description Organization (tenant) the request is scoped to (ADR-023) */
                 orgId: components["parameters"]["OrgId"];
-                partnerId: components["parameters"]["PartnerId"];
+                categoryId: components["parameters"]["CategoryId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PartnerUpdate"];
+                "application/json": components["schemas"]["CategoryUpdate"];
             };
         };
         responses: {
@@ -3853,7 +3745,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Partner"];
+                    "application/json": components["schemas"]["Category"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -3863,10 +3755,44 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
-    listBusinessUnits: {
+    previewCategoryUpdate: {
         parameters: {
-            query?: {
-                partnerId?: string;
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                categoryId: components["parameters"]["CategoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteCodeChanges"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    previewOrganizationCode: {
+        parameters: {
+            query: {
+                code: string;
             };
             header?: never;
             path: {
@@ -3883,148 +3809,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessUnitList"];
+                    "application/json": components["schemas"]["SiteCodeChanges"];
                 };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    createBusinessUnit: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BusinessUnitInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BusinessUnit"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    getBusinessUnit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BusinessUnit"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    deleteBusinessUnit: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Done */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    updateBusinessUnit: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-CSRF-Token": components["parameters"]["CsrfToken"];
-            };
-            path: {
-                /** @description Organization (tenant) the request is scoped to (ADR-023) */
-                orgId: components["parameters"]["OrgId"];
-                businessUnitId: components["parameters"]["BusinessUnitId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BusinessUnitUpdate"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BusinessUnit"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
         };
     };
     suggestSiteCode: {
         parameters: {
             query: {
-                /** @description Partner of the site's unit; omit for a shared site (SHARED- prefix) */
-                partnerId?: string;
+                /** @description the category of the site; omit for a site straight under the organization */
+                categoryId?: string;
                 /** @description Place abbreviation, 2-4 letters (e.g. HY for Hưng Yên) */
                 place: string;
             };
@@ -4056,12 +3853,10 @@ export interface operations {
     listSites: {
         parameters: {
             query?: {
-                /** @description Only sites of this business unit */
-                businessUnitId?: string;
-                /** @description Only sites of this partner (all its units) */
-                partnerId?: string;
-                /** @description Only organization-wide (shared) sites */
-                shared?: boolean;
+                /** @description Only sites of this category and the categories below it */
+                categoryId?: string;
+                /** @description Only sites attached straight to the organization */
+                root?: boolean;
             };
             header?: never;
             path: {
@@ -4480,8 +4275,8 @@ export interface operations {
             query?: {
                 /** @description Substring of hostname, serial, part number, model or asset tag */
                 q?: components["parameters"]["DeviceQuery"];
-                partnerId?: components["parameters"]["DevicePartnerFilter"];
-                businessUnitId?: components["parameters"]["DeviceUnitFilter"];
+                /** @description devices of sites in this category or below it */
+                categoryId?: components["parameters"]["DeviceCategoryFilter"];
                 siteId?: components["parameters"]["DeviceSiteFilter"];
                 type?: components["parameters"]["DeviceTypeFilter"];
                 vendor?: components["parameters"]["DeviceVendorFilter"];

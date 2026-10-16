@@ -1,9 +1,8 @@
--- Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
--- see devices of their granted units plus every device in a site visible to them.
+-- Devices (P1-08, SRS §4.1). Every query takes organization_id. A device's category is its site's (ADR-032).
 
 -- name: ListDevices :many
-SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -12,9 +11,6 @@ SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
@@ -25,8 +21,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -37,11 +33,11 @@ ORDER BY
   CASE WHEN NOT @sort_desc::boolean THEN
     CASE @sort_key::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
-      WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END ASC NULLS LAST,
+      WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END ASC NULLS LAST,
   CASE WHEN @sort_desc::boolean THEN
     CASE @sort_key::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
-      WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END DESC NULLS LAST,
+      WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'warranty_end' AND NOT @sort_desc::boolean THEN d.warranty_end END ASC NULLS LAST,
   CASE WHEN @sort_key::text = 'warranty_end' AND @sort_desc::boolean THEN d.warranty_end END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'mgmt_ip' AND NOT @sort_desc::boolean THEN
@@ -58,17 +54,14 @@ LIMIT @page_limit OFFSET @page_offset;
 SELECT count(*)
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -81,17 +74,14 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
 SELECT 'site'::text AS facet, d.site_id::text AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
@@ -102,17 +92,14 @@ UNION ALL
 SELECT 'type'::text AS facet, d.type AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
@@ -123,17 +110,14 @@ UNION ALL
 SELECT 'vendor'::text AS facet, d.vendor AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
@@ -144,17 +128,14 @@ UNION ALL
 SELECT 'lifecycle'::text AS facet, d.lifecycle AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -165,17 +146,14 @@ UNION ALL
 SELECT 'role'::text AS facet, d.role AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -186,9 +164,6 @@ UNION ALL
 SELECT 'tag'::text AS facet, t.tag AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 CROSS JOIN LATERAL unnest(d.tags) AS t(tag)
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
@@ -196,8 +171,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -208,16 +183,13 @@ UNION ALL
 SELECT 'cluster'::text AS facet, d.cluster_id::text AS value, count(*)::bigint AS n
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
        OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
-  AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
-  AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL
+       OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
@@ -228,8 +200,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
 GROUP BY 2;
 
 -- name: GetDevice :one
-SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -238,9 +210,6 @@ SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
@@ -248,11 +217,11 @@ LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NULL;
 
 -- name: CreateDevice :one
-INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
+INSERT INTO devices (organization_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
                      template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
-VALUES (@organization_id, @business_unit_id, @site_id, sqlc.narg('location_id'), sqlc.narg('rack_id'), sqlc.narg('rack_u'),
+VALUES (@organization_id, @site_id, sqlc.narg('location_id'), sqlc.narg('rack_id'), sqlc.narg('rack_u'),
         @u_height, @hostname, @type, @vendor, @model, @part_number, @serial_number, @asset_tag, @firmware, @role, @lifecycle,
         @managed, @owner_name, sqlc.narg('purchase_date'), @po_number, sqlc.narg('warranty_end'), sqlc.narg('license_end'),
         sqlc.narg('eol_date'), sqlc.narg('eos_date'), @notes, @tags, @custom_fields, sqlc.narg('template_id'),
@@ -260,7 +229,7 @@ VALUES (@organization_id, @business_unit_id, @site_id, sqlc.narg('location_id'),
 RETURNING id;
 
 -- name: UpdateDevice :execrows
-UPDATE devices SET business_unit_id = @business_unit_id, site_id = @site_id, location_id = sqlc.narg('location_id'),
+UPDATE devices SET site_id = @site_id, location_id = sqlc.narg('location_id'),
   rack_id = sqlc.narg('rack_id'), rack_u = sqlc.narg('rack_u'), u_height = @u_height, hostname = @hostname, type = @type,
   vendor = @vendor, model = @model, part_number = @part_number, serial_number = @serial_number, asset_tag = @asset_tag,
   firmware = @firmware, role = @role, lifecycle = @lifecycle, managed = @managed, owner_name = @owner_name,
@@ -283,10 +252,6 @@ SELECT count(*) FROM devices WHERE organization_id = @organization_id AND locati
 
 -- name: CountLiveDevicesInSite :one
 SELECT count(*) FROM devices WHERE organization_id = @organization_id AND site_id = @site_id AND deleted_at IS NULL;
-
--- name: CountLiveDevicesOfUnit :one
-SELECT count(*) FROM devices WHERE organization_id = @organization_id AND business_unit_id = @business_unit_id
-  AND deleted_at IS NULL;
 
 -- name: RackOccupancy :many
 -- Live devices placed in a rack (for U overlap checks and the rack view).
@@ -341,8 +306,8 @@ WHERE organization_id = @organization_id AND deleted_at IS NULL AND lower(hostna
 
 -- name: ListDevicesByIDs :many
 -- Devices placed on a diagram, with the same visibility as GetDevice.
-SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
+SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
+       category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
@@ -351,9 +316,6 @@ SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
                  ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN business_units du ON du.id = d.business_unit_id
-JOIN partners dp ON dp.id = du.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id

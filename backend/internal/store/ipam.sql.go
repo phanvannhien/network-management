@@ -193,14 +193,13 @@ func (q *Queries) GetRange(ctx context.Context, arg GetRangeParams) (IpRange, er
 }
 
 const getSubnet = `-- name: GetSubnet :one
-SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.id = $1 AND sn.organization_id = $2 AND (sn.site_id IS NULL OR s.id IS NOT NULL)
 `
@@ -223,8 +222,6 @@ type GetSubnetRow struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	SiteCode       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
 	VlanVid        pgtype.Int4
 	VlanName       string
 	VlanColor      string
@@ -248,8 +245,6 @@ func (q *Queries) GetSubnet(ctx context.Context, arg GetSubnetParams) (GetSubnet
 		&i.UpdatedAt,
 		&i.Version,
 		&i.SiteCode,
-		&i.SiteUnitID,
-		&i.SitePartnerID,
 		&i.VlanVid,
 		&i.VlanName,
 		&i.VlanColor,
@@ -260,11 +255,10 @@ func (q *Queries) GetSubnet(ctx context.Context, arg GetSubnetParams) (GetSubnet
 }
 
 const getVlan = `-- name: GetVlan :one
-SELECT v.id, v.organization_id, v.site_id, v.vid, v.name, v.color, v.description, v.created_at, v.updated_at, v.version, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT v.id, v.organization_id, v.site_id, v.vid, v.name, v.color, v.description, v.created_at, v.updated_at, v.version, COALESCE(s.code, '')::text AS site_code,
        (SELECT count(*) FROM subnets sn WHERE sn.vlan_id = v.id)::bigint AS subnet_count
 FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.id = $1 AND v.organization_id = $2 AND (v.site_id IS NULL OR s.id IS NOT NULL)
 `
 
@@ -285,8 +279,6 @@ type GetVlanRow struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	SiteCode       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
 	SubnetCount    int64
 }
 
@@ -305,8 +297,6 @@ func (q *Queries) GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, e
 		&i.UpdatedAt,
 		&i.Version,
 		&i.SiteCode,
-		&i.SiteUnitID,
-		&i.SitePartnerID,
 		&i.SubnetCount,
 	)
 	return i, err
@@ -358,8 +348,6 @@ SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a
        true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
-JOIN business_units du ON du.id = a.unit_id
-LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
 WHERE a.organization_id = $1 AND a.vrf = $2 AND a.host << $3::cidr
 ORDER BY a.host, a.hostname
 `
@@ -416,14 +404,13 @@ func (q *Queries) ListSubnetIPs(ctx context.Context, arg ListSubnetIPsParams) ([
 }
 
 const listSubnets = `-- name: ListSubnets :many
-SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = $1 AND (sn.site_id IS NULL OR s.id IS NOT NULL)
   AND ($2::uuid IS NULL OR sn.site_id = $2)
@@ -452,8 +439,6 @@ type ListSubnetsRow struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	SiteCode       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
 	VlanVid        pgtype.Int4
 	VlanName       string
 	VlanColor      string
@@ -488,8 +473,6 @@ func (q *Queries) ListSubnets(ctx context.Context, arg ListSubnetsParams) ([]Lis
 			&i.UpdatedAt,
 			&i.Version,
 			&i.SiteCode,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
 			&i.VlanVid,
 			&i.VlanName,
 			&i.VlanColor,
@@ -508,11 +491,10 @@ func (q *Queries) ListSubnets(ctx context.Context, arg ListSubnetsParams) ([]Lis
 
 const listVlans = `-- name: ListVlans :many
 
-SELECT v.id, v.organization_id, v.site_id, v.vid, v.name, v.color, v.description, v.created_at, v.updated_at, v.version, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT v.id, v.organization_id, v.site_id, v.vid, v.name, v.color, v.description, v.created_at, v.updated_at, v.version, COALESCE(s.code, '')::text AS site_code,
        (SELECT count(*) FROM subnets sn WHERE sn.vlan_id = v.id)::bigint AS subnet_count
 FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.organization_id = $1 AND (v.site_id IS NULL OR s.id IS NOT NULL)
   AND ($2::uuid IS NULL OR v.site_id = $2 OR v.site_id IS NULL)
 ORDER BY s.code NULLS FIRST, v.vid
@@ -535,8 +517,6 @@ type ListVlansRow struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	SiteCode       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
 	SubnetCount    int64
 }
 
@@ -564,8 +544,6 @@ func (q *Queries) ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVla
 			&i.UpdatedAt,
 			&i.Version,
 			&i.SiteCode,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
 			&i.SubnetCount,
 		); err != nil {
 			return nil, err
@@ -584,8 +562,6 @@ SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a
        true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
-JOIN business_units du ON du.id = a.unit_id
-LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
 WHERE a.organization_id = $1 AND a.host = $2::inet
 ORDER BY a.hostname
 `
@@ -641,14 +617,13 @@ func (q *Queries) LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupI
 }
 
 const lookupSubnets = `-- name: LookupSubnets :many
-SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.id, sn.organization_id, sn.site_id, sn.vlan_id, sn.cidr, sn.vrf, sn.gateway, sn.description, sn.created_at, sn.updated_at, sn.version, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = $1 AND (sn.site_id IS NULL OR s.id IS NOT NULL) AND sn.cidr >>= $2::inet
 ORDER BY masklen(sn.cidr) DESC, sn.vrf
@@ -672,8 +647,6 @@ type LookupSubnetsRow struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	SiteCode       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
 	VlanVid        pgtype.Int4
 	VlanName       string
 	VlanColor      string
@@ -704,8 +677,6 @@ func (q *Queries) LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([
 			&i.UpdatedAt,
 			&i.Version,
 			&i.SiteCode,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
 			&i.VlanVid,
 			&i.VlanName,
 			&i.VlanColor,

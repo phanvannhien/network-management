@@ -16,14 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { atLeast } from '@/modules/sites/access'
-import {
-  locationPath,
-  useBusinessUnits,
-  useLocations,
-  useRacks,
-  useSites,
-} from '@/modules/sites/sites'
+import { locationPath, useLocations, useRacks, useSites } from '@/modules/sites/sites'
 import {
   DEVICE_ROLES,
   DEVICE_TYPE_GROUPS,
@@ -112,9 +105,8 @@ function CustomFieldInput({
 }
 
 /**
- * Create (device undefined) or edit a device (SRS §4.1). In a unit's site the device belongs to that unit; in a
- * shared site the owner unit is chosen among units the caller may edit (ADR-026/031). Location and rack lists
- * follow the chosen site; picking a rack fixes the location.
+ * Create (device undefined) or edit a device (SRS §4.1). The device's category is its site's (ADR-032). Location
+ * and rack lists follow the chosen site; picking a rack fixes the location.
  */
 export function DeviceFormDialog({
   orgId,
@@ -133,7 +125,6 @@ export function DeviceFormDialog({
   const save = useSaveDevice(orgId)
   const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const sites = useSites(orgId)
-  const units = useBusinessUnits(orgId)
   const fields = useCustomFields(orgId)
   const templates = useTemplates(orgId, !device)
   const clusters = useClusters(orgId)
@@ -160,7 +151,6 @@ export function DeviceFormDialog({
     notes: device?.notes ?? '',
     tags: (device?.tags ?? []).join(', '),
     siteId: device?.siteId ?? defaultSiteId ?? '',
-    businessUnitId: device?.businessUnitId ?? '',
     locationId: device?.locationId ?? '',
     rackId: device?.rackId ?? '',
     rackU: device?.rackU ? String(device.rackU) : '',
@@ -180,11 +170,6 @@ export function DeviceFormDialog({
   const site = sites.data?.find((s) => s.id === f.siteId)
   const locations = useLocations(orgId, f.siteId)
   const racks = useRacks(orgId, f.siteId)
-  const shared = site !== undefined && site.businessUnitId === null
-  // Owner units for a shared site: those the caller edits, plus the device's current one.
-  const ownerUnits = (units.data ?? []).filter(
-    (u) => atLeast(u.access, 'edit') || u.id === device?.businessUnitId,
-  )
   const rackList = (racks.data ?? []).filter((r) => !f.locationId || r.locationId === f.locationId)
 
   const onSubmit = (e: FormEvent) => {
@@ -216,7 +201,6 @@ export function DeviceFormDialog({
         .filter(Boolean),
       customFields: custom,
       siteId: f.siteId,
-      businessUnitId: shared ? f.businessUnitId || null : null,
       locationId: f.locationId || null,
       rackId: f.rackId || null,
       rackU: f.rackId && f.rackU ? Number(f.rackU) : null,
@@ -363,7 +347,6 @@ export function DeviceFormDialog({
                     setF({
                       ...f,
                       siteId: e.target.value,
-                      businessUnitId: '',
                       locationId: '',
                       rackId: '',
                       rackU: '',
@@ -380,44 +363,13 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField
-              label={t('devices.unit')}
-              required={shared}
-              hint={shared ? t('devices.sharedSiteUnit') : undefined}
-              guide={t('guides.unit')}
-              help="partner-unit"
-              className="col-span-2"
-            >
-              {(p) =>
-                shared ? (
-                  <NativeSelect
-                    {...p}
-                    required
-                    value={f.businessUnitId}
-                    onChange={set('businessUnitId')}
-                  >
-                    <option value="">{t('devices.chooseUnit')}</option>
-                    {ownerUnits.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.partnerCode} › {u.code} · {u.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                ) : (
-                  <Input
-                    {...p}
-                    readOnly
-                    value={
-                      site
-                        ? t('devices.unitOfSite', {
-                            unit: `${site.partnerCode} › ${site.businessUnitCode} · ${site.businessUnitName}`,
-                          })
-                        : ''
-                    }
-                  />
-                )
-              }
-            </FormField>
+            {site && (
+              <p className="col-span-2 -mt-1 text-muted-foreground">
+                {t('devices.categoryOfSite', {
+                  category: site.categoryPath || t('categories.orgShort'),
+                })}
+              </p>
+            )}
             <FormField label={t('devices.location')} guide={t('guides.location')} help="location">
               {(p) => (
                 <NativeSelect
@@ -506,8 +458,7 @@ export function DeviceFormDialog({
                     .filter(
                       (c) =>
                         c.siteId === f.siteId &&
-                        (c.id === device?.clusterId || canJoinCluster(c, f.type)) &&
-                        (!shared || !f.businessUnitId || c.businessUnitId === f.businessUnitId),
+                        (c.id === device?.clusterId || canJoinCluster(c, f.type)),
                     )
                     .map((c) => (
                       <option key={c.id} value={c.id}>

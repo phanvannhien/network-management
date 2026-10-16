@@ -26,17 +26,16 @@ type AuditLog struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
-type BusinessUnit struct {
+type Category struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	PartnerID      pgtype.UUID
+	ParentID       pgtype.UUID
 	Code           string
 	Name           string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
 	Notes          string
-	DeletedAt      pgtype.Timestamptz
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
@@ -59,7 +58,6 @@ type CustomFieldDef struct {
 type Device struct {
 	ID              pgtype.UUID
 	OrganizationID  pgtype.UUID
-	BusinessUnitID  pgtype.UUID
 	SiteID          pgtype.UUID
 	LocationID      pgtype.UUID
 	RackID          pgtype.UUID
@@ -101,7 +99,6 @@ type Device struct {
 type DeviceCluster struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -132,9 +129,6 @@ type DeviceTemplate struct {
 type Diagram struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	Scope          string
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
 	Name           string
 	Layer          string
 	Description    string
@@ -148,7 +142,6 @@ type Diagram struct {
 type EndpointGroup struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -237,7 +230,6 @@ type IpamAddress struct {
 	GroupID        pgtype.UUID
 	Hostname       string
 	InterfaceName  string
-	UnitID         pgtype.UUID
 	SiteID         pgtype.UUID
 }
 
@@ -317,22 +309,7 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz
 	Version   int32
 	DeletedAt pgtype.Timestamptz
-}
-
-type Partner struct {
-	ID             pgtype.UUID
-	OrganizationID pgtype.UUID
-	Code           string
-	Name           string
-	Relation       string
-	ContactName    string
-	ContactPhone   string
-	ContactEmail   string
-	Notes          string
-	DeletedAt      pgtype.Timestamptz
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
+	Code      string
 }
 
 type Rack struct {
@@ -377,8 +354,9 @@ type Site struct {
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
 	Kind           string
-	BusinessUnitID pgtype.UUID
 	Isp            string
+	CategoryID     pgtype.UUID
+	LocalCode      string
 }
 
 type Subnet struct {
@@ -393,6 +371,12 @@ type Subnet struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+}
+
+type UnitCategory struct {
+	UnitID     pgtype.UUID
+	CategoryID interface{}
+	PartnerID  pgtype.UUID
 }
 
 type User struct {

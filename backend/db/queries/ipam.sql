@@ -3,21 +3,19 @@
 -- can count addresses of devices they may not see without showing them.
 
 -- name: ListVlans :many
-SELECT v.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT v.*, COALESCE(s.code, '')::text AS site_code,
        (SELECT count(*) FROM subnets sn WHERE sn.vlan_id = v.id)::bigint AS subnet_count
 FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.organization_id = @organization_id AND (v.site_id IS NULL OR s.id IS NOT NULL)
   AND (sqlc.narg('site_filter')::uuid IS NULL OR v.site_id = sqlc.narg('site_filter') OR v.site_id IS NULL)
 ORDER BY s.code NULLS FIRST, v.vid;
 
 -- name: GetVlan :one
-SELECT v.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT v.*, COALESCE(s.code, '')::text AS site_code,
        (SELECT count(*) FROM subnets sn WHERE sn.vlan_id = v.id)::bigint AS subnet_count
 FROM vlans v
 LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 WHERE v.id = @id AND v.organization_id = @organization_id AND (v.site_id IS NULL OR s.id IS NOT NULL);
 
 -- name: CreateVlan :one
@@ -34,14 +32,13 @@ WHERE id = @id AND organization_id = @organization_id AND version = @version;
 DELETE FROM vlans WHERE id = @id AND organization_id = @organization_id;
 
 -- name: ListSubnets :many
-SELECT sn.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.*, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL)
   AND (sqlc.narg('site_filter')::uuid IS NULL OR sn.site_id = sqlc.narg('site_filter'))
@@ -50,14 +47,13 @@ WHERE sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS N
 ORDER BY sn.vrf, sn.cidr;
 
 -- name: GetSubnet :one
-SELECT sn.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.*, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.id = @id AND sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL);
 
@@ -81,8 +77,6 @@ SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a
        true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
-JOIN business_units du ON du.id = a.unit_id
-LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
 WHERE a.organization_id = @organization_id AND a.vrf = @vrf AND a.host << @cidr::cidr
 ORDER BY a.host, a.hostname;
 
@@ -107,14 +101,13 @@ DELETE FROM ip_ranges WHERE id = @id AND organization_id = @organization_id AND 
 
 -- name: LookupSubnets :many
 -- Subnets containing the address (any VRF), most specific first.
-SELECT sn.*, COALESCE(s.code, '')::text AS site_code, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT sn.*, COALESCE(s.code, '')::text AS site_code,
        v.vid AS vlan_vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count,
        (SELECT count(*) FROM ip_ranges r WHERE r.subnet_id = sn.id)::bigint AS range_count
 FROM subnets sn
 LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN vlans v ON v.id = sn.vlan_id
 WHERE sn.organization_id = @organization_id AND (sn.site_id IS NULL OR s.id IS NOT NULL) AND sn.cidr >>= @ip::inet
 ORDER BY masklen(sn.cidr) DESC, sn.vrf;
@@ -126,7 +119,5 @@ SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a
        true::boolean AS visible
 FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
-JOIN business_units du ON du.id = a.unit_id
-LEFT JOIN business_units dsb ON dsb.id = ds.business_unit_id
 WHERE a.organization_id = @organization_id AND a.host = @ip::inet
 ORDER BY a.hostname;

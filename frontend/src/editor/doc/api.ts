@@ -6,7 +6,6 @@ import type { DiagramSave } from './types'
 // Diagram API hooks (P1-13).
 
 export type DiagramInput = components['schemas']['DiagramInput']
-export type DiagramScope = components['schemas']['DiagramScope']
 export type DiagramLayer = components['schemas']['DiagramLayer']
 
 export const DIAGRAM_LAYERS: DiagramLayer[] = ['physical', 'l2', 'l3', 'overview']

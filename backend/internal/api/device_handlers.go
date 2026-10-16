@@ -22,11 +22,8 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
 
-// Devices (P1-08, SRS §4.1). A device belongs to one business unit and sits in one site: in a unit's site it
-// belongs to that unit; in a shared site the unit is chosen (ADR-026). Visibility follows ADR-031: the device's
-// unit is granted, or its site is visible (shares included). Editing needs edit access on the device's unit,
-// or an editable share of its site; moving it to another unit/site and deleting it need edit access on the units
-// themselves.
+// Devices (P1-08, SRS §4.1). A device sits in one site; its category is the site's (ADR-032). Every member of the
+// organization sees every device; editors change them.
 
 const (
 	msgDeviceNotFound  = "Không tìm thấy thiết bị"
@@ -48,7 +45,7 @@ type deviceFields struct {
 	tags                                                                                                    []string
 	custom                                                                                                  map[string]any
 	site                                                                                                    uuid.UUID
-	unit, location, rack                                                                                    *uuid.UUID
+	location, rack                                                                                          *uuid.UUID
 	rackU                                                                                                   pgtype.Int4
 	uHeight                                                                                                 int32
 	uHeightSet                                                                                              bool
@@ -108,7 +105,7 @@ type deviceBody struct {
 	Tags                                                                                    *[]string
 	CustomFields                                                                            *map[string]interface{}
 	SiteId                                                                                  uuid.UUID
-	BusinessUnitId, LocationId, RackId                                                      *uuid.UUID
+	LocationId, RackId                                                                      *uuid.UUID
 	RackU, UHeight                                                                          *int32
 	MgmtInterfaceId, TemplateId                                                             *uuid.UUID
 	PollAddress                                                                             *string
@@ -123,7 +120,7 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 		partNumber: str(b.PartNumber), serial: str(b.SerialNumber), assetTag: str(b.AssetTag), firmware: str(b.Firmware),
 		owner: str(b.OwnerName), po: str(b.PoNumber), notes: str(b.Notes), role: "none", lifecycle: "active", managed: true,
 		purchase: pgDate(b.PurchaseDate), warranty: pgDate(b.WarrantyEnd), license: pgDate(b.LicenseEnd),
-		eol: pgDate(b.EolDate), eos: pgDate(b.EosDate), site: b.SiteId, unit: b.BusinessUnitId,
+		eol: pgDate(b.EolDate), eos: pgDate(b.EosDate), site: b.SiteId,
 		location: b.LocationId, rack: b.RackId, uHeight: 1, custom: map[string]any{},
 		mgmt: b.MgmtInterfaceId, template: b.TemplateId, cluster: b.ClusterId,
 	}
@@ -259,20 +256,16 @@ func checkCustomFields(defs []store.CustomFieldDef, in map[string]any) (map[stri
 	return out, ""
 }
 
-// placement is the resolved site / unit / location / rack of a device.
+// placement is the resolved site / location / rack of a device.
 type placement struct {
 	site           store.GetSiteRow
-	unit           pgtype.UUID
-	unitPartner    pgtype.UUID
 	location, rack pgtype.UUID
 	rackU          pgtype.Int4
 }
 
-// resolvePlacement checks the site (visible to the caller), the owner unit (the site's unit, or for a shared
-// site a visible unit of the organization), the location / rack (in that site) and the rack slot (free U).
-// `self` excludes the device itself from the overlap check; `keepUnit` is the device's current unit, accepted
-// for share editors who do not see it.
-func resolvePlacement(ctx context.Context, q store.Querier, m tenant.Membership, f deviceFields, self, keepUnit pgtype.UUID) (placement, string, error) {
+// resolvePlacement checks the site (in the organization), the location / rack (in that site) and the rack slot
+// (free U). `self` excludes the device itself from the overlap check.
+func resolvePlacement(ctx context.Context, q store.Querier, m tenant.Membership, f deviceFields, self pgtype.UUID) (placement, string, error) {
 	var p placement
 	site, ok, err := loadSite(ctx, q, m, f.site)
 	if err != nil {
@@ -282,24 +275,6 @@ func resolvePlacement(ctx context.Context, q store.Querier, m tenant.Membership,
 		return p, "Site không tồn tại trong tổ chức", nil
 	}
 	p.site = site
-	switch {
-	case site.BusinessUnitID.Valid:
-		if f.unit != nil && pgUUID(*f.unit) != site.BusinessUnitID {
-			return p, fmt.Sprintf("Thiết bị ở site %s thuộc đơn vị %s › %s", site.Code, site.PartnerCode, site.BusinessUnitCode), nil
-		}
-		p.unit, p.unitPartner = site.BusinessUnitID, site.PartnerID
-	case f.unit == nil:
-		return p, "Site dùng chung: cần chọn đơn vị sở hữu thiết bị", nil
-	default:
-		u, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*f.unit), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && u.ID != keepUnit && m.UnitLevel(u.ID, u.PartnerID) == tenant.LevelNone) {
-			return p, msgUnitMissing, nil
-		}
-		if err != nil {
-			return p, "", fmt.Errorf("load business unit: %w", err)
-		}
-		p.unit, p.unitPartner = u.ID, u.PartnerID
-	}
 	var rack store.Rack
 	if f.rack != nil {
 		rack, err = q.GetRack(ctx, store.GetRackParams{ID: pgUUID(*f.rack), OrganizationID: m.OrgID, SiteID: site.ID})
@@ -371,7 +346,7 @@ type deviceSnapshot struct {
 	Tags         []string       `json:"tags"`
 	CustomFields map[string]any `json:"customFields"`
 	Site         string         `json:"site"`
-	Unit         string         `json:"unit"`
+	Category     string         `json:"category,omitempty"`
 	Location     string         `json:"location,omitempty"`
 	Rack         string         `json:"rack,omitempty"`
 	RackU        int32          `json:"rackU,omitempty"`
@@ -402,7 +377,7 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 		AssetTag: d.AssetTag, Firmware: d.Firmware, Role: d.Role, Lifecycle: d.Lifecycle, Managed: d.Managed, OwnerName: d.OwnerName,
 		PurchaseDate: dateStr(d.PurchaseDate), PoNumber: d.PoNumber, WarrantyEnd: dateStr(d.WarrantyEnd), LicenseEnd: dateStr(d.LicenseEnd),
 		EolDate: dateStr(d.EolDate), EosDate: dateStr(d.EosDate), Notes: d.Notes, Tags: d.Tags, CustomFields: customMap(d.CustomFields),
-		Site: d.SiteCode, Unit: d.PartnerCode + " › " + d.UnitCode, Location: d.LocationName, Rack: d.RackName, UHeight: d.UHeight,
+		Site: d.SiteCode, Category: d.CategoryPath, Location: d.LocationName, Rack: d.RackName, UHeight: d.UHeight,
 	}
 	if d.RackID.Valid && d.RackU.Valid {
 		s.RackU = d.RackU.Int32
@@ -424,8 +399,7 @@ func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 		LicenseEnd: apiDate(d.LicenseEnd), EolDate: apiDate(d.EolDate), EosDate: apiDate(d.EosDate), Notes: d.Notes,
 		Tags: d.Tags, CustomFields: customMap(d.CustomFields),
 		SiteId: uuid.UUID(d.SiteID.Bytes), SiteCode: d.SiteCode, SiteName: d.SiteName,
-		BusinessUnitId: uuid.UUID(d.BusinessUnitID.Bytes), UnitCode: d.UnitCode, UnitName: d.UnitName,
-		PartnerId: uuid.UUID(d.PartnerID.Bytes), PartnerCode: d.PartnerCode, PartnerName: d.PartnerName,
+		CategoryId: optUUID(d.CategoryID), CategoryPath: d.CategoryPath,
 		LocationId: optUUID(d.LocationID), LocationName: d.LocationName, RackId: optUUID(d.RackID), RackName: d.RackName,
 		UHeight: d.UHeight, MgmtInterfaceId: optUUID(d.MgmtInterfaceID), MgmtInterfaceName: d.MgmtInterfaceName,
 		MgmtIp: d.MgmtIp, PollAddress: pollString(d.PollAddress), ClusterId: optUUID(d.ClusterID), ClusterName: d.ClusterName,
@@ -445,24 +419,11 @@ func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 	return out
 }
 
-// deviceLevels: the level on the device's unit, raised by the access its site gives (shares included, which
-// siteLevels already caps at edit).
-func deviceLevels(ctx context.Context, q store.Querier, m tenant.Membership, rows []store.GetDeviceRow) (map[pgtype.UUID]int, error) {
-	refs := make([]siteRef, 0, len(rows))
-	seen := map[pgtype.UUID]bool{}
-	for _, d := range rows {
-		if !seen[d.SiteID] {
-			seen[d.SiteID] = true
-			refs = append(refs, siteRef{d.SiteID, d.SiteUnitID, d.SitePartnerID})
-		}
-	}
-	sites, err := siteLevels(ctx, q, m, refs)
-	if err != nil {
-		return nil, err
-	}
+// deviceLevels: every device has the organization level (ADR-032).
+func deviceLevels(_ context.Context, _ store.Querier, m tenant.Membership, rows []store.GetDeviceRow) (map[pgtype.UUID]int, error) {
 	out := make(map[pgtype.UUID]int, len(rows))
 	for _, d := range rows {
-		out[d.ID] = max(m.UnitLevel(d.BusinessUnitID, d.PartnerID), sites[d.SiteID])
+		out[d.ID] = m.Level()
 	}
 	return out, nil
 }
@@ -521,11 +482,8 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		}
 		params.Q = escapeLike(q)
 	}
-	if p.PartnerId != nil {
-		params.PartnerFilter = pgUUID(*p.PartnerId)
-	}
-	if p.BusinessUnitId != nil {
-		params.UnitFilter = pgUUID(*p.BusinessUnitId)
+	if p.CategoryId != nil {
+		params.CategoryFilter = pgUUID(*p.CategoryId)
 	}
 	if p.SiteId != nil {
 		for _, id := range *p.SiteId {
@@ -577,7 +535,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 	}
 	total, err := s.q.CountDevices(ctx, store.CountDevicesParams{
 		OrganizationID: params.OrganizationID, Q: params.Q,
-		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
+		CategoryFilter: params.CategoryFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
 		ClusterIds: params.ClusterIds,
 	})
@@ -586,7 +544,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 	}
 	counts, err := s.q.DeviceFacetCounts(ctx, store.DeviceFacetCountsParams{
 		OrganizationID: params.OrganizationID, Q: params.Q,
-		PartnerFilter: params.PartnerFilter, UnitFilter: params.UnitFilter, SiteIds: params.SiteIds, Types: params.Types,
+		CategoryFilter: params.CategoryFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
 		ClusterIds: params.ClusterIds,
 	})
@@ -653,7 +611,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f deviceFields, id *uuid.UUID, version int32, out *deviceOutcome) error {
 	{
 		var before store.GetDeviceRow
-		self, keepUnit := pgtype.UUID{}, pgtype.UUID{}
+		self := pgtype.UUID{}
 		if id != nil {
 			var ok bool
 			var err error
@@ -672,9 +630,9 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 				out.forbidden = true
 				return errRollback
 			}
-			self, keepUnit = before.ID, before.BusinessUnitID
+			self = before.ID
 		}
-		p, bad, err := resolvePlacement(ctx, q, m, f, self, keepUnit)
+		p, bad, err := resolvePlacement(ctx, q, m, f, self)
 		if err != nil {
 			return err
 		}
@@ -682,14 +640,11 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 			out.bad = bad
 			return errRollback
 		}
-		// A new device, or one moved to another unit / site, needs edit rights on the units themselves.
-		moved := id == nil || p.unit != before.BusinessUnitID || p.site.ID != before.SiteID
-		if moved && (m.UnitLevel(p.unit, p.unitPartner) < tenant.LevelEdit ||
-			(id != nil && m.UnitLevel(before.BusinessUnitID, before.PartnerID) < tenant.LevelEdit)) {
+		if !m.CanEdit() {
 			out.forbidden = true
 			return errRollback
 		}
-		// Members sit in the cluster's site and unit (ADR-027).
+		// Members sit in the cluster's site (ADR-027).
 		var cluster pgtype.UUID
 		if f.cluster != nil {
 			c, ok, err := loadCluster(ctx, q, m, *f.cluster)
@@ -700,8 +655,8 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 				out.bad = msgClusterNotFound
 				return errRollback
 			}
-			if c.SiteID != p.site.ID || c.BusinessUnitID != p.unit {
-				out.bad = fmt.Sprintf("Thành viên cụm %s phải ở site %s và thuộc đơn vị %s › %s", c.Name, c.SiteCode, c.PartnerCode, c.UnitCode)
+			if c.SiteID != p.site.ID {
+				out.bad = fmt.Sprintf("Thành viên cụm %s phải ở site %s", c.Name, c.SiteCode)
 				return errRollback
 			}
 			if bad, err := checkMemberType(ctx, q, m, c, self, f.typ); err != nil {
@@ -778,7 +733,7 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 		var devID pgtype.UUID
 		if id == nil {
 			devID, err = q.CreateDevice(ctx, store.CreateDeviceParams{
-				OrganizationID: m.OrgID, BusinessUnitID: p.unit, SiteID: p.site.ID, LocationID: p.location, RackID: p.rack,
+				OrganizationID: m.OrgID, SiteID: p.site.ID, LocationID: p.location, RackID: p.rack,
 				RackU: p.rackU, UHeight: f.uHeight, Hostname: f.hostname, Type: f.typ, Vendor: f.vendor, Model: f.model,
 				PartNumber: f.partNumber, SerialNumber: f.serial, AssetTag: f.assetTag, Firmware: f.firmware, Role: f.role,
 				Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner, PurchaseDate: f.purchase, PoNumber: f.po,
@@ -790,7 +745,7 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 			devID = before.ID
 			var n int64
 			n, err = q.UpdateDevice(ctx, store.UpdateDeviceParams{
-				ID: before.ID, OrganizationID: m.OrgID, Version: version, BusinessUnitID: p.unit, SiteID: p.site.ID,
+				ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
 				LocationID: p.location, RackID: p.rack, RackU: p.rackU, UHeight: f.uHeight, Hostname: f.hostname, Type: f.typ,
 				Vendor: f.vendor, Model: f.model, PartNumber: f.partNumber, SerialNumber: f.serial, AssetTag: f.assetTag,
 				Firmware: f.firmware, Role: f.role, Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner,
@@ -843,7 +798,7 @@ func inputFromUpdate(b apigen.DeviceUpdate) apigen.DeviceInput {
 		AssetTag: b.AssetTag, Firmware: b.Firmware, OwnerName: b.OwnerName, PoNumber: b.PoNumber, Notes: b.Notes, Role: b.Role,
 		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
-		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
+		LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
 		MgmtInterfaceId: b.MgmtInterfaceId, PollAddress: b.PollAddress,
 		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
 	}
@@ -855,7 +810,7 @@ func bodyFromInput(b apigen.DeviceInput) deviceBody {
 		AssetTag: b.AssetTag, Firmware: b.Firmware, OwnerName: b.OwnerName, PoNumber: b.PoNumber, Notes: b.Notes, Role: b.Role,
 		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
-		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
+		LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
 		MgmtInterfaceId: b.MgmtInterfaceId, TemplateId: b.TemplateId, PollAddress: b.PollAddress,
 		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
 	}
@@ -956,7 +911,7 @@ func deleteDeviceTx(ctx context.Context, q store.Querier, m tenant.Membership, i
 	if !ok {
 		return 404, nil
 	}
-	if m.UnitLevel(d.BusinessUnitID, d.PartnerID) < tenant.LevelEdit {
+	if !m.CanEdit() {
 		return 403, nil
 	}
 	if _, err := q.SoftDeleteDevice(ctx, store.SoftDeleteDeviceParams{ID: d.ID, OrganizationID: m.OrgID}); err != nil {
@@ -1093,7 +1048,7 @@ func (s *Server) BulkUpdateDevices(ctx context.Context, req apigen.BulkUpdateDev
 				return errRollback
 			}
 			if _, err := q.UpdateDevice(ctx, store.UpdateDeviceParams{
-				ID: d.ID, OrganizationID: m.OrgID, Version: d.Version, BusinessUnitID: d.BusinessUnitID, SiteID: d.SiteID,
+				ID: d.ID, OrganizationID: m.OrgID, Version: d.Version, SiteID: d.SiteID,
 				LocationID: d.LocationID, RackID: d.RackID, RackU: d.RackU, UHeight: d.UHeight, Hostname: d.Hostname, Type: d.Type,
 				Vendor: d.Vendor, Model: d.Model, PartNumber: d.PartNumber, SerialNumber: d.SerialNumber, AssetTag: d.AssetTag,
 				Firmware: d.Firmware, Role: next.Role, Lifecycle: next.Lifecycle, Managed: next.Managed, OwnerName: next.OwnerName,

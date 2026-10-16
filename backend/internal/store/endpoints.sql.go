@@ -29,32 +29,15 @@ func (q *Queries) CountEndpointGroupsInSite(ctx context.Context, arg CountEndpoi
 	return count, err
 }
 
-const countEndpointGroupsOfUnit = `-- name: CountEndpointGroupsOfUnit :one
-SELECT count(*) FROM endpoint_groups WHERE organization_id = $1 AND business_unit_id = $2
-`
-
-type CountEndpointGroupsOfUnitParams struct {
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-}
-
-func (q *Queries) CountEndpointGroupsOfUnit(ctx context.Context, arg CountEndpointGroupsOfUnitParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countEndpointGroupsOfUnit, arg.OrganizationID, arg.BusinessUnitID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const createEndpointGroup = `-- name: CreateEndpointGroup :one
-INSERT INTO endpoint_groups (organization_id, business_unit_id, site_id, kind, name, ip_range_id, expected_count, notes)
-VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8)
+INSERT INTO endpoint_groups (organization_id, site_id, kind, name, ip_range_id, expected_count, notes)
+VALUES ($1, $2, $3, $4, $5,
+        $6, $7)
 RETURNING id
 `
 
 type CreateEndpointGroupParams struct {
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -66,7 +49,6 @@ type CreateEndpointGroupParams struct {
 func (q *Queries) CreateEndpointGroup(ctx context.Context, arg CreateEndpointGroupParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, createEndpointGroup,
 		arg.OrganizationID,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.Kind,
 		arg.Name,
@@ -146,17 +128,13 @@ func (q *Queries) DeleteEndpointMember(ctx context.Context, arg DeleteEndpointMe
 }
 
 const getEndpointGroup = `-- name: GetEndpointGroup :one
-SELECT g.id, g.organization_id, g.business_unit_id, g.site_id, g.kind, g.name, g.ip_range_id, g.expected_count, g.notes, g.created_at, g.updated_at, g.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       gu.code AS unit_code, gu.partner_id, gp.code AS partner_code,
+SELECT g.id, g.organization_id, g.site_id, g.kind, g.name, g.ip_range_id, g.expected_count, g.notes, g.created_at, g.updated_at, g.version, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        r.start_ip AS range_start, r.end_ip AS range_end, COALESCE(r.kind, '')::text AS range_kind,
        COALESCE(r.purpose, '')::text AS range_purpose, r.subnet_id, sn.cidr AS subnet_cidr,
        COALESCE(sn.vrf, '')::text AS subnet_vrf,
        (SELECT count(*) FROM endpoint_members em WHERE em.group_id = g.id)::bigint AS member_count
 FROM endpoint_groups g
 JOIN sites s ON s.id = g.site_id AND s.deleted_at IS NULL
-JOIN business_units gu ON gu.id = g.business_unit_id
-JOIN partners gp ON gp.id = gu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.id = $1 AND g.organization_id = $2
@@ -170,7 +148,6 @@ type GetEndpointGroupParams struct {
 type GetEndpointGroupRow struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -182,11 +159,8 @@ type GetEndpointGroupRow struct {
 	Version        int32
 	SiteCode       string
 	SiteName       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
-	UnitCode       string
-	PartnerID      pgtype.UUID
-	PartnerCode    string
+	CategoryID     pgtype.UUID
+	CategoryPath   string
 	RangeStart     *netip.Addr
 	RangeEnd       *netip.Addr
 	RangeKind      string
@@ -203,7 +177,6 @@ func (q *Queries) GetEndpointGroup(ctx context.Context, arg GetEndpointGroupPara
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.BusinessUnitID,
 		&i.SiteID,
 		&i.Kind,
 		&i.Name,
@@ -215,11 +188,8 @@ func (q *Queries) GetEndpointGroup(ctx context.Context, arg GetEndpointGroupPara
 		&i.Version,
 		&i.SiteCode,
 		&i.SiteName,
-		&i.SiteUnitID,
-		&i.SitePartnerID,
-		&i.UnitCode,
-		&i.PartnerID,
-		&i.PartnerCode,
+		&i.CategoryID,
+		&i.CategoryPath,
 		&i.RangeStart,
 		&i.RangeEnd,
 		&i.RangeKind,
@@ -347,17 +317,13 @@ func (q *Queries) GetRangeWithSubnet(ctx context.Context, arg GetRangeWithSubnet
 
 const listEndpointGroups = `-- name: ListEndpointGroups :many
 
-SELECT g.id, g.organization_id, g.business_unit_id, g.site_id, g.kind, g.name, g.ip_range_id, g.expected_count, g.notes, g.created_at, g.updated_at, g.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
-       gu.code AS unit_code, gu.partner_id, gp.code AS partner_code,
+SELECT g.id, g.organization_id, g.site_id, g.kind, g.name, g.ip_range_id, g.expected_count, g.notes, g.created_at, g.updated_at, g.version, s.code::text AS site_code, s.name AS site_name, s.category_id, category_path(s.category_id)::text AS category_path,
        r.start_ip AS range_start, r.end_ip AS range_end, COALESCE(r.kind, '')::text AS range_kind,
        COALESCE(r.purpose, '')::text AS range_purpose, r.subnet_id, sn.cidr AS subnet_cidr,
        COALESCE(sn.vrf, '')::text AS subnet_vrf,
        (SELECT count(*) FROM endpoint_members em WHERE em.group_id = g.id)::bigint AS member_count
 FROM endpoint_groups g
 JOIN sites s ON s.id = g.site_id AND s.deleted_at IS NULL
-JOIN business_units gu ON gu.id = g.business_unit_id
-JOIN partners gp ON gp.id = gu.partner_id
-LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.organization_id = $1
@@ -373,7 +339,6 @@ type ListEndpointGroupsParams struct {
 type ListEndpointGroupsRow struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -385,11 +350,8 @@ type ListEndpointGroupsRow struct {
 	Version        int32
 	SiteCode       string
 	SiteName       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
-	UnitCode       string
-	PartnerID      pgtype.UUID
-	PartnerCode    string
+	CategoryID     pgtype.UUID
+	CategoryPath   string
 	RangeStart     *netip.Addr
 	RangeEnd       *netip.Addr
 	RangeKind      string
@@ -400,8 +362,7 @@ type ListEndpointGroupsRow struct {
 	MemberCount    int64
 }
 
-// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
-// the group's unit is granted, or its site is visible.
+// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id.
 func (q *Queries) ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error) {
 	rows, err := q.db.Query(ctx, listEndpointGroups, arg.OrganizationID, arg.SiteFilter)
 	if err != nil {
@@ -414,7 +375,6 @@ func (q *Queries) ListEndpointGroups(ctx context.Context, arg ListEndpointGroups
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
-			&i.BusinessUnitID,
 			&i.SiteID,
 			&i.Kind,
 			&i.Name,
@@ -426,11 +386,8 @@ func (q *Queries) ListEndpointGroups(ctx context.Context, arg ListEndpointGroups
 			&i.Version,
 			&i.SiteCode,
 			&i.SiteName,
-			&i.SiteUnitID,
-			&i.SitePartnerID,
-			&i.UnitCode,
-			&i.PartnerID,
-			&i.PartnerCode,
+			&i.CategoryID,
+			&i.CategoryPath,
 			&i.RangeStart,
 			&i.RangeEnd,
 			&i.RangeKind,
@@ -533,14 +490,13 @@ func (q *Queries) SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtI
 }
 
 const updateEndpointGroup = `-- name: UpdateEndpointGroup :execrows
-UPDATE endpoint_groups SET business_unit_id = $1, site_id = $2, kind = $3, name = $4,
-  ip_range_id = $5, expected_count = $6, notes = $7,
+UPDATE endpoint_groups SET site_id = $1, kind = $2, name = $3,
+  ip_range_id = $4, expected_count = $5, notes = $6,
   version = version + 1
-WHERE id = $8 AND organization_id = $9 AND version = $10
+WHERE id = $7 AND organization_id = $8 AND version = $9
 `
 
 type UpdateEndpointGroupParams struct {
-	BusinessUnitID pgtype.UUID
 	SiteID         pgtype.UUID
 	Kind           string
 	Name           string
@@ -554,7 +510,6 @@ type UpdateEndpointGroupParams struct {
 
 func (q *Queries) UpdateEndpointGroup(ctx context.Context, arg UpdateEndpointGroupParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateEndpointGroup,
-		arg.BusinessUnitID,
 		arg.SiteID,
 		arg.Kind,
 		arg.Name,

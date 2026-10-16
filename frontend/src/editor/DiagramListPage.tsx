@@ -24,49 +24,15 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { formatDate } from '@/lib/format'
-import { atLeast, inScope, useOrgAccess, useScope } from '@/modules/sites/access'
-import { useBusinessUnits, useSites } from '@/modules/sites/sites'
-import {
-  DIAGRAM_LAYERS,
-  useDiagramMutations,
-  useDiagrams,
-  type DiagramLayer,
-  type DiagramScope,
-} from './doc/api'
+import { atLeast, useOrgAccess } from '@/modules/sites/access'
+import { DIAGRAM_LAYERS, useDiagramMutations, useDiagrams, type DiagramLayer } from './doc/api'
 import type { DiagramMeta } from './doc/types'
-
-function scopeLabel(t: (k: 'diagrams.orgWide') => string, d: DiagramMeta): string {
-  if (d.scope === 'organization') return t('diagrams.orgWide')
-  if (d.scope === 'business_unit') return `${d.partnerCode} › ${d.unitCode}`
-  return d.siteCode
-}
 
 function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { create } = useDiagramMutations(orgId)
-  const access = useOrgAccess(orgId)
-  const sites = useSites(orgId)
-  const units = useBusinessUnits(orgId)
-  const [f, setF] = useState({
-    name: '',
-    scope: 'site' as DiagramScope,
-    target: '',
-    layer: 'physical' as DiagramLayer,
-  })
-  const targets =
-    f.scope === 'site'
-      ? (sites.data ?? [])
-          .filter((s) => atLeast(s.access, 'edit'))
-          .map((s) => ({ id: s.id, label: `${s.code} · ${s.name}` }))
-      : f.scope === 'business_unit'
-        ? (units.data ?? [])
-            .filter((u) => atLeast(u.access, 'edit'))
-            .map((u) => ({ id: u.id, label: `${u.partnerCode} › ${u.code} · ${u.name}` }))
-        : []
-  const scopes: DiagramScope[] = access.orgEdit
-    ? ['site', 'business_unit', 'organization']
-    : ['site', 'business_unit']
+  const [f, setF] = useState({ name: '', layer: 'physical' as DiagramLayer })
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -76,13 +42,7 @@ function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () =>
           onSubmit={(e) => {
             e.preventDefault()
             create.mutate(
-              {
-                name: f.name.trim(),
-                scope: f.scope,
-                siteId: f.scope === 'site' ? f.target : null,
-                businessUnitId: f.scope === 'business_unit' ? f.target : null,
-                layer: f.layer,
-              },
+              { name: f.name.trim(), layer: f.layer },
               {
                 onSuccess: (d) => {
                   toast.success(t('diagrams.created'))
@@ -107,68 +67,21 @@ function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () =>
               />
             )}
           </FormField>
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('diagrams.scope')} guide={t('guides.diagramScope')}>
-              {(p) => (
-                <NativeSelect
-                  {...p}
-                  value={f.scope}
-                  onChange={(e) => {
-                    const scope = e.target.value as DiagramScope
-                    setF({
-                      ...f,
-                      scope,
-                      target: '',
-                      layer: scope === 'site' ? 'physical' : 'overview',
-                    })
-                  }}
-                >
-                  {scopes.map((s) => (
-                    <option key={s} value={s}>
-                      {t(`diagrams.scopes.${s}`)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              )}
-            </FormField>
-            <FormField label={t('diagrams.layer')} guide={t('guides.diagramLayer')}>
-              {(p) => (
-                <NativeSelect
-                  {...p}
-                  value={f.layer}
-                  onChange={(e) => setF({ ...f, layer: e.target.value as DiagramLayer })}
-                >
-                  {DIAGRAM_LAYERS.map((l) => (
-                    <option key={l} value={l}>
-                      {t(`diagrams.layers.${l}`)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              )}
-            </FormField>
-          </div>
-          {f.scope !== 'organization' && (
-            <FormField
-              label={f.scope === 'site' ? t('diagrams.site') : t('diagrams.unit')}
-              required
-            >
-              {(p) => (
-                <NativeSelect
-                  {...p}
-                  required
-                  value={f.target}
-                  onChange={(e) => setF({ ...f, target: e.target.value })}
-                >
-                  <option value="">{t('diagrams.choose')}</option>
-                  {targets.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.label}
-                    </option>
-                  ))}
-                </NativeSelect>
-              )}
-            </FormField>
-          )}
+          <FormField label={t('diagrams.layer')} guide={t('guides.diagramLayer')}>
+            {(p) => (
+              <NativeSelect
+                {...p}
+                value={f.layer}
+                onChange={(e) => setF({ ...f, layer: e.target.value as DiagramLayer })}
+              >
+                {DIAGRAM_LAYERS.map((l) => (
+                  <option key={l} value={l}>
+                    {t(`diagrams.layers.${l}`)}
+                  </option>
+                ))}
+              </NativeSelect>
+            )}
+          </FormField>
           {create.isError && (
             <p role="alert" className="text-destructive">
               {create.error.message}
@@ -194,53 +107,27 @@ export function DiagramListPage() {
   const { orgId = '' } = useParams()
   const userId = useSession().data?.user.id ?? ''
   const diagrams = useDiagrams(orgId)
-  const sites = useSites(orgId)
-  const scope = useScope(orgId)
   const access = useOrgAccess(orgId)
   const { remove } = useDiagramMutations(orgId)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<DiagramMeta | null>(null)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   useBreadcrumbs([{ label: t('nav.diagrams') }])
-  const scoped = useMemo(() => {
-    const byId = new Map((sites.data ?? []).map((s) => [s.id, s]))
-    return diagrams.data?.filter((d) => {
-      if (d.scope === 'organization') return inScope(scope, {})
-      if (d.scope === 'business_unit') return !scope.unitId || d.businessUnitId === scope.unitId
-      const s = d.siteId ? byId.get(d.siteId) : undefined
-      return inScope(scope, { partnerId: s?.partnerId ?? null, unitId: s?.businessUnitId ?? null })
-    })
-  }, [diagrams.data, sites.data, scope])
+  const scoped = diagrams.data
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
-    const scopeF = filter.facets.scope ?? []
     const layerF = filter.facets.layer ?? []
     return scoped?.filter(
       (d) =>
-        (!q ||
-          [d.name, d.description, d.siteCode, d.unitCode].some((v) =>
-            v.toLowerCase().includes(q),
-          )) &&
-        (scopeF.length === 0 || scopeF.includes(d.scope)) &&
+        (!q || [d.name, d.description].some((v) => v.toLowerCase().includes(q))) &&
         (layerF.length === 0 || layerF.includes(d.layer)),
     )
   }, [scoped, filter])
-  const table = useLocalTable(
-    rows,
-    { name: (d) => d.name, scope: (d) => scopeLabel(t, d), updated: (d) => d.updatedAt },
-    [{ id: 'name', desc: false }],
-  )
+  const table = useLocalTable(rows, { name: (d) => d.name, updated: (d) => d.updatedAt }, [
+    { id: 'name', desc: false },
+  ])
   const count = (pred: (d: DiagramMeta) => boolean) => (scoped ?? []).filter(pred).length
   const facets: Facet[] = [
-    {
-      id: 'scope',
-      label: t('diagrams.scope'),
-      options: (['organization', 'business_unit', 'site'] as DiagramScope[]).map((s) => ({
-        value: s,
-        label: t(`diagrams.scopes.${s}`),
-        count: count((d) => d.scope === s),
-      })),
-    },
     {
       id: 'layer',
       label: t('diagrams.layer'),
@@ -264,17 +151,6 @@ export function DiagramListPage() {
         >
           {d.name}
         </Link>
-      ),
-    },
-    {
-      id: 'scope',
-      header: t('diagrams.scope'),
-      meta: { label: t('diagrams.scope'), width: 200 },
-      cell: ({ row: { original: d } }) => (
-        <span>
-          <span className="text-muted-foreground">{t(`diagrams.scopes.${d.scope}`)}</span>
-          {d.scope !== 'organization' && ` · ${scopeLabel(t, d)}`}
-        </span>
       ),
     },
     {

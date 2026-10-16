@@ -9,6 +9,9 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 
 | Thuật ngữ | Là gì | Ví dụ | Trong hệ thống |
 | --- | --- | --- | --- |
+| **Danh mục** | Nhánh chia việc quản lý trong tổ chức (công ty con, khách hàng, chi nhánh, bộ phận…), chia bao nhiêu cấp cũng được; mỗi danh mục có tên tự do và mã viết tắt | Tổ chức CJ → danh mục CJ Feed (`CJFEED`) | Danh mục & Sites → cây bên trái |
+| **Site** | Một địa điểm thật (văn phòng, nhà máy, kho, IDC); gắn vào danh mục bất kỳ hoặc thẳng vào tổ chức | Văn phòng HCM | Danh mục & Sites |
+| **Mã site đầy đủ** | Ghép tự động: mã tổ chức – mã các danh mục – mã riêng của site. Đổi mã danh mục/tổ chức thì mã các site bên dưới đổi theo, hệ thống liệt kê để xác nhận trước | `CJ-CJFEED-HCM` | Form site, cây danh mục |
 | **Hostname** | Tên của thiết bị trên mạng, do kỹ sư đặt | `AGRI-BD-FW01` | Thiết bị → Hostname (không trùng trong tổ chức, trừ thành viên cùng cụm) |
 | **S/N (Serial Number)** | Số seri in trên thiết bị, dùng để bảo hành | `FGT60F0000123` | Thiết bị → S/N |
 | **Part Number** | Mã sản phẩm của hãng (đặt hàng, tra EOL) | `FG-100F`, `C9200-24P-E` | Thiết bị → Part number |

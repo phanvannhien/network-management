@@ -9,105 +9,66 @@ import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { Button } from '@/components/ui/button'
-import { inScope, useScope } from './access'
-import { SITE_KINDS, useBusinessUnits, usePartners, useSites, type Site } from './sites'
+import { useInScope } from './access'
+import { SITE_KINDS, subtreeIds, useCategories, useSites, type Site } from './sites'
 
 const SITE_SORT: Record<string, (s: Site) => string | number> = {
   code: (s) => s.code,
   name: (s) => s.name,
-  partner: (s) => s.partnerCode || '~',
-  unit: (s) => s.businessUnitCode || '~',
+  category: (s) => s.categoryPath || '~',
   kind: (s) => s.kind,
   locationCount: (s) => s.locationCount,
   rackCount: (s) => s.rackCount,
 }
 
-/** Sites table; `partnerId` / `unitId` limit it to one partner / unit (their detail pages). */
+/**
+ * Sites table (ADR-032). `categoryId` limits it to a category branch; `'root'` to the sites straight under the
+ * organization; undefined shows everything (still narrowed by the topbar filter).
+ */
 export function SitesTable({
   orgId,
-  partnerId,
-  unitId,
+  categoryId,
   canEdit,
   onAdd,
 }: {
   orgId: string
-  partnerId?: string
-  unitId?: string
+  categoryId?: string | 'root'
   canEdit: boolean
   onAdd: () => void
 }) {
   const { t } = useTranslation()
   const userId = useSession().data?.user.id ?? ''
   const sites = useSites(orgId)
-  const partners = usePartners(orgId)
-  const units = useBusinessUnits(orgId)
-  const scope = unitId ? 'unit-sites' : partnerId ? 'partner-sites' : 'sites'
-  const topScope = useScope(orgId)
+  const categories = useCategories(orgId)
+  const passes = useInScope(orgId)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
+  const branch = useMemo(
+    () =>
+      categoryId && categoryId !== 'root' && categories.data
+        ? subtreeIds(categories.data, categoryId)
+        : null,
+    [categoryId, categories.data],
+  )
 
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
-    const partnerF = filter.facets.partner ?? []
-    const unitF = filter.facets.unit ?? []
     const kindF = filter.facets.kind ?? []
     return sites.data?.filter(
       (s) =>
-        (!unitId || s.businessUnitId === unitId) &&
-        (!partnerId || s.partnerId === partnerId) &&
-        // The topbar filter applies to the hub; detail pages are already limited.
-        (unitId ||
-          partnerId ||
-          inScope(topScope, { partnerId: s.partnerId, unitId: s.businessUnitId })) &&
-        (partnerF.length === 0 || partnerF.includes(s.partnerId ?? 'shared')) &&
-        (!q || [s.code, s.name, s.address].some((v) => v.toLowerCase().includes(q))) &&
-        (unitF.length === 0 || unitF.includes(s.businessUnitId ?? 'shared')) &&
+        (categoryId === undefined
+          ? passes(s.categoryId)
+          : categoryId === 'root'
+            ? s.categoryId === null
+            : !!s.categoryId && !!branch?.has(s.categoryId)) &&
+        (!q ||
+          [s.code, s.name, s.address, s.categoryPath].some((v) => v.toLowerCase().includes(q))) &&
         (kindF.length === 0 || kindF.includes(s.kind)),
     )
-  }, [sites.data, filter, unitId, partnerId, topScope])
+  }, [sites.data, filter, categoryId, branch, passes])
   const table = useLocalTable(rows, SITE_SORT, [{ id: 'code', desc: false }])
 
-  const count = (pred: (s: Site) => boolean) => sites.data?.filter(pred).length ?? 0
-  const shared = {
-    value: 'shared',
-    label: t('units.sharedShort'),
-    count: count((s) => s.businessUnitId === null),
-  }
+  const count = (pred: (s: Site) => boolean) => (rows ?? []).filter(pred).length
   const facets: Facet[] = [
-    ...(unitId || partnerId
-      ? []
-      : [
-          {
-            id: 'partner',
-            label: t('units.partner'),
-            options: [
-              ...(partners.data ?? []).map((p) => ({
-                value: p.id,
-                label: p.code,
-                count: count((s) => s.partnerId === p.id),
-              })),
-              shared,
-            ],
-          },
-        ]),
-    ...(unitId
-      ? []
-      : [
-          {
-            id: 'unit',
-            label: t('sites.unit'),
-            // Unit codes repeat across partners (MAIN), so options carry the partner code.
-            options: [
-              ...(units.data ?? [])
-                .filter((u) => !partnerId || u.partnerId === partnerId)
-                .map((u) => ({
-                  value: u.id,
-                  label: partnerId ? u.code : `${u.partnerCode} › ${u.code}`,
-                  count: count((s) => s.businessUnitId === u.id),
-                })),
-              ...(partnerId ? [] : [shared]),
-            ],
-          },
-        ]),
     {
       id: 'kind',
       label: t('sites.kind'),
@@ -124,11 +85,11 @@ export function SitesTable({
       id: 'code',
       accessorKey: 'code',
       header: t('sites.code'),
-      meta: { label: t('sites.code'), width: 140, pin: true, alwaysVisible: true },
+      meta: { label: t('sites.code'), width: 220, pin: true, alwaysVisible: true },
       cell: ({ row }) => (
         <Link
           to={`/o/${orgId}/sites/${row.original.id}`}
-          className="font-medium hover:text-primary hover:underline"
+          className="font-mono text-tech font-medium hover:text-primary hover:underline"
         >
           {row.original.code}
         </Link>
@@ -141,40 +102,12 @@ export function SitesTable({
       meta: { label: t('sites.name'), width: 220 },
     },
     {
-      id: 'partner',
-      accessorFn: (s) => s.partnerCode,
-      header: t('units.partner'),
-      meta: { label: t('units.partner'), width: 110 },
+      id: 'category',
+      accessorFn: (s) => s.categoryPath,
+      header: t('sites.category'),
+      meta: { label: t('sites.category'), width: 220 },
       cell: ({ row: { original: s } }) =>
-        s.partnerId ? (
-          <Link
-            to={`/o/${orgId}/partners/${s.partnerId}`}
-            className="hover:text-primary hover:underline"
-            title={s.partnerName}
-          >
-            {s.partnerCode}
-          </Link>
-        ) : (
-          <span className="text-muted-foreground">{t('units.sharedShort')}</span>
-        ),
-    },
-    {
-      id: 'unit',
-      accessorFn: (s) => s.businessUnitCode,
-      header: t('sites.unit'),
-      meta: { label: t('sites.unit'), width: 130 },
-      cell: ({ row: { original: s } }) =>
-        s.businessUnitId ? (
-          <Link
-            to={`/o/${orgId}/units/${s.businessUnitId}`}
-            className="hover:text-primary hover:underline"
-            title={s.businessUnitName}
-          >
-            {s.businessUnitCode}
-          </Link>
-        ) : (
-          <span className="text-muted-foreground">{t('units.sharedShort')}</span>
-        ),
+        s.categoryPath || <span className="text-muted-foreground">{t('categories.orgShort')}</span>,
     },
     {
       id: 'kind',
@@ -234,11 +167,11 @@ export function SitesTable({
 
   return (
     <DataTable
-      tableId={scope}
+      tableId="sites"
       userId={userId}
       caption={t('sites.title')}
       columns={columns}
-      defaultHidden={unitId ? ['isp', 'partner', 'unit'] : partnerId ? ['isp', 'partner'] : ['isp']}
+      defaultHidden={categoryId ? ['isp', 'category'] : ['isp']}
       data={table.data}
       total={table.total}
       isLoading={sites.isPending}
@@ -259,14 +192,14 @@ export function SitesTable({
           }}
           facets={facets}
           searchPlaceholder={t('sites.searchPlaceholder')}
-          storageKey={`ntb-filters:${userId}:${scope}`}
+          storageKey={`ntb-filters:${userId}:sites`}
         />
       }
       empty={
         <EmptyState
           icon={<MapPin />}
-          title={unitId ? t('units.noSites') : t('sites.emptyTitle')}
-          description={unitId ? undefined : t('sites.emptyBody')}
+          title={t('sites.emptyTitle')}
+          description={t('sites.emptyBody')}
           action={
             canEdit && (
               <Button onClick={onAdd}>

@@ -1,133 +1,192 @@
-import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { FolderTree, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import { useOrganization } from '@/app/orgs'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PartnerFormDialog } from './PartnerFormDialog'
-import { PartnersTable } from './PartnersTable'
+import { cn } from '@/lib/utils'
+import { CategoryFormDialog } from './CategoryDialogs'
 import { SiteFormDialog } from './SiteFormDialog'
 import { SitesTable } from './SitesTable'
 import { useOrgAccess } from './access'
-import { useSites } from './sites'
-import { UnitFormDialog } from './UnitFormDialog'
-import { UnitsTable } from './UnitsTable'
-
-const TABS = ['partners', 'units', 'sites'] as const
-type Tab = (typeof TABS)[number]
+import {
+  buildTree,
+  flattenTree,
+  useCategories,
+  useCategoryMutations,
+  type Category,
+  type CategoryNode,
+} from './sites'
 
 /**
- * "Đơn vị & Sites" (SRS §2, ADR-031): the organization's partners, their business units and all sites.
- * Sites are filtered by the member's site scope on the server.
+ * "Danh mục & Sites" (SRS §3, ADR-032): the organization's category tree on the left (as deep as needed, may be
+ * empty), the sites of the selected branch on the right. Sites can hang under any category or the organization.
  */
 export function SiteListPage() {
   const { t } = useTranslation()
   const { orgId = '' } = useParams()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const org = useOrganization(orgId)
-  const [creating, setCreating] = useState<Tab | null>(null)
-  const tab: Tab = TABS.find((x) => x === params.get('tab')) ?? 'partners'
-  const sharedCount = useSites(orgId).data?.filter((s) => s.businessUnitId === null).length ?? 0
-  useBreadcrumbs([{ label: t('units.hub') }])
-
+  const org = useOrganization(orgId).data?.organization
+  const categories = useCategories(orgId)
+  const { remove } = useCategoryMutations(orgId)
   const access = useOrgAccess(orgId)
+  const canEdit = access.orgEdit
+  const selectedId = params.get('category')
+  const rows = useMemo(() => flattenTree(buildTree(categories.data ?? [])), [categories.data])
+  const selected = rows.find((c) => c.id === selectedId) ?? null
+  const [editing, setEditing] = useState<{ category?: Category; parentId?: string | null } | null>(
+    null,
+  )
+  const [deleting, setDeleting] = useState<Category | null>(null)
+  const [addingSite, setAddingSite] = useState(false)
+  useBreadcrumbs([{ label: t('nav.sites') }])
+  const select = (id: string | null) => setParams(id ? { category: id } : {}, { replace: true })
+
+  const nodeButton = (c: CategoryNode | null) => {
+    const active = (c?.id ?? null) === (selected?.id ?? null)
+    return (
+      <button
+        type="button"
+        onClick={() => select(c?.id ?? null)}
+        aria-current={active ? 'true' : undefined}
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-muted',
+          active && 'bg-accent font-medium text-accent-foreground',
+        )}
+        style={c ? { paddingLeft: `${0.5 + (c.depth + 1) * 1}rem` } : undefined}
+      >
+        <span className="truncate">{c ? c.name : (org?.name ?? t('categories.org'))}</span>
+        <span className="shrink-0 font-mono text-tech text-muted-foreground">
+          {c ? c.code : org?.code}
+        </span>
+        {c && c.siteCount > 0 && (
+          <span data-numeric className="ml-auto shrink-0 text-muted-foreground">
+            {c.siteCount}
+          </span>
+        )}
+      </button>
+    )
+  }
 
   return (
     <div className="space-y-3 p-4">
       <PageHeader
-        title={org.data ? t('units.hubOf', { org: org.data.organization.name }) : t('units.hub')}
+        title={t('categories.hub')}
+        description={t('categories.hubSubtitle')}
         actions={
-          <>
-            {access.orgAdmin && (
+          canEdit && (
+            <>
               <Button
-                variant={tab === 'partners' ? 'default' : 'outline'}
-                onClick={() => setCreating('partners')}
+                variant="outline"
+                onClick={() => setEditing({ parentId: selected?.id ?? null })}
               >
-                <Plus aria-hidden /> {t('partners.add')}
+                <Plus aria-hidden /> {selected ? t('categories.addChild') : t('categories.add')}
               </Button>
-            )}
-            {access.canAddUnits && (
-              <Button
-                variant={tab === 'units' ? 'default' : 'outline'}
-                onClick={() => setCreating('units')}
-              >
-                <Plus aria-hidden /> {t('units.add')}
-              </Button>
-            )}
-            {access.canAddSites && (
-              <Button
-                variant={tab === 'sites' ? 'default' : 'outline'}
-                onClick={() => setCreating('sites')}
-              >
+              <Button onClick={() => setAddingSite(true)}>
                 <Plus aria-hidden /> {t('sites.add')}
               </Button>
-            )}
-          </>
+            </>
+          )
         }
       />
-      <Tabs value={tab} onValueChange={(v) => setParams({ tab: String(v) }, { replace: true })}>
-        <TabsList variant="line" className="w-full justify-start border-b border-border">
-          <TabsTrigger value="partners">{t('units.tabPartners')}</TabsTrigger>
-          <TabsTrigger value="units">{t('units.tabUnits')}</TabsTrigger>
-          <TabsTrigger value="sites">{t('units.tabSites')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="partners" className="space-y-2 pt-3">
-          <PartnersTable
-            orgId={orgId}
-            canAdmin={access.orgAdmin}
-            onAdd={() => setCreating('partners')}
-          />
-          <p className="text-muted-foreground">
-            <Link
-              to={`/o/${orgId}/sites?tab=sites`}
-              className="hover:text-foreground hover:underline"
-            >
-              {t('units.sharedShort')}: {sharedCount} {t('units.sites').toLowerCase()}
-            </Link>{' '}
-            — {t('units.sharedHint')}
-          </p>
-        </TabsContent>
-        <TabsContent value="units" className="pt-3">
-          <UnitsTable
-            orgId={orgId}
-            canAdmin={access.canAddUnits}
-            onAdd={() => setCreating('units')}
-          />
-        </TabsContent>
-        <TabsContent value="sites" className="pt-3">
+      <div className="grid gap-3 lg:grid-cols-[18rem_1fr]">
+        <nav
+          aria-label={t('categories.tree')}
+          className="space-y-0.5 rounded-lg border border-border bg-card p-2"
+        >
+          <div className="flex items-center gap-1">{nodeButton(null)}</div>
+          {rows.map((c) => (
+            <div key={c.id} className="group flex items-center gap-1">
+              {nodeButton(c)}
+              {canEdit && (
+                <span className="flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`${t('categories.edit')} ${c.name}`}
+                    onClick={() => setEditing({ category: c })}
+                  >
+                    <Pencil aria-hidden />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`${t('categories.delete')} ${c.name}`}
+                    onClick={() => setDeleting(c)}
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                </span>
+              )}
+            </div>
+          ))}
+          {rows.length === 0 && (
+            <p className="flex gap-2 px-2 py-2 text-muted-foreground">
+              <FolderTree aria-hidden className="mt-0.5 size-4 shrink-0" />
+              {t('categories.empty')}
+            </p>
+          )}
+        </nav>
+        <section aria-label={t('sites.title')} className="min-w-0 space-y-2">
+          {selected && (
+            <p className="text-muted-foreground">
+              {selected.path}
+              {selected.contactName && ` · ${selected.contactName}`}
+              {selected.contactPhone && ` · ${selected.contactPhone}`}
+            </p>
+          )}
           <SitesTable
             orgId={orgId}
-            canEdit={access.canAddSites}
-            onAdd={() => setCreating('sites')}
+            categoryId={selected?.id}
+            canEdit={canEdit}
+            onAdd={() => setAddingSite(true)}
           />
-        </TabsContent>
-      </Tabs>
-      {creating === 'partners' && (
-        <PartnerFormDialog
+        </section>
+      </div>
+      {editing && (
+        <CategoryFormDialog
           orgId={orgId}
-          onClose={() => setCreating(null)}
-          onSaved={(p) => navigate(`/o/${orgId}/partners/${p.id}`)}
+          category={editing.category}
+          defaultParentId={editing.parentId}
+          onClose={() => setEditing(null)}
+          onSaved={(c) => select(c.id)}
         />
       )}
-      {creating === 'units' && (
-        <UnitFormDialog
-          orgId={orgId}
-          onClose={() => setCreating(null)}
-          onSaved={(u) => navigate(`/o/${orgId}/units/${u.id}`)}
-        />
-      )}
-      {creating === 'sites' && (
+      {addingSite && (
         <SiteFormDialog
           orgId={orgId}
           open
-          onClose={() => setCreating(null)}
+          defaultCategoryId={selected?.id ?? null}
+          onClose={() => setAddingSite(false)}
           onSaved={(s) => navigate(`/o/${orgId}/sites/${s.id}`)}
         />
       )}
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={t('categories.deleteTitle', { name: deleting?.name ?? '' })}
+        description={t('categories.deleteBody')}
+        confirmLabel={t('categories.delete')}
+        pending={remove.isPending}
+        onConfirm={() =>
+          deleting &&
+          remove.mutate(deleting.id, {
+            onSuccess: () => {
+              toast.success(t('categories.deleted'))
+              if (selected?.id === deleting.id) select(null)
+            },
+            onSettled: () => setDeleting(null),
+            onError: (e) => toast.error(e.message),
+          })
+        }
+      />
     </div>
   )
 }

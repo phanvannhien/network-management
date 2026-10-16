@@ -213,29 +213,23 @@ const listLinks = `-- name: ListLinks :many
 
 SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version,
   COALESCE(ad.hostname, ag.name, '')::text AS a_name, COALESCE(ad.type, ag.kind, '')::text AS a_type,
-  COALESCE(ad.site_id, ag.site_id) AS a_site_id, COALESCE(ad.business_unit_id, ag.business_unit_id) AS a_unit_id,
-  au.partner_id AS a_partner_id, asite.business_unit_id AS a_site_unit_id, asb.partner_id AS a_site_partner_id,
-  COALESCE(asite.code, '')::text AS a_site_code,
+  COALESCE(ad.site_id, ag.site_id) AS a_site_id,
+  COALESCE(asite.code::text, '')::text AS a_site_code,
   COALESCE(ai.name, '')::text AS a_interface_name, COALESCE(ai.kind, '')::text AS a_interface_kind,
   COALESCE(ai.media, '')::text AS a_interface_media,
   COALESCE(bd.hostname, bg.name, '')::text AS b_name, COALESCE(bd.type, bg.kind, '')::text AS b_type,
-  COALESCE(bd.site_id, bg.site_id) AS b_site_id, COALESCE(bd.business_unit_id, bg.business_unit_id) AS b_unit_id,
-  bu.partner_id AS b_partner_id, bsite.business_unit_id AS b_site_unit_id, bsb.partner_id AS b_site_partner_id,
-  COALESCE(bsite.code, '')::text AS b_site_code,
+  COALESCE(bd.site_id, bg.site_id) AS b_site_id,
+  COALESCE(bsite.code::text, '')::text AS b_site_code,
   COALESCE(bi.name, '')::text AS b_interface_name, COALESCE(bi.kind, '')::text AS b_interface_kind,
   COALESCE(bi.media, '')::text AS b_interface_media
 FROM links l
 LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.deleted_at IS NULL
 LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id
-LEFT JOIN business_units au ON au.id = COALESCE(ad.business_unit_id, ag.business_unit_id)
 LEFT JOIN sites asite ON asite.id = COALESCE(ad.site_id, ag.site_id) AND asite.deleted_at IS NULL
-LEFT JOIN business_units asb ON asb.id = asite.business_unit_id
 LEFT JOIN interfaces ai ON ai.id = l.a_interface_id
 LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.deleted_at IS NULL
 LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id
-LEFT JOIN business_units bu ON bu.id = COALESCE(bd.business_unit_id, bg.business_unit_id)
 LEFT JOIN sites bsite ON bsite.id = COALESCE(bd.site_id, bg.site_id) AND bsite.deleted_at IS NULL
-LEFT JOIN business_units bsb ON bsb.id = bsite.business_unit_id
 LEFT JOIN interfaces bi ON bi.id = l.b_interface_id
 WHERE l.organization_id = $1
   AND ($2::uuid IS NULL OR l.id = $2)
@@ -279,10 +273,6 @@ type ListLinksRow struct {
 	AName           string
 	AType           string
 	ASiteID         pgtype.UUID
-	AUnitID         pgtype.UUID
-	APartnerID      pgtype.UUID
-	ASiteUnitID     pgtype.UUID
-	ASitePartnerID  pgtype.UUID
 	ASiteCode       string
 	AInterfaceName  string
 	AInterfaceKind  string
@@ -290,10 +280,6 @@ type ListLinksRow struct {
 	BName           string
 	BType           string
 	BSiteID         pgtype.UUID
-	BUnitID         pgtype.UUID
-	BPartnerID      pgtype.UUID
-	BSiteUnitID     pgtype.UUID
-	BSitePartnerID  pgtype.UUID
 	BSiteCode       string
 	BInterfaceName  string
 	BInterfaceKind  string
@@ -342,10 +328,6 @@ func (q *Queries) ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLin
 			&i.AName,
 			&i.AType,
 			&i.ASiteID,
-			&i.AUnitID,
-			&i.APartnerID,
-			&i.ASiteUnitID,
-			&i.ASitePartnerID,
 			&i.ASiteCode,
 			&i.AInterfaceName,
 			&i.AInterfaceKind,
@@ -353,10 +335,6 @@ func (q *Queries) ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLin
 			&i.BName,
 			&i.BType,
 			&i.BSiteID,
-			&i.BUnitID,
-			&i.BPartnerID,
-			&i.BSiteUnitID,
-			&i.BSitePartnerID,
 			&i.BSiteCode,
 			&i.BInterfaceName,
 			&i.BInterfaceKind,

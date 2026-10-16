@@ -13,8 +13,8 @@ func clustersPath(org uuid.UUID) string { return orgPath(org) + "/clusters" }
 // Cross-tenant isolation for every cluster endpoint, plus joining another org's cluster.
 func TestClusterEndpointsAreTenantIsolated(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, unitB := mustPartnerUnit(t, fx.B, fx.OrgB, "FOOD")
-	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "FOOD-HN01", "name": "B", "businessUnitId": unitB}))
+	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B", "categoryId": unitB}))
 	clB := idOf(t, mustCreate(t, fx.B, clustersPath(fx.OrgB), map[string]any{"kind": "ha_active_passive", "name": "FW-HA", "siteId": siteB}))
 	cl := func(o uuid.UUID) string { return clustersPath(o) + "/" + clB }
 	fx.AssertCrossTenantDenied(t, "GET", clustersPath, nil)
@@ -33,9 +33,8 @@ func TestClusterEndpointsAreTenantIsolated(t *testing.T) {
 			}
 		}
 	}
-	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HN01", "name": "A"}))
-	_, unitA := mustPartnerUnit(t, fx.A, fx.OrgA, "AGRI")
-	if status, _ := fx.A.Do("POST", devicesPath(fx.OrgA), map[string]any{"hostname": "A1", "type": "firewall", "siteId": siteA, "businessUnitId": unitA, "clusterId": clB}); status != http.StatusBadRequest {
+	siteA := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "HN01", "name": "A"}))
+	if status, _ := fx.A.Do("POST", devicesPath(fx.OrgA), map[string]any{"hostname": "A1", "type": "firewall", "siteId": siteA, "clusterId": clB}); status != http.StatusBadRequest {
 		t.Errorf("device into another org's cluster: %d, want 400", status)
 	}
 	if status, _ := fx.A.Do("POST", clustersPath(fx.OrgA), map[string]any{"kind": "stack", "name": "X", "siteId": siteB}); status != http.StatusBadRequest {
@@ -49,9 +48,9 @@ func TestClusterEndpointsAreTenantIsolated(t *testing.T) {
 func TestClusterMembersAndHostnameRule(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	_, nm := mustPartnerUnit(t, fx.A, org, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
-	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "AGRI-HN01", "name": "HN", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, org, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN", "categoryId": nm}))
 	for name, body := range map[string]map[string]any{
 		"bad kind":     {"kind": "mesh", "name": "X", "siteId": bd},
 		"bad IP":       {"kind": "stack", "name": "X", "siteId": bd, "mgmtIp": "10.1/24"},
@@ -62,7 +61,7 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 		}
 	}
 	stack := mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "BD-STACK", "hostname": "BD-CORE", "mgmtIp": "10.72.114.5/24", "siteId": bd})
-	if stack["mgmtIp"] != "10.72.114.5/24" || stack["businessUnitId"] != nm {
+	if stack["mgmtIp"] != "10.72.114.5/24" || stack["categoryPath"] != "AGRI" {
 		t.Errorf("cluster stored as %v", stack)
 	}
 	stackID := idOf(t, stack)
@@ -160,8 +159,8 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 // Concurrent creates of one hostname: exactly one wins (the advisory lock replaces the unique index).
 func TestHostnameRuleUnderConcurrency(t *testing.T) {
 	fx := newOrgFixture(t)
-	_, nm := mustPartnerUnit(t, fx.A, fx.OrgA, "AGRI")
-	bd := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "AGRI-BD01", "name": "BD", "businessUnitId": nm}))
+	nm := mustCategory(t, fx.A, fx.OrgA, "AGRI")
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "BD01", "name": "BD", "categoryId": nm}))
 	var wg sync.WaitGroup
 	codes := make([]int, 8)
 	for i := range codes {

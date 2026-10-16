@@ -15,8 +15,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { atLeast } from '@/modules/sites/access'
-import { useBusinessUnits, useSites } from '@/modules/sites/sites'
+import { useSites } from '@/modules/sites/sites'
 import {
   CLUSTER_KINDS,
   useCluster,
@@ -31,14 +30,12 @@ export function ClusterDialog({
   orgId,
   cluster,
   defaultSiteId,
-  defaultUnitId,
   onClose,
   onSaved,
 }: {
   orgId: string
   cluster?: Cluster
   defaultSiteId?: string
-  defaultUnitId?: string
   onClose: () => void
   onSaved?: (c: ClusterDetail) => void
 }) {
@@ -46,7 +43,6 @@ export function ClusterDialog({
   const { save } = useClusterMutations(orgId)
   const detail = useCluster(orgId, cluster?.id ?? null)
   const sites = useSites(orgId)
-  const units = useBusinessUnits(orgId)
   const [f, setF] = useState({
     kind: (cluster?.kind ?? 'ha_active_passive') as ClusterKind,
     name: cluster?.name ?? '',
@@ -54,12 +50,9 @@ export function ClusterDialog({
     mgmtIp: cluster?.mgmtIp ?? '',
     notes: cluster?.notes ?? '',
     siteId: cluster?.siteId ?? defaultSiteId ?? '',
-    businessUnitId: cluster?.businessUnitId ?? defaultUnitId ?? '',
   })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
-  const site = sites.data?.find((s) => s.id === f.siteId)
-  const shared = site !== undefined && site.businessUnitId === null
   const hasMembers = (cluster?.memberCount ?? 0) > 0
 
   const onSubmit = (e: FormEvent) => {
@@ -74,7 +67,6 @@ export function ClusterDialog({
           mgmtIp: f.mgmtIp.trim() || null,
           notes: f.notes,
           siteId: f.siteId,
-          businessUnitId: shared ? f.businessUnitId || null : null,
         },
       },
       {
@@ -161,7 +153,7 @@ export function ClusterDialog({
                   required
                   disabled={hasMembers}
                   value={f.siteId}
-                  onChange={(e) => setF({ ...f, siteId: e.target.value, businessUnitId: '' })}
+                  onChange={(e) => setF({ ...f, siteId: e.target.value })}
                 >
                   <option value="">{t('devices.chooseSite')}</option>
                   {(sites.data ?? []).map((s) => (
@@ -172,33 +164,6 @@ export function ClusterDialog({
                 </NativeSelect>
               )}
             </FormField>
-            {shared && (
-              <FormField
-                label={t('devices.unit')}
-                help="partner-unit"
-                required
-                hint={t('devices.sharedSiteUnit')}
-              >
-                {(p) => (
-                  <NativeSelect
-                    {...p}
-                    required
-                    disabled={hasMembers}
-                    value={f.businessUnitId}
-                    onChange={set('businessUnitId')}
-                  >
-                    <option value="">{t('devices.chooseUnit')}</option>
-                    {(units.data ?? [])
-                      .filter((u) => atLeast(u.access, 'edit') || u.id === cluster?.businessUnitId)
-                      .map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.partnerCode} › {u.code} · {u.name}
-                        </option>
-                      ))}
-                  </NativeSelect>
-                )}
-              </FormField>
-            )}
           </div>
           <FormField label={t('devices.notes')}>
             {(p) => (

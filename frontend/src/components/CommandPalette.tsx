@@ -1,7 +1,7 @@
 import {
   Activity,
   Building2,
-  Handshake,
+  FolderTree,
   Languages,
   LayoutDashboard,
   MapPin,
@@ -31,7 +31,7 @@ import { setLanguage } from '@/i18n'
 import { usePreferences } from '@/lib/preferences'
 import { useMembers } from '@/modules/admin/members'
 import { useDeviceList } from '@/modules/inventory/devices'
-import { useBusinessUnits, usePartners, useSites } from '@/modules/sites/sites'
+import { useCategories, useSites } from '@/modules/sites/sites'
 import { OrgAvatar } from './OrgAvatar'
 
 interface Entry {
@@ -63,14 +63,13 @@ export function CommandPalette({
   const orgs = useMyOrganizations()
   const org = useOrganization(orgId)
   const sites = useSites(orgId, open)
-  const partners = usePartners(orgId, open)
+  const categories = useCategories(orgId, open)
   // First 200 devices by hostname; full search (IP, MAC…) is the global search of P1-23.
   const deviceList = useDeviceList(
     orgId,
-    { q: '', facets: {}, partnerId: null, unitId: null, sort: null, pageIndex: 0, pageSize: 200 },
+    { q: '', facets: {}, categoryId: null, sort: null, pageIndex: 0, pageSize: 200 },
     open,
   )
-  const units = useBusinessUnits(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
   const role = org.data?.membership.role
@@ -170,22 +169,13 @@ export function CommandPalette({
       }))
     : []
 
-  const partnerEntries: Entry[] = base
-    ? (partners.data ?? []).map((p) => ({
-        key: `p-${p.id}`,
-        label: `${p.code} · ${p.name}`,
-        icon: <Handshake />,
-        run: go(`${base}/partners/${p.id}`),
-      }))
-    : []
-
-  // Unit codes repeat across partners (MAIN), so the label carries the partner code.
-  const unitEntries: Entry[] = base
-    ? (units.data ?? []).map((u) => ({
-        key: `u-${u.id}`,
-        label: `${u.partnerCode} › ${u.code} · ${u.name}`,
-        icon: <Building2 />,
-        run: go(`${base}/units/${u.id}`),
+  const categoryEntries: Entry[] = base
+    ? (categories.data ?? []).map((c) => ({
+        key: `c-${c.id}`,
+        label: c.path,
+        hint: <span className="font-mono text-tech text-muted-foreground">{c.code}</span>,
+        icon: <FolderTree />,
+        run: go(`${base}/sites?category=${c.id}`),
       }))
     : []
 
@@ -229,8 +219,7 @@ export function CommandPalette({
   const groups: { heading: string; entries: Entry[] }[] = [
     { heading: t('palette.pages'), entries: pages },
     { heading: t('palette.organizations'), entries: organizations },
-    { heading: t('palette.partners'), entries: partnerEntries },
-    { heading: t('palette.units'), entries: unitEntries },
+    { heading: t('palette.categories'), entries: categoryEntries },
     { heading: t('palette.sites'), entries: siteEntries },
     { heading: t('palette.members'), entries: people },
     { heading: t('palette.devices'), entries: devices },

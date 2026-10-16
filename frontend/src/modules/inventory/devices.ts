@@ -65,7 +65,7 @@ export type DeviceSort =
   | 'model'
   | 'serial'
   | 'site'
-  | 'unit'
+  | 'category'
   | 'lifecycle'
   | 'warrantyEnd'
 
@@ -73,8 +73,8 @@ export interface ListParams {
   q: string
   /** FilterBar facets: site, type, vendor, lifecycle, role, tag. */
   facets: Record<string, string[]>
-  partnerId: string | null
-  unitId: string | null
+  /** Topbar filter: sites of this category and below. */
+  categoryId: string | null
   sort: { id: DeviceSort; desc: boolean } | null
   pageIndex: number
   pageSize: number
@@ -104,8 +104,7 @@ export function useDeviceList(orgId: string, p: ListParams, enabled = true) {
           path: { orgId },
           query: {
             q: p.q.trim() || undefined,
-            partnerId: p.partnerId ?? undefined,
-            businessUnitId: p.unitId ?? undefined,
+            categoryId: p.categoryId ?? undefined,
             siteId: f.site?.length ? f.site : undefined,
             type: f.type?.length ? (f.type as DeviceType[]) : undefined,
             vendor: f.vendor?.length ? f.vendor : undefined,
@@ -331,7 +330,6 @@ export function deviceToInput(d: Device): DeviceInput {
     tags: d.tags,
     customFields: d.customFields,
     siteId: d.siteId,
-    businessUnitId: d.businessUnitId,
     locationId: d.locationId,
     rackId: d.rackId,
     rackU: d.rackU,

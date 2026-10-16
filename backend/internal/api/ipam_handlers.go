@@ -37,15 +37,8 @@ var colorRe = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 // --- access ---
 
 // scopeLevel is the caller's level on a site-scoped object: the site's level, or the organization role when site-less.
-func scopeLevel(ctx context.Context, q store.Querier, m tenant.Membership, site, siteUnit, sitePartner pgtype.UUID) (int, error) {
-	if !site.Valid {
-		return m.UnitLevel(pgtype.UUID{}, pgtype.UUID{}), nil // organization role only
-	}
-	levels, err := siteLevels(ctx, q, m, []siteRef{{site, siteUnit, sitePartner}})
-	if err != nil {
-		return 0, err
-	}
-	return levels[site], nil
+func scopeLevel(_ context.Context, _ store.Querier, m tenant.Membership, _ pgtype.UUID) (int, error) {
+	return m.Level(), nil
 }
 
 // writableSite checks the caller may put an object in this site (nil = organization-wide). Returns 400 / 403 codes.
@@ -175,7 +168,7 @@ type vlanSnapshot struct {
 }
 
 func vlanLevel(ctx context.Context, q store.Querier, m tenant.Membership, v store.GetVlanRow) (int, error) {
-	return scopeLevel(ctx, q, m, v.SiteID, v.SiteUnitID, v.SitePartnerID)
+	return scopeLevel(ctx, q, m, v.SiteID)
 }
 
 func (s *Server) ListVlans(ctx context.Context, req apigen.ListVlansRequestObject) (apigen.ListVlansResponseObject, error) {
@@ -406,7 +399,7 @@ func loadSubnet(ctx context.Context, q store.Querier, m tenant.Membership, id uu
 }
 
 func subnetLevel(ctx context.Context, q store.Querier, m tenant.Membership, sn store.GetSubnetRow) (int, error) {
-	return scopeLevel(ctx, q, m, sn.SiteID, sn.SiteUnitID, sn.SitePartnerID)
+	return scopeLevel(ctx, q, m, sn.SiteID)
 }
 
 func addrString(a *netip.Addr) *string {

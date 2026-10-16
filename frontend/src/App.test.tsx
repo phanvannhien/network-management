@@ -48,13 +48,14 @@ const ORG_VIEW = {
   organization: {
     id: ORG_ID,
     name: 'Văn phòng mẫu',
+    code: 'VPM',
     kind: 'internal',
     notes: '',
     version: 1,
     createdAt: '2026-10-16T00:00:00Z',
     updatedAt: '2026-10-16T00:00:00Z',
   },
-  membership: { role: 'owner', permissions: [], partnerGrants: [], unitGrants: [] },
+  membership: { role: 'owner', permissions: [] },
 }
 
 /** Organization endpoints most pages need; individual tests override keys as required. */
@@ -371,7 +372,13 @@ describe('organizations', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     expect(await screen.findByRole('heading', { name: 'Công ty A' })).toBeInTheDocument()
     const patch = calls.find((r) => r.method === 'PATCH')!
-    expect(await patch.clone().json()).toEqual({ name: 'Công ty A', notes: '', version: 1 })
+    expect(await patch.clone().json()).toEqual({
+      name: 'Công ty A',
+      code: 'VPM',
+      confirmSiteCodes: false,
+      notes: '',
+      version: 1,
+    })
     expect(patch.headers.get('X-CSRF-Token')).toBe('csrf-123')
   })
 })
@@ -919,14 +926,11 @@ describe('app shell (P1-06)', () => {
 const SITE_ID = '44444444-4444-4444-8444-444444444444'
 const SITE = {
   id: SITE_ID,
-  code: 'SHARED-HN01',
+  code: 'VPM-HN01',
+  localCode: 'HN01',
   kind: 'office',
-  businessUnitId: null,
-  businessUnitCode: '',
-  businessUnitName: '',
-  partnerId: null,
-  partnerCode: '',
-  partnerName: '',
+  categoryId: null,
+  categoryPath: '',
   isp: '',
   name: 'HQ Hà Nội',
   address: '1 Tràng Tiền',
@@ -965,23 +969,22 @@ describe('sites (P1-07)', () => {
       }),
     )
     renderAt(`/o/${ORG_ID}/sites?tab=sites`)
-    expect(await screen.findByRole('link', { name: 'SHARED-HN01' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'VPM-HN01' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Thêm site' }))
     fireEvent.change(await screen.findByLabelText('Tên site'), { target: { value: 'HQ Hà Nội' } })
-    // ADR-030: a shared site needs the SHARED- prefix; a wrong code keeps Save disabled.
-    fireEvent.change(screen.getByLabelText('Mã site'), { target: { value: 'hq' } })
+    // ADR-032: the site's own code (A-Z, 0-9); a bad one keeps Save disabled; the full code is previewed.
+    fireEvent.change(screen.getByLabelText(/Mã site/), { target: { value: 'hn 01' } })
     expect(screen.getByRole('button', { name: 'Lưu' })).toBeDisabled()
-    fireEvent.change(screen.getByLabelText('Mã site'), { target: { value: 'shared-hn01' } })
+    fireEvent.change(screen.getByLabelText(/Mã site/), { target: { value: 'hn01' } })
+    expect(within(screen.getByRole('dialog')).getByText('VPM-HN01')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
-    expect(
-      await screen.findByRole('heading', { name: /SHARED-HN01 · HQ Hà Nội/ }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /VPM-HN01 · HQ Hà Nội/ })).toBeInTheDocument()
     const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/sites'))!
     expect(await post.clone().json()).toMatchObject({
-      code: 'SHARED-HN01',
+      code: 'HN01',
+      categoryId: null,
       name: 'HQ Hà Nội',
       kind: 'office',
-      businessUnitId: null,
       timezone: 'Asia/Ho_Chi_Minh',
     })
   })
@@ -1046,179 +1049,172 @@ describe('sites (P1-07)', () => {
     renderAt(`/o/${ORG_ID}/sites/${SITE_ID}`)
     fireEvent.click(await screen.findByRole('button', { name: 'Thêm thao tác' }))
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Xóa site' }))
-    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa site SHARED-HN01?' })
+    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa site VPM-HN01?' })
     const confirm = within(dialog).getByRole('button', { name: 'Xóa site' })
     expect(confirm).toBeDisabled()
     fireEvent.change(within(dialog).getByLabelText(/Gõ chính xác/), {
-      target: { value: 'SHARED-HN01' },
+      target: { value: 'VPM-HN01' },
     })
     fireEvent.click(confirm)
     await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
   })
 })
 
-const PARTNER_ID = '77777777-7777-4777-8777-777777777777'
-const PARTNER = {
-  id: PARTNER_ID,
-  code: 'AGRI',
+const CAT_ID = '77777777-7777-4777-8777-777777777777'
+const CHILD_ID = '55555555-5555-4555-8555-555555555555'
+const CATEGORY = {
+  id: CAT_ID,
+  parentId: null,
   name: 'Mẫu Agri',
-  relation: 'partner',
+  code: 'AGRI',
+  path: 'Mẫu Agri',
   contactName: '',
   contactPhone: '',
   contactEmail: '',
   notes: '',
-  unitCount: 1,
+  childCount: 1,
   siteCount: 1,
-  access: 'admin',
   version: 1,
-  createdAt: '2026-10-16T00:00:00Z',
 }
-const UNIT_ID = '55555555-5555-4555-8555-555555555555'
-const UNIT = {
-  id: UNIT_ID,
-  partnerId: PARTNER_ID,
-  partnerCode: 'AGRI',
-  partnerName: 'Mẫu Agri',
-  code: 'MAIN',
-  name: 'Agri chính',
-  contactName: '',
-  contactPhone: '',
-  contactEmail: '',
-  notes: '',
-  siteCount: 1,
-  access: 'admin',
-  version: 1,
-  createdAt: '2026-10-16T00:00:00Z',
+const CHILD = {
+  ...CATEGORY,
+  id: CHILD_ID,
+  parentId: CAT_ID,
+  name: 'Nhà máy',
+  code: 'NM',
+  path: 'Mẫu Agri › Nhà máy',
+  childCount: 0,
+  siteCount: 0,
 }
 const AGRI_SITE = {
   ...SITE,
   id: '66666666-6666-4666-8666-666666666666',
-  code: 'AGRI-BD01',
+  code: 'VPM-AGRI-BD01',
+  localCode: 'BD01',
   name: 'Nhà máy Bình Định',
   kind: 'factory',
-  businessUnitId: UNIT_ID,
-  businessUnitCode: 'MAIN',
-  businessUnitName: 'Agri chính',
-  partnerId: PARTNER_ID,
-  partnerCode: 'AGRI',
-  partnerName: 'Mẫu Agri',
+  categoryId: CAT_ID,
+  categoryPath: 'Mẫu Agri',
 }
 
-describe('partners and business units (P1-07b, ADR-031)', () => {
+describe('categories & sites (P1-27, ADR-032)', () => {
   const routes = (extra: Record<string, () => Response> = {}) =>
     siteRoutes({
-      [`GET /api/orgs/${ORG_ID}/partners`]: () => json({ partners: [PARTNER] }),
-      [`GET /api/orgs/${ORG_ID}/partners/${PARTNER_ID}`]: () => json(PARTNER),
-      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ businessUnits: [UNIT] }),
-      [`GET /api/orgs/${ORG_ID}/business-units/${UNIT_ID}`]: () => json(UNIT),
       [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [CATEGORY, CHILD] }),
       ...extra,
     })
 
-  it('lists partners with their counts and creates one with an upper-case code', async () => {
+  it('the tree lists categories; a branch shows its sites; a site may sit under the organization', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/sites`)
+    const tree = await screen.findByRole('navigation', { name: 'Cây danh mục' })
+    expect(await within(tree).findByRole('button', { name: /^Nhà máy/ })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'VPM-HN01' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'VPM-AGRI-BD01' })).toBeInTheDocument()
+    fireEvent.click(within(tree).getByRole('button', { name: /^Mẫu Agri/ }))
+    await waitFor(() =>
+      expect(screen.queryByRole('link', { name: 'VPM-HN01' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('link', { name: 'VPM-AGRI-BD01' })).toBeInTheDocument()
+  })
+
+  it('creates a sub-category and a site whose full code follows the tree', async () => {
+    const created = {
+      ...CHILD,
+      id: 'c-new',
+      code: 'VP1',
+      name: 'Văn phòng',
+      path: 'Mẫu Agri › Văn phòng',
+    }
+    let list = [CATEGORY, CHILD]
     const calls = fakeApi(
-      routes({ [`POST /api/orgs/${ORG_ID}/partners`]: () => json(PARTNER, 201) }),
+      routes({
+        [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: list }),
+        [`POST /api/orgs/${ORG_ID}/categories`]: () => {
+          list = [...list, created]
+          return json(created, 201)
+        },
+        [`POST /api/orgs/${ORG_ID}/sites`]: () => json({ ...AGRI_SITE, id: 's-new' }, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/sites?category=${CAT_ID}`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm danh mục con' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm danh mục' })
+    fireEvent.change(within(dialog).getByLabelText(/Tên danh mục/), {
+      target: { value: 'Văn phòng' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/^Mã/), { target: { value: 'vp-1' } })
+    expect(within(dialog).getByLabelText(/Thuộc danh mục/)).toHaveValue(CAT_ID)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isCat = (r: Request) => r.method === 'POST' && r.url.endsWith('/categories')
+    await waitFor(() => expect(calls.some(isCat)).toBe(true))
+    expect(await calls.find(isCat)!.clone().json()).toMatchObject({
+      name: 'Văn phòng',
+      code: 'VP1',
+      parentId: CAT_ID,
+    })
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Thêm danh mục' })).not.toBeInTheDocument(),
+    )
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm site' })[0]!)
+    const site = await screen.findByRole('dialog', { name: /^Thêm site/ })
+    fireEvent.change(within(site).getByLabelText('Tên site'), { target: { value: 'Kho Bến Cát' } })
+    fireEvent.change(within(site).getByLabelText(/Mã site/), { target: { value: 'bc01' } })
+    expect(within(site).getByText('VPM-AGRI-VP1-BC01')).toBeInTheDocument()
+    fireEvent.click(within(site).getByRole('button', { name: 'Lưu' }))
+    const isSite = (r: Request) => r.method === 'POST' && r.url.endsWith('/sites')
+    await waitFor(() => expect(calls.some(isSite)).toBe(true))
+    expect(await calls.find(isSite)!.clone().json()).toMatchObject({
+      code: 'BC01',
+      name: 'Kho Bến Cát',
+      categoryId: 'c-new',
+    })
+  })
+
+  it('re-coding a category lists the site codes and saves only after confirmation', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/categories/${CAT_ID}/preview`]: () =>
+          json({
+            changes: [
+              {
+                siteId: AGRI_SITE.id,
+                name: AGRI_SITE.name,
+                from: 'VPM-AGRI-BD01',
+                to: 'VPM-AG-BD01',
+              },
+            ],
+          }),
+        [`PATCH /api/orgs/${ORG_ID}/categories/${CAT_ID}`]: () =>
+          json({ ...CATEGORY, code: 'AG', version: 2 }),
+      }),
     )
     renderAt(`/o/${ORG_ID}/sites`)
-    expect(await screen.findByRole('link', { name: 'AGRI' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Đối tác', selected: true })).toBeInTheDocument()
-    expect(await screen.findByText(/Dùng chung: 1/)).toBeInTheDocument()
-    // The organization is named: partners belong to the organization being viewed (taken from the URL).
-    expect(
-      screen.getByRole('heading', { name: 'Đơn vị & Sites — Văn phòng mẫu' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('columnheader', { name: /Quan hệ với Văn phòng mẫu/ }),
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm đối tác' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Thêm đối tác vào Văn phòng mẫu' })
-    expect(
-      within(dialog).getByRole('option', { name: 'Đối tác của Văn phòng mẫu' }),
-    ).toBeInTheDocument()
-    fireEvent.change(await screen.findByLabelText('Mã đối tác'), { target: { value: 'agri-1' } })
-    expect(screen.getByLabelText('Mã đối tác')).toHaveValue('AGRI1')
-    fireEvent.change(screen.getByLabelText('Tên đối tác'), { target: { value: 'Mẫu Agri' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
-    await waitFor(() =>
-      expect(calls.some((r) => r.method === 'POST' && r.url.endsWith('/partners'))).toBe(true),
-    )
-    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/partners'))!
-    expect(await post.clone().json()).toMatchObject({
-      code: 'AGRI1',
-      name: 'Mẫu Agri',
-      relation: 'subsidiary',
+    const tree = await screen.findByRole('navigation', { name: 'Cây danh mục' })
+    fireEvent.click(await within(tree).findByRole('button', { name: 'Sửa danh mục Mẫu Agri' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Sửa danh mục' })
+    fireEvent.change(within(dialog).getByLabelText(/^Mã/), { target: { value: 'AG' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const confirm = await screen.findByRole('dialog', { name: 'Đổi mã 1 site' })
+    expect(within(confirm).getByText('VPM-AG-BD01')).toBeInTheDocument()
+    expect(calls.some((r) => r.method === 'PATCH')).toBe(false)
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Đổi mã và lưu' }))
+    const isPatch = (r: Request) => r.method === 'PATCH'
+    await waitFor(() => expect(calls.some(isPatch)).toBe(true))
+    expect(await calls.find(isPatch)!.clone().json()).toMatchObject({
+      code: 'AG',
+      confirmSiteCodes: true,
+      version: 1,
     })
-  })
-
-  it('a unit is created under a chosen partner', async () => {
-    const calls = fakeApi(
-      routes({ [`POST /api/orgs/${ORG_ID}/business-units`]: () => json(UNIT, 201) }),
-    )
-    renderAt(`/o/${ORG_ID}/sites?tab=units`)
-    // Unit codes repeat across partners, so the partner column is shown.
-    expect(await screen.findByRole('link', { name: 'MAIN' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'AGRI' })).toHaveAttribute(
-      'href',
-      `/o/${ORG_ID}/partners/${PARTNER_ID}`,
-    )
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm đơn vị' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Thêm đơn vị vào Văn phòng mẫu' })
-    fireEvent.change(within(dialog).getByLabelText('Mã đơn vị'), { target: { value: 'hn' } })
-    fireEvent.change(within(dialog).getByLabelText('Tên đơn vị'), { target: { value: 'Agri HN' } })
-    const save = within(dialog).getByRole('button', { name: 'Lưu' })
-    expect(save).toBeDisabled() // no partner chosen yet
-    fireEvent.change(within(dialog).getByLabelText('Đối tác'), { target: { value: PARTNER_ID } })
-    fireEvent.click(save)
-    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/business-units')
-    await waitFor(() => expect(calls.some(isPost)).toBe(true))
-    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
-      code: 'HN',
-      name: 'Agri HN',
-      partnerId: PARTNER_ID,
-    })
-  })
-
-  it('the partner page lists its units and sites and adds a unit to it', async () => {
-    fakeApi(routes())
-    renderAt(`/o/${ORG_ID}/partners/${PARTNER_ID}`)
-    expect(await screen.findByRole('heading', { name: /AGRI · Mẫu Agri/ })).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: 'MAIN' })).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: 'AGRI-BD01' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'SHARED-HN01' })).not.toBeInTheDocument()
-    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm đơn vị' })[0])
-    const dialog = await screen.findByRole('dialog', { name: 'Thêm đơn vị cho Mẫu Agri' })
-    expect(within(dialog).getByLabelText('Đối tác')).toHaveValue(PARTNER_ID)
-  })
-
-  it('a site added from a unit gets the unit and a code suggested from its partner', async () => {
-    const calls = fakeApi(
-      routes({ [`GET /api/orgs/${ORG_ID}/sites/next-code`]: () => json({ code: 'AGRI-BD02' }) }),
-    )
-    renderAt(`/o/${ORG_ID}/units/${UNIT_ID}`)
-    expect(await screen.findByRole('heading', { name: /MAIN · Agri chính/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'AGRI · Mẫu Agri' })).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: 'AGRI-BD01' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'SHARED-HN01' })).not.toBeInTheDocument() // other unit's / shared sites
-    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm site' })[0])
-    const dialog = await screen.findByRole('dialog', { name: 'Thêm site vào Văn phòng mẫu' })
-    expect(within(dialog).getByLabelText('Đơn vị')).toHaveValue(UNIT_ID)
-    fireEvent.change(within(dialog).getByLabelText('Tên site'), {
-      target: { value: 'Nhà máy Bình Định 2' },
-    })
-    await waitFor(() => expect(within(dialog).getByLabelText('Mã site')).toHaveValue('AGRI-BD02'))
-    const nextCall = calls.find((r) => r.url.includes('/sites/next-code'))!
-    const q = new URL(nextCall.url).searchParams
-    expect([q.get('place'), q.get('partnerId')]).toEqual(['BD', PARTNER_ID])
-    // The unit code is not the prefix: MAIN-… is rejected client-side.
-    fireEvent.change(within(dialog).getByLabelText('Mã site'), { target: { value: 'MAIN-BD01' } })
-    expect(within(dialog).getByRole('button', { name: 'Lưu' })).toBeDisabled()
   })
 })
 
 const VLAN = {
   id: 'vl-1',
   siteId: '66666666-6666-4666-8666-666666666666',
-  siteCode: 'AGRI-BD01',
+  siteCode: 'VPM-AGRI-BD01',
   vid: 10,
   name: 'MGMT',
   color: '#0ea5e9',
@@ -1234,7 +1230,7 @@ const SUBNET = {
   gateway: '10.72.114.1',
   description: 'Quản trị',
   siteId: '66666666-6666-4666-8666-666666666666',
-  siteCode: 'AGRI-BD01',
+  siteCode: 'VPM-AGRI-BD01',
   vlanId: 'vl-1',
   vlanVid: 10,
   vlanName: 'MGMT',
@@ -1250,7 +1246,7 @@ const OTHER_SITE_SUBNET = {
   id: 'sn-2',
   cidr: '10.80.0.0/24',
   siteId: SITE_ID,
-  siteCode: 'SHARED-HN01',
+  siteCode: 'VPM-HN01',
   vlanId: null,
   vlanVid: null,
   vlanName: '',
@@ -1284,14 +1280,10 @@ describe('device inventory (P1-08)', () => {
     tags: ['edge'],
     customFields: {},
     siteId: AGRI_SITE.id,
-    siteCode: 'AGRI-BD01',
+    siteCode: 'VPM-AGRI-BD01',
     siteName: 'Nhà máy Bình Định',
-    businessUnitId: UNIT_ID,
-    unitCode: 'MAIN',
-    unitName: 'Agri chính',
-    partnerId: PARTNER_ID,
-    partnerCode: 'AGRI',
-    partnerName: 'Mẫu Agri',
+    categoryId: CAT_ID,
+    categoryPath: 'Mẫu Agri',
     locationId: null,
     locationName: '',
     rackId: null,
@@ -1320,8 +1312,7 @@ describe('device inventory (P1-08)', () => {
       [`GET /api/orgs/${ORG_ID}/devices`]: () => list([DEVICE, SWITCH]),
       [`GET /api/orgs/${ORG_ID}/devices/dev-1`]: () => json(DEVICE),
       [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
-      [`GET /api/orgs/${ORG_ID}/partners`]: () => json({ partners: [PARTNER] }),
-      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ businessUnits: [UNIT] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [CATEGORY, CHILD] }),
       [`GET /api/orgs/${ORG_ID}/custom-fields`]: () => json({ fields: [] }),
       ...extra,
     })
@@ -1349,28 +1340,29 @@ describe('device inventory (P1-08)', () => {
     expect(screen.getByRole('navigation', { name: 'Vị trí trang' })).toHaveTextContent('Thiết bị')
   })
 
-  it('a device in a shared site needs an owner unit', async () => {
+  it('a new device takes its category from the site', async () => {
     const calls = fakeApi(
       routes({ [`POST /api/orgs/${ORG_ID}/devices`]: () => json({ ...DEVICE, id: 'dev-9' }, 201) }),
     )
     renderAt(`/o/${ORG_ID}/devices`)
     fireEvent.click(await screen.findByRole('button', { name: 'Thêm thiết bị' }))
     const dialog = await screen.findByRole('dialog', { name: 'Thêm thiết bị vào Văn phòng mẫu' })
-    fireEvent.change(within(dialog).getByLabelText('Hostname'), { target: { value: 'IDC-FW01' } })
-    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: SITE_ID } })
-    const unit = await within(dialog).findByLabelText('Đơn vị')
-    expect(unit.tagName).toBe('SELECT') // shared site: choose the owner
-    fireEvent.change(unit, { target: { value: UNIT_ID } })
+    fireEvent.change(within(dialog).getByLabelText('Hostname'), {
+      target: { value: 'AGRI-BD-FW02' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: AGRI_SITE.id } })
+    expect(await within(dialog).findByText('Danh mục (theo site): Mẫu Agri')).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
     const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/devices')
     await waitFor(() => expect(calls.some(isPost)).toBe(true))
-    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
-      hostname: 'IDC-FW01',
-      siteId: SITE_ID,
-      businessUnitId: UNIT_ID,
+    const body = await calls.find(isPost)!.clone().json()
+    expect(body).toMatchObject({
+      hostname: 'AGRI-BD-FW02',
+      siteId: AGRI_SITE.id,
       locationId: null,
       rackId: null,
     })
+    expect(body).not.toHaveProperty('businessUnitId')
   })
 
   it('bulk edit sends only the changed fields', async () => {
@@ -1566,7 +1558,7 @@ describe('device inventory (P1-08)', () => {
         name: 'AGRI-BD-FW01',
         type: 'firewall',
         siteId: AGRI_SITE.id,
-        siteCode: 'AGRI-BD01',
+        siteCode: 'VPM-AGRI-BD01',
         interfaceId: 'if-2',
         interfaceName: 'Gi1/0/1',
         interfaceKind: 'physical',
@@ -1578,7 +1570,7 @@ describe('device inventory (P1-08)', () => {
         name: 'AGRI-BD-SW01',
         type: 'l2_switch',
         siteId: AGRI_SITE.id,
-        siteCode: 'AGRI-BD01',
+        siteCode: 'VPM-AGRI-BD01',
         interfaceId: null,
         interfaceName: '',
         interfaceKind: '',
@@ -1692,11 +1684,9 @@ describe('device inventory (P1-08)', () => {
     mgmtIp: '10.72.114.1/24',
     notes: '',
     siteId: AGRI_SITE.id,
-    siteCode: 'AGRI-BD01',
+    siteCode: 'VPM-AGRI-BD01',
     siteName: 'Nhà máy Bình Định',
-    businessUnitId: UNIT_ID,
-    unitCode: 'MAIN',
-    partnerCode: 'AGRI',
+    categoryPath: 'Mẫu Agri',
     memberCount: 0,
     memberHostnames: '',
     memberType: '',
@@ -1732,7 +1722,6 @@ describe('device inventory (P1-08)', () => {
       mgmtIp: '10.72.114.1/24',
       notes: '',
       siteId: AGRI_SITE.id,
-      businessUnitId: null,
     })
     const isPatch = (r: Request) => r.method === 'PATCH'
     await waitFor(() => expect(calls.some(isPatch)).toBe(true))
@@ -1890,7 +1879,7 @@ describe('IPAM (P1-10)', () => {
       [`GET /api/orgs/${ORG_ID}/subnets`]: () => json({ subnets: [SUBNET, OTHER_SITE_SUBNET] }),
       [`GET /api/orgs/${ORG_ID}/vlans`]: () =>
         json({
-          vlans: [VLAN, { ...VLAN, id: 'vl-2', siteId: SITE_ID, siteCode: 'SHARED-HN01', vid: 20 }],
+          vlans: [VLAN, { ...VLAN, id: 'vl-2', siteId: SITE_ID, siteCode: 'VPM-HN01', vid: 20 }],
         }),
       [`GET /api/orgs/${ORG_ID}/subnets/sn-1`]: () => json(DETAIL),
       ...extra,
@@ -1958,7 +1947,9 @@ describe('IPAM (P1-10)', () => {
         'Mạng 10.72.114.0/24 · dùng được 10.72.114.1 – 10.72.114.254 (254 địa chỉ) · mặt nạ 255.255.255.0',
       ),
     ).toBeInTheDocument()
-    await waitFor(() => expect(within(dialog).getByLabelText('Site')).toContainHTML('AGRI-BD01'))
+    await waitFor(() =>
+      expect(within(dialog).getByLabelText('Site')).toContainHTML('VPM-AGRI-BD01'),
+    )
     fireEvent.change(within(dialog).getByLabelText('Site'), { target: { value: AGRI_SITE.id } })
     const vlanSelect = within(dialog).getByLabelText('VLAN')
     // VLAN 20 belongs to another site.
@@ -2036,11 +2027,9 @@ describe('endpoint groups (P1-11)', () => {
     kind: 'ip_camera',
     name: 'Camera nhà xưởng',
     siteId: AGRI_SITE.id,
-    siteCode: 'AGRI-BD01',
+    siteCode: 'VPM-AGRI-BD01',
     siteName: 'Nhà máy Bình Định',
-    businessUnitId: UNIT_ID,
-    unitCode: 'MAIN',
-    partnerCode: 'AGRI',
+    categoryPath: 'Mẫu Agri',
     ipRangeId: 'rg-1',
     rangeStart: '10.72.114.100',
     rangeEnd: '10.72.114.119',
@@ -2078,7 +2067,7 @@ describe('endpoint groups (P1-11)', () => {
   const routes = (extra: Record<string, () => Response> = {}) =>
     siteRoutes({
       [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
-      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ units: [] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [] }),
       [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [] }),
       [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [SW], total: 1, facets: {} }),
       [`GET /api/orgs/${ORG_ID}/devices/sw-1/interfaces`]: () => json({ interfaces: PORTS }),
@@ -2126,7 +2115,9 @@ describe('endpoint groups (P1-11)', () => {
     fireEvent.change(within(dialog).getByLabelText(/Tên nhóm/), {
       target: { value: ' Camera kho ' },
     })
-    await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toContainHTML('AGRI-BD01'))
+    await waitFor(() =>
+      expect(within(dialog).getByLabelText(/^Site/)).toContainHTML('VPM-AGRI-BD01'),
+    )
     fireEvent.change(within(dialog).getByLabelText(/^Site/), { target: { value: AGRI_SITE.id } })
     const subnetSelect = within(dialog).getByLabelText('Subnet')
     // Only the site's subnets (and organization-wide ones).
@@ -2143,7 +2134,6 @@ describe('endpoint groups (P1-11)', () => {
       kind: 'ip_camera',
       name: 'Camera kho',
       siteId: AGRI_SITE.id,
-      businessUnitId: null,
       ipRangeId: 'rg-1',
       expectedCount: 12,
       notes: '',
@@ -2219,13 +2209,6 @@ describe('diagrams (P1-13)', () => {
   const DIAGRAM = {
     id: 'dg-1',
     name: 'LAN Bình Định',
-    scope: 'site',
-    businessUnitId: null,
-    siteId: AGRI_SITE.id,
-    partnerCode: 'AGRI',
-    unitCode: 'MAIN',
-    siteCode: 'AGRI-BD01',
-    siteName: 'Nhà máy Bình Định',
     layer: 'physical',
     description: '',
     nodeCount: 1,
@@ -2238,14 +2221,14 @@ describe('diagrams (P1-13)', () => {
     hostname: 'AGRI-BD-FW01',
     type: 'firewall',
     siteId: AGRI_SITE.id,
-    siteCode: 'AGRI-BD01',
+    siteCode: 'VPM-AGRI-BD01',
   }
   const SW = {
     id: 'dev-2',
     hostname: 'AGRI-BD-SW01',
     type: 'l2_switch',
     siteId: AGRI_SITE.id,
-    siteCode: 'AGRI-BD01',
+    siteCode: 'VPM-AGRI-BD01',
   }
   const DETAIL = {
     diagram: DIAGRAM,
@@ -2262,7 +2245,7 @@ describe('diagrams (P1-13)', () => {
   const routes = (extra: Record<string, () => Response> = {}) =>
     siteRoutes({
       [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
-      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ units: [] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [] }),
       [`GET /api/orgs/${ORG_ID}/diagrams`]: () => json({ diagrams: [DIAGRAM] }),
       [`GET /api/orgs/${ORG_ID}/diagrams/dg-1`]: () => json(DETAIL),
       [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [FW, SW], total: 2, facets: {} }),
@@ -2270,7 +2253,7 @@ describe('diagrams (P1-13)', () => {
     })
   beforeEach(() => setDraftStore(memoryDraftStore()))
 
-  it('lists diagrams and creates one for a site', async () => {
+  it('lists diagrams and creates one owned by the organization', async () => {
     const calls = fakeApi(
       routes({
         [`POST /api/orgs/${ORG_ID}/diagrams`]: () =>
@@ -2287,17 +2270,12 @@ describe('diagrams (P1-13)', () => {
     fireEvent.change(within(dialog).getByLabelText(/Tên sơ đồ/), {
       target: { value: 'LAN tầng 3' },
     })
-    const site = within(dialog).getByLabelText(/^Site/)
-    await waitFor(() => expect(site).toContainHTML('AGRI-BD01'))
-    fireEvent.change(site, { target: { value: AGRI_SITE.id } })
+    expect(within(dialog).queryByLabelText(/^Site/)).not.toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo' }))
     const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/diagrams')
     await waitFor(() => expect(calls.some(isPost)).toBe(true))
     expect(await calls.find(isPost)!.clone().json()).toEqual({
       name: 'LAN tầng 3',
-      scope: 'site',
-      siteId: AGRI_SITE.id,
-      businessUnitId: null,
       layer: 'physical',
     })
   })
