@@ -12,20 +12,32 @@ import (
 
 type Querier interface {
 	AddMembership(ctx context.Context, arg AddMembershipParams) (Membership, error)
+	AddMembershipWithPermissions(ctx context.Context, arg AddMembershipWithPermissionsParams) (Membership, error)
 	// System admin (not tenant-scoped by design: managing the list of organizations).
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
+	// System admin: user management (global by design).
+	AdminListUsers(ctx context.Context) ([]AdminListUsersRow, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
+	CountActiveSystemAdmins(ctx context.Context) (int64, error)
+	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CreateInvitedUser(ctx context.Context, email string) (User, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	// Users and sessions are global (not tenant-scoped): a user can belong to several organizations.
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	// Account tokens (invite / password reset).
+	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
+	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
 	DeleteRecoveryCodes(ctx context.Context, userID pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
+	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
 	// Organizations and memberships (P1-03, ADR-016, ADR-023).
 	// Soft-deleted organizations (deleted_at IS NOT NULL) are invisible everywhere except audit history.
 	// The tenant middleware's single source of truth: does this user belong to this (live) organization?
@@ -37,24 +49,35 @@ type Querier interface {
 	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
+	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
+	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
+	// Organization members (P1-04). Every query is scoped by organization_id.
+	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
 	ListMyOrganizations(ctx context.Context, userID pgtype.UUID) ([]ListMyOrganizationsRow, error)
+	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
+	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
+	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
+	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
+	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
 	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.
 	UpsertPendingTOTP(ctx context.Context, arg UpsertPendingTOTPParams) (int64, error)
 	UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams) (int64, error)
-	// ADR-019 / SRS §10: system admins and organization owners/admins must use MFA.
+	UseUserToken(ctx context.Context, tokenHash []byte) (int64, error)
+	// ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 	UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error)
 }
 

@@ -221,10 +221,18 @@ export function OrgHomePage() {
         <Link to="/editor" className="text-primary underline">
           Mở editor sơ đồ (bản đang refactor)
         </Link>
+        <Link to={`/o/${orgId}/members`} className="text-primary underline">
+          Thành viên
+        </Link>
         {user?.isSystemAdmin && (
-          <Link to="/admin/organizations" className="text-primary underline">
-            Quản trị tổ chức
-          </Link>
+          <>
+            <Link to="/admin/organizations" className="text-primary underline">
+              Quản trị tổ chức
+            </Link>
+            <Link to="/admin/users" className="text-primary underline">
+              Quản trị người dùng
+            </Link>
+          </>
         )}
         <button
           type="button"

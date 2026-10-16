@@ -37,7 +37,8 @@ SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s
        u.id AS user_id, u.email, u.display_name, u.is_system_admin,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.is_system_admin OR EXISTS (
-          SELECT 1 FROM memberships m WHERE m.user_id = u.id AND m.role IN ('owner', 'admin')
+          SELECT 1 FROM memberships m WHERE m.user_id = u.id
+            AND (m.role IN ('owner', 'admin') OR 'credential.reveal' = ANY (m.permissions))
         ))::boolean AS mfa_required
 FROM sessions s
 JOIN users u ON u.id = s.user_id

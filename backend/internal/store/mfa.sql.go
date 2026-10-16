@@ -174,12 +174,13 @@ func (q *Queries) UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams
 
 const userRequiresMFA = `-- name: UserRequiresMFA :one
 SELECT (u.is_system_admin OR EXISTS (
-          SELECT 1 FROM memberships m WHERE m.user_id = u.id AND m.role IN ('owner', 'admin')
+          SELECT 1 FROM memberships m WHERE m.user_id = u.id
+            AND (m.role IN ('owner', 'admin') OR 'credential.reveal' = ANY (m.permissions))
         ))::boolean AS required
 FROM users u WHERE u.id = $1
 `
 
-// ADR-019 / SRS §10: system admins and organization owners/admins must use MFA.
+// ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 func (q *Queries) UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error) {
 	row := q.db.QueryRow(ctx, userRequiresMFA, id)
 	var required bool

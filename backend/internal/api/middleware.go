@@ -111,7 +111,8 @@ var partialSessionPaths = map[auth.Access]map[string]bool{
 func mfaGate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, ok := sessionFrom(r.Context())
-		if !ok || r.URL.Path == "/api/healthz" || r.URL.Path == "/api/auth/login" {
+		if !ok || r.URL.Path == "/api/healthz" || r.URL.Path == "/api/auth/login" ||
+			strings.HasPrefix(r.URL.Path, "/api/account-tokens/") { // session-independent one-time links
 			next.ServeHTTP(w, r)
 			return
 		}

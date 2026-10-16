@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-04 Người dùng & vai trò
+- Đã làm:
+  - Migration `000005_user_tokens` (link dùng 1 lần: invite / password_reset, chỉ lưu SHA-256). User được mời có `password_hash = ''` → đăng nhập luôn bị từ chối (sửa luôn: trước đó hash rỗng làm Login lỗi 500).
+  - API (OpenAPI trước): `/orgs/{orgId}/members` GET (mọi thành viên) / POST (thêm theo email: user có sẵn → thêm ngay; chưa có → tạo user chờ + link mời 7 ngày) / PATCH `{userId}` (vai trò + quyền bổ sung, optimistic lock 409) / DELETE (gỡ; ai cũng tự rời được) / POST `{userId}/invite` (cấp lại link, link cũ hết hiệu lực); `/account-tokens/{token}` GET/POST công khai (xem link / đặt mật khẩu → dùng 1 lần, đăng xuất mọi nơi); `/admin/users` GET + `{userId}/disable|enable|reset-mfa|password-reset` (system admin).
+  - Quy tắc vai trò (`checkRoleChange`): quản lý thành viên = owner/admin/`user.manage`; chỉ owner cấp/đổi/gỡ owner; chỉ owner/admin cấp/đổi admin và quyền bổ sung; không gỡ/hạ owner cuối cùng (409). `credential.reveal` ⇒ bắt buộc MFA (GetSession + UserRequiresMFA).
+  - Bảo mật: reset mật khẩu / reset MFA chỉ system admin (admin tổ chức reset user thuộc nhiều tổ chức = chiếm quyền tổ chức khác); **chặn tấn công link mời chéo tổ chức**: không thêm được user đang chờ kích hoạt thuộc tổ chức khác (409), chỉ cấp lại link khi user chỉ thuộc đúng tổ chức này. System admin không tự vô hiệu hóa, không vô hiệu hóa system admin cuối; vô hiệu hóa / reset MFA đăng xuất user ngay. Audit: member.add/update/remove/invite_regenerated, user.disable/enable/mfa_reset/password_reset_issued, account.invite_accepted/password_reset.
+  - Frontend: `/o/:orgId/members` (danh sách, thêm + hiện link mời 1 lần, đổi vai trò/quyền theo đúng quy tắc, gỡ/rời, cấp lại link), `/invite/:token` công khai (kích hoạt / đặt lại mật khẩu, nhập lại mật khẩu), `/admin/users` (vô hiệu hóa, reset MFA, link đặt lại mật khẩu).
+- Test / cách kiểm tra: unit 11 trường hợp quy tắc vai trò; API với Postgres thật: cách ly mọi endpoint thành viên (kể cả nhắm user tổ chức khác qua đường dẫn tổ chức mình), mời → xem → mật khẩu yếu 400 → đăng nhập trước khi kích hoạt bị từ chối → kích hoạt → dùng lại link 404 → đăng nhập; thêm user có sẵn / trùng (không phân biệt hoa thường) 409 / dữ liệu sai 400; kịch bản tấn công link mời chéo tổ chức 409; quy tắc vai trò + owner cuối + version cũ + tự rời; credential.reveal → MFA bắt buộc; cấp lại link; quản trị user (owner bị 403, tự vô hiệu hóa 409, session mất sau khi vô hiệu hóa/reset MFA, link đặt lại mật khẩu dùng được) + audit. Mutation check: bỏ chốt chặn link mời → test tấn công fail. Vitest 110 (6 mới). Chạy thật process API + DB tạm (đã xóa) với Origin: owner mời → người được mời kích hoạt → đăng nhập thấy tổ chức (editor). Migration 5 đã áp vào DB dev. `make check` pass.
+- Còn dở / lỗi đã biết: giới hạn theo site chuyển sang P1-07 (đã ghi vào PLAN); chưa gửi email (link copy tay tới P2-05 SMTP); thêm user có sẵn tiết lộ email đó có tài khoản trong hệ thống (rủi ro nhỏ, chấp nhận); chưa có trang "tài khoản của tôi" để tự đổi mật khẩu (P1-06 app shell).
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-05 Audit log (màn hình xem/lọc audit; ghi trước/sau đã có từ P1-03).
+
 ## 2026-10-16 — P1-03 Tổ chức & tenant middleware
 - Đã làm:
   - ADR-023 (người dùng chốt): tổ chức xác định theo đường dẫn `/api/orgs/{orgId}/…` (web `/o/{orgId}`); system admin không mặc nhiên đọc dữ liệu tổ chức không phải thành viên.

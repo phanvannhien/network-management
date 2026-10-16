@@ -7,6 +7,9 @@ import { MfaVerifyPage } from './app/MfaVerifyPage'
 import { RequireAuth } from './app/RequireAuth'
 import { RootRedirect } from './app/RootRedirect'
 import { AdminOrganizationsPage } from './modules/admin/AdminOrganizationsPage'
+import { AdminUsersPage } from './modules/admin/AdminUsersPage'
+import { MembersPage } from './modules/admin/MembersPage'
+import { AcceptInvitePage } from './app/AcceptInvitePage'
 import { CanvasView } from './editor/canvas/CanvasView'
 import { Palette } from './editor/panels/Palette'
 import { Sidebar } from './editor/panels/Sidebar'
@@ -32,6 +35,23 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/mfa" element={<MfaVerifyPage />} />
       <Route path="/mfa/setup" element={<MfaSetupPage />} />
+      <Route path="/invite/:token" element={<AcceptInvitePage />} />
+      <Route
+        path="/o/:orgId/members"
+        element={
+          <RequireAuth>
+            <MembersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireAuth>
+            <AdminUsersPage />
+          </RequireAuth>
+        }
+      />
       <Route
         path="/"
         element={

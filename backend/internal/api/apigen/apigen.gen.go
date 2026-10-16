@@ -16,6 +16,24 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AccountTokenInfoPurpose.
+const (
+	Invite        AccountTokenInfoPurpose = "invite"
+	PasswordReset AccountTokenInfoPurpose = "password_reset"
+)
+
+// Valid indicates whether the value is a known member of the AccountTokenInfoPurpose enum.
+func (e AccountTokenInfoPurpose) Valid() bool {
+	switch e {
+	case Invite:
+		return true
+	case PasswordReset:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -70,6 +88,27 @@ func (e OrganizationKind) Valid() bool {
 	}
 }
 
+// Defines values for Permission.
+const (
+	CredentialManage Permission = "credential.manage"
+	CredentialReveal Permission = "credential.reveal"
+	UserManage       Permission = "user.manage"
+)
+
+// Valid indicates whether the value is a known member of the Permission enum.
+func (e Permission) Valid() bool {
+	switch e {
+	case CredentialManage:
+		return true
+	case CredentialReveal:
+		return true
+	case UserManage:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Role.
 const (
 	Admin  Role = "admin"
@@ -94,6 +133,36 @@ func (e Role) Valid() bool {
 	}
 }
 
+// AcceptAccountTokenRequest defines model for AcceptAccountTokenRequest.
+type AcceptAccountTokenRequest struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Password    string  `json:"password"`
+}
+
+// AccountTokenInfo defines model for AccountTokenInfo.
+type AccountTokenInfo struct {
+	Email         string                  `json:"email"`
+	Organizations []string                `json:"organizations"`
+	Purpose       AccountTokenInfoPurpose `json:"purpose"`
+}
+
+// AccountTokenInfoPurpose defines model for AccountTokenInfo.Purpose.
+type AccountTokenInfoPurpose string
+
+// AddMemberRequest defines model for AddMemberRequest.
+type AddMemberRequest struct {
+	Email       openapi_types.Email `json:"email"`
+	Permissions *[]Permission       `json:"permissions,omitempty"`
+	Role        Role                `json:"role"`
+}
+
+// AddMemberResult defines model for AddMemberResult.
+type AddMemberResult struct {
+	// InviteToken One-time invite token for a new user (build the link /invite/{token}); null for existing users
+	InviteToken *string `json:"inviteToken"`
+	Member      Member  `json:"member"`
+}
+
 // AdminOrganization defines model for AdminOrganization.
 type AdminOrganization struct {
 	CreatedAt   time.Time          `json:"createdAt"`
@@ -108,6 +177,24 @@ type AdminOrganization struct {
 // AdminOrganizationList defines model for AdminOrganizationList.
 type AdminOrganizationList struct {
 	Organizations []AdminOrganization `json:"organizations"`
+}
+
+// AdminUser defines model for AdminUser.
+type AdminUser struct {
+	CreatedAt         time.Time          `json:"createdAt"`
+	Disabled          bool               `json:"disabled"`
+	DisplayName       string             `json:"displayName"`
+	Email             string             `json:"email"`
+	Id                openapi_types.UUID `json:"id"`
+	IsSystemAdmin     bool               `json:"isSystemAdmin"`
+	MfaEnabled        bool               `json:"mfaEnabled"`
+	OrganizationCount int64              `json:"organizationCount"`
+	PendingInvite     bool               `json:"pendingInvite"`
+}
+
+// AdminUserList defines model for AdminUserList.
+type AdminUserList struct {
+	Users []AdminUser `json:"users"`
 }
 
 // AuthSession defines model for AuthSession.
@@ -158,10 +245,35 @@ type HealthDatabase string
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// InviteLink defines model for InviteLink.
+type InviteLink struct {
+	InviteToken string `json:"inviteToken"`
+}
+
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
 	Email    openapi_types.Email `json:"email"`
 	Password string              `json:"password"`
+}
+
+// Member defines model for Member.
+type Member struct {
+	Disabled    bool   `json:"disabled"`
+	DisplayName string `json:"displayName"`
+	Email       string `json:"email"`
+	MfaEnabled  bool   `json:"mfaEnabled"`
+
+	// PendingInvite Invited but has not set a password yet
+	PendingInvite bool               `json:"pendingInvite"`
+	Permissions   []Permission       `json:"permissions"`
+	Role          Role               `json:"role"`
+	UserId        openapi_types.UUID `json:"userId"`
+	Version       int32              `json:"version"`
+}
+
+// MemberList defines model for MemberList.
+type MemberList struct {
+	Members []Member `json:"members"`
 }
 
 // MembershipInfo defines model for MembershipInfo.
@@ -239,8 +351,24 @@ type OrganizationView struct {
 	Organization Organization   `json:"organization"`
 }
 
+// PasswordResetLink defines model for PasswordResetLink.
+type PasswordResetLink struct {
+	// ResetToken One-time token (build the link /invite/{token})
+	ResetToken string `json:"resetToken"`
+}
+
+// Permission defines model for Permission.
+type Permission string
+
 // Role defines model for Role.
 type Role string
+
+// UpdateMemberRequest defines model for UpdateMemberRequest.
+type UpdateMemberRequest struct {
+	Permissions []Permission `json:"permissions"`
+	Role        Role         `json:"role"`
+	Version     int32        `json:"version"`
+}
 
 // UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
 type UpdateOrganizationRequest struct {
@@ -256,6 +384,9 @@ type CsrfToken = string
 
 // OrgId defines model for OrgId.
 type OrgId = openapi_types.UUID
+
+// UserId defines model for UserId.
+type UserId = openapi_types.UUID
 
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
@@ -282,6 +413,26 @@ type AdminCreateOrganizationParams struct {
 
 // AdminDeleteOrganizationParams defines parameters for AdminDeleteOrganization.
 type AdminDeleteOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminDisableUserParams defines parameters for AdminDisableUser.
+type AdminDisableUserParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminEnableUserParams defines parameters for AdminEnableUser.
+type AdminEnableUserParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminCreatePasswordResetParams defines parameters for AdminCreatePasswordReset.
+type AdminCreatePasswordResetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminResetMfaParams defines parameters for AdminResetMfa.
+type AdminResetMfaParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -320,6 +471,29 @@ type ActivateOrganizationParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// AddMemberParams defines parameters for AddMember.
+type AddMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RemoveMemberParams defines parameters for RemoveMember.
+type RemoveMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateMemberParams defines parameters for UpdateMember.
+type UpdateMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RegenerateInviteParams defines parameters for RegenerateInvite.
+type RegenerateInviteParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AcceptAccountTokenJSONRequestBody defines body for AcceptAccountToken for application/json ContentType.
+type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
+
 // AdminCreateOrganizationJSONRequestBody defines body for AdminCreateOrganization for application/json ContentType.
 type AdminCreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
@@ -338,8 +512,20 @@ type VerifyMfaJSONRequestBody = MfaVerifyRequest
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
 
+// AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
+type AddMemberJSONRequestBody = AddMemberRequest
+
+// UpdateMemberJSONRequestBody defines body for UpdateMember for application/json ContentType.
+type UpdateMemberJSONRequestBody = UpdateMemberRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
+	// (GET /account-tokens/{token})
+	InspectAccountToken(w http.ResponseWriter, r *http.Request, token string)
+	// AcceptAccountToken Set the password (and name, for invitations) using a one-time link
+	// (POST /account-tokens/{token})
+	AcceptAccountToken(w http.ResponseWriter, r *http.Request, token string)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(w http.ResponseWriter, r *http.Request)
@@ -349,6 +535,21 @@ type ServerInterface interface {
 	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
 	// (DELETE /admin/organizations/{orgId})
 	AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams)
+	// AdminListUsers All users (system admin)
+	// (GET /admin/users)
+	AdminListUsers(w http.ResponseWriter, r *http.Request)
+	// AdminDisableUser Disable a user (soft delete, signs them out everywhere)
+	// (POST /admin/users/{userId}/disable)
+	AdminDisableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminDisableUserParams)
+	// AdminEnableUser Re-enable a disabled user
+	// (POST /admin/users/{userId}/enable)
+	AdminEnableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminEnableUserParams)
+	// AdminCreatePasswordReset Issue a one-time password-reset link (24 h)
+	// (POST /admin/users/{userId}/password-reset)
+	AdminCreatePasswordReset(w http.ResponseWriter, r *http.Request, userId UserId, params AdminCreatePasswordResetParams)
+	// AdminResetMfa Remove MFA so the user can enroll again (lost phone and recovery codes)
+	// (POST /admin/users/{userId}/reset-mfa)
+	AdminResetMfa(w http.ResponseWriter, r *http.Request, userId UserId, params AdminResetMfaParams)
 	// Login Sign in with email and password
 	// (POST /auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
@@ -385,11 +586,38 @@ type ServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams)
+	// ListMembers Members of the organization
+	// (GET /orgs/{orgId}/members)
+	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// AddMember Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
+	// (POST /orgs/{orgId}/members)
+	AddMember(w http.ResponseWriter, r *http.Request, orgId OrgId, params AddMemberParams)
+	// RemoveMember Remove a member from the organization (the last owner cannot be removed)
+	// (DELETE /orgs/{orgId}/members/{userId})
+	RemoveMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RemoveMemberParams)
+	// UpdateMember Change role / extra permissions (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/members/{userId})
+	UpdateMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params UpdateMemberParams)
+	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
+	// (POST /orgs/{orgId}/members/{userId}/invite)
+	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
+// (GET /account-tokens/{token})
+func (_ Unimplemented) InspectAccountToken(w http.ResponseWriter, r *http.Request, token string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AcceptAccountToken Set the password (and name, for invitations) using a one-time link
+// (POST /account-tokens/{token})
+func (_ Unimplemented) AcceptAccountToken(w http.ResponseWriter, r *http.Request, token string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // AdminListOrganizations All organizations (system admin)
 // (GET /admin/organizations)
@@ -406,6 +634,36 @@ func (_ Unimplemented) AdminCreateOrganization(w http.ResponseWriter, r *http.Re
 // AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
 // (DELETE /admin/organizations/{orgId})
 func (_ Unimplemented) AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminListUsers All users (system admin)
+// (GET /admin/users)
+func (_ Unimplemented) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminDisableUser Disable a user (soft delete, signs them out everywhere)
+// (POST /admin/users/{userId}/disable)
+func (_ Unimplemented) AdminDisableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminDisableUserParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminEnableUser Re-enable a disabled user
+// (POST /admin/users/{userId}/enable)
+func (_ Unimplemented) AdminEnableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminEnableUserParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminCreatePasswordReset Issue a one-time password-reset link (24 h)
+// (POST /admin/users/{userId}/password-reset)
+func (_ Unimplemented) AdminCreatePasswordReset(w http.ResponseWriter, r *http.Request, userId UserId, params AdminCreatePasswordResetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminResetMfa Remove MFA so the user can enroll again (lost phone and recovery codes)
+// (POST /admin/users/{userId}/reset-mfa)
+func (_ Unimplemented) AdminResetMfa(w http.ResponseWriter, r *http.Request, userId UserId, params AdminResetMfaParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -481,6 +739,36 @@ func (_ Unimplemented) ActivateOrganization(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListMembers Members of the organization
+// (GET /orgs/{orgId}/members)
+func (_ Unimplemented) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddMember Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
+// (POST /orgs/{orgId}/members)
+func (_ Unimplemented) AddMember(w http.ResponseWriter, r *http.Request, orgId OrgId, params AddMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveMember Remove a member from the organization (the last owner cannot be removed)
+// (DELETE /orgs/{orgId}/members/{userId})
+func (_ Unimplemented) RemoveMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RemoveMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateMember Change role / extra permissions (optimistic lock on version)
+// (PATCH /orgs/{orgId}/members/{userId})
+func (_ Unimplemented) UpdateMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params UpdateMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
+// (POST /orgs/{orgId}/members/{userId}/invite)
+func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler            ServerInterface
@@ -489,6 +777,58 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// InspectAccountToken operation middleware
+func (siw *ServerInterfaceWrapper) InspectAccountToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "token" -------------
+	var token string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", chi.URLParam(r, "token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InspectAccountToken(w, r, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptAccountToken operation middleware
+func (siw *ServerInterfaceWrapper) AcceptAccountToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "token" -------------
+	var token string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", chi.URLParam(r, "token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptAccountToken(w, r, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // AdminListOrganizations operation middleware
 func (siw *ServerInterfaceWrapper) AdminListOrganizations(w http.ResponseWriter, r *http.Request) {
@@ -594,6 +934,236 @@ func (siw *ServerInterfaceWrapper) AdminDeleteOrganization(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminDeleteOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListUsers operation middleware
+func (siw *ServerInterfaceWrapper) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListUsers(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDisableUser operation middleware
+func (siw *ServerInterfaceWrapper) AdminDisableUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDisableUserParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDisableUser(w, r, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminEnableUser operation middleware
+func (siw *ServerInterfaceWrapper) AdminEnableUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminEnableUserParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminEnableUser(w, r, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminCreatePasswordReset operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreatePasswordReset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminCreatePasswordResetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminCreatePasswordReset(w, r, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminResetMfa operation middleware
+func (siw *ServerInterfaceWrapper) AdminResetMfa(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminResetMfaParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminResetMfa(w, r, userId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1018,6 +1588,275 @@ func (siw *ServerInterfaceWrapper) ActivateOrganization(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMembers(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddMember operation middleware
+func (siw *ServerInterfaceWrapper) AddMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddMember(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveMember(w, r, orgId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateMember operation middleware
+func (siw *ServerInterfaceWrapper) UpdateMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateMember(w, r, orgId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RegenerateInvite operation middleware
+func (siw *ServerInterfaceWrapper) RegenerateInvite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RegenerateInviteParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegenerateInvite(w, r, orgId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1176,6 +2015,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/admin/organizations/{orgId}", wrapper.AdminDeleteOrganization)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/members", wrapper.ListMembers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/members", wrapper.AddMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/members/{userId}", wrapper.RemoveMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/members/{userId}", wrapper.UpdateMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/members/{userId}/invite", wrapper.RegenerateInvite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/account-tokens/{token}", wrapper.InspectAccountToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/account-tokens/{token}", wrapper.AcceptAccountToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/users", wrapper.AdminListUsers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/users/{userId}/disable", wrapper.AdminDisableUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/users/{userId}/enable", wrapper.AdminEnableUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/users/{userId}/reset-mfa", wrapper.AdminResetMfa)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/users/{userId}/password-reset", wrapper.AdminCreatePasswordReset)
+	})
 
 	return r
 }
@@ -1191,6 +2066,87 @@ type InvalidCodeJSONResponse Error
 type NotFoundJSONResponse Error
 
 type UnauthorizedJSONResponse Error
+
+type InspectAccountTokenRequestObject struct {
+	Token string `json:"token"`
+}
+
+type InspectAccountTokenResponseObject interface {
+	VisitInspectAccountTokenResponse(w http.ResponseWriter) error
+}
+
+type InspectAccountToken200JSONResponse AccountTokenInfo
+
+func (response InspectAccountToken200JSONResponse) VisitInspectAccountTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InspectAccountToken404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response InspectAccountToken404JSONResponse) VisitInspectAccountTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAccountTokenRequestObject struct {
+	Token string `json:"token"`
+	Body  *AcceptAccountTokenJSONRequestBody
+}
+
+type AcceptAccountTokenResponseObject interface {
+	VisitAcceptAccountTokenResponse(w http.ResponseWriter) error
+}
+
+type AcceptAccountToken204Response struct {
+}
+
+func (response AcceptAccountToken204Response) VisitAcceptAccountTokenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AcceptAccountToken400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AcceptAccountToken400JSONResponse) VisitAcceptAccountTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAccountToken404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AcceptAccountToken404JSONResponse) VisitAcceptAccountTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type AdminListOrganizationsRequestObject struct {
 }
@@ -1354,6 +2310,311 @@ func (response AdminDeleteOrganization403JSONResponse) VisitAdminDeleteOrganizat
 type AdminDeleteOrganization404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response AdminDeleteOrganization404JSONResponse) VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListUsersRequestObject struct {
+}
+
+type AdminListUsersResponseObject interface {
+	VisitAdminListUsersResponse(w http.ResponseWriter) error
+}
+
+type AdminListUsers200JSONResponse AdminUserList
+
+func (response AdminListUsers200JSONResponse) VisitAdminListUsersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListUsers401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListUsers401JSONResponse) VisitAdminListUsersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListUsers403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListUsers403JSONResponse) VisitAdminListUsersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDisableUserRequestObject struct {
+	UserId UserId `json:"userId"`
+	Params AdminDisableUserParams
+}
+
+type AdminDisableUserResponseObject interface {
+	VisitAdminDisableUserResponse(w http.ResponseWriter) error
+}
+
+type AdminDisableUser204Response struct {
+}
+
+func (response AdminDisableUser204Response) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDisableUser401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDisableUser401JSONResponse) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDisableUser403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDisableUser403JSONResponse) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDisableUser404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDisableUser404JSONResponse) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDisableUser409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminDisableUser409JSONResponse) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminEnableUserRequestObject struct {
+	UserId UserId `json:"userId"`
+	Params AdminEnableUserParams
+}
+
+type AdminEnableUserResponseObject interface {
+	VisitAdminEnableUserResponse(w http.ResponseWriter) error
+}
+
+type AdminEnableUser204Response struct {
+}
+
+func (response AdminEnableUser204Response) VisitAdminEnableUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminEnableUser401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminEnableUser401JSONResponse) VisitAdminEnableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminEnableUser403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminEnableUser403JSONResponse) VisitAdminEnableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminEnableUser404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminEnableUser404JSONResponse) VisitAdminEnableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreatePasswordResetRequestObject struct {
+	UserId UserId `json:"userId"`
+	Params AdminCreatePasswordResetParams
+}
+
+type AdminCreatePasswordResetResponseObject interface {
+	VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error
+}
+
+type AdminCreatePasswordReset200JSONResponse PasswordResetLink
+
+func (response AdminCreatePasswordReset200JSONResponse) VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreatePasswordReset401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminCreatePasswordReset401JSONResponse) VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreatePasswordReset403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreatePasswordReset403JSONResponse) VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreatePasswordReset404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminCreatePasswordReset404JSONResponse) VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminResetMfaRequestObject struct {
+	UserId UserId `json:"userId"`
+	Params AdminResetMfaParams
+}
+
+type AdminResetMfaResponseObject interface {
+	VisitAdminResetMfaResponse(w http.ResponseWriter) error
+}
+
+type AdminResetMfa204Response struct {
+}
+
+func (response AdminResetMfa204Response) VisitAdminResetMfaResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminResetMfa401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminResetMfa401JSONResponse) VisitAdminResetMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminResetMfa403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminResetMfa403JSONResponse) VisitAdminResetMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminResetMfa404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminResetMfa404JSONResponse) VisitAdminResetMfaResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2010,8 +3271,407 @@ func (response ActivateOrganization404JSONResponse) VisitActivateOrganizationRes
 	return err
 }
 
+type ListMembersRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListMembersResponseObject interface {
+	VisitListMembersResponse(w http.ResponseWriter) error
+}
+
+type ListMembers200JSONResponse MemberList
+
+func (response ListMembers200JSONResponse) VisitListMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMembers401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListMembers401JSONResponse) VisitListMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMembers404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListMembers404JSONResponse) VisitListMembersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMemberRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params AddMemberParams
+	Body   *AddMemberJSONRequestBody
+}
+
+type AddMemberResponseObject interface {
+	VisitAddMemberResponse(w http.ResponseWriter) error
+}
+
+type AddMember201JSONResponse AddMemberResult
+
+func (response AddMember201JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AddMember400JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AddMember401JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AddMember403JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AddMember404JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AddMember409JSONResponse) VisitAddMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMemberRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	UserId UserId `json:"userId"`
+	Params RemoveMemberParams
+}
+
+type RemoveMemberResponseObject interface {
+	VisitRemoveMemberResponse(w http.ResponseWriter) error
+}
+
+type RemoveMember204Response struct {
+}
+
+func (response RemoveMember204Response) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RemoveMember401JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RemoveMember403JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RemoveMember404JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response RemoveMember409JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMemberRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	UserId UserId `json:"userId"`
+	Params UpdateMemberParams
+	Body   *UpdateMemberJSONRequestBody
+}
+
+type UpdateMemberResponseObject interface {
+	VisitUpdateMemberResponse(w http.ResponseWriter) error
+}
+
+type UpdateMember200JSONResponse Member
+
+func (response UpdateMember200JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateMember400JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateMember401JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateMember403JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateMember404JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateMember409JSONResponse) VisitUpdateMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateInviteRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	UserId UserId `json:"userId"`
+	Params RegenerateInviteParams
+}
+
+type RegenerateInviteResponseObject interface {
+	VisitRegenerateInviteResponse(w http.ResponseWriter) error
+}
+
+type RegenerateInvite200JSONResponse InviteLink
+
+func (response RegenerateInvite200JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateInvite401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RegenerateInvite401JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateInvite403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RegenerateInvite403JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateInvite404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RegenerateInvite404JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateInvite409JSONResponse struct{ ConflictJSONResponse }
+
+func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// InspectAccountToken What a one-time invite / password-reset link is for (no sign-in required)
+	// (GET /account-tokens/{token})
+	InspectAccountToken(ctx context.Context, request InspectAccountTokenRequestObject) (InspectAccountTokenResponseObject, error)
+	// AcceptAccountToken Set the password (and name, for invitations) using a one-time link
+	// (POST /account-tokens/{token})
+	AcceptAccountToken(ctx context.Context, request AcceptAccountTokenRequestObject) (AcceptAccountTokenResponseObject, error)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(ctx context.Context, request AdminListOrganizationsRequestObject) (AdminListOrganizationsResponseObject, error)
@@ -2021,6 +3681,21 @@ type StrictServerInterface interface {
 	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
 	// (DELETE /admin/organizations/{orgId})
 	AdminDeleteOrganization(ctx context.Context, request AdminDeleteOrganizationRequestObject) (AdminDeleteOrganizationResponseObject, error)
+	// AdminListUsers All users (system admin)
+	// (GET /admin/users)
+	AdminListUsers(ctx context.Context, request AdminListUsersRequestObject) (AdminListUsersResponseObject, error)
+	// AdminDisableUser Disable a user (soft delete, signs them out everywhere)
+	// (POST /admin/users/{userId}/disable)
+	AdminDisableUser(ctx context.Context, request AdminDisableUserRequestObject) (AdminDisableUserResponseObject, error)
+	// AdminEnableUser Re-enable a disabled user
+	// (POST /admin/users/{userId}/enable)
+	AdminEnableUser(ctx context.Context, request AdminEnableUserRequestObject) (AdminEnableUserResponseObject, error)
+	// AdminCreatePasswordReset Issue a one-time password-reset link (24 h)
+	// (POST /admin/users/{userId}/password-reset)
+	AdminCreatePasswordReset(ctx context.Context, request AdminCreatePasswordResetRequestObject) (AdminCreatePasswordResetResponseObject, error)
+	// AdminResetMfa Remove MFA so the user can enroll again (lost phone and recovery codes)
+	// (POST /admin/users/{userId}/reset-mfa)
+	AdminResetMfa(ctx context.Context, request AdminResetMfaRequestObject) (AdminResetMfaResponseObject, error)
 	// Login Sign in with email and password
 	// (POST /auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -2057,6 +3732,21 @@ type StrictServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(ctx context.Context, request ActivateOrganizationRequestObject) (ActivateOrganizationResponseObject, error)
+	// ListMembers Members of the organization
+	// (GET /orgs/{orgId}/members)
+	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
+	// AddMember Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
+	// (POST /orgs/{orgId}/members)
+	AddMember(ctx context.Context, request AddMemberRequestObject) (AddMemberResponseObject, error)
+	// RemoveMember Remove a member from the organization (the last owner cannot be removed)
+	// (DELETE /orgs/{orgId}/members/{userId})
+	RemoveMember(ctx context.Context, request RemoveMemberRequestObject) (RemoveMemberResponseObject, error)
+	// UpdateMember Change role / extra permissions (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/members/{userId})
+	UpdateMember(ctx context.Context, request UpdateMemberRequestObject) (UpdateMemberResponseObject, error)
+	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
+	// (POST /orgs/{orgId}/members/{userId}/invite)
+	RegenerateInvite(ctx context.Context, request RegenerateInviteRequestObject) (RegenerateInviteResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -2096,6 +3786,65 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// InspectAccountToken operation middleware
+func (sh *strictHandler) InspectAccountToken(w http.ResponseWriter, r *http.Request, token string) {
+	var request InspectAccountTokenRequestObject
+
+	request.Token = token
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.InspectAccountToken(ctx, request.(InspectAccountTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "InspectAccountToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(InspectAccountTokenResponseObject); ok {
+		if err := validResponse.VisitInspectAccountTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptAccountToken operation middleware
+func (sh *strictHandler) AcceptAccountToken(w http.ResponseWriter, r *http.Request, token string) {
+	var request AcceptAccountTokenRequestObject
+
+	request.Token = token
+
+	var body AcceptAccountTokenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptAccountToken(ctx, request.(AcceptAccountTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptAccountToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptAccountTokenResponseObject); ok {
+		if err := validResponse.VisitAcceptAccountTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // AdminListOrganizations operation middleware
@@ -2175,6 +3924,138 @@ func (sh *strictHandler) AdminDeleteOrganization(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminDeleteOrganizationResponseObject); ok {
 		if err := validResponse.VisitAdminDeleteOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminListUsers operation middleware
+func (sh *strictHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+	var request AdminListUsersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListUsers(ctx, request.(AdminListUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListUsers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListUsersResponseObject); ok {
+		if err := validResponse.VisitAdminListUsersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDisableUser operation middleware
+func (sh *strictHandler) AdminDisableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminDisableUserParams) {
+	var request AdminDisableUserRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDisableUser(ctx, request.(AdminDisableUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDisableUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDisableUserResponseObject); ok {
+		if err := validResponse.VisitAdminDisableUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminEnableUser operation middleware
+func (sh *strictHandler) AdminEnableUser(w http.ResponseWriter, r *http.Request, userId UserId, params AdminEnableUserParams) {
+	var request AdminEnableUserRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminEnableUser(ctx, request.(AdminEnableUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminEnableUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminEnableUserResponseObject); ok {
+		if err := validResponse.VisitAdminEnableUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminCreatePasswordReset operation middleware
+func (sh *strictHandler) AdminCreatePasswordReset(w http.ResponseWriter, r *http.Request, userId UserId, params AdminCreatePasswordResetParams) {
+	var request AdminCreatePasswordResetRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreatePasswordReset(ctx, request.(AdminCreatePasswordResetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreatePasswordReset")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminCreatePasswordResetResponseObject); ok {
+		if err := validResponse.VisitAdminCreatePasswordResetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminResetMfa operation middleware
+func (sh *strictHandler) AdminResetMfa(w http.ResponseWriter, r *http.Request, userId UserId, params AdminResetMfaParams) {
+	var request AdminResetMfaRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminResetMfa(ctx, request.(AdminResetMfaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminResetMfa")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminResetMfaResponseObject); ok {
+		if err := validResponse.VisitAdminResetMfaResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -2516,6 +4397,157 @@ func (sh *strictHandler) ActivateOrganization(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ActivateOrganizationResponseObject); ok {
 		if err := validResponse.VisitActivateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMembers operation middleware
+func (sh *strictHandler) ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListMembersRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMembers(ctx, request.(ListMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMembers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMembersResponseObject); ok {
+		if err := validResponse.VisitListMembersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddMember operation middleware
+func (sh *strictHandler) AddMember(w http.ResponseWriter, r *http.Request, orgId OrgId, params AddMemberParams) {
+	var request AddMemberRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body AddMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddMember(ctx, request.(AddMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddMemberResponseObject); ok {
+		if err := validResponse.VisitAddMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveMember operation middleware
+func (sh *strictHandler) RemoveMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RemoveMemberParams) {
+	var request RemoveMemberRequestObject
+
+	request.OrgId = orgId
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveMember(ctx, request.(RemoveMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveMemberResponseObject); ok {
+		if err := validResponse.VisitRemoveMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateMember operation middleware
+func (sh *strictHandler) UpdateMember(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params UpdateMemberParams) {
+	var request UpdateMemberRequestObject
+
+	request.OrgId = orgId
+	request.UserId = userId
+	request.Params = params
+
+	var body UpdateMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateMember(ctx, request.(UpdateMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateMemberResponseObject); ok {
+		if err := validResponse.VisitUpdateMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegenerateInvite operation middleware
+func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams) {
+	var request RegenerateInviteRequestObject
+
+	request.OrgId = orgId
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegenerateInvite(ctx, request.(RegenerateInviteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegenerateInvite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegenerateInviteResponseObject); ok {
+		if err := validResponse.VisitRegenerateInviteResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

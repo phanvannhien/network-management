@@ -427,3 +427,148 @@ describe('admin organizations', () => {
     expect(await screen.findByRole('heading', { name: 'Văn phòng mẫu' })).toBeInTheDocument()
   })
 })
+
+const MEMBER = {
+  userId: '00000000-0000-4000-8000-000000000002',
+  email: 'viewer@example.com',
+  displayName: 'Viewer',
+  role: 'viewer',
+  permissions: [],
+  mfaEnabled: false,
+  disabled: false,
+  pendingInvite: false,
+  version: 1,
+}
+
+describe('members', () => {
+  it('owner invites a new member and sees the one-time link', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+      [`POST /api/orgs/${ORG_ID}/members`]: () =>
+        json(
+          {
+            member: {
+              ...MEMBER,
+              userId: 'n',
+              email: 'new@example.com',
+              displayName: '',
+              pendingInvite: true,
+            },
+            inviteToken: 'tok123',
+          },
+          201,
+        ),
+    })
+    renderAt(`/o/${ORG_ID}/members`)
+    expect(await screen.findByText('viewer@example.com')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm' }))
+    expect(await screen.findByText(/\/invite\/tok123$/)).toBeInTheDocument()
+    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/members'))!
+    expect(await post.clone().json()).toEqual({
+      email: 'new@example.com',
+      role: 'viewer',
+      permissions: [],
+    })
+  })
+
+  it('changing a role sends the version for the optimistic lock', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+      [`PATCH /api/orgs/${ORG_ID}/members/${MEMBER.userId}`]: () =>
+        json({ ...MEMBER, role: 'editor', version: 2 }),
+    })
+    renderAt(`/o/${ORG_ID}/members`)
+    fireEvent.change(await screen.findByLabelText('Vai trò của viewer@example.com'), {
+      target: { value: 'editor' },
+    })
+    await waitFor(() => expect(calls.some((r) => r.method === 'PATCH')).toBe(true))
+    const patch = calls.find((r) => r.method === 'PATCH')!
+    expect(await patch.clone().json()).toEqual({ role: 'editor', permissions: [], version: 1 })
+  })
+
+  it('viewers see the list without management controls', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
+      [`GET /api/orgs/${ORG_ID}`]: () =>
+        json({ ...ORG_VIEW, membership: { role: 'viewer', permissions: [] } }),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+    })
+    renderAt(`/o/${ORG_ID}/members`)
+    expect(await screen.findByText('viewer@example.com')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Thêm thành viên' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Vai trò của viewer@example.com')).not.toBeInTheDocument()
+  })
+})
+
+describe('accept invite', () => {
+  it('activates the account from a one-time link without signing in', async () => {
+    const calls = fakeApi({
+      'GET /api/account-tokens/tok123': () =>
+        json({ email: 'new@example.com', purpose: 'invite', organizations: ['Văn phòng mẫu'] }),
+      'POST /api/account-tokens/tok123': () => new Response(null, { status: 204 }),
+    })
+    renderAt('/invite/tok123')
+    expect(await screen.findByRole('heading', { name: 'Kích hoạt tài khoản' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Họ tên'), { target: { value: 'Người Mới' } })
+    fireEvent.change(screen.getByLabelText(/Mật khẩu mới/), {
+      target: { value: 'a-strong-password' },
+    })
+    fireEvent.change(screen.getByLabelText('Nhập lại mật khẩu'), {
+      target: { value: 'different-password' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Kích hoạt' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('không khớp')
+
+    fireEvent.change(screen.getByLabelText('Nhập lại mật khẩu'), {
+      target: { value: 'a-strong-password' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Kích hoạt' }))
+    expect(await screen.findByRole('heading', { name: 'Hoàn tất' })).toBeInTheDocument()
+    const post = calls.find((r) => r.method === 'POST')!
+    expect(await post.clone().json()).toEqual({
+      displayName: 'Người Mới',
+      password: 'a-strong-password',
+    })
+  })
+
+  it('explains an invalid or used link', async () => {
+    fakeApi({
+      'GET /api/account-tokens/old': () =>
+        json({ message: 'Link không hợp lệ, đã dùng hoặc đã hết hạn' }, 404),
+    })
+    renderAt('/invite/old')
+    expect(await screen.findByRole('heading', { name: 'Link không dùng được' })).toBeInTheDocument()
+  })
+})
+
+describe('admin users', () => {
+  it('issues a password-reset link', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/users': () =>
+        json({
+          users: [
+            {
+              id: 'u1',
+              email: 'ed@example.com',
+              displayName: 'Ed',
+              isSystemAdmin: false,
+              mfaEnabled: true,
+              disabled: false,
+              pendingInvite: false,
+              organizationCount: 1,
+              createdAt: '2026-10-16T00:00:00Z',
+            },
+          ],
+        }),
+      'POST /api/admin/users/u1/password-reset': () => json({ resetToken: 'reset456' }),
+    })
+    renderAt('/admin/users')
+    fireEvent.click(await screen.findByRole('button', { name: 'Link đặt lại mật khẩu' }))
+    expect(await screen.findByText(/\/invite\/reset456$/)).toBeInTheDocument()
+  })
+})

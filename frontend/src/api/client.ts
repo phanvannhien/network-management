@@ -1,6 +1,8 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './schema'
 
+export type { components }
+
 /**
  * Typed API client generated from api/openapi.yaml (ADR-017). Paths, params and
  * response bodies are checked at compile time; regenerate with `make gen`.

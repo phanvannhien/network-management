@@ -43,8 +43,9 @@ SELECT count(*) FROM mfa_recovery_codes WHERE user_id = $1 AND used_at IS NULL;
 UPDATE sessions SET mfa_verified_at = now() WHERE token_hash = $1;
 
 -- name: UserRequiresMFA :one
--- ADR-019 / SRS §10: system admins and organization owners/admins must use MFA.
+-- ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 SELECT (u.is_system_admin OR EXISTS (
-          SELECT 1 FROM memberships m WHERE m.user_id = u.id AND m.role IN ('owner', 'admin')
+          SELECT 1 FROM memberships m WHERE m.user_id = u.id
+            AND (m.role IN ('owner', 'admin') OR 'credential.reveal' = ANY (m.permissions))
         ))::boolean AS required
 FROM users u WHERE u.id = $1;

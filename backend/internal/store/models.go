@@ -93,3 +93,13 @@ type User struct {
 	UpdatedAt        pgtype.Timestamptz
 	Version          int32
 }
+
+type UserToken struct {
+	TokenHash []byte
+	UserID    pgtype.UUID
+	Purpose   string
+	CreatedBy pgtype.UUID
+	ExpiresAt pgtype.Timestamptz
+	UsedAt    pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}

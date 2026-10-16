@@ -25,6 +25,7 @@ import (
 
 // Fixture: a fresh database, two organizations and one owner in each.
 type Fixture struct {
+	t      *testing.T
 	Pool   *pgxpool.Pool
 	Server *httptest.Server
 	OrgA   uuid.UUID
@@ -39,7 +40,7 @@ func New(t *testing.T, newHandler func(pool *pgxpool.Pool) http.Handler) *Fixtur
 	pool, _ := testdb.New(t)
 	srv := httptest.NewServer(newHandler(pool))
 	t.Cleanup(srv.Close)
-	fx := &Fixture{Pool: pool, Server: srv}
+	fx := &Fixture{t: t, Pool: pool, Server: srv}
 	fx.OrgA = fx.NewOrg(t, "Org A")
 	fx.OrgB = fx.NewOrg(t, "Org B")
 	fx.A = fx.NewUser(t, "owner-a@example.com", false, Member{fx.OrgA, "owner"})
@@ -116,8 +117,10 @@ func (c *Client) Do(method, path string, body any) (int, map[string]any) {
 	req, _ := http.NewRequest(method, c.base+path, buf)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Origin", c.base)
-	req.Header.Set("X-CSRF-Token", c.csrf)
-	req.AddCookie(&http.Cookie{Name: "ntb_session", Value: c.token})
+	if c.token != "" {
+		req.Header.Set("X-CSRF-Token", c.csrf)
+		req.AddCookie(&http.Cookie{Name: "ntb_session", Value: c.token})
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.t.Fatalf("%s %s: %v", method, path, err)
@@ -139,4 +142,9 @@ func (fx *Fixture) AssertCrossTenantDenied(t *testing.T, method string, pathFor 
 	if status, _ := fx.B.Do(method, pathFor(fx.OrgB), body); status == http.StatusNotFound || status == http.StatusUnauthorized {
 		t.Errorf("%s %s as member: status %d — control request failed, the denial above proves nothing", method, pathFor(fx.OrgB), status)
 	}
+}
+
+// NewAnonymous returns a client without a session (public endpoints, login).
+func (fx *Fixture) NewAnonymous() *Client {
+	return &Client{t: fx.t, base: fx.Server.URL}
 }

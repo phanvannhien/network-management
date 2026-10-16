@@ -139,6 +139,12 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 		return LoginResult{}, fmt.Errorf("load user: %w", err)
 	}
 
+	if user.PasswordHash == "" {
+		// Invited user who has not accepted yet: no password exists, so nothing can match.
+		_, _ = VerifyPassword(password, s.dummyPwd)
+		s.audit(ctx, user.ID, "auth.login_failed", user.Email, meta)
+		return LoginResult{}, ErrInvalidCredentials
+	}
 	ok, err := VerifyPassword(password, user.PasswordHash)
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("verify password: %w", err)

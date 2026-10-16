@@ -329,6 +329,259 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/members:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listMembers
+      summary: Members of the organization
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: addMember
+      summary: Add a member by email (owner/admin/user.manage); unknown emails get a one-time invite link
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddMemberResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      operationId: updateMember
+      summary: Change role / extra permissions (optimistic lock on version)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: removeMember
+      summary: Remove a member from the organization (the last owner cannot be removed)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/members/{userId}/invite:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: regenerateInvite
+      summary: Issue a new invite link for a member who has not accepted yet (old links stop working)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /account-tokens/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+    get:
+      operationId: inspectAccountToken
+      summary: What a one-time invite / password-reset link is for (no sign-in required)
+      security: []
+      responses:
+        '200':
+          description: Valid link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTokenInfo'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: acceptAccountToken
+      summary: Set the password (and name, for invitations) using a one-time link
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptAccountTokenRequest'
+      responses:
+        '204':
+          description: Password set; sign in with it
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      summary: All users (system admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/disable:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: adminDisableUser
+      summary: Disable a user (soft delete, signs them out everywhere)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /admin/users/{userId}/enable:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: adminEnableUser
+      summary: Re-enable a disabled user
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{userId}/reset-mfa:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: adminResetMfa
+      summary: Remove MFA so the user can enroll again (lost phone and recovery codes)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{userId}/password-reset:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: adminCreatePasswordReset
+      summary: Issue a one-time password-reset link (24 h)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   securitySchemes:
     sessionCookie:
@@ -337,6 +590,13 @@ components:
       name: ntb_session
 
   parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     OrgId:
       name: orgId
       in: path
@@ -647,3 +907,158 @@ components:
           type: boolean
           default: true
           description: Make the creating system admin an owner (otherwise nobody can access it until P1-04 adds members)
+
+    Permission:
+      type: string
+      enum: [credential.reveal, credential.manage, user.manage]
+
+    Member:
+      type: object
+      required: [userId, email, displayName, role, permissions, mfaEnabled, disabled, pendingInvite, version]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        mfaEnabled:
+          type: boolean
+        disabled:
+          type: boolean
+        pendingInvite:
+          type: boolean
+          description: Invited but has not set a password yet
+        version:
+          type: integer
+          format: int32
+
+    MemberList:
+      type: object
+      required: [members]
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+
+    AddMemberRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        role:
+          $ref: '#/components/schemas/Role'
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    AddMemberResult:
+      type: object
+      required: [member, inviteToken]
+      properties:
+        member:
+          $ref: '#/components/schemas/Member'
+        inviteToken:
+          description: One-time invite token for a new user (build the link /invite/{token}); null for existing users
+          type: [string, 'null']
+
+    UpdateMemberRequest:
+      type: object
+      required: [role, permissions, version]
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        version:
+          type: integer
+          format: int32
+
+    InviteLink:
+      type: object
+      required: [inviteToken]
+      properties:
+        inviteToken:
+          type: string
+
+    PasswordResetLink:
+      type: object
+      required: [resetToken]
+      properties:
+        resetToken:
+          type: string
+          description: One-time token (build the link /invite/{token})
+
+    AccountTokenInfo:
+      type: object
+      required: [email, purpose, organizations]
+      properties:
+        email:
+          type: string
+        purpose:
+          type: string
+          enum: [invite, password_reset]
+        organizations:
+          type: array
+          items:
+            type: string
+
+    AcceptAccountTokenRequest:
+      type: object
+      required: [password]
+      properties:
+        displayName:
+          type: string
+          maxLength: 100
+        password:
+          type: string
+          maxLength: 1024
+
+    AdminUser:
+      type: object
+      required: [id, email, displayName, isSystemAdmin, mfaEnabled, disabled, pendingInvite, organizationCount, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        isSystemAdmin:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        disabled:
+          type: boolean
+        pendingInvite:
+          type: boolean
+        organizationCount:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserList:
+      type: object
+      required: [users]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUser'
