@@ -522,6 +522,34 @@ export const CLUSTER_KINDS: ClusterKind[] = [
 ]
 export const CLUSTER_ROLES: ClusterRole[] = ['primary', 'secondary', 'member']
 
+const HA_TYPES: DeviceType[] = [
+  'firewall',
+  'router',
+  'vpn_gateway',
+  'load_balancer',
+  'wireless_controller',
+  'waf',
+  'proxy',
+  'ids_ips',
+  'sdwan_edge',
+  'server',
+  'nas',
+]
+/** Device types per cluster kind, mirroring the server (ADR-027); 'other' is open. */
+const CLUSTER_TYPES: Partial<Record<ClusterKind, DeviceType[]>> = {
+  ha_active_passive: HA_TYPES,
+  ha_active_active: HA_TYPES,
+  stack: ['l2_switch', 'l3_switch', 'poe_switch'],
+  vpc: ['l2_switch', 'l3_switch'],
+  vss: ['l2_switch', 'l3_switch'],
+}
+
+/** A device of this type may join the cluster: its kind allows the type and the members share it. */
+export function canJoinCluster(c: Cluster, type: DeviceType): boolean {
+  const allowed = CLUSTER_TYPES[c.kind]
+  return (!allowed || allowed.includes(type)) && (c.memberType === '' || c.memberType === type)
+}
+
 const clusterKeys = {
   all: (orgId: string) => ['orgs', orgId, 'clusters'] as const,
   one: (orgId: string, id: string) => ['orgs', orgId, 'clusters', id] as const,

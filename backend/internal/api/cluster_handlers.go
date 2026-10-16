@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -22,6 +23,49 @@ import (
 // the cluster's unit level, raised by its site's shares.
 
 const msgClusterNotFound = "Không tìm thấy cụm thiết bị"
+
+// clusterTypes lists the device types each cluster kind applies to (ADR-027, chốt 2026-10-16); "other" is open.
+var clusterTypes = map[string][]string{
+	"ha_active_passive": haTypes,
+	"ha_active_active":  haTypes,
+	"stack":             {"l2_switch", "l3_switch", "poe_switch"},
+	"vpc":               {"l2_switch", "l3_switch"},
+	"vss":               {"l2_switch", "l3_switch"},
+}
+
+var haTypes = []string{
+	"firewall", "router", "vpn_gateway", "load_balancer", "wireless_controller", "waf", "proxy", "ids_ips",
+	"sdwan_edge", "server", "nas",
+}
+
+var clusterKindLabels = map[string]string{
+	"ha_active_passive": "HA active-passive", "ha_active_active": "HA active-active", "stack": "Stack",
+	"vpc": "vPC", "vss": "VSS", "other": "Khác",
+}
+
+// clusterFits reports whether a device type may join a cluster of the kind.
+func clusterFits(kind, deviceType string) bool {
+	types, limited := clusterTypes[kind]
+	return !limited || slices.Contains(types, deviceType)
+}
+
+// checkMemberType: the type fits the kind and matches the other members (members of a cluster share one type).
+// Returns a 400 message or "".
+func checkMemberType(ctx context.Context, q store.Querier, m tenant.Membership, c store.GetClusterRow, self pgtype.UUID, deviceType string) (string, error) {
+	if !clusterFits(c.Kind, deviceType) {
+		return fmt.Sprintf("Loại thiết bị này không dùng được cho cụm kiểu %s (dùng kiểu Khác nếu là trường hợp đặc biệt)", clusterKindLabels[c.Kind]), nil
+	}
+	members, err := q.ListClusterMembers(ctx, store.ListClusterMembersParams{OrganizationID: m.OrgID, ClusterID: c.ID})
+	if err != nil {
+		return "", fmt.Errorf("list members: %w", err)
+	}
+	for _, mb := range members {
+		if mb.ID != self && mb.Type != deviceType {
+			return fmt.Sprintf("Thành viên cụm %s phải cùng loại thiết bị (%s là %s)", c.Name, mb.Hostname, mb.Type), nil
+		}
+	}
+	return "", nil
+}
 
 func loadCluster(ctx context.Context, q store.Querier, m tenant.Membership, id uuid.UUID) (store.GetClusterRow, bool, error) {
 	v := visibilityOf(m)
@@ -59,7 +103,7 @@ func toCluster(c store.GetClusterRow, level int) apigen.Cluster {
 		Id: uuid.UUID(c.ID.Bytes), Kind: apigen.ClusterKind(c.Kind), Name: c.Name, Hostname: c.Hostname,
 		MgmtIp: prefixString(c.MgmtIp), Notes: c.Notes, SiteId: uuid.UUID(c.SiteID.Bytes), SiteCode: c.SiteCode,
 		SiteName: c.SiteName, BusinessUnitId: uuid.UUID(c.BusinessUnitID.Bytes), UnitCode: c.UnitCode,
-		PartnerCode: c.PartnerCode, MemberCount: c.MemberCount, MemberHostnames: c.MemberHostnames,
+		PartnerCode: c.PartnerCode, MemberCount: c.MemberCount, MemberHostnames: c.MemberHostnames, MemberType: c.MemberType,
 		Access: levelName(level), Version: c.Version,
 	}
 }
@@ -76,7 +120,7 @@ func (s *Server) clusterDetail(ctx context.Context, q store.Querier, m tenant.Me
 	base := toCluster(c, level)
 	out := apigen.ClusterDetail{
 		Access: base.Access, BusinessUnitId: base.BusinessUnitId, Hostname: base.Hostname, Id: base.Id, Kind: base.Kind,
-		MemberCount: base.MemberCount, MemberHostnames: base.MemberHostnames, MgmtIp: base.MgmtIp, Name: base.Name,
+		MemberCount: base.MemberCount, MemberHostnames: base.MemberHostnames, MgmtIp: base.MgmtIp, Name: base.Name, MemberType: base.MemberType,
 		Notes: base.Notes, PartnerCode: base.PartnerCode, SiteCode: base.SiteCode, SiteId: base.SiteId,
 		SiteName: base.SiteName, UnitCode: base.UnitCode, Version: base.Version,
 		Members: make([]apigen.ClusterMember, 0, len(rows)),
@@ -230,6 +274,18 @@ func (s *Server) saveCluster(ctx context.Context, m tenant.Membership, f cluster
 			(id != nil && m.UnitLevel(before.BusinessUnitID, before.PartnerID) < tenant.LevelEdit)) {
 			out.code = 403
 			return errRollback
+		}
+		if id != nil && f.kind != before.Kind && before.MemberCount > 0 {
+			members, err := q.ListClusterMembers(ctx, store.ListClusterMembersParams{OrganizationID: m.OrgID, ClusterID: before.ID})
+			if err != nil {
+				return fmt.Errorf("list members: %w", err)
+			}
+			for _, mb := range members {
+				if !clusterFits(f.kind, mb.Type) {
+					out.bad = fmt.Sprintf("Không đổi được sang kiểu %s: thành viên %s không phù hợp", clusterKindLabels[f.kind], mb.Hostname)
+					return errRollback
+				}
+			}
 		}
 		if id != nil && moved && before.MemberCount > 0 {
 			out.bad = "Cụm còn thành viên: không đổi site/đơn vị được (thành viên phải cùng site và đơn vị với cụm)"

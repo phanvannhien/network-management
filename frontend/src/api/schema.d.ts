@@ -2255,6 +2255,8 @@ export interface components {
             /** Format: int64 */
             memberCount: number;
             memberHostnames: string;
+            /** @description Device type of the members ('' when empty) — members share one type (ADR-027) */
+            memberType: string;
             access: components["schemas"]["AccessLevel"];
             /** Format: int32 */
             version: number;

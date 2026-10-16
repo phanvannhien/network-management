@@ -1032,6 +1032,9 @@ type Cluster struct {
 	MemberCount     int64              `json:"memberCount"`
 	MemberHostnames string             `json:"memberHostnames"`
 
+	// MemberType Device type of the members ('' when empty) — members share one type (ADR-027)
+	MemberType string `json:"memberType"`
+
 	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
 	MgmtIp      *string            `json:"mgmtIp"`
 	Name        string             `json:"name"`
@@ -1056,7 +1059,10 @@ type ClusterDetail struct {
 	Kind            ClusterKind        `json:"kind"`
 	MemberCount     int64              `json:"memberCount"`
 	MemberHostnames string             `json:"memberHostnames"`
-	Members         []ClusterMember    `json:"members"`
+
+	// MemberType Device type of the members ('' when empty) — members share one type (ADR-027)
+	MemberType string          `json:"memberType"`
+	Members    []ClusterMember `json:"members"`
 
 	// MgmtIp Shared management IP (CIDR), e.g. the HA cluster IP
 	MgmtIp      *string            `json:"mgmtIp"`

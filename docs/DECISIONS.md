@@ -186,6 +186,11 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   dưới khóa transaction theo hostname (`pg_advisory_xact_lock`). Rời cụm khi đang trùng hostname với thành viên khác → phải đổi
   hostname trước; xóa cụm chỉ khi không còn thành viên. IP quản trị cụm lưu trực tiếp trên cụm (CIDR); "interface ảo của cụm"
   để sau nếu cần. Hiển thị gộp trên sơ đồ làm cùng editor (P1-14+); bỏ qua IP trùng trong cụm làm ở rule validation (P1-20).
+- **Quy định loại thiết bị (người dùng chốt 2026-10-16):** cụm **không bắt buộc**. Kiểu cụm chỉ nhận loại thiết bị phù hợp —
+  HA (active-passive/active-active): firewall, router, VPN gateway, load balancer, wireless controller, WAF, proxy, IDS/IPS,
+  SD-WAN edge, server, NAS; Stack: switch L2/L3/PoE; vPC/VSS: switch L2/L3; "Khác": mọi loại (trường hợp đặc biệt).
+  Thành viên một cụm phải **cùng loại** (lỗi). Khác model/firmware chỉ **cảnh báo** (rule P1-20). Đổi kiểu cụm khi có thành
+  viên không hợp → từ chối.
 
 ### ADR-028 — Sơ đồ nhiều cấp và đi sâu (drill-down)
 - **Quyết định:** sơ đồ thuộc tổ chức, có `scope`: organization | business_unit | site (kèm id tương ứng). Ba loại:

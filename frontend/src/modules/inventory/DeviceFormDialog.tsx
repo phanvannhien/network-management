@@ -27,6 +27,7 @@ import {
   DEVICE_ROLES,
   DEVICE_TYPE_GROUPS,
   LIFECYCLES,
+  canJoinCluster,
   CLUSTER_ROLES,
   useClusters,
   useCustomFields,
@@ -480,6 +481,7 @@ export function DeviceFormDialog({
                     .filter(
                       (c) =>
                         c.siteId === f.siteId &&
+                        (c.id === device?.clusterId || canJoinCluster(c, f.type)) &&
                         (!shared || !f.businessUnitId || c.businessUnitId === f.businessUnitId),
                     )
                     .map((c) => (

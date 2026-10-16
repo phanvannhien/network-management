@@ -467,7 +467,8 @@ export const en: Strings = {
     noCluster: 'No cluster',
     role: 'Role in cluster',
     memberNo: 'Member no.',
-    deviceHint: 'Only clusters in the same site (and unit) are listed.',
+    deviceHint:
+      'Only clusters in the same site/unit whose kind fits the device type (e.g. Stack for switches, HA for firewalls) and whose members share that type.',
     kinds: {
       ha_active_passive: 'HA active-passive',
       ha_active_active: 'HA active-active',

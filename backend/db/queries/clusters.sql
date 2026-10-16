@@ -6,7 +6,9 @@ SELECT c.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
        cu.code AS unit_code, cu.name AS unit_name, cu.partner_id, cp.code AS partner_code,
        (SELECT count(*) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL)::bigint AS member_count,
        COALESCE((SELECT string_agg(m.hostname, ', ' ORDER BY m.cluster_member_no NULLS LAST, m.hostname)
-                 FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames
+                 FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames,
+       COALESCE((SELECT min(m.type) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text
+         AS member_type
 FROM device_clusters c
 JOIN sites s ON s.id = c.site_id AND s.deleted_at IS NULL
 JOIN business_units cu ON cu.id = c.business_unit_id
@@ -30,7 +32,9 @@ SELECT c.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site
        cu.code AS unit_code, cu.name AS unit_name, cu.partner_id, cp.code AS partner_code,
        (SELECT count(*) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL)::bigint AS member_count,
        COALESCE((SELECT string_agg(m.hostname, ', ' ORDER BY m.cluster_member_no NULLS LAST, m.hostname)
-                 FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames
+                 FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text AS member_hostnames,
+       COALESCE((SELECT min(m.type) FROM devices m WHERE m.cluster_id = c.id AND m.deleted_at IS NULL), '')::text
+         AS member_type
 FROM device_clusters c
 JOIN sites s ON s.id = c.site_id AND s.deleted_at IS NULL
 JOIN business_units cu ON cu.id = c.business_unit_id

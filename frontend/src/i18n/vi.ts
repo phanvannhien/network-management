@@ -463,7 +463,8 @@ export const vi = {
     noCluster: 'Không thuộc cụm',
     role: 'Vai trò trong cụm',
     memberNo: 'Số thứ tự',
-    deviceHint: 'Chỉ hiện cụm cùng site (và đơn vị) với thiết bị.',
+    deviceHint:
+      'Chỉ hiện cụm cùng site/đơn vị, có kiểu hợp với loại thiết bị (vd Stack cho switch, HA cho firewall) và cùng loại với các thành viên.',
     kinds: {
       ha_active_passive: 'HA active-passive',
       ha_active_active: 'HA active-active',

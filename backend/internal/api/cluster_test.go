@@ -98,6 +98,24 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 	if byCluster["total"] != float64(2) || byCluster["facets"].(map[string]any)["cluster"].(map[string]any)[stackID] != float64(2) {
 		t.Errorf("cluster filter: %v %v", byCluster["total"], byCluster["facets"])
 	}
+	// Kind ↔ device type (ADR-027): a camera does not stack; members share one type; "other" is open.
+	if status, _ := fx.A.Do("POST", devicesPath(org), map[string]any{"hostname": "CAM-1", "type": "ip_camera", "siteId": bd, "clusterId": stackID}); status != http.StatusBadRequest {
+		t.Errorf("camera into a stack: %d, want 400", status)
+	}
+	if status, _ := fx.A.Do("POST", devicesPath(org), map[string]any{"hostname": "SW-L2", "type": "l2_switch", "siteId": bd, "clusterId": stackID}); status != http.StatusBadRequest {
+		t.Errorf("L2 switch into an L3 stack: %d, want 400", status)
+	}
+	other := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "other", "name": "CAM-PAIR", "siteId": bd}))
+	mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "CAM-A", "type": "ip_camera", "siteId": bd, "clusterId": other})
+	if status, _ := fx.A.Do("POST", devicesPath(org), map[string]any{"hostname": "NVR-A", "type": "nvr", "siteId": bd, "clusterId": other}); status != http.StatusBadRequest {
+		t.Errorf("mixed types in an 'other' cluster: %d, want 400", status)
+	}
+	if status, _ := fx.A.Do("PATCH", clustersPath(org)+"/"+stackID, map[string]any{"kind": "ha_active_passive", "name": "BD-STACK", "siteId": bd, "version": 1}); status != http.StatusBadRequest {
+		t.Errorf("switch stack turned into HA: %d, want 400", status)
+	}
+	if status, _ := fx.A.Do("PATCH", clustersPath(org)+"/"+stackID, map[string]any{"kind": "vss", "name": "BD-STACK", "siteId": bd, "version": 1}); status != http.StatusOK {
+		t.Errorf("L3 stack turned into VSS: %d", status)
+	}
 	// The role is dropped when no cluster is set.
 	_, x1 := fx.A.Do("GET", devicesPath(org)+"?q=X1", nil)
 	if d := x1["devices"].([]any)[0].(map[string]any); d["clusterRole"] != nil || d["clusterMemberNo"] != nil {
@@ -118,7 +136,7 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 	if detail["memberCount"] != float64(1) || len(detail["members"].([]any)) != 1 {
 		t.Errorf("cluster detail: %v", detail)
 	}
-	if status, _ := fx.A.Do("PATCH", clustersPath(org)+"/"+stackID, map[string]any{"kind": "stack", "name": "BD-STACK", "siteId": hn, "version": 1}); status != http.StatusBadRequest {
+	if status, _ := fx.A.Do("PATCH", clustersPath(org)+"/"+stackID, map[string]any{"kind": "stack", "name": "BD-STACK", "siteId": hn, "version": 2}); status != http.StatusBadRequest {
 		t.Errorf("move a cluster with members: %d, want 400", status)
 	}
 	if status, _ := fx.A.Do("DELETE", clustersPath(org)+"/"+stackID, nil); status != http.StatusConflict {
@@ -132,7 +150,7 @@ func TestClusterMembersAndHostnameRule(t *testing.T) {
 	if status, _ := fx.A.Do("DELETE", clustersPath(org)+"/"+stackID, nil); status != http.StatusNoContent {
 		t.Errorf("delete the empty cluster: %d", status)
 	}
-	for action, want := range map[string]int{"cluster.create": 1, "cluster.delete": 1} {
+	for action, want := range map[string]int{"cluster.create": 2, "cluster.update": 1, "cluster.delete": 1} {
 		if got := auditCount(t, fx.Pool, action, org); got != want {
 			t.Errorf("%s audit rows = %d, want %d", action, got, want)
 		}

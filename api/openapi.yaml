@@ -4763,7 +4763,7 @@ components:
 
     Cluster:
       type: object
-      required: [id, kind, name, hostname, mgmtIp, notes, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, memberCount, memberHostnames, access, version]
+      required: [id, kind, name, hostname, mgmtIp, notes, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, memberCount, memberHostnames, memberType, access, version]
       properties:
         id:
           type: string
@@ -4803,6 +4803,9 @@ components:
           format: int64
         memberHostnames:
           type: string
+        memberType:
+          type: string
+          description: Device type of the members ('' when empty) — members share one type (ADR-027)
         access:
           $ref: '#/components/schemas/AccessLevel'
         version:

@@ -1656,6 +1656,7 @@ describe('device inventory (P1-08)', () => {
     partnerCode: 'AGRI',
     memberCount: 0,
     memberHostnames: '',
+    memberType: '',
     access: 'edit',
     version: 1,
   }
@@ -1702,7 +1703,14 @@ describe('device inventory (P1-08)', () => {
   it('a device joins a cluster of its site from the device form', async () => {
     const calls = fakeApi(
       routes({
-        [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [CLUSTER] }),
+        [`GET /api/orgs/${ORG_ID}/clusters`]: () =>
+          json({
+            clusters: [
+              CLUSTER,
+              { ...CLUSTER, id: 'cl-2', kind: 'stack', name: 'BD-STACK' },
+              { ...CLUSTER, id: 'cl-3', name: 'SRV-HA', memberCount: 2, memberType: 'server' },
+            ],
+          }),
         [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () => json({ interfaces: [] }),
         [`PATCH /api/orgs/${ORG_ID}/devices/dev-1`]: () => json({ ...DEVICE, version: 4 }),
       }),
@@ -1714,6 +1722,9 @@ describe('device inventory (P1-08)', () => {
     await waitFor(() =>
       expect(within(select).getByRole('option', { name: /BD-FW-HA/ })).toBeInTheDocument(),
     )
+    // A switch stack and an HA pair of servers are not offered for a firewall (ADR-027).
+    expect(within(select).queryByRole('option', { name: /BD-STACK/ })).not.toBeInTheDocument()
+    expect(within(select).queryByRole('option', { name: /SRV-HA/ })).not.toBeInTheDocument()
     fireEvent.change(select, { target: { value: 'cl-1' } })
     fireEvent.change(within(dialog).getByLabelText('Vai trò trong cụm'), {
       target: { value: 'primary' },

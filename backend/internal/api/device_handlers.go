@@ -703,6 +703,12 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 				out.bad = fmt.Sprintf("Thành viên cụm %s phải ở site %s và thuộc đơn vị %s › %s", c.Name, c.SiteCode, c.PartnerCode, c.UnitCode)
 				return errRollback
 			}
+			if bad, err := checkMemberType(ctx, q, m, c, self, f.typ); err != nil {
+				return err
+			} else if bad != "" {
+				out.bad = bad
+				return errRollback
+			}
 			cluster = c.ID
 		}
 		// Hostnames are unique among live devices except within one cluster (a stack); serialized per hostname.

@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { atLeast } from '@/modules/sites/access'
 import { ClusterDialog } from './ClusterDialog'
 import {
+  canJoinCluster,
   CLUSTER_ROLES,
   deviceToInput,
   useCluster,
@@ -51,6 +52,7 @@ function JoinClusterDialog({
     (c) =>
       c.siteId === device.siteId &&
       c.businessUnitId === device.businessUnitId &&
+      canJoinCluster(c, device.type) &&
       atLeast(c.access, 'edit'),
   )
   const join = (id: string) =>

@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Quy định loại thiết bị cho cụm (ADR-027)
+- Đã làm (người dùng chốt phương án đề xuất): kiểu cụm chỉ nhận loại thiết bị phù hợp (HA: firewall/router/VPN/LB/WLC/WAF/proxy/
+  IDS-IPS/SD-WAN/server/NAS; Stack: switch L2/L3/PoE; vPC/VSS: switch L2/L3; Khác: mọi loại); thành viên cùng cụm phải cùng loại;
+  đổi kiểu cụm khi có thành viên không hợp → 400. API cụm trả `memberType`; form thiết bị và hộp "Thêm vào cụm" chỉ liệt kê cụm
+  hợp với loại thiết bị. Khác model/firmware sẽ là cảnh báo ở P1-20. Cụm không bắt buộc.
+- Test / cách kiểm tra: Go — camera vào stack, switch L2 vào stack L3, trộn loại trong cụm "Khác", đổi stack → HA: đều 400; stack
+  L3 → VSS: OK; 3 mutation backend + 1 frontend đều bị bắt. Vitest 167 pass. `make check` pass.
+- Còn dở / lỗi đã biết: cảnh báo khác model/firmware ở P1-20.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-10** IPAM cơ bản.
+
 ## 2026-10-16 — Sắp lại chỗ quản lý Template và Cụm thiết bị (theo SRS §2)
 - Đã làm (người dùng chốt phương án đề xuất):
   - Bỏ 2 menu riêng "Cụm thiết bị" và "Template thiết bị" ở nhóm chính (SRS §2 không có).
