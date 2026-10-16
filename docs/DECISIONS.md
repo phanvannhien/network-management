@@ -62,6 +62,9 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Quyết định:** quy hoạch = `ip_ranges` trong subnet (dhcp|static|reserved, purpose, vlan); khai báo = IP của interface
   và thành viên `endpoint_members`; thực tế (Phase 3) = ARP của gateway + bảng MAC của switch qua SNMP.
   Mức sử dụng dải là giá trị tính toán. Switch hiển thị dải/VLAN nó phục vụ, suy ra từ link.
+- **Chi tiết triển khai (P1-10/P1-11, người dùng đồng ý 2026-10-16):** dải IP **không có trường VLAN riêng** — dùng VLAN của
+  subnet chứa nó (một subnet chạy trên đúng một VLAN, trường riêng chỉ tạo dữ liệu mâu thuẫn). "Đang dùng" = view
+  `ipam_addresses`: IP interface thiết bị + IP quản trị cụm + IP thành viên nhóm đầu cuối (VRF của subnet chứa dải của nhóm).
 
 ### ADR-015 — Backend và database ngay từ MVP; database là nguồn sự thật *(thay thế ADR-007)*
 - **Quyết định:** Phase 1 đã có Go API + Postgres + đăng nhập. Dữ liệu mạng (thiết bị, interface, IP, link, subnet…)

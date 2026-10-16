@@ -2096,6 +2096,229 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/endpoint-groups:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listEndpointGroups
+      summary: Endpoint groups the caller may see
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointGroupList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createEndpointGroup
+      summary: Create an endpoint group
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointGroupInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointGroupDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgId}/endpoint-groups/{groupId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/GroupId'
+    get:
+      operationId: getEndpointGroup
+      summary: An endpoint group with its members
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointGroupDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateEndpointGroup
+      summary: Update an endpoint group (optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointGroupUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointGroupDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteEndpointGroup
+      summary: Delete an endpoint group and its members
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orgs/{orgId}/endpoint-groups/{groupId}/members:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/GroupId'
+    post:
+      operationId: createEndpointMember
+      summary: Add a member to an endpoint group
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointMemberInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/GroupId'
+      - $ref: '#/components/parameters/MemberId'
+    patch:
+      operationId: updateEndpointMember
+      summary: Update a member (optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointMemberUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteEndpointMember
+      summary: Remove a member
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/GroupId'
+      - $ref: '#/components/parameters/MemberId'
+    post:
+      operationId: promoteEndpointMember
+      summary: Turn a member into a device (interface, MAC and IP carried over; member removed)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoteMemberInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /orgs/{orgId}/vlans:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -2881,6 +3104,20 @@ components:
         format: uuid
     ClusterId:
       name: clusterId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MemberId:
+      name: memberId
       in: path
       required: true
       schema:
@@ -5484,12 +5721,210 @@ components:
           items:
             $ref: '#/components/schemas/Subnet'
 
+    EndpointKind:
+      type: string
+      description: The device type of the group's members (used when a member becomes a device)
+      enum: [pc, laptop, printer, ip_camera, ip_phone, access_point, access_control, video_conference, iot, server, vm, nas, other]
+
+    EndpointGroupInput:
+      type: object
+      required: [kind, name, siteId]
+      properties:
+        kind:
+          $ref: '#/components/schemas/EndpointKind'
+        name:
+          type: string
+          maxLength: 100
+        siteId:
+          type: string
+          format: uuid
+        businessUnitId:
+          type: [string, 'null']
+          format: uuid
+          description: owner unit, only for a shared site
+        ipRangeId:
+          type: [string, 'null']
+          format: uuid
+          description: planned IP range of a subnet of the same site (or organization-wide)
+        expectedCount:
+          type: [integer, 'null']
+          format: int32
+          minimum: 0
+          maximum: 100000
+        notes:
+          type: string
+          maxLength: 2000
+
+    EndpointGroupUpdate:
+      allOf:
+        - $ref: '#/components/schemas/EndpointGroupInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    EndpointGroup:
+      type: object
+      required: [id, kind, name, siteId, siteCode, siteName, businessUnitId, unitCode, partnerCode, ipRangeId, rangeStart,
+                 rangeEnd, rangeKind, rangePurpose, subnetId, subnetCidr, vrf, expectedCount, memberCount, total, notes,
+                 access, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/EndpointKind'
+        name:
+          type: string
+        siteId:
+          type: string
+          format: uuid
+        siteCode:
+          type: string
+        siteName:
+          type: string
+        businessUnitId:
+          type: string
+          format: uuid
+        unitCode:
+          type: string
+        partnerCode:
+          type: string
+        ipRangeId:
+          type: [string, 'null']
+          format: uuid
+        rangeStart:
+          type: [string, 'null']
+        rangeEnd:
+          type: [string, 'null']
+        rangeKind:
+          type: string
+          description: dhcp | static | reserved, empty without a range
+        rangePurpose:
+          type: string
+        subnetId:
+          type: [string, 'null']
+          format: uuid
+        subnetCidr:
+          type: [string, 'null']
+        vrf:
+          type: string
+        expectedCount:
+          type: [integer, 'null']
+          format: int32
+        memberCount:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+          description: the "used / total" badge total — expected count, else the range size, else the member count
+        notes:
+          type: string
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    EndpointGroupList:
+      type: object
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointGroup'
+
+    EndpointMemberInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        ip:
+          type: [string, 'null']
+          description: a single address, e.g. 10.72.120.15 (inside the group's range when it has one)
+        mac:
+          type: [string, 'null']
+        interfaceId:
+          type: [string, 'null']
+          format: uuid
+          description: the physical switch port the member plugs into (a device of the same site)
+        notes:
+          type: string
+          maxLength: 500
+
+    EndpointMemberUpdate:
+      allOf:
+        - $ref: '#/components/schemas/EndpointMemberInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    EndpointMember:
+      type: object
+      required: [id, name, ip, address, mac, interfaceId, interfaceName, portDeviceId, portHostname, notes, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ip:
+          type: [string, 'null']
+        address:
+          type: [string, 'null']
+          description: the IP with the subnet's prefix length when the group has a range
+        mac:
+          type: [string, 'null']
+        interfaceId:
+          type: [string, 'null']
+          format: uuid
+        interfaceName:
+          type: string
+        portDeviceId:
+          type: [string, 'null']
+          format: uuid
+        portHostname:
+          type: string
+        notes:
+          type: string
+        version:
+          type: integer
+          format: int32
+
+    EndpointGroupDetail:
+      allOf:
+        - $ref: '#/components/schemas/EndpointGroup'
+        - type: object
+          required: [members]
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/EndpointMember'
+
+    PromoteMemberInput:
+      type: object
+      properties:
+        hostname:
+          type: string
+          maxLength: 253
+          description: the new device's hostname; defaults to the member name
+
     IpAssignment:
       type: object
       description: >-
-        An address in use, either on a device interface or as the management IP of a device cluster
-        (clusterId set, deviceId null, role primary, VRF empty).
-      required: [address, host, role, vrf, deviceId, clusterId, hostname, interfaceName]
+        An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF
+        empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet).
+      required: [address, host, role, vrf, deviceId, clusterId, endpointGroupId, hostname, interfaceName]
       properties:
         address:
           type: string
@@ -5505,9 +5940,14 @@ components:
         clusterId:
           type: [string, 'null']
           format: uuid
+        endpointGroupId:
+          type: [string, 'null']
+          format: uuid
         hostname:
           type: string
-          description: device hostname, or the cluster hostname (its name when no hostname is set)
+          description: >-
+            device hostname, the cluster hostname (its name when no hostname is set), or the endpoint member name
+            (interfaceName then holds the group name)
         interfaceName:
           type: string
 

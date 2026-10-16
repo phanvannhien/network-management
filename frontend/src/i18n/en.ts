@@ -455,6 +455,15 @@ export const en: Strings = {
     },
   },
   guides: {
+    endpointGroup:
+      'An endpoint group = many similar devices (cameras, PCs, IP phones…) managed as one item, drawn as one icon with a "used/total" badge.',
+    endpointKind:
+      'The type of each device in the group; used when a member is split off as a device.',
+    endpointExpected:
+      'How many devices are planned (e.g. 20 cameras). Empty = the size of the IP range.',
+    endpointRange:
+      'The planned IP range for the group (e.g. "camera static IPs"); member IPs must be inside it.',
+    endpointPort: 'The switch and port the device plugs into — handy when tracing a cable.',
     hostname:
       'The device name following your convention, e.g. AGRI-BD-FW01 (partner–site–type+number).',
     type: 'Pick the right type so the matching rules apply (clusters, templates, diagram icon).',
@@ -633,9 +642,57 @@ export const en: Strings = {
     notFound: 'Subnet not found',
     notFoundBody: 'The subnet does not exist or you may not see it.',
     back: 'Back to IPAM',
+    groupMember: 'Member of {{group}}',
     clusterIp: 'Cluster management IP',
     clusterIpHint:
       'The shared address of the cluster (HA/stack), on no interface; managed from a member device page.',
+  },
+  endpoints: {
+    title: 'Endpoint groups',
+    tabDevices: 'Devices',
+    add: 'Add endpoint group',
+    edit: 'Edit group',
+    delete: 'Delete group',
+    deleteTitle: 'Delete group {{name}}?',
+    deleteBody:
+      'Its {{count}} members are deleted too. Devices already split off are not affected.',
+    saved: 'Saved',
+    deleted: 'Group deleted',
+    name: 'Group name',
+    nameHint: 'Unique within a site, e.g. "Factory cameras", "Accounting PCs".',
+    kind: 'Device type',
+    subnet: 'Subnet',
+    range: 'IP range',
+    noRange: 'No IP range',
+    chooseRange: 'Choose range…',
+    expected: 'Expected count',
+    used: 'Used / total',
+    notes: 'Notes',
+    search: 'Search group, IP range…',
+    emptyTitle: 'No endpoint groups yet',
+    emptyBody: 'Group similar devices (cameras, PCs, IP phones…) instead of declaring each one.',
+    members: 'Members',
+    noMembers: 'No members yet. An expected count is enough; add members to track each IP/MAC.',
+    memberAdd: 'Add member',
+    memberEdit: 'Edit member',
+    memberDelete: 'Delete member',
+    memberDeleteTitle: 'Delete member {{name}}?',
+    memberName: 'Name',
+    memberNameHint: 'Device name or code, e.g. CAM-01; unique in the group.',
+    ip: 'IP',
+    ipInRange: 'Must be inside {{range}}.',
+    ipOptional: 'Leave empty when the device gets its address by DHCP.',
+    switch: 'Plugged into device',
+    port: 'Port',
+    noPort: 'Not recorded',
+    choosePort: 'Choose port…',
+    promote: 'Split off as device',
+    promoteTitle: 'Split {{name}} off as a device',
+    promoteBody:
+      'Creates a {{type}} device at site {{site}} whose eth0 carries the member IP and MAC (the IP becomes its management IP); the switch port goes into the notes. The member leaves the group.',
+    promoted: 'Device {{hostname}} created',
+    promoteHint:
+      'Split a member off when it needs its own record (S/N, warranty, monitoring, its own node on diagrams).',
   },
   clusters: {
     join: 'Join a cluster',
@@ -1049,6 +1106,7 @@ export const en: Strings = {
     },
   },
   errors: {
+    endpointsLoad: 'Could not load endpoint groups',
     ipamLoad: 'Could not load IPAM data',
     templatesLoad: 'Could not load templates',
     clustersLoad: 'Could not load clusters',

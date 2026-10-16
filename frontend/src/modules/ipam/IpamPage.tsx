@@ -29,7 +29,7 @@ import {
   type Subnet,
   type Vlan,
 } from './ipam'
-import { HolderLink, UsageBar, VlanChip } from './UsageBar'
+import { HolderLink, HolderRole, UsageBar, VlanChip } from './UsageBar'
 
 const TABS = ['subnets', 'vlans'] as const
 type Tab = (typeof TABS)[number]
@@ -509,7 +509,7 @@ function IpLookupPanel({ orgId }: { orgId: string }) {
                     )}
                     <span className="font-mono text-tech text-muted-foreground">{a.address}</span>
                     <span className="text-muted-foreground">
-                      {a.clusterId ? t('ipam.clusterIp') : t(`devices.ipRoles.${a.role}`)}
+                      <HolderRole ip={a} />
                       {a.vrf && ` · VRF ${a.vrf}`}
                     </span>
                   </li>

@@ -109,7 +109,7 @@ DELETE FROM subnets WHERE id = @id AND organization_id = @organization_id;
 -- name: ListSubnetIPs :many
 -- Addresses in use inside a subnet (same VRF), with whether the caller may see the device / cluster.
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
-       a.cluster_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
+       a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
        (NOT @restricted::boolean
           OR a.unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
           OR dsb.id = ANY (@grant_units::uuid[]) OR dsb.partner_id = ANY (@grant_partners::uuid[])
@@ -170,7 +170,7 @@ ORDER BY masklen(sn.cidr) DESC, sn.vrf;
 -- name: LookupIPs :many
 -- Interfaces and clusters holding the address (any VRF).
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
-       a.cluster_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
+       a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
        (NOT @restricted::boolean
           OR a.unit_id = ANY (@grant_units::uuid[]) OR du.partner_id = ANY (@grant_partners::uuid[])
           OR dsb.id = ANY (@grant_units::uuid[]) OR dsb.partner_id = ANY (@grant_partners::uuid[])

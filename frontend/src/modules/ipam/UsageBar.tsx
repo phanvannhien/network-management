@@ -80,9 +80,18 @@ export function VlanChip({
   )
 }
 
-/** Who holds an address: a link to the device, or the cluster name (clusters are managed on member pages). */
+/** Who holds an address: a link to the device or endpoint group, or the cluster name (managed on member pages). */
 export function HolderLink({ orgId, ip }: { orgId: string; ip: IpAssignment }) {
   const { t } = useTranslation()
+  if (ip.endpointGroupId)
+    return (
+      <Link
+        to={`/o/${orgId}/endpoint-groups/${ip.endpointGroupId}`}
+        className="font-medium hover:text-primary hover:underline"
+      >
+        {ip.hostname}
+      </Link>
+    )
   if (!ip.deviceId)
     return (
       <span className="font-medium" title={t('ipam.clusterIpHint')}>
@@ -97,4 +106,12 @@ export function HolderLink({ orgId, ip }: { orgId: string; ip: IpAssignment }) {
       {ip.hostname}
     </Link>
   )
+}
+
+/** How an address is held: an IP role, the cluster's shared IP, or an endpoint group member. */
+export function HolderRole({ ip }: { ip: IpAssignment }) {
+  const { t } = useTranslation()
+  if (ip.endpointGroupId) return <>{t('ipam.groupMember', { group: ip.interfaceName })}</>
+  if (ip.clusterId) return <>{t('ipam.clusterIp')}</>
+  return <>{t(`devices.ipRoles.${ip.role}`)}</>
 }

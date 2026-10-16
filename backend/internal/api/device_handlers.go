@@ -650,7 +650,14 @@ type deviceOutcome struct {
 
 func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFields, id *uuid.UUID, version int32) (deviceOutcome, error) {
 	var out deviceOutcome
-	err := s.withTx(ctx, func(q store.Querier) error {
+	err := s.withTx(ctx, func(q store.Querier) error { return writeDevice(ctx, q, m, f, id, version, &out) })
+	return out, err
+}
+
+// writeDevice creates (id nil) or updates a device inside the caller's transaction; a refusal is reported in out
+// with errRollback.
+func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f deviceFields, id *uuid.UUID, version int32, out *deviceOutcome) error {
+	{
 		var before store.GetDeviceRow
 		self, keepUnit := pgtype.UUID{}, pgtype.UUID{}
 		if id != nil {
@@ -832,8 +839,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 			entry.Action, entry.Before = "device.update", snapDevice(before)
 		}
 		return audit.Write(ctx, q, entry)
-	})
-	return out, err
+	}
 }
 
 func bodyFromInput(b apigen.DeviceInput) deviceBody {

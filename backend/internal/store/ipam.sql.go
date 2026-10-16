@@ -392,7 +392,7 @@ func (q *Queries) ListRanges(ctx context.Context, arg ListRangesParams) ([]IpRan
 
 const listSubnetIPs = `-- name: ListSubnetIPs :many
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
-       a.cluster_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
+       a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
        (NOT $1::boolean
           OR a.unit_id = ANY ($2::uuid[]) OR du.partner_id = ANY ($3::uuid[])
           OR dsb.id = ANY ($2::uuid[]) OR dsb.partner_id = ANY ($3::uuid[])
@@ -427,6 +427,7 @@ type ListSubnetIPsRow struct {
 	Vrf           string
 	DeviceID      pgtype.UUID
 	ClusterID     pgtype.UUID
+	GroupID       pgtype.UUID
 	Hostname      string
 	InterfaceName string
 	Visible       bool
@@ -457,6 +458,7 @@ func (q *Queries) ListSubnetIPs(ctx context.Context, arg ListSubnetIPsParams) ([
 			&i.Vrf,
 			&i.DeviceID,
 			&i.ClusterID,
+			&i.GroupID,
 			&i.Hostname,
 			&i.InterfaceName,
 			&i.Visible,
@@ -671,7 +673,7 @@ func (q *Queries) ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVla
 
 const lookupIPs = `-- name: LookupIPs :many
 SELECT a.host::inet AS host, a.address::text AS address, a.role::text AS role, a.vrf::text AS vrf, a.device_id,
-       a.cluster_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
+       a.cluster_id, a.group_id, a.hostname::text AS hostname, a.interface_name::text AS interface_name,
        (NOT $1::boolean
           OR a.unit_id = ANY ($2::uuid[]) OR du.partner_id = ANY ($3::uuid[])
           OR dsb.id = ANY ($2::uuid[]) OR dsb.partner_id = ANY ($3::uuid[])
@@ -705,6 +707,7 @@ type LookupIPsRow struct {
 	Vrf           string
 	DeviceID      pgtype.UUID
 	ClusterID     pgtype.UUID
+	GroupID       pgtype.UUID
 	Hostname      string
 	InterfaceName string
 	Visible       bool
@@ -734,6 +737,7 @@ func (q *Queries) LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupI
 			&i.Vrf,
 			&i.DeviceID,
 			&i.ClusterID,
+			&i.GroupID,
 			&i.Hostname,
 			&i.InterfaceName,
 			&i.Visible,

@@ -34,7 +34,7 @@ import {
   type IpRange,
   type SubnetDetail,
 } from './ipam'
-import { HolderLink, UsageBar, VlanChip } from './UsageBar'
+import { HolderLink, HolderRole, UsageBar, VlanChip } from './UsageBar'
 
 function NextFree({ orgId, subnetId }: { orgId: string; subnetId: string }) {
   const { t } = useTranslation()
@@ -232,9 +232,11 @@ function IpsSection({ orgId, subnet }: { orgId: string; subnet: SubnetDetail }) 
                   <TableCell>
                     <HolderLink orgId={orgId} ip={ip} />
                   </TableCell>
-                  <TableCell className="font-mono text-tech">{ip.interfaceName}</TableCell>
+                  <TableCell className="font-mono text-tech">
+                    {ip.endpointGroupId ? '' : ip.interfaceName}
+                  </TableCell>
                   <TableCell>
-                    {ip.clusterId ? t('ipam.clusterIp') : t(`devices.ipRoles.${ip.role}`)}
+                    <HolderRole ip={ip} />
                     {ip.host === subnet.gateway && ` · ${t('ipam.gateway')}`}
                   </TableCell>
                 </TableRow>

@@ -140,6 +140,35 @@ type DeviceTemplate struct {
 	Version        int32
 }
 
+type EndpointGroup struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	BusinessUnitID pgtype.UUID
+	SiteID         pgtype.UUID
+	Kind           string
+	Name           string
+	IpRangeID      pgtype.UUID
+	ExpectedCount  pgtype.Int4
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
+type EndpointMember struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	GroupID        pgtype.UUID
+	Name           string
+	Ip             *netip.Addr
+	Mac            net.HardwareAddr
+	InterfaceID    pgtype.UUID
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Interface struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -200,6 +229,7 @@ type IpamAddress struct {
 	Role           string
 	DeviceID       pgtype.UUID
 	ClusterID      pgtype.UUID
+	GroupID        pgtype.UUID
 	Hostname       string
 	InterfaceName  string
 	UnitID         pgtype.UUID

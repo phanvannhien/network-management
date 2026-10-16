@@ -66,6 +66,14 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **Poll address** | Địa chỉ hệ thống giám sát (Phase 3) dùng để hỏi thiết bị; trống = IP quản trị | Poller đi qua IP NAT |
 | **IPv6** | Thế hệ địa chỉ mới, dài hơn | `2001:db8::1/64` |
 
+## 4b. Nhóm thiết bị đầu cuối
+
+| Thuật ngữ | Là gì | Ví dụ |
+| --- | --- | --- |
+| **Nhóm thiết bị đầu cuối** | Nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) quản lý như một mục: dải IP, số lượng dự kiến, danh sách thành viên. Trên sơ đồ là một biểu tượng có "đã dùng/tổng" | "Camera nhà xưởng" 14/20 |
+| **Thành viên** | Một thiết bị trong nhóm, chỉ ghi tên, IP, MAC, cổng switch đang cắm | `CAM-01` · `10.72.120.2` · cắm `BD-SW01 Gi1/0/5` |
+| **Tách thành thiết bị** | Biến một thành viên thành thiết bị đầy đủ khi cần quản lý riêng (S/N, bảo hành, giám sát) | Camera cổng chính cần theo dõi bảo hành |
+
 ## 5. Dự phòng và cụm thiết bị
 
 | Thuật ngữ | Là gì | Ví dụ |

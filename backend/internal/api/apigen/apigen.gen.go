@@ -308,6 +308,57 @@ func (e DeviceType) Valid() bool {
 	}
 }
 
+// Defines values for EndpointKind.
+const (
+	EndpointKindAccessControl   EndpointKind = "access_control"
+	EndpointKindAccessPoint     EndpointKind = "access_point"
+	EndpointKindIot             EndpointKind = "iot"
+	EndpointKindIpCamera        EndpointKind = "ip_camera"
+	EndpointKindIpPhone         EndpointKind = "ip_phone"
+	EndpointKindLaptop          EndpointKind = "laptop"
+	EndpointKindNas             EndpointKind = "nas"
+	EndpointKindOther           EndpointKind = "other"
+	EndpointKindPc              EndpointKind = "pc"
+	EndpointKindPrinter         EndpointKind = "printer"
+	EndpointKindServer          EndpointKind = "server"
+	EndpointKindVideoConference EndpointKind = "video_conference"
+	EndpointKindVm              EndpointKind = "vm"
+)
+
+// Valid indicates whether the value is a known member of the EndpointKind enum.
+func (e EndpointKind) Valid() bool {
+	switch e {
+	case EndpointKindAccessControl:
+		return true
+	case EndpointKindAccessPoint:
+		return true
+	case EndpointKindIot:
+		return true
+	case EndpointKindIpCamera:
+		return true
+	case EndpointKindIpPhone:
+		return true
+	case EndpointKindLaptop:
+		return true
+	case EndpointKindNas:
+		return true
+	case EndpointKindOther:
+		return true
+	case EndpointKindPc:
+		return true
+	case EndpointKindPrinter:
+		return true
+	case EndpointKindServer:
+		return true
+	case EndpointKindVideoConference:
+		return true
+	case EndpointKindVm:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -1488,6 +1539,157 @@ type DeviceUpdate struct {
 	WarrantyEnd *openapi_types.Date `json:"warrantyEnd,omitempty"`
 }
 
+// EndpointGroup defines model for EndpointGroup.
+type EndpointGroup struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel         `json:"access"`
+	BusinessUnitId openapi_types.UUID  `json:"businessUnitId"`
+	ExpectedCount  *int32              `json:"expectedCount"`
+	Id             openapi_types.UUID  `json:"id"`
+	IpRangeId      *openapi_types.UUID `json:"ipRangeId"`
+
+	// Kind The device type of the group's members (used when a member becomes a device)
+	Kind        EndpointKind `json:"kind"`
+	MemberCount int64        `json:"memberCount"`
+	Name        string       `json:"name"`
+	Notes       string       `json:"notes"`
+	PartnerCode string       `json:"partnerCode"`
+	RangeEnd    *string      `json:"rangeEnd"`
+
+	// RangeKind dhcp | static | reserved, empty without a range
+	RangeKind    string              `json:"rangeKind"`
+	RangePurpose string              `json:"rangePurpose"`
+	RangeStart   *string             `json:"rangeStart"`
+	SiteCode     string              `json:"siteCode"`
+	SiteId       openapi_types.UUID  `json:"siteId"`
+	SiteName     string              `json:"siteName"`
+	SubnetCidr   *string             `json:"subnetCidr"`
+	SubnetId     *openapi_types.UUID `json:"subnetId"`
+
+	// Total the "used / total" badge total — expected count, else the range size, else the member count
+	Total    int64  `json:"total"`
+	UnitCode string `json:"unitCode"`
+	Version  int32  `json:"version"`
+	Vrf      string `json:"vrf"`
+}
+
+// EndpointGroupDetail defines model for EndpointGroupDetail.
+type EndpointGroupDetail struct {
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access         AccessLevel         `json:"access"`
+	BusinessUnitId openapi_types.UUID  `json:"businessUnitId"`
+	ExpectedCount  *int32              `json:"expectedCount"`
+	Id             openapi_types.UUID  `json:"id"`
+	IpRangeId      *openapi_types.UUID `json:"ipRangeId"`
+
+	// Kind The device type of the group's members (used when a member becomes a device)
+	Kind        EndpointKind     `json:"kind"`
+	MemberCount int64            `json:"memberCount"`
+	Members     []EndpointMember `json:"members"`
+	Name        string           `json:"name"`
+	Notes       string           `json:"notes"`
+	PartnerCode string           `json:"partnerCode"`
+	RangeEnd    *string          `json:"rangeEnd"`
+
+	// RangeKind dhcp | static | reserved, empty without a range
+	RangeKind    string              `json:"rangeKind"`
+	RangePurpose string              `json:"rangePurpose"`
+	RangeStart   *string             `json:"rangeStart"`
+	SiteCode     string              `json:"siteCode"`
+	SiteId       openapi_types.UUID  `json:"siteId"`
+	SiteName     string              `json:"siteName"`
+	SubnetCidr   *string             `json:"subnetCidr"`
+	SubnetId     *openapi_types.UUID `json:"subnetId"`
+
+	// Total the "used / total" badge total — expected count, else the range size, else the member count
+	Total    int64  `json:"total"`
+	UnitCode string `json:"unitCode"`
+	Version  int32  `json:"version"`
+	Vrf      string `json:"vrf"`
+}
+
+// EndpointGroupInput defines model for EndpointGroupInput.
+type EndpointGroupInput struct {
+	// BusinessUnitId owner unit, only for a shared site
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+	ExpectedCount  *int32              `json:"expectedCount,omitempty"`
+
+	// IpRangeId planned IP range of a subnet of the same site (or organization-wide)
+	IpRangeId *openapi_types.UUID `json:"ipRangeId,omitempty"`
+
+	// Kind The device type of the group's members (used when a member becomes a device)
+	Kind   EndpointKind       `json:"kind"`
+	Name   string             `json:"name"`
+	Notes  *string            `json:"notes,omitempty"`
+	SiteId openapi_types.UUID `json:"siteId"`
+}
+
+// EndpointGroupList defines model for EndpointGroupList.
+type EndpointGroupList struct {
+	Groups []EndpointGroup `json:"groups"`
+}
+
+// EndpointGroupUpdate defines model for EndpointGroupUpdate.
+type EndpointGroupUpdate struct {
+	// BusinessUnitId owner unit, only for a shared site
+	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
+	ExpectedCount  *int32              `json:"expectedCount,omitempty"`
+
+	// IpRangeId planned IP range of a subnet of the same site (or organization-wide)
+	IpRangeId *openapi_types.UUID `json:"ipRangeId,omitempty"`
+
+	// Kind The device type of the group's members (used when a member becomes a device)
+	Kind    EndpointKind       `json:"kind"`
+	Name    string             `json:"name"`
+	Notes   *string            `json:"notes,omitempty"`
+	SiteId  openapi_types.UUID `json:"siteId"`
+	Version int32              `json:"version"`
+}
+
+// EndpointKind The device type of the group's members (used when a member becomes a device)
+type EndpointKind string
+
+// EndpointMember defines model for EndpointMember.
+type EndpointMember struct {
+	// Address the IP with the subnet's prefix length when the group has a range
+	Address       *string             `json:"address"`
+	Id            openapi_types.UUID  `json:"id"`
+	InterfaceId   *openapi_types.UUID `json:"interfaceId"`
+	InterfaceName string              `json:"interfaceName"`
+	Ip            *string             `json:"ip"`
+	Mac           *string             `json:"mac"`
+	Name          string              `json:"name"`
+	Notes         string              `json:"notes"`
+	PortDeviceId  *openapi_types.UUID `json:"portDeviceId"`
+	PortHostname  string              `json:"portHostname"`
+	Version       int32               `json:"version"`
+}
+
+// EndpointMemberInput defines model for EndpointMemberInput.
+type EndpointMemberInput struct {
+	// InterfaceId the physical switch port the member plugs into (a device of the same site)
+	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
+
+	// Ip a single address, e.g. 10.72.120.15 (inside the group's range when it has one)
+	Ip    *string `json:"ip,omitempty"`
+	Mac   *string `json:"mac,omitempty"`
+	Name  string  `json:"name"`
+	Notes *string `json:"notes,omitempty"`
+}
+
+// EndpointMemberUpdate defines model for EndpointMemberUpdate.
+type EndpointMemberUpdate struct {
+	// InterfaceId the physical switch port the member plugs into (a device of the same site)
+	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
+
+	// Ip a single address, e.g. 10.72.120.15 (inside the group's range when it has one)
+	Ip      *string `json:"ip,omitempty"`
+	Mac     *string `json:"mac,omitempty"`
+	Name    string  `json:"name"`
+	Notes   *string `json:"notes,omitempty"`
+	Version int32   `json:"version"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Message string `json:"message"`
@@ -1693,14 +1895,15 @@ type IpAddressUpdate struct {
 	Vrf         *string             `json:"vrf,omitempty"`
 }
 
-// IpAssignment An address in use, either on a device interface or as the management IP of a device cluster (clusterId set, deviceId null, role primary, VRF empty).
+// IpAssignment An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet).
 type IpAssignment struct {
-	Address   string              `json:"address"`
-	ClusterId *openapi_types.UUID `json:"clusterId"`
-	DeviceId  *openapi_types.UUID `json:"deviceId"`
-	Host      string              `json:"host"`
+	Address         string              `json:"address"`
+	ClusterId       *openapi_types.UUID `json:"clusterId"`
+	DeviceId        *openapi_types.UUID `json:"deviceId"`
+	EndpointGroupId *openapi_types.UUID `json:"endpointGroupId"`
+	Host            string              `json:"host"`
 
-	// Hostname device hostname, or the cluster hostname (its name when no hostname is set)
+	// Hostname device hostname, the cluster hostname (its name when no hostname is set), or the endpoint member name (interfaceName then holds the group name)
 	Hostname      string `json:"hostname"`
 	InterfaceName string `json:"interfaceName"`
 	Role          IpRole `json:"role"`
@@ -1992,6 +2195,12 @@ type PortGroup struct {
 	Poe     *bool           `json:"poe,omitempty"`
 	Speed   *string         `json:"speed,omitempty"`
 	Start   int32           `json:"start"`
+}
+
+// PromoteMemberInput defines model for PromoteMemberInput.
+type PromoteMemberInput struct {
+	// Hostname the new device's hostname; defaults to the member name
+	Hostname *string `json:"hostname,omitempty"`
 }
 
 // Rack defines model for Rack.
@@ -2404,6 +2613,9 @@ type DeviceVendorFilter = []string
 // FieldId defines model for FieldId.
 type FieldId = openapi_types.UUID
 
+// GroupId defines model for GroupId.
+type GroupId = openapi_types.UUID
+
 // InterfaceId defines model for InterfaceId.
 type InterfaceId = openapi_types.UUID
 
@@ -2412,6 +2624,9 @@ type IpId = openapi_types.UUID
 
 // LocationId defines model for LocationId.
 type LocationId = openapi_types.UUID
+
+// MemberId defines model for MemberId.
+type MemberId = openapi_types.UUID
 
 // OrgId defines model for OrgId.
 type OrgId = openapi_types.UUID
@@ -2739,6 +2954,46 @@ type UpdateDeviceIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ListEndpointGroupsParams defines parameters for ListEndpointGroups.
+type ListEndpointGroupsParams struct {
+	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// CreateEndpointGroupParams defines parameters for CreateEndpointGroup.
+type CreateEndpointGroupParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteEndpointGroupParams defines parameters for DeleteEndpointGroup.
+type DeleteEndpointGroupParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateEndpointGroupParams defines parameters for UpdateEndpointGroup.
+type UpdateEndpointGroupParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateEndpointMemberParams defines parameters for CreateEndpointMember.
+type CreateEndpointMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteEndpointMemberParams defines parameters for DeleteEndpointMember.
+type DeleteEndpointMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateEndpointMemberParams defines parameters for UpdateEndpointMember.
+type UpdateEndpointMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// PromoteEndpointMemberParams defines parameters for PromoteEndpointMember.
+type PromoteEndpointMemberParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // LookupIpParams defines parameters for LookupIp.
 type LookupIpParams struct {
 	Ip string `form:"ip" json:"ip"`
@@ -3012,6 +3267,21 @@ type CreateDeviceIpJSONRequestBody = IpAddressInput
 // UpdateDeviceIpJSONRequestBody defines body for UpdateDeviceIp for application/json ContentType.
 type UpdateDeviceIpJSONRequestBody = IpAddressUpdate
 
+// CreateEndpointGroupJSONRequestBody defines body for CreateEndpointGroup for application/json ContentType.
+type CreateEndpointGroupJSONRequestBody = EndpointGroupInput
+
+// UpdateEndpointGroupJSONRequestBody defines body for UpdateEndpointGroup for application/json ContentType.
+type UpdateEndpointGroupJSONRequestBody = EndpointGroupUpdate
+
+// CreateEndpointMemberJSONRequestBody defines body for CreateEndpointMember for application/json ContentType.
+type CreateEndpointMemberJSONRequestBody = EndpointMemberInput
+
+// UpdateEndpointMemberJSONRequestBody defines body for UpdateEndpointMember for application/json ContentType.
+type UpdateEndpointMemberJSONRequestBody = EndpointMemberUpdate
+
+// PromoteEndpointMemberJSONRequestBody defines body for PromoteEndpointMember for application/json ContentType.
+type PromoteEndpointMemberJSONRequestBody = PromoteMemberInput
+
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
 
@@ -3266,6 +3536,33 @@ type ServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams)
+	// ListEndpointGroups Endpoint groups the caller may see
+	// (GET /orgs/{orgId}/endpoint-groups)
+	ListEndpointGroups(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListEndpointGroupsParams)
+	// CreateEndpointGroup Create an endpoint group
+	// (POST /orgs/{orgId}/endpoint-groups)
+	CreateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateEndpointGroupParams)
+	// DeleteEndpointGroup Delete an endpoint group and its members
+	// (DELETE /orgs/{orgId}/endpoint-groups/{groupId})
+	DeleteEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params DeleteEndpointGroupParams)
+	// GetEndpointGroup An endpoint group with its members
+	// (GET /orgs/{orgId}/endpoint-groups/{groupId})
+	GetEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId)
+	// UpdateEndpointGroup Update an endpoint group (optimistic lock)
+	// (PATCH /orgs/{orgId}/endpoint-groups/{groupId})
+	UpdateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params UpdateEndpointGroupParams)
+	// CreateEndpointMember Add a member to an endpoint group
+	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members)
+	CreateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params CreateEndpointMemberParams)
+	// DeleteEndpointMember Remove a member
+	// (DELETE /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+	DeleteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params DeleteEndpointMemberParams)
+	// UpdateEndpointMember Update a member (optimistic lock)
+	// (PATCH /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+	UpdateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params UpdateEndpointMemberParams)
+	// PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
+	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
+	PromoteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params PromoteEndpointMemberParams)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
@@ -3791,6 +4088,60 @@ func (_ Unimplemented) DeleteDeviceIp(w http.ResponseWriter, r *http.Request, or
 // UpdateDeviceIp Update an IP address (optimistic lock on version)
 // (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 func (_ Unimplemented) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListEndpointGroups Endpoint groups the caller may see
+// (GET /orgs/{orgId}/endpoint-groups)
+func (_ Unimplemented) ListEndpointGroups(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListEndpointGroupsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateEndpointGroup Create an endpoint group
+// (POST /orgs/{orgId}/endpoint-groups)
+func (_ Unimplemented) CreateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateEndpointGroupParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteEndpointGroup Delete an endpoint group and its members
+// (DELETE /orgs/{orgId}/endpoint-groups/{groupId})
+func (_ Unimplemented) DeleteEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params DeleteEndpointGroupParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetEndpointGroup An endpoint group with its members
+// (GET /orgs/{orgId}/endpoint-groups/{groupId})
+func (_ Unimplemented) GetEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateEndpointGroup Update an endpoint group (optimistic lock)
+// (PATCH /orgs/{orgId}/endpoint-groups/{groupId})
+func (_ Unimplemented) UpdateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params UpdateEndpointGroupParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateEndpointMember Add a member to an endpoint group
+// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members)
+func (_ Unimplemented) CreateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params CreateEndpointMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteEndpointMember Remove a member
+// (DELETE /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+func (_ Unimplemented) DeleteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params DeleteEndpointMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateEndpointMember Update a member (optimistic lock)
+// (PATCH /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+func (_ Unimplemented) UpdateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params UpdateEndpointMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
+// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
+func (_ Unimplemented) PromoteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params PromoteEndpointMemberParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7439,6 +7790,542 @@ func (siw *ServerInterfaceWrapper) UpdateDeviceIp(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// ListEndpointGroups operation middleware
+func (siw *ServerInterfaceWrapper) ListEndpointGroups(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEndpointGroupsParams
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEndpointGroups(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateEndpointGroup operation middleware
+func (siw *ServerInterfaceWrapper) CreateEndpointGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateEndpointGroupParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateEndpointGroup(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteEndpointGroup operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEndpointGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteEndpointGroupParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteEndpointGroup(w, r, orgId, groupId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEndpointGroup operation middleware
+func (siw *ServerInterfaceWrapper) GetEndpointGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEndpointGroup(w, r, orgId, groupId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEndpointGroup operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEndpointGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateEndpointGroupParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEndpointGroup(w, r, orgId, groupId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateEndpointMember operation middleware
+func (siw *ServerInterfaceWrapper) CreateEndpointMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateEndpointMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateEndpointMember(w, r, orgId, groupId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteEndpointMember operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEndpointMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memberId" -------------
+	var memberId MemberId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memberId", chi.URLParam(r, "memberId"), &memberId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memberId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteEndpointMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteEndpointMember(w, r, orgId, groupId, memberId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEndpointMember operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEndpointMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memberId" -------------
+	var memberId MemberId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memberId", chi.URLParam(r, "memberId"), &memberId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memberId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateEndpointMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEndpointMember(w, r, orgId, groupId, memberId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PromoteEndpointMember operation middleware
+func (siw *ServerInterfaceWrapper) PromoteEndpointMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memberId" -------------
+	var memberId MemberId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memberId", chi.URLParam(r, "memberId"), &memberId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memberId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PromoteEndpointMemberParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PromoteEndpointMember(w, r, orgId, groupId, memberId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LookupIp operation middleware
 func (siw *ServerInterfaceWrapper) LookupIp(w http.ResponseWriter, r *http.Request) {
 
@@ -10411,6 +11298,33 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/clusters/{clusterId}", wrapper.UpdateCluster)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/endpoint-groups", wrapper.ListEndpointGroups)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/endpoint-groups", wrapper.CreateEndpointGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}", wrapper.DeleteEndpointGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}", wrapper.GetEndpointGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}", wrapper.UpdateEndpointGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}/members", wrapper.CreateEndpointMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}", wrapper.DeleteEndpointMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}", wrapper.UpdateEndpointMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote", wrapper.PromoteEndpointMember)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/vlans", wrapper.ListVlans)
@@ -15145,6 +16059,705 @@ func (response UpdateDeviceIp409JSONResponse) VisitUpdateDeviceIpResponse(w http
 	return err
 }
 
+type ListEndpointGroupsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListEndpointGroupsParams
+}
+
+type ListEndpointGroupsResponseObject interface {
+	VisitListEndpointGroupsResponse(w http.ResponseWriter) error
+}
+
+type ListEndpointGroups200JSONResponse EndpointGroupList
+
+func (response ListEndpointGroups200JSONResponse) VisitListEndpointGroupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEndpointGroups401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListEndpointGroups401JSONResponse) VisitListEndpointGroupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEndpointGroups404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListEndpointGroups404JSONResponse) VisitListEndpointGroupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroupRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateEndpointGroupParams
+	Body   *CreateEndpointGroupJSONRequestBody
+}
+
+type CreateEndpointGroupResponseObject interface {
+	VisitCreateEndpointGroupResponse(w http.ResponseWriter) error
+}
+
+type CreateEndpointGroup201JSONResponse EndpointGroupDetail
+
+func (response CreateEndpointGroup201JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroup400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateEndpointGroup400JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateEndpointGroup401JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroup403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateEndpointGroup403JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroup404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateEndpointGroup404JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointGroup409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateEndpointGroup409JSONResponse) VisitCreateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointGroupRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	GroupId GroupId `json:"groupId"`
+	Params  DeleteEndpointGroupParams
+}
+
+type DeleteEndpointGroupResponseObject interface {
+	VisitDeleteEndpointGroupResponse(w http.ResponseWriter) error
+}
+
+type DeleteEndpointGroup204Response struct {
+}
+
+func (response DeleteEndpointGroup204Response) VisitDeleteEndpointGroupResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteEndpointGroup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteEndpointGroup401JSONResponse) VisitDeleteEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointGroup403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteEndpointGroup403JSONResponse) VisitDeleteEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointGroup404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteEndpointGroup404JSONResponse) VisitDeleteEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEndpointGroupRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	GroupId GroupId `json:"groupId"`
+}
+
+type GetEndpointGroupResponseObject interface {
+	VisitGetEndpointGroupResponse(w http.ResponseWriter) error
+}
+
+type GetEndpointGroup200JSONResponse EndpointGroupDetail
+
+func (response GetEndpointGroup200JSONResponse) VisitGetEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEndpointGroup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetEndpointGroup401JSONResponse) VisitGetEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEndpointGroup404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetEndpointGroup404JSONResponse) VisitGetEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroupRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	GroupId GroupId `json:"groupId"`
+	Params  UpdateEndpointGroupParams
+	Body    *UpdateEndpointGroupJSONRequestBody
+}
+
+type UpdateEndpointGroupResponseObject interface {
+	VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error
+}
+
+type UpdateEndpointGroup200JSONResponse EndpointGroupDetail
+
+func (response UpdateEndpointGroup200JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroup400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateEndpointGroup400JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateEndpointGroup401JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroup403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateEndpointGroup403JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroup404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateEndpointGroup404JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointGroup409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateEndpointGroup409JSONResponse) VisitUpdateEndpointGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMemberRequestObject struct {
+	OrgId   OrgId   `json:"orgId"`
+	GroupId GroupId `json:"groupId"`
+	Params  CreateEndpointMemberParams
+	Body    *CreateEndpointMemberJSONRequestBody
+}
+
+type CreateEndpointMemberResponseObject interface {
+	VisitCreateEndpointMemberResponse(w http.ResponseWriter) error
+}
+
+type CreateEndpointMember201JSONResponse EndpointMember
+
+func (response CreateEndpointMember201JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateEndpointMember400JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateEndpointMember401JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateEndpointMember403JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateEndpointMember404JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEndpointMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateEndpointMember409JSONResponse) VisitCreateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointMemberRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	GroupId  GroupId  `json:"groupId"`
+	MemberId MemberId `json:"memberId"`
+	Params   DeleteEndpointMemberParams
+}
+
+type DeleteEndpointMemberResponseObject interface {
+	VisitDeleteEndpointMemberResponse(w http.ResponseWriter) error
+}
+
+type DeleteEndpointMember204Response struct {
+}
+
+func (response DeleteEndpointMember204Response) VisitDeleteEndpointMemberResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteEndpointMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteEndpointMember401JSONResponse) VisitDeleteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteEndpointMember403JSONResponse) VisitDeleteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEndpointMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteEndpointMember404JSONResponse) VisitDeleteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMemberRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	GroupId  GroupId  `json:"groupId"`
+	MemberId MemberId `json:"memberId"`
+	Params   UpdateEndpointMemberParams
+	Body     *UpdateEndpointMemberJSONRequestBody
+}
+
+type UpdateEndpointMemberResponseObject interface {
+	VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error
+}
+
+type UpdateEndpointMember200JSONResponse EndpointMember
+
+func (response UpdateEndpointMember200JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateEndpointMember400JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateEndpointMember401JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateEndpointMember403JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateEndpointMember404JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEndpointMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateEndpointMember409JSONResponse) VisitUpdateEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMemberRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	GroupId  GroupId  `json:"groupId"`
+	MemberId MemberId `json:"memberId"`
+	Params   PromoteEndpointMemberParams
+	Body     *PromoteEndpointMemberJSONRequestBody
+}
+
+type PromoteEndpointMemberResponseObject interface {
+	VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error
+}
+
+type PromoteEndpointMember201JSONResponse Device
+
+func (response PromoteEndpointMember201JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMember400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response PromoteEndpointMember400JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMember401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response PromoteEndpointMember401JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMember403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response PromoteEndpointMember403JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMember404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response PromoteEndpointMember404JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PromoteEndpointMember409JSONResponse struct{ ConflictJSONResponse }
+
+func (response PromoteEndpointMember409JSONResponse) VisitPromoteEndpointMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LookupIpRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params LookupIpParams
@@ -19303,6 +20916,33 @@ type StrictServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(ctx context.Context, request UpdateDeviceIpRequestObject) (UpdateDeviceIpResponseObject, error)
+	// ListEndpointGroups Endpoint groups the caller may see
+	// (GET /orgs/{orgId}/endpoint-groups)
+	ListEndpointGroups(ctx context.Context, request ListEndpointGroupsRequestObject) (ListEndpointGroupsResponseObject, error)
+	// CreateEndpointGroup Create an endpoint group
+	// (POST /orgs/{orgId}/endpoint-groups)
+	CreateEndpointGroup(ctx context.Context, request CreateEndpointGroupRequestObject) (CreateEndpointGroupResponseObject, error)
+	// DeleteEndpointGroup Delete an endpoint group and its members
+	// (DELETE /orgs/{orgId}/endpoint-groups/{groupId})
+	DeleteEndpointGroup(ctx context.Context, request DeleteEndpointGroupRequestObject) (DeleteEndpointGroupResponseObject, error)
+	// GetEndpointGroup An endpoint group with its members
+	// (GET /orgs/{orgId}/endpoint-groups/{groupId})
+	GetEndpointGroup(ctx context.Context, request GetEndpointGroupRequestObject) (GetEndpointGroupResponseObject, error)
+	// UpdateEndpointGroup Update an endpoint group (optimistic lock)
+	// (PATCH /orgs/{orgId}/endpoint-groups/{groupId})
+	UpdateEndpointGroup(ctx context.Context, request UpdateEndpointGroupRequestObject) (UpdateEndpointGroupResponseObject, error)
+	// CreateEndpointMember Add a member to an endpoint group
+	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members)
+	CreateEndpointMember(ctx context.Context, request CreateEndpointMemberRequestObject) (CreateEndpointMemberResponseObject, error)
+	// DeleteEndpointMember Remove a member
+	// (DELETE /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+	DeleteEndpointMember(ctx context.Context, request DeleteEndpointMemberRequestObject) (DeleteEndpointMemberResponseObject, error)
+	// UpdateEndpointMember Update a member (optimistic lock)
+	// (PATCH /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId})
+	UpdateEndpointMember(ctx context.Context, request UpdateEndpointMemberRequestObject) (UpdateEndpointMemberResponseObject, error)
+	// PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
+	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
+	PromoteEndpointMember(ctx context.Context, request PromoteEndpointMemberRequestObject) (PromoteEndpointMemberResponseObject, error)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
@@ -21381,6 +23021,293 @@ func (sh *strictHandler) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateDeviceIpResponseObject); ok {
 		if err := validResponse.VisitUpdateDeviceIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEndpointGroups operation middleware
+func (sh *strictHandler) ListEndpointGroups(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListEndpointGroupsParams) {
+	var request ListEndpointGroupsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEndpointGroups(ctx, request.(ListEndpointGroupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEndpointGroups")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEndpointGroupsResponseObject); ok {
+		if err := validResponse.VisitListEndpointGroupsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateEndpointGroup operation middleware
+func (sh *strictHandler) CreateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateEndpointGroupParams) {
+	var request CreateEndpointGroupRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateEndpointGroupJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateEndpointGroup(ctx, request.(CreateEndpointGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateEndpointGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateEndpointGroupResponseObject); ok {
+		if err := validResponse.VisitCreateEndpointGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteEndpointGroup operation middleware
+func (sh *strictHandler) DeleteEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params DeleteEndpointGroupParams) {
+	var request DeleteEndpointGroupRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEndpointGroup(ctx, request.(DeleteEndpointGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEndpointGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteEndpointGroupResponseObject); ok {
+		if err := validResponse.VisitDeleteEndpointGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEndpointGroup operation middleware
+func (sh *strictHandler) GetEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId) {
+	var request GetEndpointGroupRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEndpointGroup(ctx, request.(GetEndpointGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEndpointGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEndpointGroupResponseObject); ok {
+		if err := validResponse.VisitGetEndpointGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEndpointGroup operation middleware
+func (sh *strictHandler) UpdateEndpointGroup(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params UpdateEndpointGroupParams) {
+	var request UpdateEndpointGroupRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.Params = params
+
+	var body UpdateEndpointGroupJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEndpointGroup(ctx, request.(UpdateEndpointGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEndpointGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEndpointGroupResponseObject); ok {
+		if err := validResponse.VisitUpdateEndpointGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateEndpointMember operation middleware
+func (sh *strictHandler) CreateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, params CreateEndpointMemberParams) {
+	var request CreateEndpointMemberRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.Params = params
+
+	var body CreateEndpointMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateEndpointMember(ctx, request.(CreateEndpointMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateEndpointMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateEndpointMemberResponseObject); ok {
+		if err := validResponse.VisitCreateEndpointMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteEndpointMember operation middleware
+func (sh *strictHandler) DeleteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params DeleteEndpointMemberParams) {
+	var request DeleteEndpointMemberRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.MemberId = memberId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEndpointMember(ctx, request.(DeleteEndpointMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEndpointMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteEndpointMemberResponseObject); ok {
+		if err := validResponse.VisitDeleteEndpointMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEndpointMember operation middleware
+func (sh *strictHandler) UpdateEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params UpdateEndpointMemberParams) {
+	var request UpdateEndpointMemberRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.MemberId = memberId
+	request.Params = params
+
+	var body UpdateEndpointMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEndpointMember(ctx, request.(UpdateEndpointMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEndpointMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEndpointMemberResponseObject); ok {
+		if err := validResponse.VisitUpdateEndpointMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PromoteEndpointMember operation middleware
+func (sh *strictHandler) PromoteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params PromoteEndpointMemberParams) {
+	var request PromoteEndpointMemberRequestObject
+
+	request.OrgId = orgId
+	request.GroupId = groupId
+	request.MemberId = memberId
+	request.Params = params
+
+	var body PromoteEndpointMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PromoteEndpointMember(ctx, request.(PromoteEndpointMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PromoteEndpointMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PromoteEndpointMemberResponseObject); ok {
+		if err := validResponse.VisitPromoteEndpointMemberResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

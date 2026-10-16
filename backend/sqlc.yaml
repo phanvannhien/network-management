@@ -27,3 +27,8 @@ sql:
               import: "net"
               type: "HardwareAddr"
             nullable: true
+          - column: "endpoint_members.mac"
+            go_type:
+              import: "net"
+              type: "HardwareAddr"
+            nullable: true

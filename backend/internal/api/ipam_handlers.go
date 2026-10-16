@@ -565,7 +565,7 @@ func (s *Server) subnetDetail(ctx context.Context, q store.Querier, m tenant.Mem
 func toAssignment(ip store.ListSubnetIPsRow) apigen.IpAssignment {
 	return apigen.IpAssignment{
 		Address: ip.Address, Host: ip.Host.String(), Role: apigen.IpRole(ip.Role), Vrf: ip.Vrf, DeviceId: optUUID(ip.DeviceID),
-		ClusterId: optUUID(ip.ClusterID), Hostname: ip.Hostname, InterfaceName: ip.InterfaceName,
+		ClusterId: optUUID(ip.ClusterID), EndpointGroupId: optUUID(ip.GroupID), Hostname: ip.Hostname, InterfaceName: ip.InterfaceName,
 	}
 }
 

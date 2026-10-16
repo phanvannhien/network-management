@@ -451,6 +451,15 @@ export const vi = {
     },
   },
   guides: {
+    endpointGroup:
+      'Nhóm đầu cuối = nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) quản lý như một mục, vẽ thành một biểu tượng có số "đã dùng/tổng" trên sơ đồ.',
+    endpointKind:
+      'Loại của từng thiết bị trong nhóm; dùng khi tách một thành viên thành thiết bị riêng.',
+    endpointExpected:
+      'Tổng số thiết bị dự kiến (vd 20 camera). Để trống thì lấy số địa chỉ của dải IP.',
+    endpointRange:
+      'Dải IP quy hoạch cho nhóm (vd dải "IP tĩnh camera"); IP thành viên phải nằm trong dải.',
+    endpointPort: 'Switch và cổng mà thiết bị đang cắm vào — giúp tìm nhanh khi cần kiểm tra dây.',
     hostname: 'Tên thiết bị trên mạng theo quy ước, vd AGRI-BD-FW01 (đối tác–site–loại+số).',
     type: 'Chọn đúng loại để hệ thống áp quy tắc phù hợp (cụm, template, icon trên sơ đồ).',
     partNumber: 'Mã sản phẩm của hãng, in trên hộp/tem; dùng tra bảo hành và ngày EOL.',
@@ -624,9 +633,58 @@ export const vi = {
     notFound: 'Không tìm thấy subnet',
     notFoundBody: 'Subnet không tồn tại hoặc bạn không có quyền xem.',
     back: 'Về IPAM',
+    groupMember: 'Thành viên nhóm {{group}}',
     clusterIp: 'IP quản trị cụm',
     clusterIpHint:
       'IP chung của cả cụm (HA/stack), không nằm trên interface nào; quản lý ở trang thiết bị thành viên.',
+  },
+  endpoints: {
+    title: 'Nhóm đầu cuối',
+    tabDevices: 'Thiết bị',
+    add: 'Thêm nhóm đầu cuối',
+    edit: 'Sửa nhóm',
+    delete: 'Xóa nhóm',
+    deleteTitle: 'Xóa nhóm {{name}}?',
+    deleteBody: 'Xóa cả {{count}} thành viên trong nhóm. Thiết bị đã tách ra không bị ảnh hưởng.',
+    saved: 'Đã lưu',
+    deleted: 'Đã xóa nhóm',
+    name: 'Tên nhóm',
+    nameHint: 'Không trùng trong một site, vd "Camera nhà xưởng", "PC phòng kế toán".',
+    kind: 'Loại thiết bị',
+    subnet: 'Subnet',
+    range: 'Dải IP',
+    noRange: 'Không liên kết dải IP',
+    chooseRange: 'Chọn dải…',
+    expected: 'Số lượng dự kiến',
+    used: 'Đã dùng / tổng',
+    notes: 'Ghi chú',
+    search: 'Tìm nhóm, dải IP…',
+    emptyTitle: 'Chưa có nhóm thiết bị đầu cuối',
+    emptyBody:
+      'Gom các thiết bị giống nhau (camera, PC, điện thoại IP…) thành một nhóm thay vì khai báo từng cái.',
+    members: 'Thành viên',
+    noMembers:
+      'Chưa có thành viên. Có thể chỉ khai báo số lượng dự kiến, thêm thành viên khi cần theo dõi IP/MAC từng thiết bị.',
+    memberAdd: 'Thêm thành viên',
+    memberEdit: 'Sửa thành viên',
+    memberDelete: 'Xóa thành viên',
+    memberDeleteTitle: 'Xóa thành viên {{name}}?',
+    memberName: 'Tên',
+    memberNameHint: 'Tên hoặc mã thiết bị, vd CAM-01; không trùng trong nhóm.',
+    ip: 'IP',
+    ipInRange: 'Phải nằm trong dải {{range}}.',
+    ipOptional: 'Để trống nếu thiết bị lấy IP tự động (DHCP).',
+    switch: 'Cắm vào thiết bị',
+    port: 'Cổng',
+    noPort: 'Không ghi',
+    choosePort: 'Chọn cổng…',
+    promote: 'Tách thành thiết bị',
+    promoteTitle: 'Tách {{name}} thành thiết bị riêng',
+    promoteBody:
+      'Tạo thiết bị loại {{type}} ở site {{site}} với cổng eth0 mang IP và MAC của thành viên (IP thành IP quản trị); cổng switch đang cắm được ghi vào ghi chú. Thành viên rời khỏi nhóm.',
+    promoted: 'Đã tạo thiết bị {{hostname}}',
+    promoteHint:
+      'Tách thành thiết bị khi cần quản lý riêng một thiết bị (S/N, bảo hành, giám sát, vẽ riêng trên sơ đồ).',
   },
   clusters: {
     join: 'Thêm vào cụm',
@@ -1036,6 +1094,7 @@ export const vi = {
     },
   },
   errors: {
+    endpointsLoad: 'Không tải được nhóm thiết bị đầu cuối',
     ipamLoad: 'Không tải được dữ liệu IPAM',
     templatesLoad: 'Không tải được template',
     clustersLoad: 'Không tải được cụm thiết bị',

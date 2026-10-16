@@ -1001,6 +1001,116 @@ export interface paths {
         patch: operations["updateCluster"];
         trace?: never;
     };
+    "/orgs/{orgId}/endpoint-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Endpoint groups the caller may see */
+        get: operations["listEndpointGroups"];
+        put?: never;
+        /** Create an endpoint group */
+        post: operations["createEndpointGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/endpoint-groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        /** An endpoint group with its members */
+        get: operations["getEndpointGroup"];
+        put?: never;
+        post?: never;
+        /** Delete an endpoint group and its members */
+        delete: operations["deleteEndpointGroup"];
+        options?: never;
+        head?: never;
+        /** Update an endpoint group (optimistic lock) */
+        patch: operations["updateEndpointGroup"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/endpoint-groups/{groupId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a member to an endpoint group */
+        post: operations["createEndpointMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+                memberId: components["parameters"]["MemberId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member */
+        delete: operations["deleteEndpointMember"];
+        options?: never;
+        head?: never;
+        /** Update a member (optimistic lock) */
+        patch: operations["updateEndpointMember"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+                memberId: components["parameters"]["MemberId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn a member into a device (interface, MAC and IP carried over; member removed) */
+        post: operations["promoteEndpointMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/vlans": {
         parameters: {
             query?: never;
@@ -2587,7 +2697,117 @@ export interface components {
         SubnetList: {
             subnets: components["schemas"]["Subnet"][];
         };
-        /** @description An address in use, either on a device interface or as the management IP of a device cluster (clusterId set, deviceId null, role primary, VRF empty). */
+        /**
+         * @description The device type of the group's members (used when a member becomes a device)
+         * @enum {string}
+         */
+        EndpointKind: "pc" | "laptop" | "printer" | "ip_camera" | "ip_phone" | "access_point" | "access_control" | "video_conference" | "iot" | "server" | "vm" | "nas" | "other";
+        EndpointGroupInput: {
+            kind: components["schemas"]["EndpointKind"];
+            name: string;
+            /** Format: uuid */
+            siteId: string;
+            /**
+             * Format: uuid
+             * @description owner unit, only for a shared site
+             */
+            businessUnitId?: string | null;
+            /**
+             * Format: uuid
+             * @description planned IP range of a subnet of the same site (or organization-wide)
+             */
+            ipRangeId?: string | null;
+            /** Format: int32 */
+            expectedCount?: number | null;
+            notes?: string;
+        };
+        EndpointGroupUpdate: components["schemas"]["EndpointGroupInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        EndpointGroup: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EndpointKind"];
+            name: string;
+            /** Format: uuid */
+            siteId: string;
+            siteCode: string;
+            siteName: string;
+            /** Format: uuid */
+            businessUnitId: string;
+            unitCode: string;
+            partnerCode: string;
+            /** Format: uuid */
+            ipRangeId: string | null;
+            rangeStart: string | null;
+            rangeEnd: string | null;
+            /** @description dhcp | static | reserved, empty without a range */
+            rangeKind: string;
+            rangePurpose: string;
+            /** Format: uuid */
+            subnetId: string | null;
+            subnetCidr: string | null;
+            vrf: string;
+            /** Format: int32 */
+            expectedCount: number | null;
+            /** Format: int64 */
+            memberCount: number;
+            /**
+             * Format: int64
+             * @description the "used / total" badge total — expected count, else the range size, else the member count
+             */
+            total: number;
+            notes: string;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        EndpointGroupList: {
+            groups: components["schemas"]["EndpointGroup"][];
+        };
+        EndpointMemberInput: {
+            name: string;
+            /** @description a single address, e.g. 10.72.120.15 (inside the group's range when it has one) */
+            ip?: string | null;
+            mac?: string | null;
+            /**
+             * Format: uuid
+             * @description the physical switch port the member plugs into (a device of the same site)
+             */
+            interfaceId?: string | null;
+            notes?: string;
+        };
+        EndpointMemberUpdate: components["schemas"]["EndpointMemberInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        EndpointMember: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            ip: string | null;
+            /** @description the IP with the subnet's prefix length when the group has a range */
+            address: string | null;
+            mac: string | null;
+            /** Format: uuid */
+            interfaceId: string | null;
+            interfaceName: string;
+            /** Format: uuid */
+            portDeviceId: string | null;
+            portHostname: string;
+            notes: string;
+            /** Format: int32 */
+            version: number;
+        };
+        EndpointGroupDetail: components["schemas"]["EndpointGroup"] & {
+            members: components["schemas"]["EndpointMember"][];
+        };
+        PromoteMemberInput: {
+            /** @description the new device's hostname; defaults to the member name */
+            hostname?: string;
+        };
+        /** @description An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet). */
         IpAssignment: {
             address: string;
             host: string;
@@ -2597,7 +2817,9 @@ export interface components {
             deviceId: string | null;
             /** Format: uuid */
             clusterId: string | null;
-            /** @description device hostname, or the cluster hostname (its name when no hostname is set) */
+            /** Format: uuid */
+            endpointGroupId: string | null;
+            /** @description device hostname, the cluster hostname (its name when no hostname is set), or the endpoint member name (interfaceName then holds the group name) */
             hostname: string;
             interfaceName: string;
         };
@@ -2735,6 +2957,8 @@ export interface components {
         InterfaceId: string;
         IpId: string;
         ClusterId: string;
+        GroupId: string;
+        MemberId: string;
         VlanId: string;
         SubnetId: string;
         RangeId: string;
@@ -5370,6 +5594,290 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClusterDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listEndpointGroups: {
+        parameters: {
+            query?: {
+                siteId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointGroupList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createEndpointGroup: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointGroupInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointGroupDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getEndpointGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointGroupDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteEndpointGroup: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateEndpointGroup: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointGroupUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointGroupDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createEndpointMember: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointMemberInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointMember"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteEndpointMember: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+                memberId: components["parameters"]["MemberId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateEndpointMember: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+                memberId: components["parameters"]["MemberId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointMemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointMember"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    promoteEndpointMember: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                groupId: components["parameters"]["GroupId"];
+                memberId: components["parameters"]["MemberId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoteMemberInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
                 };
             };
             400: components["responses"]["BadRequest"];

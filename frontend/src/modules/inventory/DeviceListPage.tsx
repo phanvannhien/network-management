@@ -2,7 +2,7 @@ import type { PaginationState, RowSelectionState, SortingState } from '@tanstack
 import { MoreHorizontal, Plus, SearchX, Server, TriangleAlert } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useSession } from '@/app/auth'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
@@ -14,6 +14,7 @@ import { emptyFilter, type FilterState } from '@/components/filters'
 import { PageHeader } from '@/components/PageHeader'
 import { TechText } from '@/components/TechText'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import { atLeast, useOrgAccess, useScope } from '@/modules/sites/access'
 import { useSites } from '@/modules/sites/sites'
 import { BulkEditDialog } from './BulkEditDialog'
 import { DeviceFormDialog } from './DeviceFormDialog'
+import { EndpointGroupDialog, EndpointGroupsTable } from './EndpointGroups'
 import {
   DEVICE_TYPES,
   LIFECYCLES,
@@ -111,6 +113,9 @@ export function DeviceListPage() {
   const sites = useSites(orgId)
   const clusters = useClusters(orgId)
   useBreadcrumbs([{ label: t('nav.devices') }])
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'groups' ? 'groups' : 'devices'
+  const [creatingGroup, setCreatingGroup] = useState(false)
 
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const [sorting, setSorting] = useState<SortingState>([{ id: 'hostname', desc: false }])
@@ -374,87 +379,123 @@ export function DeviceListPage() {
         count={list.data?.total}
         actions={
           access.canAddSites && (
-            <Button onClick={() => setEditing('new')}>
-              <Plus aria-hidden /> {t('devices.add')}
-            </Button>
+            <>
+              <Button
+                variant={tab === 'devices' ? 'default' : 'outline'}
+                onClick={() => setEditing('new')}
+              >
+                <Plus aria-hidden /> {t('devices.add')}
+              </Button>
+              <Button
+                variant={tab === 'groups' ? 'default' : 'outline'}
+                onClick={() => setCreatingGroup(true)}
+              >
+                <Plus aria-hidden /> {t('endpoints.add')}
+              </Button>
+            </>
           )
         }
       />
-      <DataTable
-        tableId="devices"
-        userId={userId}
-        caption={t('devices.title')}
-        filters={
-          <FilterBar
-            value={filter}
-            onChange={changeFilter}
-            facets={facets}
-            searchPlaceholder={t('devices.searchPlaceholder')}
-            storageKey={`ntb-filters:${userId}:devices`}
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setParams(v === 'groups' ? { tab: 'groups' } : {}, { replace: true })}
+      >
+        <TabsList variant="line" className="w-full justify-start border-b border-border">
+          <TabsTrigger value="devices">{t('endpoints.tabDevices')}</TabsTrigger>
+          <TabsTrigger value="groups">{t('endpoints.title')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="groups" className="pt-3">
+          <EndpointGroupsTable
+            orgId={orgId}
+            canAdd={access.canAddSites}
+            onAdd={() => setCreatingGroup(true)}
           />
-        }
-        columns={columns}
-        defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit', 'cluster']}
-        data={rows}
-        total={list.data?.total ?? 0}
-        isLoading={list.isPending}
-        error={list.error}
-        getRowId={(d) => d.id}
-        rowLabel={(d) => d.hostname}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        sorting={sorting}
-        onSortingChange={(u) => {
-          setSorting(u)
-          setPagination((p) => ({ ...p, pageIndex: 0 }))
-        }}
-        selection={selection}
-        onSelectionChange={setSelection}
-        maxHeight="calc(100vh - 280px)"
-        empty={
-          filtered ? (
-            <EmptyState
-              icon={<SearchX />}
-              title={t('devices.emptyTitle')}
-              description={t('devices.emptyBody')}
-              action={
-                <Button variant="outline" onClick={() => changeFilter(emptyFilter)}>
-                  {t('filter.clear')}
+        </TabsContent>
+        <TabsContent value="devices" className="pt-3">
+          <DataTable
+            tableId="devices"
+            userId={userId}
+            caption={t('devices.title')}
+            filters={
+              <FilterBar
+                value={filter}
+                onChange={changeFilter}
+                facets={facets}
+                searchPlaceholder={t('devices.searchPlaceholder')}
+                storageKey={`ntb-filters:${userId}:devices`}
+              />
+            }
+            columns={columns}
+            defaultHidden={['vendor', 'firmware', 'owner', 'tags', 'unit', 'cluster']}
+            data={rows}
+            total={list.data?.total ?? 0}
+            isLoading={list.isPending}
+            error={list.error}
+            getRowId={(d) => d.id}
+            rowLabel={(d) => d.hostname}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            sorting={sorting}
+            onSortingChange={(u) => {
+              setSorting(u)
+              setPagination((p) => ({ ...p, pageIndex: 0 }))
+            }}
+            selection={selection}
+            onSelectionChange={setSelection}
+            maxHeight="calc(100vh - 280px)"
+            empty={
+              filtered ? (
+                <EmptyState
+                  icon={<SearchX />}
+                  title={t('devices.emptyTitle')}
+                  description={t('devices.emptyBody')}
+                  action={
+                    <Button variant="outline" onClick={() => changeFilter(emptyFilter)}>
+                      {t('filter.clear')}
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  icon={<Server />}
+                  title={t('devices.noneTitle')}
+                  description={t('devices.noneBody')}
+                  action={
+                    access.canAddSites && (
+                      <Button onClick={() => setEditing('new')}>
+                        <Plus aria-hidden /> {t('devices.add')}
+                      </Button>
+                    )
+                  }
+                />
+              )
+            }
+            bulkActions={(ids) => (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setBulkEdit(ids)}>
+                  {t('devices.bulkEdit')}
                 </Button>
-              }
-            />
-          ) : (
-            <EmptyState
-              icon={<Server />}
-              title={t('devices.noneTitle')}
-              description={t('devices.noneBody')}
-              action={
-                access.canAddSites && (
-                  <Button onClick={() => setEditing('new')}>
-                    <Plus aria-hidden /> {t('devices.add')}
-                  </Button>
-                )
-              }
-            />
-          )
-        }
-        bulkActions={(ids) => (
-          <>
-            <Button variant="outline" size="sm" onClick={() => setBulkEdit(ids)}>
-              {t('devices.bulkEdit')}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() =>
-                setConfirmDelete(ids.map((id) => byId.get(id)).filter((d): d is Device => !!d))
-              }
-            >
-              {t('devices.bulkDelete')}
-            </Button>
-          </>
-        )}
-      />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() =>
+                    setConfirmDelete(ids.map((id) => byId.get(id)).filter((d): d is Device => !!d))
+                  }
+                >
+                  {t('devices.bulkDelete')}
+                </Button>
+              </>
+            )}
+          />
+        </TabsContent>
+      </Tabs>
+      {creatingGroup && (
+        <EndpointGroupDialog
+          orgId={orgId}
+          onClose={() => setCreatingGroup(false)}
+          onSaved={(g) => navigate(`/o/${orgId}/endpoint-groups/${g.id}`)}
+        />
+      )}
 
       {editing && (
         <DeviceFormDialog

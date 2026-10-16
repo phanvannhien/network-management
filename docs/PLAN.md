@@ -39,7 +39,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-09 Template & interface**: template theo SRS §4.3 sinh cổng physical; thêm interface ảo; IP theo interface (CIDR, VRF, role); chọn interface quản trị; IP NAT/public; `poll_address`.
 - [x] **P1-09b Cụm thiết bị**: device_clusters, gán thành viên, IP/hostname cụm, rule trùng IP/hostname bỏ qua trong cụm; trên sơ đồ hiển thị gộp/mở rộng.
 - [x] **P1-10 IPAM cơ bản**: VLAN, subnet, ip_ranges; mức sử dụng; gợi ý IP trống; tìm IP thuộc ai.
-- [ ] **P1-11 Nhóm thiết bị đầu cuối**: endpoint_groups + members, liên kết dải IP, đã dùng/tổng, tách thành viên thành device.
+- [x] **P1-11 Nhóm thiết bị đầu cuối**: endpoint_groups + members, liên kết dải IP, đã dùng/tổng, tách thành viên thành device.
   IP của thành viên nhóm phải vào view `ipam_addresses` (P1-10) để được tính "đang dùng" và "IP trống kế tiếp" bỏ qua.
 - [ ] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.
 

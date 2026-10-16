@@ -537,6 +537,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['Stack core BD dùng 10.72.114.3.', 'The BD core stack uses 10.72.114.3.'],
   ),
   e(
+    'endpoint-group',
+    'device',
+    ['Nhóm thiết bị đầu cuối', 'Endpoint group'],
+    [
+      'Nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) gom thành một mục: một dải IP, số lượng dự kiến, danh sách thành viên (tên, IP, MAC, cổng switch). Trên sơ đồ là một biểu tượng kèm "đã dùng/tổng". Thành viên cần quản lý riêng thì tách thành thiết bị.',
+      'Many similar devices (cameras, PCs, IP phones…) kept as one item: an IP range, an expected count, members (name, IP, MAC, switch port). Drawn as one icon with "used/total"; a member that needs its own record is split off as a device.',
+    ],
+    [
+      '"Camera nhà xưởng": 20 camera, dải 10.72.120.2–21, đang có 14 → 14/20.',
+      '"Factory cameras": 20 cameras, range 10.72.120.2–21, 14 in use → 14/20.',
+    ],
+  ),
+  e(
     'member-no',
     'cluster',
     ['Số thứ tự thành viên', 'Member number'],

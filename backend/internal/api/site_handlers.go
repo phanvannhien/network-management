@@ -493,6 +493,12 @@ func (s *Server) DeleteSite(ctx context.Context, req apigen.DeleteSiteRequestObj
 			conflict = fmt.Sprintf("Site còn %d thiết bị — chuyển hoặc xóa thiết bị trước", n)
 			return errRollback
 		}
+		if n, err := q.CountEndpointGroupsInSite(ctx, store.CountEndpointGroupsInSiteParams{OrganizationID: m.OrgID, SiteID: before.ID}); err != nil {
+			return fmt.Errorf("count site endpoint groups: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Site còn %d nhóm thiết bị đầu cuối — chuyển hoặc xóa trước", n)
+			return errRollback
+		}
 		if _, err := q.SoftDeleteSite(ctx, store.SoftDeleteSiteParams{ID: before.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("delete site: %w", err)
 		}

@@ -2065,3 +2065,188 @@ describe('IPAM (P1-10)', () => {
     expect(screen.queryByRole('button', { name: 'Thêm dải IP' })).not.toBeInTheDocument()
   })
 })
+
+describe('endpoint groups (P1-11)', () => {
+  const GROUP = {
+    id: 'eg-1',
+    kind: 'ip_camera',
+    name: 'Camera nhà xưởng',
+    siteId: AGRI_SITE.id,
+    siteCode: 'AGRI-BD01',
+    siteName: 'Nhà máy Bình Định',
+    businessUnitId: UNIT_ID,
+    unitCode: 'MAIN',
+    partnerCode: 'AGRI',
+    ipRangeId: 'rg-1',
+    rangeStart: '10.72.114.100',
+    rangeEnd: '10.72.114.119',
+    rangeKind: 'static',
+    rangePurpose: 'Camera',
+    subnetId: 'sn-1',
+    subnetCidr: '10.72.114.0/24',
+    vrf: '',
+    expectedCount: null,
+    memberCount: 1,
+    total: 20,
+    notes: '',
+    access: 'edit',
+    version: 1,
+  }
+  const MEMBER = {
+    id: 'em-1',
+    name: 'CAM-01',
+    ip: '10.72.114.100',
+    address: '10.72.114.100/24',
+    mac: 'aa:bb:cc:00:00:01',
+    interfaceId: 'if-9',
+    interfaceName: 'Gi1/0/5',
+    portDeviceId: 'sw-1',
+    portHostname: 'AGRI-BD-SW01',
+    notes: '',
+    version: 1,
+  }
+  const SW = { id: 'sw-1', hostname: 'AGRI-BD-SW01', type: 'poe_switch', siteId: AGRI_SITE.id }
+  const PORTS = [
+    { id: 'if-9', name: 'Gi1/0/5', kind: 'physical' },
+    { id: 'if-10', name: 'Gi1/0/6', kind: 'physical' },
+    { id: 'if-11', name: 'Vlan20', kind: 'svi' },
+  ]
+  const routes = (extra: Record<string, () => Response> = {}) =>
+    siteRoutes({
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [SITE, AGRI_SITE] }),
+      [`GET /api/orgs/${ORG_ID}/business-units`]: () => json({ units: [] }),
+      [`GET /api/orgs/${ORG_ID}/clusters`]: () => json({ clusters: [] }),
+      [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [SW], total: 1, facets: {} }),
+      [`GET /api/orgs/${ORG_ID}/devices/sw-1/interfaces`]: () => json({ interfaces: PORTS }),
+      [`GET /api/orgs/${ORG_ID}/endpoint-groups`]: () => json({ groups: [GROUP] }),
+      [`GET /api/orgs/${ORG_ID}/endpoint-groups/eg-1`]: () => json({ ...GROUP, members: [MEMBER] }),
+      [`GET /api/orgs/${ORG_ID}/subnets`]: () => json({ subnets: [SUBNET, OTHER_SITE_SUBNET] }),
+      [`GET /api/orgs/${ORG_ID}/subnets/sn-1`]: () =>
+        json({
+          ...SUBNET,
+          ranges: [
+            {
+              id: 'rg-1',
+              startIp: '10.72.114.100',
+              endIp: '10.72.114.119',
+              kind: 'static',
+              purpose: 'Camera',
+              size: 20,
+              usedCount: 1,
+              version: 1,
+            },
+          ],
+          ips: [],
+          hiddenCount: 0,
+        }),
+      ...extra,
+    })
+
+  it('device page tab lists groups and creates one linked to a range', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/endpoint-groups`]: () => json({ ...GROUP, members: [] }, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices?tab=groups`)
+    expect(await screen.findByRole('link', { name: 'Camera nhà xưởng' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/endpoint-groups/eg-1`,
+    )
+    expect(screen.getByRole('meter', { name: 'Đã dùng / tổng Camera nhà xưởng' })).toHaveAttribute(
+      'aria-valuetext',
+      '1 / 20 (5%)',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm nhóm đầu cuối' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm nhóm đầu cuối' })
+    fireEvent.change(within(dialog).getByLabelText(/Tên nhóm/), {
+      target: { value: ' Camera kho ' },
+    })
+    await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toContainHTML('AGRI-BD01'))
+    fireEvent.change(within(dialog).getByLabelText(/^Site/), { target: { value: AGRI_SITE.id } })
+    const subnetSelect = within(dialog).getByLabelText('Subnet')
+    // Only the site's subnets (and organization-wide ones).
+    expect(within(subnetSelect).queryByText(/10\.80\.0\.0/)).not.toBeInTheDocument()
+    fireEvent.change(subnetSelect, { target: { value: 'sn-1' } })
+    const rangeSelect = within(dialog).getByLabelText('Dải IP')
+    await waitFor(() => expect(rangeSelect).toContainHTML('10.72.114.100 – 10.72.114.119'))
+    fireEvent.change(rangeSelect, { target: { value: 'rg-1' } })
+    fireEvent.change(within(dialog).getByLabelText(/Số lượng dự kiến/), { target: { value: '12' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/endpoint-groups')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      kind: 'ip_camera',
+      name: 'Camera kho',
+      siteId: AGRI_SITE.id,
+      businessUnitId: null,
+      ipRangeId: 'rg-1',
+      expectedCount: 12,
+      notes: '',
+    })
+  })
+
+  it('group page adds a member on a switch port and splits one off as a device', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/endpoint-groups/eg-1/members`]: () => json(MEMBER, 201),
+        [`POST /api/orgs/${ORG_ID}/endpoint-groups/eg-1/members/em-1/promote`]: () =>
+          json({ id: 'dev-9', hostname: 'CAM-01' }, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/endpoint-groups/eg-1`)
+    expect(await screen.findByRole('heading', { name: 'Camera nhà xưởng' })).toBeInTheDocument()
+    expect(screen.getByText('10.72.114.100/24')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'AGRI-BD-SW01' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm thành viên' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm thành viên' })
+    expect(
+      within(dialog).getByText('Phải nằm trong dải 10.72.114.100 – 10.72.114.119.'),
+    ).toBeInTheDocument()
+    fireEvent.change(within(dialog).getByLabelText(/^Tên/), { target: { value: 'CAM-02' } })
+    fireEvent.change(within(dialog).getByLabelText(/^IP/), { target: { value: '10.72.114.101' } })
+    const sw = within(dialog).getByLabelText(/Cắm vào thiết bị/)
+    await waitFor(() => expect(sw).toContainHTML('AGRI-BD-SW01'))
+    fireEvent.change(sw, { target: { value: 'sw-1' } })
+    const port = within(dialog).getByLabelText('Cổng')
+    await waitFor(() => expect(port).toContainHTML('Gi1/0/6'))
+    // Only physical ports: a device cannot plug into an SVI.
+    expect(within(port).queryByText('Vlan20')).not.toBeInTheDocument()
+    fireEvent.change(port, { target: { value: 'if-10' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/members')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      name: 'CAM-02',
+      ip: '10.72.114.101',
+      mac: null,
+      interfaceId: 'if-10',
+      notes: '',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tách thành thiết bị CAM-01' }))
+    const promote = await screen.findByRole('dialog', { name: 'Tách CAM-01 thành thiết bị riêng' })
+    expect(within(promote).getByRole('textbox')).toHaveValue('CAM-01')
+    fireEvent.change(within(promote).getByRole('textbox'), {
+      target: { value: 'AGRI-BD-CAM01' },
+    })
+    fireEvent.click(within(promote).getByRole('button', { name: 'Lưu' }))
+    const isPromote = (r: Request) => r.url.endsWith('/promote')
+    await waitFor(() => expect(calls.some(isPromote)).toBe(true))
+    expect(await calls.find(isPromote)!.clone().json()).toEqual({ hostname: 'AGRI-BD-CAM01' })
+  })
+
+  it('a viewer sees the group without edit actions', async () => {
+    fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/endpoint-groups/eg-1`]: () =>
+          json({ ...GROUP, access: 'view', members: [MEMBER] }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/endpoint-groups/eg-1`)
+    expect(await screen.findByRole('heading', { name: 'Camera nhà xưởng' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Thêm thành viên' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Tách thành thiết bị/ })).not.toBeInTheDocument()
+  })
+})

@@ -280,6 +280,12 @@ func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusine
 			conflict = fmt.Sprintf("Đơn vị còn %d thiết bị — chuyển hoặc xóa thiết bị trước", n)
 			return errRollback
 		}
+		if n, err := q.CountEndpointGroupsOfUnit(ctx, store.CountEndpointGroupsOfUnitParams{OrganizationID: m.OrgID, BusinessUnitID: before.ID}); err != nil {
+			return fmt.Errorf("count unit endpoint groups: %w", err)
+		} else if n > 0 {
+			conflict = fmt.Sprintf("Đơn vị còn %d nhóm thiết bị đầu cuối — chuyển hoặc xóa trước", n)
+			return errRollback
+		}
 		if _, err := q.SoftDeleteBusinessUnit(ctx, store.SoftDeleteBusinessUnitParams{ID: before.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("delete business unit: %w", err)
 		}

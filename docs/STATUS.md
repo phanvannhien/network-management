@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-11 Nhóm thiết bị đầu cuối
+- Đã làm:
+  - **Migration 000016:** `endpoint_groups` (loại = loại thiết bị đầu cuối, tên không trùng trong site, site + đơn vị sở hữu như
+    thiết bị, dải IP liên kết, số lượng dự kiến, ghi chú) và `endpoint_members` (tên, IP, MAC, cổng switch, ghi chú; tên/IP không
+    trùng trong nhóm). View `ipam_addresses` thêm IP thành viên (VRF lấy từ subnet của dải) → tính "đang dùng", "IP trống" bỏ qua,
+    Tra IP thấy thành viên.
+  - **API:** CRUD nhóm + thành viên, `POST …/members/{id}/promote` (tách thành thiết bị). Quy tắc: dải phải thuộc subnet cùng site
+    (hoặc toàn tổ chức); IP thành viên nằm trong dải của nhóm; đổi dải không được làm thành viên rơi ra ngoài; cổng switch phải là
+    **cổng vật lý** của thiết bị cùng site mà người dùng thấy được; "tổng" = số dự kiến, không có thì = số địa chỉ của dải. Không xóa
+    được site/đơn vị còn nhóm. Audit `endpoint_group.*`, `endpoint_member.*` (kể cả `promote`).
+  - **Tách thành thiết bị** (một transaction): tạo thiết bị cùng loại/site/đơn vị (hostname mặc định = tên thành viên, đổi được),
+    cổng `eth0` mang MAC + IP (prefix theo subnet, VRF của subnet) và làm interface quản trị; cổng switch đang cắm ghi vào ghi chú
+    (link thật làm ở P1-12); thành viên rời nhóm. Thân `saveDevice` tách thành `writeDevice` để dùng chung transaction.
+  - **Giao diện:** trang Thiết bị có tab **Nhóm đầu cuối** (lọc site/loại, thanh "đã dùng/tổng"); form nhóm chọn Site → Subnet →
+    Dải IP; trang nhóm: thông tin dải/subnet (link sang IPAM), bảng thành viên (IP, MAC, cổng switch có link), thêm/sửa/xóa, nút
+    tách thành thiết bị. Form thành viên chọn thiết bị mạng cùng site → cổng vật lý. IPAM hiện dòng "Thành viên nhóm …" có link về
+    nhóm. Hướng dẫn trên form + thuật ngữ mới (`endpoint-group`; GLOSSARY.md mục 4b).
+  - ADR-014 ghi chú: dải IP dùng VLAN của subnet (người dùng đồng ý).
+- Test / cách kiểm tra: Go 4 test mới với DB thật (cách ly tổ chức mọi endpoint, quy tắc nhóm/thành viên/cổng, tích hợp IPAM, tách
+  thành thiết bị kể cả trường hợp bị từ chối, phân quyền); 7 mutation đều bị bắt. Vitest 182 pass (thêm: tab nhóm + tạo nhóm theo
+  dải, thêm thành viên chỉ cổng vật lý + tách thành thiết bị, viewer không có nút). Ảnh chụp 6 màn + axe sáng/tối: 0 lỗi.
+  `make check` pass. **Cần chạy `make migrate-up` (000016) rồi khởi động lại `make dev-api`.**
+- Còn dở / lỗi đã biết: cổng switch chưa phải "link" (P1-12 sẽ chuyển thành link thật, kể cả khi tách); badge "đã dùng/tổng" trên
+  sơ đồ làm cùng editor.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-12** Link API.
+
 ## 2026-10-16 — P1-10 IPAM cơ bản
 - Đã làm:
   - **Migration 000015:** `vlans` (số 1–4094, tên, màu, site hoặc toàn tổ chức; không trùng số trong một phạm vi), `subnets`

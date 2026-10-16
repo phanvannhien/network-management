@@ -23,6 +23,8 @@ type Querier interface {
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
+	CountEndpointGroupsInSite(ctx context.Context, arg CountEndpointGroupsInSiteParams) (int64, error)
+	CountEndpointGroupsOfUnit(ctx context.Context, arg CountEndpointGroupsOfUnitParams) (int64, error)
 	// Live devices with the same hostname, other than the device itself and other members of its cluster.
 	CountHostnameConflicts(ctx context.Context, arg CountHostnameConflictsParams) (int64, error)
 	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
@@ -41,6 +43,8 @@ type Querier interface {
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
+	CreateEndpointGroup(ctx context.Context, arg CreateEndpointGroupParams) (pgtype.UUID, error)
+	CreateEndpointMember(ctx context.Context, arg CreateEndpointMemberParams) (pgtype.UUID, error)
 	CreateIP(ctx context.Context, arg CreateIPParams) (IpAddress, error)
 	CreateInterface(ctx context.Context, arg CreateInterfaceParams) (Interface, error)
 	// Applying a template adds the ports a device does not have yet (by name, case-insensitive).
@@ -63,6 +67,8 @@ type Querier interface {
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
+	DeleteEndpointGroup(ctx context.Context, arg DeleteEndpointGroupParams) (int64, error)
+	DeleteEndpointMember(ctx context.Context, arg DeleteEndpointMemberParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
 	DeleteIP(ctx context.Context, arg DeleteIPParams) (int64, error)
 	DeleteInterface(ctx context.Context, arg DeleteInterfaceParams) (int64, error)
@@ -90,6 +96,8 @@ type Querier interface {
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
+	GetEndpointGroup(ctx context.Context, arg GetEndpointGroupParams) (GetEndpointGroupRow, error)
+	GetEndpointMember(ctx context.Context, arg GetEndpointMemberParams) (EndpointMember, error)
 	GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
 	GetInterface(ctx context.Context, arg GetInterfaceParams) (Interface, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
@@ -101,8 +109,12 @@ type Querier interface {
 	GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	GetPartner(ctx context.Context, arg GetPartnerParams) (GetPartnerRow, error)
 	GetPartnerMember(ctx context.Context, arg GetPartnerMemberParams) (GetPartnerMemberRow, error)
+	// A switch port a member may plug into: an interface of a live device in the organization.
+	GetPortInterface(ctx context.Context, arg GetPortInterfaceParams) (GetPortInterfaceRow, error)
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
 	GetRange(ctx context.Context, arg GetRangeParams) (IpRange, error)
+	// A planned range and its subnet, to link a group to it.
+	GetRangeWithSubnet(ctx context.Context, arg GetRangeWithSubnetParams) (GetRangeWithSubnetRow, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
 	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
@@ -137,6 +149,10 @@ type Querier interface {
 	// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
 	// see devices of their granted units plus every device in a site visible to them.
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
+	// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id; visibility follows devices (ADR-031):
+	// the group's unit is granted, or its site is visible.
+	ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error)
+	ListEndpointMembers(ctx context.Context, arg ListEndpointMembersParams) ([]ListEndpointMembersRow, error)
 	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
@@ -189,6 +205,7 @@ type Querier interface {
 	RenamePartnerSitePrefix(ctx context.Context, arg RenamePartnerSitePrefixParams) (int64, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
+	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
@@ -205,6 +222,8 @@ type Querier interface {
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)
+	UpdateEndpointGroup(ctx context.Context, arg UpdateEndpointGroupParams) (int64, error)
+	UpdateEndpointMember(ctx context.Context, arg UpdateEndpointMemberParams) (int64, error)
 	UpdateIP(ctx context.Context, arg UpdateIPParams) (IpAddress, error)
 	UpdateInterface(ctx context.Context, arg UpdateInterfaceParams) (Interface, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
