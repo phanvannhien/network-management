@@ -26,6 +26,7 @@ services:
     environment:
       NTB_HTTP_ADDR: ":8069"
       NTB_VERSION: ${NTB_VERSION:-dev}
+      NTB_ENV: ${NTB_ENV:-production}
       NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:-ntb_dev_password}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
       NTB_MIGRATE_ON_START: "true"
       # Trust X-Forwarded-For only from the nginx container. Never trust whole private ranges:

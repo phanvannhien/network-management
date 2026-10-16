@@ -51,6 +51,8 @@ type Session struct {
 	MFAVerified   bool        // MFA code entered in this session
 	MFARequired   bool        // system admin or org owner/admin (ADR-019)
 	ActiveOrgID   pgtype.UUID // organization used last; only a default for the UI (ADR-023)
+	ExpiresAt     time.Time   // current idle expiry (already capped by SessionAbsolute)
+	MFAVerifiedAt time.Time   // zero when MFA has not been entered in this session
 }
 
 func sessionFromRow(row store.GetSessionRow) Session {
@@ -58,7 +60,7 @@ func sessionFromRow(row store.GetSessionRow) Session {
 		TokenHash: row.TokenHash, CSRFToken: row.CsrfToken, UserID: row.UserID,
 		Email: row.Email, DisplayName: row.DisplayName, IsSystemAdmin: row.IsSystemAdmin,
 		MFAEnabled: row.MfaEnabled, MFAVerified: row.MfaVerifiedAt.Valid, MFARequired: row.MfaRequired,
-		ActiveOrgID: row.ActiveOrganizationID,
+		ActiveOrgID: row.ActiveOrganizationID, ExpiresAt: row.ExpiresAt.Time, MFAVerifiedAt: row.MfaVerifiedAt.Time,
 	}
 }
 
@@ -224,6 +226,7 @@ func (s *Service) Lookup(ctx context.Context, token string) (Session, error) {
 		}); err != nil {
 			return Session{}, fmt.Errorf("touch session: %w", err)
 		}
+		row.ExpiresAt = pgtype.Timestamptz{Time: expires, Valid: true}
 	}
 	return sessionFromRow(row), nil
 }

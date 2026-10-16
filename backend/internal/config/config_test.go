@@ -3,11 +3,11 @@ package config
 import "testing"
 
 func TestLoadDefaults(t *testing.T) {
-	for _, key := range []string{"NTB_HTTP_ADDR", "NTB_VERSION", "NTB_DATABASE_URL", "NTB_MIGRATE_ON_START"} {
+	for _, key := range []string{"NTB_HTTP_ADDR", "NTB_VERSION", "NTB_ENV", "NTB_DATABASE_URL", "NTB_MIGRATE_ON_START"} {
 		t.Setenv(key, "")
 	}
 	cfg := Load()
-	if cfg.HTTPAddr != ":8069" || cfg.Version != "dev" || cfg.MigrateOnStart {
+	if cfg.HTTPAddr != ":8069" || cfg.Version != "dev" || cfg.Env != "development" || cfg.MigrateOnStart {
 		t.Fatalf("unexpected defaults: %+v", cfg)
 	}
 }

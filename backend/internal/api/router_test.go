@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
@@ -45,7 +46,7 @@ func newRouter(t *testing.T, db Pinger, pool *pgxpool.Pool) http.Handler {
 		t.Fatalf("auth service: %v", err)
 	}
 	resolver, _ := auth.NewClientIPResolver("127.0.0.1/32")
-	return NewRouter(logger, NewServer(logger, db, pool, svc, "test"), resolver)
+	return NewRouter(logger, NewServer(logger, db, pool, svc, "test", "testing"), resolver)
 }
 
 // client wraps an httptest server with a cookie jar, like a browser tab.
@@ -87,7 +88,7 @@ func (c *client) do(method, path string, body any, headers map[string]string) (*
 func TestHealthzOK(t *testing.T) {
 	c := newClient(t, newRouter(t, fakePinger{}, nil))
 	resp, body := c.do("GET", "/api/healthz", nil, nil)
-	if resp.StatusCode != 200 || body["database"] != "ok" || body["status"] != "ok" {
+	if resp.StatusCode != 200 || body["database"] != "ok" || body["status"] != "ok" || body["environment"] != "testing" {
 		t.Fatalf("status=%d body=%v", resp.StatusCode, body)
 	}
 }
@@ -155,6 +156,11 @@ func TestLoginSessionLogoutFlow(t *testing.T) {
 	resp, body = c.do("GET", "/api/auth/me", nil, nil)
 	if resp.StatusCode != 200 || body["csrfToken"] != csrf {
 		t.Fatalf("me: status=%d body=%v", resp.StatusCode, body)
+	}
+	// expiresAt is the idle expiry: about 12h ahead, never beyond the 7-day absolute cap.
+	if exp, err := time.Parse(time.RFC3339, fmt.Sprint(body["expiresAt"])); err != nil ||
+		time.Until(exp) < auth.SessionIdle-time.Minute || time.Until(exp) > auth.SessionAbsolute {
+		t.Fatalf("me: expiresAt = %v (%v)", body["expiresAt"], err)
 	}
 
 	// Logout without / with a wrong CSRF token is refused.

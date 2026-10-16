@@ -653,12 +653,15 @@ components:
   schemas:
     Health:
       type: object
-      required: [status, version, database]
+      required: [status, version, environment, database]
       properties:
         status:
           type: string
           enum: [ok, degraded]
         version:
+          type: string
+        environment:
+          description: Deployment name from NTB_ENV (production, staging, development…); the UI badges non-production
           type: string
         database:
           type: string
@@ -692,7 +695,7 @@ components:
 
     AuthSession:
       type: object
-      required: [user, csrfToken, mfa, activeOrganizationId]
+      required: [user, csrfToken, mfa, activeOrganizationId, expiresAt]
       properties:
         user:
           $ref: '#/components/schemas/CurrentUser'
@@ -704,6 +707,10 @@ components:
           description: Organization used last (UI default only; access is checked per request)
           type: [string, 'null']
           format: uuid
+        expiresAt:
+          description: When the session ends if idle (sliding, capped by the 7-day absolute limit)
+          type: string
+          format: date-time
 
     MfaStatus:
       type: object
@@ -719,6 +726,10 @@ components:
           type: boolean
         required:
           type: boolean
+        verifiedAt:
+          description: When MFA was last entered in this session (re-verify gates, e.g. secret reveal, use it)
+          type: [string, 'null']
+          format: date-time
 
     MfaSetup:
       type: object

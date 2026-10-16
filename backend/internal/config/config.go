@@ -12,6 +12,8 @@ type Config struct {
 	HTTPAddr string
 	// Version is reported by /api/healthz.
 	Version string
+	// Env names the deployment ("production", "staging", "development"); the UI shows a badge unless production.
+	Env string
 	// DatabaseURL is the Postgres connection string (dev default: Compose db on localhost:5468).
 	DatabaseURL string
 	// MigrateOnStart applies pending migrations before serving (enabled in Docker Compose).
@@ -28,6 +30,7 @@ func Load() Config {
 	return Config{
 		HTTPAddr:       getenv("NTB_HTTP_ADDR", ":8069"),
 		Version:        getenv("NTB_VERSION", "dev"),
+		Env:            getenv("NTB_ENV", "development"),
 		DatabaseURL:    getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 		MigrateOnStart: getbool("NTB_MIGRATE_ON_START", false),
 		TrustedProxies: getenv("NTB_TRUSTED_PROXIES", "127.0.0.1/32,::1/128"),

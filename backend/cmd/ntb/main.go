@@ -91,7 +91,7 @@ func serve(logger *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version), resolver),
+		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

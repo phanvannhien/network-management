@@ -421,6 +421,8 @@ export interface components {
             /** @enum {string} */
             status: "ok" | "degraded";
             version: string;
+            /** @description Deployment name from NTB_ENV (production, staging, development…); the UI badges non-production */
+            environment: string;
             /** @enum {string} */
             database: "ok" | "unavailable";
         };
@@ -445,6 +447,11 @@ export interface components {
              * @description Organization used last (UI default only; access is checked per request)
              */
             activeOrganizationId: string | null;
+            /**
+             * Format: date-time
+             * @description When the session ends if idle (sliding, capped by the 7-day absolute limit)
+             */
+            expiresAt: string;
         };
         /**
          * @description enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
@@ -455,6 +462,11 @@ export interface components {
             enabled: boolean;
             verified: boolean;
             required: boolean;
+            /**
+             * Format: date-time
+             * @description When MFA was last entered in this session (re-verify gates, e.g. secret reveal, use it)
+             */
+            verifiedAt?: string | null;
         };
         MfaSetup: {
             /** @description Base32 secret for manual entry */

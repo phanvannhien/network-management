@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,13 +30,14 @@ type Server struct {
 	q       store.Querier
 	auth    *auth.Service
 	version string
+	env     string
 }
 
 var _ apigen.StrictServerInterface = (*Server)(nil)
 
 // NewServer builds the API handlers.
-func NewServer(logger *slog.Logger, db Pinger, pool *pgxpool.Pool, authSvc *auth.Service, version string) *Server {
-	return &Server{logger: logger, db: db, pool: pool, q: store.New(pool), auth: authSvc, version: version}
+func NewServer(logger *slog.Logger, db Pinger, pool *pgxpool.Pool, authSvc *auth.Service, version, env string) *Server {
+	return &Server{logger: logger, db: db, pool: pool, q: store.New(pool), auth: authSvc, version: version, env: env}
 }
 
 // errRollback aborts a transaction without being reported as a server error.
@@ -67,11 +69,11 @@ func (s *Server) GetHealthz(ctx context.Context, _ apigen.GetHealthzRequestObjec
 	if _, err := s.db.Ping(ctx); err != nil {
 		s.logger.WarnContext(ctx, "health check: database unavailable", "error", err)
 		return apigen.GetHealthz503JSONResponse{
-			Status: apigen.HealthStatusDegraded, Version: s.version, Database: apigen.HealthDatabaseUnavailable,
+			Status: apigen.HealthStatusDegraded, Version: s.version, Environment: s.env, Database: apigen.HealthDatabaseUnavailable,
 		}, nil
 	}
 	return apigen.GetHealthz200JSONResponse{
-		Status: apigen.HealthStatusOk, Version: s.version, Database: apigen.HealthDatabaseOk,
+		Status: apigen.HealthStatusOk, Version: s.version, Environment: s.env, Database: apigen.HealthDatabaseOk,
 	}, nil
 }
 
@@ -130,9 +132,20 @@ func toAuthSession(s auth.Session) apigen.AuthSession {
 		User: apigen.CurrentUser{
 			Id: uuid.UUID(s.UserID.Bytes), Email: s.Email, DisplayName: s.DisplayName, IsSystemAdmin: s.IsSystemAdmin,
 		},
-		Mfa:                  apigen.MfaStatus{Enabled: s.MFAEnabled, Verified: s.MFAVerified, Required: s.MFARequired},
+		Mfa: apigen.MfaStatus{
+			Enabled: s.MFAEnabled, Verified: s.MFAVerified, Required: s.MFARequired, VerifiedAt: mfaVerifiedAt(s),
+		},
 		ActiveOrganizationId: activeOrg(s),
+		ExpiresAt:            s.ExpiresAt,
 	}
+}
+
+func mfaVerifiedAt(s auth.Session) *time.Time {
+	if s.MFAVerifiedAt.IsZero() {
+		return nil
+	}
+	t := s.MFAVerifiedAt
+	return &t
 }
 
 func activeOrg(s auth.Session) *uuid.UUID {

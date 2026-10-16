@@ -203,6 +203,9 @@ type AuthSession struct {
 	ActiveOrganizationId *openapi_types.UUID `json:"activeOrganizationId"`
 	CsrfToken            string              `json:"csrfToken"`
 
+	// ExpiresAt When the session ends if idle (sliding, capped by the 7-day absolute limit)
+	ExpiresAt time.Time `json:"expiresAt"`
+
 	// Mfa enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
 	// account (system admin / org owner / org admin). The session is fully usable only when
 	// (enabled and verified) or (not enabled and not required).
@@ -235,8 +238,11 @@ type Error struct {
 // Health defines model for Health.
 type Health struct {
 	Database HealthDatabase `json:"database"`
-	Status   HealthStatus   `json:"status"`
-	Version  string         `json:"version"`
+
+	// Environment Deployment name from NTB_ENV (production, staging, development…); the UI badges non-production
+	Environment string       `json:"environment"`
+	Status      HealthStatus `json:"status"`
+	Version     string       `json:"version"`
 }
 
 // HealthDatabase defines model for Health.Database.
@@ -310,6 +316,9 @@ type MfaStatus struct {
 	Enabled  bool `json:"enabled"`
 	Required bool `json:"required"`
 	Verified bool `json:"verified"`
+
+	// VerifiedAt When MFA was last entered in this session (re-verify gates, e.g. secret reveal, use it)
+	VerifiedAt *time.Time `json:"verifiedAt,omitempty"`
 }
 
 // MfaVerifyRequest Provide either a TOTP code or a recovery code.
