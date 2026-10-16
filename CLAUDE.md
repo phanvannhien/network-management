@@ -2,7 +2,7 @@
 
 ## Dự án là gì
 Hệ thống **self-hosted** quản lý hạ tầng mạng cho doanh nghiệp và nhà tích hợp (MSP):
-kho thiết bị, Site/Location, IPAM, sơ đồ mạng kéo thả, đơn vị & sites, nhà cung cấp & hợp đồng, kho mật khẩu & tài khoản cloud,
+kho thiết bị, Site/Location, IPAM, sơ đồ mạng kéo thả, danh mục & sites, nhà cung cấp & hợp đồng, kho mật khẩu & tài khoản cloud,
 phân quyền nhiều tổ chức, và (Phase 3) trạng thái thật qua SNMP.
 
 Tài liệu nguồn:
@@ -40,7 +40,7 @@ Tài liệu nguồn:
 /schema              ntb.schema.json — định dạng file export/import .ntb.json
 /frontend
   src/app/           App shell: layout, menu trái, org switcher, tìm kiếm toàn cục, router
-  src/modules/       inventory, sites (tổ chức → đối tác → đơn vị → site), ipam, vendors, vault, admin, dashboard, reports
+  src/modules/       inventory, sites (tổ chức → cây danh mục → site, ADR-032), ipam, vendors, vault, admin, dashboard, reports
   src/editor/        Màn hình vẽ: model, commands, canvas, toolbar nổi, panels, validation worker
   src/api/           Client sinh từ OpenAPI + hooks TanStack Query
   src/i18n/

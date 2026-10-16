@@ -5,6 +5,23 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Chốt lại phân cấp & quyền (ADR-032), chia lại task
+- Đã làm (chỉ tài liệu, chưa sửa code): sau trao đổi với người dùng, ghi **ADR-032** thay ADR-026/029/030/031 và một phần
+  ADR-025/028:
+  - Cây **Danh mục** nhiều cấp (một bảng cha–con, tên + mã) thay cho Đối tác → Đơn vị; tổ chức không cần danh mục vẫn dùng được
+    ("Công ty → Site"). Site gắn vào bất kỳ danh mục nào hoặc thẳng vào tổ chức; bỏ "site dùng chung" (dùng chung là thiết bị).
+  - Mã site tự sinh theo đường đi (`CJ-CJFEED-HCM`); đổi mã / chuyển nhánh → xem trước danh sách site đổi mã và xác nhận.
+  - Quyền **chỉ theo vai trò trong tổ chức**: mọi thành viên thấy toàn bộ tổ chức; bỏ giao quyền đối tác/đơn vị và chia sẻ.
+  - Sơ đồ thuộc tổ chức; **khung nhóm** gắn site/location trên sơ đồ (thiết bị mới thả vào khung nhận site; lệch site → cảnh báo).
+  - Cập nhật SRS §1, §2, §3, §4.1, §6.1, §10, §12, mô hình dữ liệu, checklist; CLAUDE.md.
+  - PLAN: thêm **P1-27** (cây danh mục + mã site), **P1-28** (quyền chỉ theo tổ chức), **P1-29** (gỡ đơn vị khỏi thiết bị/cụm/nhóm/
+    sơ đồ), làm trước P1-14; P1-19 thêm khung nhóm; P1-20 thêm cảnh báo lệch site; P1-21/P1-25 đổi đơn vị → danh mục.
+- Test / cách kiểm tra: không có thay đổi code.
+- Còn dở / lỗi đã biết: code hiện tại vẫn theo ADR-031 cho tới khi xong P1-27..P1-29.
+- Câu hỏi cho người dùng: chưa trả lời — hướng tạo VLAN/subnet/IP ngay trên sơ đồ (giữ menu IPAM để tra cứu) đã đề xuất trước đó.
+- Đề xuất quyết định cần chốt: như trên.
+- Task tiếp theo đề xuất: **P1-27** Cây Danh mục & mã site tự sinh.
+
 ## 2026-10-16 — P1-13 Diagram API & store
 - Đã làm:
   - **Migration 000018:** `diagrams` — phạm vi tổ chức / đơn vị / site (ADR-028), lớp (vật lý, L2, L3, tổng quan), `view` JSONB

@@ -148,6 +148,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Chốt:** người dùng xác nhận 2026-10-16 (kèm 10 chỉnh sửa ghi trong DESIGN.md §8b, đánh dấu ✎).
 
 ### ADR-025 — Site, location, rack; phạm vi site của thành viên; sơ đồ thuộc đúng một site
+*(Thay đổi sau: phạm vi site của thành viên và "sơ đồ thuộc một site" bỏ hẳn — ADR-032.)*
 - **Quyết định:**
   - Phân cấp: tổ chức (khách hàng / nội bộ) → nhiều **site** → cây **location** (tòa nhà → tầng → phòng; tầng/phòng có thể
     nằm thẳng dưới site cho site nhỏ) → **rack** (thuộc một location, 1–60U, mặc định 42U). Mỗi site có nhiều thiết bị (P1-08)
@@ -166,6 +167,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Chốt:** người dùng xác nhận 2026-10-16.
 
 ### ADR-026 — Cấp Đơn vị giữa Tổ chức và Site
+*(Thay bởi ADR-032: cây Danh mục thay cho Đơn vị; bỏ site dùng chung.)*
 - **Quyết định:** phân cấp: Tổ chức → Đơn vị (business unit) → Site → Location → Rack → Thiết bị.
   Tổ chức = bên ký hợp đồng với đơn vị vận hành (vd CJ). Đơn vị = công ty con / đối tác / khách hàng của tổ chức (vd CJ Foodville).
   Site = địa điểm vật lý có địa chỉ, có `kind`: office | factory | datacenter | warehouse | store | other.
@@ -196,6 +198,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   viên không hợp → từ chối.
 
 ### ADR-028 — Sơ đồ nhiều cấp và đi sâu (drill-down)
+*(Thay một phần bởi ADR-032: sơ đồ thuộc tổ chức, không có phạm vi; nhóm thiết bị theo site/location bằng khung trên sơ đồ.)*
 - **Quyết định:** sơ đồ thuộc tổ chức, có `scope`: organization | business_unit | site (kèm id tương ứng). Ba loại:
   tổng quan tổ chức (trung tâm + đơn vị + WAN/VPN), tổng quan đơn vị (các site dạng khối nối về trung tâm), chi tiết site (LAN).
   Node "site" trên sơ đồ tổng quan: double-click mở sơ đồ chi tiết của site đó. Sơ đồ tổng quan có thể tự sinh từ dữ liệu
@@ -208,6 +211,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   khóa lạc quan theo version; sau khi lưu lịch sử undo bắt đầu lại (temp id thành id thật).
 
 ### ADR-029 — Phân quyền theo đơn vị và chia sẻ bản ghi (động, không cố định trong code)
+*(Thay bởi ADR-032: quyền chỉ theo vai trò trong tổ chức; bỏ giao quyền theo đơn vị và chia sẻ bản ghi.)*
 - **Quyết định:**
   - **Giao quyền theo đơn vị:** bảng `business_unit_members` (business_unit_id, user_id, role: `bu_admin` | `editor` | `viewer`).
     Một user có thể được giao nhiều đơn vị → thấy hợp của tất cả. Vai trò cấp tổ chức (owner/admin/editor/viewer) vẫn giữ:
@@ -229,6 +233,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Chốt:** người dùng xác nhận 2026-10-16.
 
 ### ADR-030 — Quy tắc đặt mã đơn vị và site
+*(Thay bởi ADR-032: mã site tự sinh theo đường đi trên cây Danh mục.)*
 - **Quyết định:** quy tắc **bắt buộc** (server từ chối mã sai), form **tự gợi ý** mã đúng quy tắc, người dùng sửa được trong khuôn khổ.
   - Mã đơn vị: 2–8 ký tự `A–Z`, `0–9`, bắt đầu bằng chữ, lưu chữ hoa, duy nhất trong tổ chức. Vd `FOOD`, `AGRI`, `VPM`.
   - Mã site: `<MÃ ĐƠN VỊ>-<mã địa điểm><STT 2 chữ số>`; mã địa điểm 2–4 chữ cái (gợi ý từ tỉnh/thành: Hưng Yên → `HY`,
@@ -239,6 +244,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Chốt:** người dùng xác nhận 2026-10-16.
 
 ### ADR-031 — Ba cấp Tổ chức → Đối tác → Đơn vị; phân quyền theo đối tác hoặc đơn vị
+*(Thay bởi ADR-032: cây Danh mục nhiều cấp thay Đối tác → Đơn vị; quyền chỉ theo tổ chức.)*
 - **Quyết định:**
   - Phân cấp: Tổ chức (khách hàng của bên vận hành, vd CJ) → **Đối tác** (vd CJ Foodville, CJ Agri Deheus) → **Đơn vị**
     (vd Deheus nhà máy, Deheus văn phòng) → Site → Location → Rack → Thiết bị. **Mọi đơn vị bắt buộc thuộc một đối tác**
@@ -277,3 +283,35 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - User `member` không xem được danh sách thành viên tổ chức (tránh lộ người dùng của đối tác khác).
   - Gỡ thành viên khỏi tổ chức xóa mọi quyền đối tác/đơn vị của người đó; thu hồi quyền cuối cùng thì vẫn là `member`
     nhưng không thấy gì.
+
+### ADR-032 — Cây Danh mục nhiều cấp; site gắn vào bất kỳ danh mục nào; quyền chỉ theo tổ chức; sơ đồ thuộc tổ chức
+- **Bối cảnh:** "Tổ chức → Đối tác → Đơn vị → Site" (ADR-031) cứng nhắc: công ty tự quản mạng nội bộ chỉ cần "Công ty → Site";
+  MSP bảo trì cho khách mà khách lại bảo trì cho khách của họ cần nhiều cấp hơn. Người dùng chốt 2026-10-16.
+- **Quyết định:**
+  - **Danh mục** (`categories`): **một bảng cây** cha–con trong tổ chức (`parent_id` null = ngay dưới tổ chức), sâu tùy ý.
+    Mỗi danh mục có **tên** tự do và **mã** (2–12 ký tự `A–Z0–9`, bắt đầu bằng chữ, duy nhất giữa các danh mục anh em),
+    ghi chú, người liên hệ. Chỉ để phân chia quản lý thiết bị — không gắn quyền, không gắn sơ đồ.
+  - **Site** là một địa điểm vật lý rõ ràng, thuộc đúng **một** danh mục hoặc gắn thẳng vào tổ chức (`category_id` null).
+    Một danh mục có thể vừa có danh mục con vừa có site. **Bỏ khái niệm "site dùng chung"**: dùng chung là chuyện của
+    thiết bị (vd firewall ở IDC phục vụ nhiều site) — thể hiện bằng link, không cần cơ chế quyền riêng.
+  - **Mã site tự sinh** theo đường đi: `<MÃ TỔ CHỨC>-<mã danh mục>-…-<mã riêng của site>`, viết hoa, vd tổ chức `CJ` →
+    danh mục `CJFEED` → site `HCM` = `CJ-CJFEED-HCM`. Tổ chức có thêm **mã** (bắt buộc). Site tự đặt phần cuối (`HCM`, `HCM02`…).
+    Mã đầy đủ duy nhất trong tổ chức, được lưu sẵn để tìm kiếm. **Đổi mã tổ chức/danh mục, hoặc chuyển site/danh mục sang nhánh
+    khác** → API trả danh sách site bị đổi mã (cũ → mới) để người dùng **xác nhận** rồi mới áp dụng; trùng mã → từ chối.
+    Hostname thiết bị do người dùng đặt, không tự đổi theo.
+  - **Quyền chỉ theo tổ chức:** thành viên tổ chức thấy **toàn bộ** dữ liệu của tổ chức; vai trò owner / admin / editor / viewer
+    giữ nguyên (sửa / chỉ xem / quản lý người dùng). Bỏ `partner_members`, `business_unit_members`, `resource_shares`, vai trò
+    `member` (member hiện có → viewer), bộ lọc hiển thị theo đối tác/đơn vị trong SQL, khái niệm "hidden ref" trên sơ đồ.
+    Bộ chọn trên topbar thành **chọn một nhánh của cây Danh mục** — chỉ để lọc.
+  - **Thiết bị, nhóm đầu cuối, cụm** chỉ gắn **site** (danh mục suy ra từ site); bỏ `business_unit_id`.
+  - **Sơ đồ thuộc tổ chức**, không có phạm vi; đặt thiết bị của bất kỳ site nào. Người vẽ nhóm vài thiết bị thành **khung nhóm**
+    gắn với một site hoặc location (vd khung "HCM" chứa 2 router + 1 switch), tên khung lấy theo site/location. Thiết bị **mới tạo**
+    thả vào khung nhận site/location của khung; thiết bị đã có nằm trong khung nhưng site thật khác → **cảnh báo** (không tự sửa kho).
+    Node "site" và drill-down sơ đồ tổng quan (ADR-028) không làm ở Phase 1.
+  - **Chuyển dữ liệu:** mỗi đối tác → một danh mục (mã = mã đối tác); đơn vị của nó → danh mục con, trừ khi đối tác chỉ có đơn vị
+    mặc định `MAIN` (gộp vào danh mục đối tác). Site dùng chung (`SHARED-…`) → gắn thẳng vào tổ chức. Mã riêng của site = mã cũ bỏ
+    tiền tố đối tác (`AGRI-BD01` → `BD01`). Sơ đồ có phạm vi → sơ đồ của tổ chức.
+- **Thay thế:** ADR-026, ADR-029, ADR-030, ADR-031; một phần ADR-025 và ADR-028.
+- **Lý do:** mọi loại khách (công ty nội bộ, khách của MSP, khách nhiều tầng) dùng được cùng một mô hình; một khái niệm (danh mục)
+  thay cho ba (đối tác, đơn vị, site dùng chung); phân quyền đơn giản.
+- **Đánh đổi:** không còn giới hạn "người IT nhà máy chỉ thấy nhà máy" — nếu cần thì tách thành tổ chức riêng.

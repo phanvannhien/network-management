@@ -43,29 +43,47 @@ Phase hiện tại: **Phase 0**
   IP của thành viên nhóm phải vào view `ipam_addresses` (P1-10) để được tính "đang dùng" và "IP trống kế tiếp" bỏ qua.
 - [x] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.
 
+### Tái cấu trúc phân cấp & quyền (ADR-032, chốt 2026-10-16) — làm trước P1-14
+- [ ] **P1-27 Cây Danh mục & mã site tự sinh**: migration `categories` (cây cha–con, mã duy nhất giữa anh em), `organizations.code`,
+  `sites.category_id` (null = gắn vào tổ chức) + mã riêng + `full_code` (duy nhất trong tổ chức); chuyển dữ liệu theo ADR-032
+  (đối tác → danh mục, đơn vị → danh mục con trừ `MAIN`, `SHARED-…` → gắn tổ chức, bỏ tiền tố mã site); API CRUD danh mục, chuyển
+  nhánh; **xem trước đổi mã** (`…/preview` trả site cũ → mới) và áp dụng có xác nhận; màn "Danh mục & Sites" dạng cây (thêm/sửa/
+  chuyển/xóa danh mục, site dưới mọi nút). Done khi: tạo được "Công ty → Site" không qua danh mục; cây 3+ cấp; đổi mã danh mục hiện
+  danh sách site đổi mã và chỉ đổi sau khi xác nhận; dữ liệu cũ chuyển đúng; test chéo tổ chức cho mọi endpoint mới.
+- [ ] **P1-28 Quyền chỉ theo tổ chức**: bỏ `partner_members`, `business_unit_members`, `resource_shares`, vai trò `member` (→ viewer),
+  bộ lọc hiển thị trong mọi query (thiết bị, cụm, nhóm, IPAM, link, sơ đồ) và màn giao quyền/chia sẻ; `access` trên bản ghi = vai trò
+  tổ chức; bộ chọn topbar = chọn nhánh danh mục (lọc). Done khi: viewer chỉ xem, editor sửa toàn tổ chức, admin quản lý user;
+  không còn code/bảng đối tác/đơn vị/chia sẻ; `make check` pass.
+- [ ] **P1-29 Gỡ Đơn vị khỏi thiết bị, cụm, nhóm, sơ đồ**: bỏ `business_unit_id` ở devices / device_clusters / endpoint_groups
+  (danh mục suy từ site; lọc thiết bị theo nhánh danh mục); sơ đồ thuộc tổ chức (bỏ scope, bỏ hidden refs); form và danh sách cập
+  nhật; i18n, hướng dẫn, glossary ("Danh mục" thay "Đối tác/Đơn vị", bỏ "site dùng chung"). Done khi: không còn trường đơn vị ở
+  giao diện/API; test cũ viết lại theo mô hình mới pass.
+
 ### Editor sơ đồ
-- [x] **P1-13 Diagram API & store**: bảng diagrams (view JSONB), lưu có optimistic lock (409 khi xung đột); store editor (Zustand + Immer), commands, undo/redo ≥ 100; lưu = một request gồm thay đổi view + thay đổi dữ liệu kho trong một transaction; nháp chưa gửi giữ ở IndexedDB; diagram có scope organization | business_unit | site.
+- [x] **P1-13 Diagram API & store**: bảng diagrams (view JSONB), lưu có optimistic lock (409 khi xung đột); store editor (Zustand + Immer), commands, undo/redo ≥ 100; lưu = một request gồm thay đổi view + thay đổi dữ liệu kho trong một transaction; nháp chưa gửi giữ ở IndexedDB; diagram có scope organization | business_unit | site *(bỏ phạm vi ở P1-29, ADR-032)*.
 - [ ] **P1-14 Canvas & toolbar nổi**: React Flow, zoom/pan/grid/minimap/fit, thanh công cụ nổi trên, menu trái thu gọn khi vào màn vẽ. Tooltip tên + phím tắt cho mọi nút; gợi ý thao tác lần đầu mở editor, tắt được (DESIGN.md §4a).
 - [ ] **P1-15 Thư viện & thêm nhanh**: panel thư viện nổi (tab template / tab "trong kho chưa vẽ"), tìm kiếm, phím `/` thêm nhanh, kéo thả. Mỗi loại thiết bị / template có mô tả 1 dòng; panel thuộc tính dùng hint/guide/help (DESIGN.md §4a).
 - [ ] **P1-16 Thao tác chọn & sửa**: multi-select, copy/paste giữ link, duplicate, lock, phím tắt SRS §6.4; Delete chỉ gỡ khỏi sơ đồ, Shift+Delete xóa khỏi kho (xác nhận).
 - [ ] **P1-17 Nối dây**: port → port hoặc device → device; popup chọn cổng; kiểu nét theo loại; link song song; gán cổng sau.
 - [ ] **P1-18 Panel thuộc tính & hiển thị**: sửa nhanh device/link/nhóm, mở trang chi tiết; label template, màu nền label, label cổng, ẩn label khi zoom < 50%, tooltip, viền nét đứt cho managed=false.
-- [ ] **P1-19 Annotation**: text màu, mũi tên, zone có nền.
+- [ ] **P1-19 Annotation & khung nhóm**: text màu, mũi tên, zone có nền; **khung nhóm gắn site/location** (ADR-032): tên lấy theo
+  site/location, thiết bị mới thả vào khung nhận site/location của khung.
 - [ ] **P1-20 Validation**: rule engine dùng chung logic cho Web Worker (khi vẽ); rule Phase 1 SRS §7; backend kiểm tra lại các rule Error khi lưu/import; panel Problems, badge node. Mỗi rule có unit test.
   Gồm thêm các rule nghiệp vụ mạng (chốt 2026-10-16): IP trùng **theo VRF** (bỏ qua thành viên cùng cụm, ADR-027); IP là địa chỉ
   mạng/broadcast của subnet IPv4 (trừ /31, /32) → cảnh báo; cổng access có allowed/native VLAN, cổng trunk có access VLAN →
   cảnh báo; thành viên LAG khác tốc độ/media → cảnh báo; thành viên cụm khác model/firmware → cảnh báo.
+  Thiết bị nằm trong khung nhóm nhưng site/location thật khác khung → cảnh báo (ADR-032).
 
 ### Nhập/xuất & tiện ích
-- [ ] **P1-21 Import Excel thiết bị**: file mẫu tải về, ánh xạ cột, xem trước, lỗi từng dòng, tạo mới/cập nhật theo hostname hoặc S/N, chạy nền có tiến trình; ánh xạ Site→Đơn vị, Location→Site; chuẩn hóa và gộp tên gần giống; đề xuất cụm HA khi trùng IP.
+- [ ] **P1-21 Import Excel thiết bị**: file mẫu tải về, ánh xạ cột, xem trước, lỗi từng dòng, tạo mới/cập nhật theo hostname hoặc S/N, chạy nền có tiến trình; ánh xạ Site→Danh mục, Location→Site; chuẩn hóa và gộp tên gần giống; đề xuất cụm HA khi trùng IP.
 - [ ] **P1-22 Export**: PNG (1x–4x) / SVG có legend; Excel danh sách thiết bị; `.ntb.json` export/import theo `schema/ntb.schema.json` (không có bí mật); mỗi lần export ghi audit `export.*` (từ P1-05).
 - [ ] **P1-23 Tìm kiếm toàn cục**: hostname, IP, MAC, S/N, part number, site; kết quả mở đúng trang/zoom tới node trên sơ đồ.
 - [ ] **P1-24 Dashboard cơ bản**: số thiết bị theo site/loại/trạng thái, top vấn đề validation, thiết bị thiếu thông tin.
-- [ ] **P1-25 Dữ liệu mẫu & benchmark**: seed tổ chức "Tập đoàn Mẫu" (tên giả) có 2 đơn vị "Mẫu Food" và "Mẫu Agri"; site dùng chung "IDC HCM" (datacenter)
+- [ ] **P1-25 Dữ liệu mẫu & benchmark**: seed tổ chức "Tập đoàn Mẫu" (tên giả) có 2 danh mục "Mẫu Food" và "Mẫu Agri"; site "IDC HCM" (datacenter) gắn thẳng vào tổ chức
   có cặp FortiGate 80F HA chung IP 10.136.4.101; Mẫu Food: site Hà Nội (1 router ISR4331 10.136.41.1, 1 switch CBS220 10.136.41.2),
   site HCM (4 switch C1300 10.136.162.4–7); Mẫu Agri: 6 site (Hưng Yên, Vĩnh Long, Bình Định – nhà máy, Bến Cát, Biên Hòa, HCM) mỗi site 1 router
   (ISR4331/ISR4321/C2921/C2911/C2951, IP 10.136.<x>.1); link VPN từ mọi router chi nhánh về cụm FortiGate. S/N dùng giá trị giả.
-  Giữ cả dữ liệu "Văn phòng mẫu" cũ như một đơn vị thứ ba. Kèm file testdata/import-sample.xlsx đúng định dạng file khách
+  Giữ cả dữ liệu "Văn phòng mẫu" cũ như một danh mục thứ ba. Kèm file testdata/import-sample.xlsx đúng định dạng file khách
   (cột Site, Location, Category, Hostname, Ip Address mgmt, PartNumber, S/N, Person in charge) có tên viết lệch để test gộp.
   Script sinh 500/2.000 thiết bị; đo FPS, thời gian mở, thời gian lọc bảng.
 - [ ] **P1-26 Gate MVP**: chạy checklist SRS §16, sửa tới khi đạt.
