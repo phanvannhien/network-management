@@ -1,0 +1,10 @@
+# Keep the Docker build context small and avoid copying host-built artifacts
+# (macOS node_modules would overwrite the Linux ones installed by `npm ci`).
+.git
+**/node_modules
+**/dist
+**/coverage
+**/*.log
+deploy/.env
+.env
+*.zip

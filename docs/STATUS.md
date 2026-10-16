@@ -5,6 +5,20 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P0-05 Compose đầy đủ (hạ tầng xong, CHƯA tick)
+- Đã làm:
+  - `deploy/api.Dockerfile`: build Go nhiều tầng (golang:1.25-alpine, CGO tắt, GOWORK=off) → alpine, chạy user không root (uid 10001).
+  - Compose: service `api` (env `NTB_DATABASE_URL` trỏ `db`, `NTB_MIGRATE_ON_START=true`, `NTB_MASTER_KEY`), healthcheck cả `web`/`api`/`db` (healthcheck api gọi `/api/healthz` → bao luôn kết nối DB); thứ tự khởi động db → api → web theo healthy.
+  - Backend: cờ `NTB_MIGRATE_ON_START` (config + test) — API tự chạy migration nhúng trước khi phục vụ; dev vẫn dùng `make migrate-up`.
+  - nginx: `location /api/` proxy sang `api:8069` (đặt trước SPA fallback, kèm X-Forwarded-*); route /api sai trả 404 thay vì `index.html`.
+  - `.env.example`: `NTB_MASTER_KEY` (hướng dẫn `openssl rand -base64 32`, cảnh báo giữ riêng khỏi backup), `NTB_VERSION`, lưu ý ký tự đặc biệt trong mật khẩu DB.
+  - Thêm `.dockerignore` (node_modules macOS từng có thể ghi đè node_modules Linux do `COPY frontend/` sau `npm ci`).
+  - Sửa lỗi có sẵn: build Docker `web` hỏng từ P1-10 cũ vì frontend import `../schema` (alias @schema) mà Dockerfile chỉ copy `frontend/` → build giữ bố cục `/repo/frontend` + `/repo/schema`.
+- Test / cách kiểm tra (chạy thật): `docker compose -f deploy/docker-compose.yml up -d --build` → 3 service healthy; `curl :8068/api/healthz` → 200 JSON `database:ok`; `/api/nope` → 404 (không phải index.html); `/editor` → 200; bundle đúng bản mới; log api có "applying database migrations"; `id` trong container = uid 10001. `make check` pass.
+- Còn dở / lỗi đã biết: **P0-05 chưa tick** — Done khi cần "thấy trang đăng nhập", trang đó thuộc P1-01; tick cùng P1-01. Chưa thử migrate trên volume DB trống (không xóa volume dev của người dùng; logic migrate đã có test Go với DB tạm). API chưa dùng `NTB_MASTER_KEY` (từ P1-02) — sẽ bắt buộc có giá trị khi khởi động lúc đó.
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-01 Đăng nhập (argon2id, session cookie Postgres, logout, khóa tạm, CSRF, rate limit, IP client sau proxy tin cậy, `ntb admin create`, trang đăng nhập) — xong thì tick luôn P0-05.
+
 ## 2026-10-16 — P0-03 Sinh code
 - Đã làm:
   - **OpenAPI 3.1 khả thi:** thử thật oapi-codegen v2.8.0 với spec 3.1 (`type: [string, "null"]` → `*string`) — chạy đúng. `api/openapi.yaml` nâng lên 3.1.0 theo đúng ADR-017, không cần ADR mới.

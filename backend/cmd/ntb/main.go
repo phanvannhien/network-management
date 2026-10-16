@@ -15,6 +15,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
@@ -30,6 +31,13 @@ func run(logger *slog.Logger) error {
 	cfg := config.Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	if cfg.MigrateOnStart {
+		logger.Info("applying database migrations")
+		if err := database.MigrateUp(cfg.DatabaseURL); err != nil {
+			return fmt.Errorf("migrate on start: %w", err)
+		}
+	}
 
 	// The pool connects lazily: the API starts even when Postgres is down and /api/healthz reports it.
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)

@@ -6,8 +6,36 @@ services:
     ports:
       - "${WEB_PORT:-8068}:80"
     depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    environment:
+      NTB_HTTP_ADDR: ":8069"
+      NTB_VERSION: ${NTB_VERSION:-dev}
+      NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:-ntb_dev_password}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
+      NTB_MIGRATE_ON_START: "true"
+      # Envelope-encryption master key for secrets (MFA, credentials; used from P1-02). Required in production.
+      NTB_MASTER_KEY: ${NTB_MASTER_KEY:-}
+    depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      # /api/healthz returns 503 when the database is unreachable, so this also covers DB connectivity.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8069/api/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   db:

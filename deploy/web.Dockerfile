@@ -1,13 +1,14 @@
-# Build stage
+# Build stage — mirrors the repo layout because the frontend imports ../schema (Vite alias @schema).
 FROM node:22-alpine AS build
-WORKDIR /app
+WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
+COPY schema/ /repo/schema/
 COPY frontend/ ./
 RUN npm run build
 
 # Serve stage
 FROM nginx:1.27-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /repo/frontend/dist /usr/share/nginx/html
 EXPOSE 80
