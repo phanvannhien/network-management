@@ -75,7 +75,7 @@ Trạng thái **luôn = icon + chữ + màu**. Không bao giờ chỉ dùng ch�
 | planned | `#5F6770` | `#9AA4AF` | `circle-dashed` | "Dự kiến" | **viền/nét đứt**, nền trong suốt |
 | not monitored | `--text-muted` | `--text-muted` | `circle-minus` | "Không giám sát" | không màu nền |
 
-Badge trạng thái: nền = màu trạng thái độ mờ 12% (Light) / 18% (Dark), chữ + icon = màu trạng thái đậm; bo 4px; cao 20px.
+Badge trạng thái: nền = màu trạng thái 10% trộn **đục** với `surface` (cả Light/Dark — axe-core Bước 2 cho thấy nền trong suốt 12%/18% tụt dưới 4.5:1 trên dòng hover/đang chọn), chữ + icon = màu trạng thái; bo 4px; cao 20px. Dòng đang chọn: accent 6% + vạch accent 2px bên trái.
 Màu lỗi form/hành động phá hủy dùng `down`, cảnh báo dùng `warning`, thành công dùng `up`.
 
 ### 3.3 Tương phản (đã tính, WCAG 2.1)

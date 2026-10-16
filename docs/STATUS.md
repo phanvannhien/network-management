@@ -5,6 +5,40 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 2: nền tảng thiết kế (ADR-024) + trang mẫu
+- Đã làm:
+  - DESIGN.md cập nhật 10 chỉnh sửa đã duyệt (đánh dấu ✎, §8b); ghi ADR-024; Stack trong CLAUDE.md.
+  - Thư viện: @tanstack/react-table (v9), cmdk, sonner, recharts (chưa dùng — cho Dashboard), IBM Plex Sans/Mono (@fontsource),
+    react-i18next + i18next, @axe-core/playwright (dev); gỡ Geist. Component shadcn thêm qua CLI rồi chỉnh theo token.
+  - API: `Health.environment` (env `NTB_ENV`, mặc định development; Compose mặc định production), `AuthSession.expiresAt`,
+    `MfaStatus.verifiedAt` (để SecretField biết MFA quá 5 phút). Có test.
+  - Token màu/chữ/mật độ trong `index.css` (Light/Dark/System, Gọn/Thoáng); `cn` cấu hình nhận cỡ chữ token.
+  - i18n `src/i18n` (vi mặc định, en; key có kiểm tra kiểu). Component mới không còn chuỗi cứng.
+  - Component dùng chung `src/components/`: AppShell (OrgShell + SystemShell có dải màu riêng), sidebar tự thu gọn < 1440px,
+    org avatar màu cố định, badge môi trường, breadcrumb, Ctrl+K, thông báo, menu tài khoản (giao diện/mật độ/đăng xuất),
+    cảnh báo phiên hết hạn 2 phút; PageHeader, DataTable, FilterBar (+ bộ lọc đã lưu), StatusBadge, KeyValueList, TechText,
+    CopyButton, StatCard, EmptyState, ConfirmDialog 2 mức, FormField, PasswordInput, MfaCodeInput, SecretField, Toaster.
+  - `/dev/ui` (chỉ dev, đã kiểm tra không có trong bundle production).
+  - Trang mới: Danh sách + Chi tiết thiết bị (dữ liệu mẫu "Văn phòng mẫu", giả lập API phân trang server, có banner),
+    Đăng nhập, Quên mật khẩu, MFA, Thiết lập MFA (khóa chia nhóm + bước mã khôi phục bắt buộc tick), Kích hoạt, 404.
+  - Trang cũ (Dashboard tạm, Thành viên, Quản trị) đã nằm trong khung mới nhưng nội dung chưa làm lại (Bước 3).
+    Dòng "API: ok · dev · DB ok" đã bỏ.
+- Test / cách kiểm tra:
+  - `make check` pass (132 test frontend, gồm test mới cho DataTable/ConfirmDialog/SecretField/MfaCodeInput/hết phiên/Ctrl+K/
+    trang thiết bị; đã thử mutation để chắc test bắt lỗi).
+  - Ảnh `docs/ui-screens/after/` (15 trang × 1440/1280 × Light/Dark = 60 ảnh).
+  - axe-core WCAG 2.1 AA + duyệt Tab 25 bước mỗi trang: `docs/ui-screens/after/a11y-report.md` — 0 vấn đề
+    (lần đầu ra 18: tương phản badge trên dòng chọn/Dark, aria-label lệch chữ hiển thị, khung cuộn/tab panel thiếu viền focus — đã sửa).
+  - Script: `scripts/screenshots.mjs` (thêm actions/mock), `scripts/a11y.mjs`.
+- Còn dở / lỗi đã biết:
+  - Thao tác trên trang thiết bị (thêm/sửa/xóa/xuất) chỉ hiện toast "dữ liệu mẫu" cho tới P1-08.
+  - Bundle JS ~1 MB (cảnh báo Vite) — tách chunk theo route ở Bước 3.
+  - Editor sơ đồ chưa theo token/i18n (Bước 3). Tình trạng hệ thống chưa có trang trong khu vực Hệ thống (Bước 3).
+  - API dev đang chạy ở 8069 cần khởi động lại (`make dev-api`) để có `environment`/`expiresAt`.
+- Câu hỏi cho người dùng: duyệt ảnh Bước 2 trước khi sang Bước 3.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: UI Bước 3 (làm lại các trang còn lại theo module), sau đó P1-05.
+
 ## 2026-10-16 — Thiết kế lại giao diện NMS — Bước 1 (khảo sát & kế hoạch, chưa code giao diện)
 - Đã làm: cài `@playwright/test` (trong Stack) + Chromium; `frontend/scripts/screenshots.mjs` (chụp theo danh sách trang, Light/Dark, nhiều độ rộng, cookie session) — dùng lại ở Bước 2–3. Chụp 14 trang × Light/Dark ở 1440px → `docs/ui-screens/before/` (28 ảnh) trên API + Vite riêng (8074/5180) với DB tạm có dữ liệu mẫu và session ở từng trạng thái (đầy đủ, chờ mã MFA, bắt buộc thiết lập MFA); đã dọn DB tạm và process, không đụng server dev 5173/8069 của người dùng. Viết `docs/DESIGN.md`: mục tiêu, 17 vấn đề hiện trạng có dẫn ảnh, bảng màu Light/Dark (accent aqua OM3, nền NOC tối) + 6 màu trạng thái có icon + chữ, typography IBM Plex Sans/Mono đóng gói, thang khoảng cách 4px, mật độ Gọn/Thoáng, AppShell, wireframe 4 kiểu trang, 10 nguyên tắc, thư viện đề xuất, nháp ADR-024.
 - Test / cách kiểm tra: tương phản WCAG tính bằng script cho mọi cặp chữ/nền: chữ ≥ 5.06:1 (Light) / ≥ 4.72:1 (Dark); viền control ≥ 3.01:1 (sửa 2 vòng: bản đầu accent/up/warn/unknown Light < 4.5 trên header bảng, viền input < 3:1).

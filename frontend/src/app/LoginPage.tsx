@@ -1,9 +1,16 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router'
-import { AuthCard, inputClass, primaryButtonClass, safeNext } from './AuthCard'
+import { useTranslation } from 'react-i18next'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
+import { FormField } from '@/components/FormField'
+import { PasswordInput } from '@/components/PasswordInput'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { AuthCard, authControl } from './AuthCard'
 import { useLogin, useSession } from './auth'
+import { safeNext } from './safeNext'
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
   const navigate = useNavigate()
@@ -21,38 +28,49 @@ export function LoginPage() {
   }
 
   return (
-    <AuthCard title="Đăng nhập">
+    <AuthCard title={t('auth.signIn')}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block space-y-1">
-          <span className="text-sm text-muted-foreground">Email</span>
-          <input
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-sm text-muted-foreground">Mật khẩu</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
-          />
-        </label>
+        <FormField label={t('auth.email')}>
+          {(f) => (
+            <Input
+              {...f}
+              type="email"
+              autoComplete="username"
+              autoFocus
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={authControl}
+            />
+          )}
+        </FormField>
+        <div className="space-y-1">
+          <FormField label={t('auth.password')}>
+            {(f) => (
+              <PasswordInput
+                {...f}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={authControl}
+              />
+            )}
+          </FormField>
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-label text-primary hover:underline">
+              {t('auth.forgot')}
+            </Link>
+          </div>
+        </div>
         {login.isError && (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-destructive">
             {login.error.message}
           </p>
         )}
-        <button type="submit" disabled={login.isPending} className={primaryButtonClass}>
-          {login.isPending ? 'Đang đăng nhập…' : 'Đăng nhập'}
-        </button>
+        <Button type="submit" disabled={login.isPending} className={`w-full ${authControl}`}>
+          {login.isPending ? t('auth.signingIn') : t('auth.signIn')}
+        </Button>
       </form>
     </AuthCard>
   )

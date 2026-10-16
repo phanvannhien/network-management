@@ -15,7 +15,7 @@ export function AdminUsersPage() {
   const error = action.error ?? reset.error ?? users.error
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6 text-sm text-foreground">
+    <div className="max-w-5xl space-y-6 p-4 text-foreground">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Quản trị người dùng</h1>
         <Link to="/" className="text-primary underline">
@@ -114,6 +114,6 @@ export function AdminUsersPage() {
           ))}
         </tbody>
       </table>
-    </main>
+    </div>
   )
 }

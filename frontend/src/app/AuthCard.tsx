@@ -1,28 +1,52 @@
+import { Network } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { EnvBadge } from '@/components/EnvBadge'
+import { useHealth } from './health'
 
-export const inputClass =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring'
-export const primaryButtonClass =
-  'w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
-
-/** Centered card used by the sign-in and MFA screens. */
-export function AuthCard({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Centered card for sign-in, MFA, activation and password pages (DESIGN.md §8b): product name +
+ * version, environment badge outside production, 14px/22px form text.
+ */
+export function AuthCard({
+  title,
+  description,
+  children,
+  footer,
+}: {
+  title: string
+  description?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+}) {
+  const { t } = useTranslation()
+  const version = useHealth().data?.version
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-6 text-form text-foreground">
+      <div className="flex items-center gap-2">
+        <Network aria-hidden className="size-6 text-primary" strokeWidth={2} />
+        <span className="text-base font-semibold">{t('common.product')}</span>
+        <EnvBadge />
+      </div>
       <section
-        className="w-full max-w-sm space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm"
+        className="w-full max-w-sm space-y-5 rounded-lg border border-border bg-card p-6"
         aria-labelledby="auth-card-title"
       >
-        <h1 id="auth-card-title" className="text-xl font-semibold">
-          {title}
-        </h1>
+        <div className="space-y-1">
+          <h1 id="auth-card-title" className="text-title font-semibold">
+            {title}
+          </h1>
+          {description && <div className="text-muted-foreground">{description}</div>}
+        </div>
         {children}
       </section>
+      {footer}
+      <p className="text-label text-muted-foreground" data-numeric>
+        {version ? t('common.version', { version }) : ' '}
+      </p>
     </main>
   )
 }
 
-/** Only same-app paths are allowed as post-auth redirects (no open redirect via ?next=). */
-export function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
-}
+/** Full-width primary button / input sizes used on the auth pages. */
+export const authControl = 'h-9 text-form'

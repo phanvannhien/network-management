@@ -2,7 +2,9 @@
 //   node scripts/screenshots.mjs <pages.json> <outDir>
 // Env: BASE_URL (default http://localhost:5180), TOKENS (JSON file mapping session name → cookie value),
 //      WIDTHS (comma list, default 1440), THEMES (light,dark).
-// pages.json: [{ "name": "members", "path": "/o/<id>/members", "session": "full", "click": "Sửa thông tin" }]
+// pages.json: [{ "name": "members", "path": "/o/<id>/members", "session": "full", "click": "Sửa thông tin",
+//   "actions": [{ "click": "Bắt đầu" }, { "fill": "Mã", "value": "123456" }, { "check": "Chọn SW-01" }, { "press": "Control+K" }],
+//   "mock": { "POST /api/auth/mfa/enable": { "status": 200, "body": { … } } }, "fullPage": false }]
 import { chromium } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -42,14 +44,37 @@ for (const width of widths) {
         )
       }, theme === 'dark')
       const page = await context.newPage()
+      page.on('pageerror', (e) => console.error(`  ! ${p.name}: ${e.message}`))
+      for (const [key, res] of Object.entries(p.mock ?? {})) {
+        const [method, route] = key.split(' ')
+        await page.route(base + route, (r) =>
+          r.request().method() === method
+            ? r.fulfill({
+                status: res.status,
+                contentType: 'application/json',
+                body: JSON.stringify(res.body),
+              })
+            : r.continue(),
+        )
+      }
       await page.goto(base + p.path, { waitUntil: 'networkidle' })
-      if (p.click) {
-        await page.getByRole('button', { name: p.click }).first().click()
+      const actions = [...(p.click ? [{ click: p.click }] : []), ...(p.actions ?? [])]
+      for (const a of actions) {
+        if (a.click)
+          await page
+            .getByRole(a.role ?? 'button', { name: a.click, exact: a.exact ?? true })
+            .first()
+            .click()
+        if (a.fill) await page.getByLabel(a.fill, { exact: true }).first().fill(a.value)
+        if (a.check)
+          await page.getByRole('checkbox', { name: a.check, exact: true }).first().click()
+        if (a.press) await page.keyboard.press(a.press)
         await page.waitForLoadState('networkidle')
+        await page.waitForTimeout(150)
       }
       await page.waitForTimeout(300)
       const file = path.join(outDir, `${p.name}--${width}-${theme}.png`)
-      await page.screenshot({ path: file, fullPage: true })
+      await page.screenshot({ path: file, fullPage: p.fullPage ?? true })
       console.log(file)
       await context.close()
     }

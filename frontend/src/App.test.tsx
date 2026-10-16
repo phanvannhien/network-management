@@ -23,7 +23,10 @@ const SESSION = {
   // Admin with MFA enrolled and verified this session → full access.
   mfa: { enabled: true, verified: true, required: true },
   activeOrganizationId: null,
+  expiresAt: '2099-01-01T00:00:00Z',
 }
+
+const HEALTH = { status: 'ok', version: 'test', environment: 'development', database: 'ok' }
 
 const withMfa = (mfa: { enabled: boolean; verified: boolean; required: boolean }) => ({
   ...SESSION,
@@ -109,24 +112,27 @@ describe('auth guard', () => {
     expect(await screen.findByRole('heading', { name: 'Đăng nhập' })).toBeInTheDocument()
   })
 
-  it('shows the home page with user and API health when signed in', async () => {
+  it('shows the home page inside the shell with a badge outside production', async () => {
     fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/')
     expect(await screen.findByText('Admin')).toBeInTheDocument()
-    expect(await screen.findByText('API: ok · test · DB ok')).toBeInTheDocument()
+    expect(await screen.findByText('Development')).toBeInTheDocument()
+    // The organization is always named in the topbar, even with a single membership.
+    expect(screen.getByLabelText('Tổ chức hiện tại: Văn phòng mẫu')).toBeInTheDocument()
+    expect(screen.queryByText(/API:/)).not.toBeInTheDocument()
   })
 
-  it('shows degraded health when the database is down (503)', async () => {
+  it('hides the environment badge in production', async () => {
     fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () =>
-        json({ status: 'degraded', version: 'test', database: 'unavailable' }, 503),
+      'GET /api/healthz': () => json({ ...HEALTH, environment: 'production' }),
     })
     renderAt('/')
-    expect(await screen.findByText('API: degraded · test · DB unavailable')).toBeInTheDocument()
+    expect(await screen.findByText('Admin')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Development')).not.toBeInTheDocument())
   })
 
   it('renders the editor for a signed-in user', async () => {
@@ -145,7 +151,7 @@ describe('login page', () => {
         signedIn = true
         return json(SESSION)
       },
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/login?next=/')
     fireEvent.change(await screen.findByLabelText('Email'), {
@@ -178,7 +184,7 @@ describe('login page', () => {
   it('ignores external ?next= targets (no open redirect)', async () => {
     fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/login?next=//evil.example/phish')
     // Already signed in: redirected to "/" instead of the external URL.
@@ -191,14 +197,15 @@ describe('logout', () => {
     let signedIn = true
     const calls = fakeApi({
       'GET /api/auth/me': () => (signedIn ? json(SESSION) : json({ message: 'x' }, 401)),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
       'POST /api/auth/logout': () => {
         signedIn = false
         return new Response(null, { status: 204 })
       },
     })
     renderAt('/')
-    fireEvent.click(await screen.findByRole('button', { name: 'Đăng xuất' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Tài khoản: Admin' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Đăng xuất' }))
     expect(await screen.findByRole('heading', { name: 'Đăng nhập' })).toBeInTheDocument()
     const logoutCall = calls.find((r) => r.method === 'POST')!
     expect(logoutCall.headers.get('X-CSRF-Token')).toBe('csrf-123')
@@ -214,14 +221,14 @@ describe('MFA', () => {
         verified = true
         return json(withMfa({ enabled: true, verified: true, required: true }))
       },
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/')
     expect(await screen.findByRole('heading', { name: 'Xác thực hai lớp' })).toBeInTheDocument()
+    // The sixth digit submits on its own (no button press).
     fireEvent.change(screen.getByLabelText('Mã 6 số từ ứng dụng xác thực'), {
-      target: { value: '123456' },
+      target: { value: '123 456' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận' }))
     expect(await screen.findByText('Admin')).toBeInTheDocument()
     const verifyCall = calls.find((r) => r.url.endsWith('/auth/mfa/verify'))!
     expect(await verifyCall.clone().json()).toEqual({ code: '123456' })
@@ -259,7 +266,7 @@ describe('MFA', () => {
         enabled = true
         return json({ recoveryCodes: ['AAAA-BBBB-CCCC-DDDD', 'EEEE-FFFF-GGGG-HHHH'] })
       },
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/editor')
     expect(
@@ -268,14 +275,18 @@ describe('MFA', () => {
     expect(screen.getByText(/bắt buộc dùng MFA/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }))
     expect(await screen.findByAltText('Mã QR thiết lập MFA')).toBeInTheDocument()
-    expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument()
+    expect(screen.getByText('JBSW Y3DP EHPK 3PXP')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/Nhập mã 6 số/), { target: { value: '654321' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Bật MFA' }))
 
     // Codes stay on screen even though the session now reports MFA enabled.
     expect(await screen.findByRole('heading', { name: 'Lưu mã khôi phục' })).toBeInTheDocument()
     expect(screen.getByText('AAAA-BBBB-CCCC-DDDD')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Tôi đã lưu mã, tiếp tục' }))
+    // Continue stays disabled until the user confirms the codes were saved.
+    const cont = screen.getByRole('button', { name: 'Tiếp tục' })
+    expect(cont).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Tôi đã lưu mã khôi phục ở nơi an toàn' }))
+    await waitFor(() => expect(cont).toBeEnabled())
+    fireEvent.click(cont)
     await waitFor(() => expect(document.body.querySelector('.react-flow')).toBeInTheDocument())
   })
 
@@ -286,7 +297,7 @@ describe('MFA', () => {
           ...withMfa({ enabled: false, verified: false, required: false }),
           user: { ...SESSION.user, isSystemAdmin: false },
         }),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/')
     expect(await screen.findByRole('link', { name: 'Bật xác thực hai lớp' })).toBeInTheDocument()
@@ -297,7 +308,7 @@ describe('organizations', () => {
   it('opens the remembered organization and records it as active', async () => {
     const calls = fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/')
     expect(await screen.findByRole('heading', { name: 'Văn phòng mẫu' })).toBeInTheDocument()
@@ -322,19 +333,17 @@ describe('organizations', () => {
   it('shows "not found" for organizations the user cannot access', async () => {
     fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/o/22222222-2222-4222-8222-222222222222')
-    expect(
-      await screen.findByRole('heading', { name: 'Không tìm thấy tổ chức' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Không tìm thấy trang' })).toBeInTheDocument()
   })
 
   it('owner renames the organization; a 409 is explained', async () => {
     let attempt = 0
     const calls = fakeApi({
       'GET /api/auth/me': () => json(SESSION),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
       [`PATCH /api/orgs/${ORG_ID}`]: () =>
         ++attempt === 1
           ? json(
@@ -421,7 +430,7 @@ describe('admin organizations', () => {
           user: { ...SESSION.user, isSystemAdmin: false },
           mfa: { enabled: true, verified: true, required: true },
         }),
-      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      'GET /api/healthz': () => json(HEALTH),
     })
     renderAt('/admin/organizations')
     expect(await screen.findByRole('heading', { name: 'Văn phòng mẫu' })).toBeInTheDocument()
@@ -570,5 +579,79 @@ describe('admin users', () => {
     renderAt('/admin/users')
     fireEvent.click(await screen.findByRole('button', { name: 'Link đặt lại mật khẩu' }))
     expect(await screen.findByText(/\/invite\/reset456$/)).toBeInTheDocument()
+  })
+})
+
+describe('app shell and device pages', () => {
+  it('lists sample devices with server-style search and opens a device', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt(`/o/${ORG_ID}/devices`)
+    expect(await screen.findByRole('heading', { name: 'Thiết bị' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'AP-DN-01' })).toBeInTheDocument()
+    // Hostname is a regular-weight sans link, IPs are mono.
+    expect(screen.getByRole('link', { name: 'AP-DN-01' }).className).not.toMatch(/font-mono/)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm kiếm' }), {
+      target: { value: 'FW-HQ' },
+    })
+    await waitFor(() =>
+      expect(screen.queryByRole('link', { name: 'AP-DN-01' })).not.toBeInTheDocument(),
+    )
+    fireEvent.click(await screen.findByRole('link', { name: 'FW-HQ-01' }))
+    expect(await screen.findByRole('heading', { name: 'FW-HQ-01' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Vị trí trang' })).toHaveTextContent('Thiết bị')
+  })
+
+  it('opens the interfaces tab from ?tab= and masks credentials', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt(`/o/${ORG_ID}/devices/dev-hq-sw-acc-01?tab=interfaces`)
+    expect(await screen.findByRole('heading', { name: 'SW-ACC-HQ-01' })).toBeInTheDocument()
+    expect(screen.getByText('Gi1/0/1')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Truy cập' }))
+    expect(await screen.findByText(/Mật khẩu SSH: Đã che/)).toBeInTheDocument()
+    expect(screen.queryByText('Sample-Ssh-Pa55w0rd')).not.toBeInTheDocument()
+  })
+
+  it('marks the system area with its own band and label', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () => json(HEALTH),
+      'GET /api/admin/users': () => json({ users: [] }),
+    })
+    renderAt('/admin/users')
+    expect(await screen.findByText('Khu vực hệ thống')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Tổ chức hiện tại/)).not.toBeInTheDocument()
+  })
+
+  it('collapses the sidebar to icons below 1440px', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: false,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt(`/o/${ORG_ID}`)
+    expect(await screen.findByRole('button', { name: 'Mở rộng menu' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(screen.getByRole('link', { name: 'Thiết bị' })).toBeInTheDocument() // icon link keeps its name
+  })
+
+  it('Ctrl+K opens the command palette and jumps to a device', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION), 'GET /api/healthz': () => json(HEALTH) })
+    renderAt(`/o/${ORG_ID}`)
+    await screen.findByText('Admin')
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    const input = await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…')
+    fireEvent.change(input, { target: { value: '10.72.114.1' } })
+    fireEvent.click(await screen.findByRole('option', { name: /FW-HQ-01/ }))
+    expect(await screen.findByRole('heading', { name: 'FW-HQ-01' })).toBeInTheDocument()
+  })
+
+  it('shows a 404 page for unknown addresses', async () => {
+    fakeApi({})
+    renderAt('/no-such-page')
+    expect(await screen.findByRole('heading', { name: 'Không tìm thấy trang' })).toBeInTheDocument()
   })
 })

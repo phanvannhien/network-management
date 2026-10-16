@@ -1,14 +1,68 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { Copy, Download } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
-import { AuthCard, inputClass, primaryButtonClass, safeNext } from './AuthCard'
+import { toast } from 'sonner'
+import { CopyButton } from '@/components/CopyButton'
+import { FormField } from '@/components/FormField'
+import { MfaCodeInput } from '@/components/MfaCodeInput'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { copyText } from '@/lib/clipboard'
+import { groupKey } from '@/lib/format'
+import { AuthCard, authControl } from './AuthCard'
 import { SESSION_QUERY_KEY, useMfaEnable, useMfaSetup, useSession } from './auth'
+import { safeNext } from './safeNext'
+
+/** Mandatory step after enabling MFA: codes must be copied/downloaded and acknowledged. */
+function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
+  const { t } = useTranslation()
+  const [saved, setSaved] = useState(false)
+  const text = codes.join('\n') + '\n'
+  return (
+    <AuthCard title={t('auth.recoveryTitle')} description={t('auth.recoveryBody')}>
+      <ul
+        className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-border bg-muted p-3 font-mono text-tech"
+        aria-label={t('auth.recoveryList')}
+      >
+        {codes.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => void copyText(text).then((ok) => ok && toast.success(t('common.copied')))}
+        >
+          <Copy aria-hidden /> {t('auth.recoveryCopy')}
+        </Button>
+        <a
+          className={buttonVariants({ variant: 'outline', className: 'flex-1' })}
+          download="ntb-recovery-codes.txt"
+          href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`}
+        >
+          <Download aria-hidden /> {t('auth.recoveryDownload')}
+        </a>
+      </div>
+      <label className="flex items-start gap-2">
+        <Checkbox checked={saved} onCheckedChange={(v) => setSaved(!!v)} className="mt-1" />
+        <span>{t('auth.recoverySaved')}</span>
+      </label>
+      <Button className={`w-full ${authControl}`} disabled={!saved} onClick={onDone}>
+        {t('auth.continue')}
+      </Button>
+    </AuthCard>
+  )
+}
 
 /**
- * TOTP enrollment: QR code → confirm with a code → show recovery codes once.
- * Mandatory for system admins and organization owners/admins (ADR-019); optional for others.
+ * TOTP enrollment: QR code (or grouped manual key) → confirm with a code → recovery codes.
+ * Mandatory for system admins, organization owners/admins and credential.reveal holders (ADR-019).
  */
 export function MfaSetupPage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
   const navigate = useNavigate()
@@ -23,114 +77,82 @@ export function MfaSetupPage() {
   // Already enrolled and not in the middle of showing freshly issued codes.
   if (session.data.mfa.enabled && !enable.data) return <Navigate to={next} replace />
 
-  const finish = async () => {
-    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY })
-    navigate(next, { replace: true })
-  }
-
   if (enable.data) {
-    const text = enable.data.join('\n')
     return (
-      <AuthCard title="Lưu mã khôi phục">
-        <p className="text-sm text-muted-foreground">
-          Mỗi mã dùng được một lần khi bạn mất điện thoại. Mã chỉ hiện{' '}
-          <strong>một lần duy nhất</strong> — hãy lưu ở nơi an toàn.
-        </p>
-        <ul
-          className="grid grid-cols-2 gap-1 rounded-md border border-border p-3 font-mono text-sm"
-          aria-label="Mã khôi phục"
-        >
-          {enable.data.map((c) => (
-            <li key={c}>{c}</li>
-          ))}
-        </ul>
-        <div className="flex gap-3 text-sm">
-          <button
-            type="button"
-            className="underline"
-            onClick={() => void navigator.clipboard?.writeText(text)}
-          >
-            Sao chép
-          </button>
-          <a
-            className="underline"
-            download="ntb-recovery-codes.txt"
-            href={`data:text/plain;charset=utf-8,${encodeURIComponent(text + '\n')}`}
-          >
-            Tải file .txt
-          </a>
-        </div>
-        <button type="button" className={primaryButtonClass} onClick={() => void finish()}>
-          Tôi đã lưu mã, tiếp tục
-        </button>
-      </AuthCard>
+      <RecoveryCodes
+        codes={enable.data}
+        onDone={() =>
+          void queryClient
+            .invalidateQueries({ queryKey: SESSION_QUERY_KEY })
+            .then(() => navigate(next, { replace: true }))
+        }
+      />
     )
   }
 
+  const confirm = (c: string) => enable.mutate(c, { onError: () => setCode('') })
   const onConfirm = (e: FormEvent) => {
     e.preventDefault()
-    enable.mutate(code)
+    confirm(code)
   }
 
   return (
-    <AuthCard title="Thiết lập xác thực hai lớp">
-      {session.data.mfa.required && (
-        <p className="text-sm text-muted-foreground">
-          Tài khoản quản trị bắt buộc dùng MFA trước khi tiếp tục.
-        </p>
-      )}
+    <AuthCard
+      title={t('auth.setupTitle')}
+      description={session.data.mfa.required ? t('auth.setupRequired') : undefined}
+    >
       {!setup.data ? (
         <>
-          <p className="text-sm text-muted-foreground">
-            Cần một ứng dụng xác thực (Google Authenticator, Microsoft Authenticator, 1Password,
-            Bitwarden…).
-          </p>
+          <p>{t('auth.setupIntro')}</p>
           {setup.isError && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-destructive">
               {setup.error.message}
             </p>
           )}
-          <button
-            type="button"
-            className={primaryButtonClass}
+          <Button
+            className={`w-full ${authControl}`}
             disabled={setup.isPending}
             onClick={() => setup.mutate()}
           >
-            {setup.isPending ? 'Đang tạo mã…' : 'Bắt đầu'}
-          </button>
+            {setup.isPending ? t('auth.starting') : t('auth.start')}
+          </Button>
         </>
       ) : (
         <form onSubmit={onConfirm} className="space-y-4">
-          <p className="text-sm">1. Quét mã QR bằng ứng dụng xác thực:</p>
+          <p className="font-medium">{t('auth.scan')}</p>
           <img
             src={setup.data.qrCode}
-            alt="Mã QR thiết lập MFA"
-            className="mx-auto size-48 rounded bg-white p-2"
+            alt={t('auth.qrAlt')}
+            className="mx-auto size-44 rounded-md bg-white p-2 ring-1 ring-border"
           />
-          <p className="text-xs text-muted-foreground">
-            Không quét được? Nhập khóa:{' '}
-            <code className="break-all font-mono">{setup.data.secret}</code>
-          </p>
-          <label className="block space-y-1">
-            <span className="text-sm">2. Nhập mã 6 số đang hiện trong ứng dụng:</span>
-            <input
-              autoFocus
-              required
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          {enable.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              {enable.error.message}
-            </p>
-          )}
-          <button type="submit" disabled={enable.isPending} className={primaryButtonClass}>
-            {enable.isPending ? 'Đang kiểm tra…' : 'Bật MFA'}
-          </button>
+          <div className="space-y-1">
+            <p className="text-label text-muted-foreground">{t('auth.manualKey')}</p>
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-2 py-1.5">
+              <code className="flex-1 font-mono text-tech break-words" data-testid="mfa-secret">
+                {groupKey(setup.data.secret)}
+              </code>
+              <CopyButton value={setup.data.secret} label={t('auth.copyKey')} />
+            </div>
+          </div>
+          <FormField
+            label={t('auth.enterCode')}
+            error={enable.isError ? enable.error.message : undefined}
+          >
+            {(f) => (
+              <MfaCodeInput
+                {...f}
+                autoFocus
+                required
+                value={code}
+                onChange={setCode}
+                onComplete={confirm}
+                disabled={enable.isPending}
+              />
+            )}
+          </FormField>
+          <Button type="submit" disabled={enable.isPending} className={`w-full ${authControl}`}>
+            {enable.isPending ? t('auth.verifying') : t('auth.enable')}
+          </Button>
         </form>
       )}
     </AuthCard>

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
@@ -82,6 +83,7 @@ func (s *Server) VerifyMfa(ctx context.Context, req apigen.VerifyMfaRequestObjec
 		return nil, err
 	}
 	sess.MFAVerified = true
+	sess.MFAVerifiedAt = time.Now()
 	return apigen.VerifyMfa200JSONResponse(toAuthSession(sess)), nil
 }
 

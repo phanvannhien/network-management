@@ -1,10 +1,17 @@
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
-import { AuthCard, inputClass, primaryButtonClass, safeNext } from './AuthCard'
+import { FormField } from '@/components/FormField'
+import { MfaCodeInput } from '@/components/MfaCodeInput'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { AuthCard, authControl } from './AuthCard'
 import { mfaStep, useLogout, useMfaVerify, useSession } from './auth'
+import { safeNext } from './safeNext'
 
-/** Second sign-in step: TOTP code from the authenticator app, or a one-time recovery code. */
+/** Second sign-in step: TOTP code (auto-submits at 6 digits) or a one-time recovery code. */
 export function MfaVerifyPage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
   const navigate = useNavigate()
@@ -18,59 +25,77 @@ export function MfaVerifyPage() {
   if (!session.data) return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />
   if (mfaStep(session.data) !== 'verify' && !verify.isSuccess) return <Navigate to={next} replace />
 
+  const submit = (v: string) =>
+    verify.mutate(useRecovery ? { recoveryCode: v } : { code: v }, {
+      onSuccess: () => navigate(next, { replace: true }),
+      onError: () => !useRecovery && setValue(''),
+    })
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    verify.mutate(useRecovery ? { recoveryCode: value } : { code: value }, {
-      onSuccess: () => navigate(next, { replace: true }),
-    })
+    submit(value)
   }
 
   return (
-    <AuthCard title="Xác thực hai lớp">
+    <AuthCard
+      title={t('auth.mfaTitle')}
+      footer={
+        <div className="flex w-full max-w-sm justify-between text-label">
+          <button
+            type="button"
+            className="text-primary hover:underline"
+            onClick={() => {
+              setUseRecovery(!useRecovery)
+              setValue('')
+              verify.reset()
+            }}
+          >
+            {useRecovery ? t('auth.useApp') : t('auth.useRecovery')}
+          </button>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground hover:underline"
+            onClick={() => logout.mutate()}
+          >
+            {t('auth.signOut')}
+          </button>
+        </div>
+      }
+    >
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block space-y-1">
-          <span className="text-sm text-muted-foreground">
-            {useRecovery ? 'Mã khôi phục' : 'Mã 6 số từ ứng dụng xác thực'}
-          </span>
-          <input
-            key={useRecovery ? 'recovery' : 'totp'}
-            autoFocus
-            required
-            autoComplete="one-time-code"
-            inputMode={useRecovery ? 'text' : 'numeric'}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-        {verify.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            {verify.error.message}
-          </p>
-        )}
-        <button type="submit" disabled={verify.isPending} className={primaryButtonClass}>
-          {verify.isPending ? 'Đang kiểm tra…' : 'Xác nhận'}
-        </button>
+        <FormField
+          key={useRecovery ? 'recovery' : 'totp'}
+          label={useRecovery ? t('auth.recoveryCode') : t('auth.mfaCode')}
+          error={verify.isError ? verify.error.message : undefined}
+        >
+          {(f) =>
+            useRecovery ? (
+              <Input
+                {...f}
+                autoFocus
+                required
+                autoComplete="off"
+                spellCheck={false}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className={`font-mono ${authControl}`}
+              />
+            ) : (
+              <MfaCodeInput
+                {...f}
+                autoFocus
+                required
+                value={value}
+                onChange={setValue}
+                onComplete={submit}
+                disabled={verify.isPending}
+              />
+            )
+          }
+        </FormField>
+        <Button type="submit" disabled={verify.isPending} className={`w-full ${authControl}`}>
+          {verify.isPending ? t('auth.verifying') : t('auth.verify')}
+        </Button>
       </form>
-      <div className="flex justify-between text-sm">
-        <button
-          type="button"
-          className="text-muted-foreground underline hover:text-foreground"
-          onClick={() => {
-            setUseRecovery(!useRecovery)
-            setValue('')
-          }}
-        >
-          {useRecovery ? 'Dùng mã từ ứng dụng' : 'Dùng mã khôi phục'}
-        </button>
-        <button
-          type="button"
-          className="text-muted-foreground underline hover:text-foreground"
-          onClick={() => logout.mutate()}
-        >
-          Đăng xuất
-        </button>
-      </div>
     </AuthCard>
   )
 }
