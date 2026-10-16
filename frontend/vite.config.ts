@@ -15,7 +15,12 @@ export default defineConfig({
   server: {
     proxy: {
       // Same path layout as nginx in Docker: /api is forwarded untouched to the Go API.
-      '/api': process.env.NTB_API_URL ?? 'http://localhost:8069',
+      '/api': {
+        target: process.env.NTB_API_URL ?? 'http://localhost:8069',
+        // Keep the browser's Host header (like nginx `$http_host`): the API's CSRF check compares
+        // Origin with Host. The string shorthand would set changeOrigin: true and break login.
+        changeOrigin: false,
+      },
     },
   },
 })

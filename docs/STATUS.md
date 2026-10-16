@@ -5,6 +5,13 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Sửa lỗi: đăng nhập qua Vite (5173) bị chặn CSRF
+- Đã làm: proxy Vite viết dạng rút gọn `'/api': url` ngầm bật `changeOrigin: true` → đổi Host thành `localhost:8069`, khác `Origin: http://localhost:5173` của trình duyệt → `csrfGuard` chặn mọi lần đăng nhập ở cổng dev. Đổi sang dạng object với `changeOrigin: false` (giống nginx `$http_host`).
+- Test / cách kiểm tra: tái hiện bằng curl có header `Origin: http://localhost:5173` qua Vite → trước 403, sau 401 (đúng: tài khoản giả); Origin lạ vẫn 403; Docker 8068 vẫn đúng. `make check` pass. Bài học: kiểm tra trọn luồng phải gửi header `Origin` như trình duyệt (các lần trước dùng curl không có Origin nên không lộ lỗi).
+- Còn dở / lỗi đã biết: dòng "401 (Unauthorized)" trong console khi mở trang là bình thường — frontend gọi `/auth/me` để biết đã đăng nhập chưa; trình duyệt luôn ghi log mọi phản hồi 4xx.
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-03 Tổ chức & tenant middleware.
+
 ## 2026-10-16 — P1-02 MFA TOTP
 - Đã làm:
   - `internal/secrets`: mã hóa envelope — mỗi bí mật một DEK (AES-256-GCM), DEK bọc bằng master key (AES-256-GCM), lưu `key_version` để xoay key sau (ADR-018); AAD gắn bí mật vào ngữ cảnh (`totp:<user id>`) nên chép sang dòng khác không giải mã được. Dùng lại cho kho mật khẩu Phase 2.
