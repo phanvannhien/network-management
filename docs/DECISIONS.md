@@ -106,3 +106,8 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   Màn hình vẽ thu gọn menu trái; công cụ ở thanh nổi phía trên (kiểu Photoshop); thư viện thiết bị là panel nổi kéo được
   (có tab "thiết bị trong kho chưa vẽ") và thêm nhanh bằng tìm kiếm (phím `/`); panel thuộc tính bên phải; panel Problems phía dưới.
 - **Lý do:** app nhiều module; vẽ cần tối đa diện tích canvas; 40+ loại thiết bị không vừa một thanh công cụ.
+
+### ADR-021 — Linter frontend dùng oxlint; cổng web mặc định 8068
+- **Quyết định:** frontend lint bằng oxlint (thay ESLint ghi trong PLAN), kèm Prettier. Cổng web mặc định trong Compose là 8068 (đổi qua `WEB_PORT`).
+- **Lý do:** oxlint đã chạy ổn trong repo, nhanh hơn ESLint nhiều lần, đủ rule cho React/TS; cổng 8080 trùng dịch vụ khác trên máy phát triển.
+- **Chốt:** người dùng xác nhận 2026-10-16.
