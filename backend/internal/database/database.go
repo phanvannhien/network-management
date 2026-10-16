@@ -1,0 +1,82 @@
+// Package database opens the Postgres pool and applies migrations.
+package database
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/golang-migrate/migrate/v4"
+	// Registers the "pgx5" database driver for golang-migrate.
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/phanvannhien/networkdiagramdrawer/backend/db"
+)
+
+// Open connects a pgx pool and verifies the connection with a ping.
+func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("open pool: %w", err)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ping database: %w", err)
+	}
+	return pool, nil
+}
+
+// MigrateUp applies all pending embedded migrations.
+func MigrateUp(databaseURL string) error {
+	m, err := newMigrator(databaseURL)
+	if err != nil {
+		return err
+	}
+	defer closeMigrator(m)
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("migrate up: %w", err)
+	}
+	return nil
+}
+
+// MigrateDown rolls back every migration (used by tests to prove down scripts work).
+func MigrateDown(databaseURL string) error {
+	m, err := newMigrator(databaseURL)
+	if err != nil {
+		return err
+	}
+	defer closeMigrator(m)
+	if err := m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("migrate down: %w", err)
+	}
+	return nil
+}
+
+func newMigrator(databaseURL string) (*migrate.Migrate, error) {
+	source, err := iofs.New(db.Migrations, "migrations")
+	if err != nil {
+		return nil, fmt.Errorf("load embedded migrations: %w", err)
+	}
+	m, err := migrate.NewWithSourceInstance("iofs", source, toMigrateURL(databaseURL))
+	if err != nil {
+		return nil, fmt.Errorf("init migrator: %w", err)
+	}
+	return m, nil
+}
+
+func closeMigrator(m *migrate.Migrate) {
+	_, _ = m.Close()
+}
+
+// toMigrateURL swaps the postgres:// scheme for golang-migrate's pgx5:// driver name.
+func toMigrateURL(databaseURL string) string {
+	for _, prefix := range []string{"postgres://", "postgresql://"} {
+		if strings.HasPrefix(databaseURL, prefix) {
+			return "pgx5://" + strings.TrimPrefix(databaseURL, prefix)
+		}
+	}
+	return databaseURL
+}

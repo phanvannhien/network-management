@@ -21,7 +21,11 @@ Xem `docs/SRS.md` (đặc tả), `docs/PLAN.md` (kế hoạch), `docs/DECISIONS.
 
 Yêu cầu: Node ≥ 20, Go ≥ 1.25, GNU Make.
 
+Yêu cầu thêm: Docker (Postgres dev), golang-migrate CLI (`brew install golang-migrate`).
+
 ```sh
+make db-up     # Postgres dev trong Docker, cổng host 5468
+make migrate-up / make migrate-down   # áp/rollback migration (DATABASE_URL mặc định trỏ DB dev)
 make dev-api   # Go API ở http://localhost:8069 (đổi bằng NTB_HTTP_ADDR)
 make dev-web   # Vite ở http://localhost:5173, proxy /api → API (đổi bằng NTB_API_URL)
 make test      # Vitest + go test

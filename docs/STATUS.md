@@ -5,6 +5,17 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P0-04 Database
+- Đã làm:
+  - Migration `000001_init`: `organizations` (kind internal/customer), `users` (email citext unique, password_hash, is_system_admin, khóa tạm), `memberships` (role owner/admin/editor/viewer, permissions giới hạn theo ADR-019, site_scope, unique org+user), `sessions` (chỉ lưu hash token, active_organization_id, mfa_verified_at), `audit_log` (before/after JSONB, ip, request_id; **append-only bằng trigger** — UPDATE/DELETE bị chặn ở DB). Trigger `set_updated_at`; cột `version` cho optimistic lock.
+  - `backend/db/embed.go` (migration nhúng vào binary), `internal/database` (pgxpool Open + MigrateUp/Down qua golang-migrate pgx5 driver), `internal/testdb` (mỗi test tạo DB tạm `ntb_test_<random>`, migrate, DROP khi xong).
+  - Compose: `db` mở cổng host **5468** (máy có Postgres riêng ở 5432), chỉ bind 127.0.0.1; `.env.example` thêm `DB_PORT`. Makefile: `db-up`, `migrate-up/down` (CLI golang-migrate), `DATABASE_URL` + `NTB_TEST_DATABASE_URL` mặc định trỏ DB dev.
+  - `go.work` ở gốc repo (gopls trong IDE nhận module backend).
+- Test / cách kiểm tra (chạy thật): `make migrate-up` tạo 5 bảng → `make migrate-down` xóa sạch → `migrate-up` lại OK (Done khi ✅). Go test với Postgres thật: kết nối + đủ bảng, down/up round-trip, ràng buộc (email trùng không phân biệt hoa thường, role sai, membership trùng, permission lạ, trigger updated_at, audit_log không sửa/xóa được). Không còn DB tạm sau test. `make check` pass.
+- Còn dở / lỗi đã biết: `make check` giờ cần `make db-up` trước (test DB fail rõ ràng nếu DB không chạy; chỉ skip khi biến `NTB_TEST_DATABASE_URL` rỗng). `brew install golang-migrate` tự nâng Go trên máy lên 1.27.2; `go.mod` tối thiểu go 1.25.11 (do pgx/migrate). API chưa kết nối DB (làm khi có endpoint dùng DB).
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P0-03 Sinh code (oapi-codegen + openapi-typescript/openapi-fetch + sqlc, endpoint mẫu trọn đường) — kèm kiểm tra OpenAPI 3.1 vs 3.0.3.
+
 ## 2026-10-16 — Refactor theo PLAN v2: dọn dẹp, cấu trúc lại, P0-01 Khung monorepo
 - Đã làm:
   - Dọn dẹp: chuyển `dexie`/`fake-indexeddb` khỏi `package.json` gốc repo (lỗi cũ); ADR-021 (giữ oxlint, cổng web 8068), tick P0-02.
