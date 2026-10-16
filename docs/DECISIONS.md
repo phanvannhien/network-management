@@ -156,6 +156,8 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     Thiết bị/sơ đồ (P1-08, P1-13) dùng lại cùng phạm vi.
   - Xóa site = **xóa mềm** (`deleted_at`), chỉ owner/admin, xác nhận gõ lại tên; dữ liệu và audit giữ nguyên.
     Location chỉ xóa được khi không còn nút con/rack; rack chỉ xóa được khi trống (từ P1-08: không còn thiết bị).
+- **Thay đổi sau:** ý "mỗi sơ đồ thuộc đúng một site" được thay bởi ADR-028 (sơ đồ có phạm vi tổ chức/đơn vị/site);
+  `site_scope` được thay bởi giao quyền theo đơn vị + chia sẻ bản ghi (ADR-029).
 - **Lý do:** MSP quản lý nhiều khách hàng, mỗi khách hàng nhiều chi nhánh; kỹ sư hiện trường chỉ cần (và chỉ nên) thấy site
   mình phụ trách; cây location chuẩn hóa thay ô gõ tự do (SRS §3); sơ đồ một site giữ phân quyền theo site đơn giản.
 - **Chốt:** người dùng xác nhận 2026-10-16.
@@ -167,6 +169,7 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   Site có `business_unit_id` hoặc null (= site dùng chung của tổ chức, vd IDC). Thiết bị có `business_unit_id` riêng
   (mặc định lấy theo site; bắt buộc chọn khi site dùng chung). Location (tòa/tầng/phòng) và Rack không bắt buộc.
   Phân quyền: membership có thể giới hạn theo danh sách đơn vị và/hoặc site.
+  *(Chi tiết phân quyền: ADR-029 — theo đơn vị + chia sẻ bản ghi, không giới hạn theo site.)*
 - **Lý do:** Excel thực tế của khách dùng "Site" = công ty và "Location" = địa điểm; một công ty có nhiều địa điểm và một địa điểm
   (IDC) có thể phục vụ nhiều công ty — phải tách thành hai cấp.
 
@@ -184,3 +187,32 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   Node "site" trên sơ đồ tổng quan: double-click mở sơ đồ chi tiết của site đó. Sơ đồ tổng quan có thể tự sinh từ dữ liệu
   (sites + link WAN/VPN), người dùng chỉnh bố cục sau. Một site có thể có nhiều sơ đồ chi tiết (vật lý, L2, L3).
 - **Lý do:** khách nhiều đơn vị × nhiều site; một sơ đồ cho cả đơn vị sẽ quá rối, kỹ sư cần nhìn tổng quan rồi đi sâu.
+
+### ADR-029 — Phân quyền theo đơn vị và chia sẻ bản ghi (động, không cố định trong code)
+- **Quyết định:**
+  - **Giao quyền theo đơn vị:** bảng `business_unit_members` (business_unit_id, user_id, role: `bu_admin` | `editor` | `viewer`).
+    Một user có thể được giao nhiều đơn vị → thấy hợp của tất cả. Vai trò cấp tổ chức (owner/admin/editor/viewer) vẫn giữ:
+    owner/admin tổ chức thấy mọi đơn vị. User chỉ có quyền đơn vị (không vai trò tổ chức) chỉ thấy đơn vị được giao.
+  - **bu_admin** quản lý user của đơn vị mình: mời email mới hoặc user đã có, đặt vai trò trong đơn vị, gỡ; không đụng được
+    đơn vị khác hay vai trò cấp tổ chức. Người được mời vào tổ chức chỉ với quyền trong đơn vị.
+  - **Chia sẻ bản ghi:** bảng chung `resource_shares` (resource_type, resource_id, business_unit_id, access: `view` | `edit`,
+    granted_by, granted_at). Áp cho **site** trước: site share cho đơn vị X → user của X thấy mọi thứ trong site (location,
+    rack, thiết bị, sơ đồ của site) với quyền xem/sửa theo share. Site của tổ chức (dùng chung, vd IDC) chỉ hiện với đơn vị
+    được share. Người cấp share: owner/admin tổ chức (bản ghi của tổ chức), bu_admin (bản ghi của đơn vị mình). Sơ đồ tổng quan,
+    thiết bị lẻ dùng cùng bảng ở task sau.
+  - **Bộ chọn đơn vị** trên topbar (sau tên tổ chức): "Tất cả đơn vị của tôi" hoặc một đơn vị; chỉ là bộ lọc hiển thị —
+    quyền luôn kiểm ở server theo giao quyền + share; bản ghi ngoài quyền → 404.
+  - Mọi cấp quyền, share, thu hồi đều ghi audit.
+  - **Thay `site_scope`** của ADR-025: bỏ cột `memberships.site_scope` và phần API/giao diện tương ứng.
+- **Lý do:** đối tác/khách hàng của tổ chức tự quản người dùng của mình; tài nguyên dùng chung (IDC, cặp FortiGate trung tâm)
+  phải hiện đúng cho những bên được chia sẻ, cấu hình được theo từng bản ghi thay vì quy tắc cố định.
+- **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-030 — Quy tắc đặt mã đơn vị và site
+- **Quyết định:** quy tắc **bắt buộc** (server từ chối mã sai), form **tự gợi ý** mã đúng quy tắc, người dùng sửa được trong khuôn khổ.
+  - Mã đơn vị: 2–8 ký tự `A–Z`, `0–9`, bắt đầu bằng chữ, lưu chữ hoa, duy nhất trong tổ chức. Vd `FOOD`, `AGRI`, `VPM`.
+  - Mã site: `<MÃ ĐƠN VỊ>-<mã địa điểm><STT 2 chữ số>`; mã địa điểm 2–4 chữ cái (gợi ý từ tỉnh/thành: Hưng Yên → `HY`,
+    Hà Nội → `HN`, TP.HCM → `HCM`). Vd `AGRI-BD01`, `FOOD-HN01`. Site của tổ chức (dùng chung): tiền tố `SHARED-`, vd `SHARED-HCM01`.
+    Duy nhất trong tổ chức. Đổi site sang đơn vị khác → phải đổi mã (hệ thống gợi ý mã mới).
+- **Lý do:** nhìn mã biết ngay đơn vị và địa điểm; tránh trùng giữa các đơn vị cùng tỉnh; khớp cách khách đặt hostname.
+- **Chốt:** người dùng xác nhận 2026-10-16.

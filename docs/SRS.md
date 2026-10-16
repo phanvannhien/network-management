@@ -54,8 +54,8 @@ part number, tên site, đối tác), thông báo (sắp hết hạn, cảnh bá
 ## §3. Tổ chức, Đơn vị, Site, Location
 
 - **Organization:** tên, loại (internal/customer), logo, ghi chú, cấu hình riêng (SMTP nhận cảnh báo, chu kỳ SNMP).
-- **Đơn vị:** tên, mã, loại quan hệ (công ty con / đối tác / khách hàng của tổ chức), người liên hệ, ghi chú. Mỗi đơn vị có nhiều site.
-- **Site:** mã, tên, loại (văn phòng / nhà máy / trung tâm dữ liệu / kho / cửa hàng / khác), đơn vị (hoặc 'dùng chung' cho cả tổ chức),
+- **Đơn vị:** tên, mã (quy tắc ADR-030, vd `AGRI`), loại quan hệ (công ty con / đối tác / khách hàng của tổ chức), người liên hệ, ghi chú. Mỗi đơn vị có nhiều site.
+- **Site:** mã (quy tắc ADR-030, vd `AGRI-BD01`, site dùng chung `SHARED-HCM01`), tên, loại (văn phòng / nhà máy / trung tâm dữ liệu / kho / cửa hàng / khác), đơn vị (hoặc 'dùng chung' cho cả tổ chức),
   địa chỉ, múi giờ, người liên hệ tại chỗ, nhà mạng/đường truyền chính, ghi chú.
 - **Location:** cây phân cấp trong site: tòa nhà → tầng → phòng/tủ. Không dùng ô gõ tự do để tránh "Tầng 3"/"T3"/"Floor 3".
 - **Rack:** thuộc location, số U (mặc định 42), view mặt trước với thiết bị chiếm U.
@@ -230,8 +230,11 @@ username, credential (local/external), người giữ thiết bị MFA, gói d�
 - **Đăng nhập:** email/password (argon2id), session cookie HttpOnly + SameSite; TOTP MFA (bắt buộc với owner/admin và người có quyền xem mật khẩu);
   khóa tạm sau nhiều lần sai; đặt lại mật khẩu qua email (khi có SMTP). SSO OIDC (Entra ID, Google Workspace, Keycloak) ở Phase 2.
 - **Vai trò theo tổ chức:** owner (toàn quyền, quản lý thanh toán/cài đặt), admin (quản lý user, dữ liệu), editor (sửa dữ liệu), viewer (chỉ xem).
-  Quyền bổ sung: `credential.reveal`, `credential.manage`, `user.manage`. Giới hạn phạm vi theo site (tùy chọn).
-  Giới hạn phạm vi theo đơn vị và/hoặc site (vd IT của CJ Foodville chỉ thấy đơn vị Foodville).
+  Quyền bổ sung: `credential.reveal`, `credential.manage`, `user.manage`.
+  Giới hạn phạm vi theo đơn vị (vd IT của CJ Foodville chỉ thấy đơn vị Foodville).
+  **Phân quyền động (ADR-029):** user được giao một hoặc nhiều đơn vị với vai trò `bu_admin`/`editor`/`viewer` (thấy hợp các đơn vị);
+  bu_admin tự mời và phân quyền user trong đơn vị mình; bản ghi (trước mắt là site, vd IDC dùng chung) được chia sẻ cho từng đơn vị
+  với quyền xem/sửa; bộ chọn đơn vị trên topbar để xem theo đối tác. Thay cho giới hạn theo site.
 - **System admin:** quản trị toàn hệ thống (tạo tổ chức, sao lưu, cài đặt chung); dành cho bên vận hành hệ thống/MSP.
 - **Link chia sẻ chỉ xem (P2):** cho một sơ đồ, token có hạn, tùy chọn mật khẩu, tùy chọn ẩn IP; thu hồi được.
 - **Audit log:** mọi thao tác ghi (trước/sau), đăng nhập, xem mật khẩu, export; lọc theo người/thời gian/đối tượng; giữ tối thiểu 1 năm.

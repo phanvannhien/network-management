@@ -5,6 +5,29 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Chốt phân quyền theo đơn vị, chia sẻ bản ghi, quy tắc mã (ADR-029, ADR-030)
+- Đã làm (chỉ tài liệu, chưa code):
+  - **ADR-029:** giao user theo một hoặc nhiều đơn vị (`bu_admin`/`editor`/`viewer`, thấy hợp các đơn vị); bu_admin mời
+    email mới hoặc user có sẵn và phân quyền trong đơn vị mình; bảng chung `resource_shares` (xem/sửa) áp cho **site** trước —
+    site dùng chung (IDC) chỉ hiện với đơn vị được share, được share thì thấy mọi thứ trong site; bộ chọn đơn vị trên topbar
+    (chỉ là bộ lọc, quyền kiểm ở server); **bỏ `site_scope`**.
+  - **ADR-030:** mã đơn vị 2–8 ký tự `A–Z0–9` bắt đầu bằng chữ (vd `AGRI`); mã site `<ĐƠN VỊ>-<địa điểm><STT>`
+    (vd `AGRI-BD01`), site dùng chung `SHARED-…`; bắt buộc ở server + tự gợi ý trên form.
+  - ADR-025 thêm dòng "Thay đổi sau" (sơ đồ một site → ADR-028; site_scope → ADR-029); ADR-026 trỏ sang ADR-029;
+    SRS §3 (mã theo ADR-030), §10 (phân quyền động, bỏ giới hạn theo site); PLAN: P1-07 thêm quy tắc mã, **P1-07c** mới.
+- Ảnh hưởng tới phần đã code (chưa sửa — chờ duyệt bắt đầu):
+  1. **P1-07 (đơn vị, kind, site dùng chung, quy tắc mã):** migration `business_units`, `sites.kind/business_unit_id/isp`;
+     mã site hiện có không theo quy tắc mới → migration giữ nguyên, sửa sẽ bị bắt theo quy tắc (hoặc đổi tên một lần bằng
+     script; dữ liệu dev hiện chỉ có dữ liệu thử). ~2,5–3 ngày.
+  2. **P1-07c (phân quyền theo đơn vị + share):** bảng `business_unit_members`, `resource_shares`; bỏ `memberships.site_scope`
+     (gỡ `SiteFilter`/`siteScope` trong API, test, sheet Thành viên); hàm quyền chung "site nào user này xem/sửa được" thay cho
+     `SiteFilter`, dùng lại cho thiết bị/sơ đồ; màn hình thành viên đơn vị cho bu_admin, màn hình share site, bộ chọn đơn vị;
+     test chéo đơn vị (user FOOD không đọc/sửa được site AGRI, site không share → 404, share xem → không sửa được). ~3–4 ngày.
+  - Tổng **~6–7 ngày** trước P1-08. Thứ tự đề xuất: P1-07 (đơn vị + mã) → P1-07c → P1-08.
+- Câu hỏi cho người dùng: không còn câu mở cho phần mô hình. Chờ lệnh bắt đầu sửa code.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-07 (bổ sung đơn vị, kind, site dùng chung, quy tắc mã) — sẽ trình kế hoạch chi tiết trước khi code.
+
 ## 2026-10-16 — Mô hình Tổ chức → Đơn vị → Site; cụm HA; sơ đồ nhiều cấp
 - Đã làm (chỉ tài liệu, chưa code):
   - `docs/DECISIONS.md`: **ADR-026** Cấp Đơn vị giữa Tổ chức và Site, **ADR-027** Cụm thiết bị (HA, stack),

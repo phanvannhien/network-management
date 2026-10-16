@@ -26,13 +26,14 @@ Phase hiện tại: **Phase 0**
 ### Nền tảng hệ thống
 - [x] **P1-01 Đăng nhập**: argon2id, session cookie HttpOnly/SameSite trong Postgres, logout, khóa tạm khi sai nhiều lần, CSRF, rate limit; lệnh CLI `ntb admin create` tạo system admin đầu tiên.
 - [x] **P1-02 MFA TOTP**: bật/tắt, mã khôi phục; bắt buộc với owner/admin; lưu secret mã hóa (envelope, `NTB_MASTER_KEY`).
-- [x] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module; membership giới hạn theo đơn vị/site. *(phần giới hạn theo đơn vị chưa làm — xem STATUS)*
+- [x] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module; membership giới hạn theo đơn vị/site. *(phần đơn vị chưa làm — thay bằng P1-07c theo ADR-029)*
 - [x] **P1-04 Người dùng & vai trò**: mời/tạo user, membership nhiều tổ chức, vai trò owner/admin/editor/viewer, giới hạn theo site; kiểm tra quyền ở mọi endpoint.
 - [x] **P1-05 Audit log**: ghi trước/sau cho thao tác ghi, đăng nhập, export; màn hình xem/lọc audit. *(export chưa có phía server — ghi audit `export.*` làm trong P1-22)*
 - [x] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.
 
 ### Dữ liệu hạ tầng
-- [ ] **P1-07 Đơn vị/Sites/Location/Rack**: CRUD đơn vị; site có kind và đơn vị (hoặc dùng chung); cây location; rack view đơn giản. *(site/location/rack + `site_scope` đã làm 2026-10-16; còn đơn vị, `kind`, site dùng chung — xem STATUS)*
+- [ ] **P1-07 Đơn vị/Sites/Location/Rack**: CRUD đơn vị; site có kind và đơn vị (hoặc dùng chung); cây location; rack view đơn giản; quy tắc mã ADR-030 (bắt buộc + gợi ý). *(site/location/rack đã làm 2026-10-16; còn đơn vị, `kind`, site dùng chung, quy tắc mã — xem STATUS)*
+- [ ] **P1-07c Phân quyền theo đơn vị & chia sẻ (ADR-029)**: `business_unit_members` (bu_admin/editor/viewer, nhiều đơn vị), bu_admin mời/phân quyền trong đơn vị; `resource_shares` cho site (xem/sửa); bộ chọn đơn vị trên topbar; bỏ `site_scope`; audit mọi cấp/thu hồi quyền; test chéo đơn vị như test chéo tổ chức.
 - [ ] **P1-08 Kho thiết bị**: bảng devices đủ trường SRS §4.1 (trừ phần Phase 2), danh sách phân trang server + lọc + chọn cột + sửa hàng loạt; trang chi tiết các tab có sẵn dữ liệu; custom fields + tag; thiết bị có business_unit_id (mặc định theo site, bắt buộc chọn khi site dùng chung); lọc theo đơn vị.
 - [ ] **P1-09 Template & interface**: template theo SRS §4.3 sinh cổng physical; thêm interface ảo; IP theo interface (CIDR, VRF, role); chọn interface quản trị; IP NAT/public; `poll_address`.
 - [ ] **P1-09b Cụm thiết bị**: device_clusters, gán thành viên, IP/hostname cụm, rule trùng IP/hostname bỏ qua trong cụm; trên sơ đồ hiển thị gộp/mở rộng.
