@@ -30,12 +30,16 @@ for (const width of widths) {
       })
       if (p.session) {
         const { hostname } = new URL(base)
-        await context.addCookies([{ name: 'ntb_session', value: tokens[p.session], domain: hostname, path: '/' }])
+        await context.addCookies([
+          { name: 'ntb_session', value: tokens[p.session], domain: hostname, path: '/' },
+        ])
       }
       // Until the theme switcher exists (P1-06) the app only reacts to the .dark class.
       await context.addInitScript((dark) => {
         localStorage.setItem('ntb-theme', dark ? 'dark' : 'light')
-        document.addEventListener('DOMContentLoaded', () => document.documentElement.classList.toggle('dark', dark))
+        document.addEventListener('DOMContentLoaded', () =>
+          document.documentElement.classList.toggle('dark', dark),
+        )
       }, theme === 'dark')
       const page = await context.newPage()
       await page.goto(base + p.path, { waitUntil: 'networkidle' })
