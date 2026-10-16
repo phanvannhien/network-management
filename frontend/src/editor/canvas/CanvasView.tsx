@@ -9,7 +9,12 @@ import {
   type NodeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { ArrowLeft, Lock, LockOpen, Magnet, Maximize } from 'lucide-react'
+import { Link } from 'react-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { NativeSelect } from '@/components/NativeSelect'
+import { Button, buttonVariants } from '@/components/ui/button'
 import type { DeviceType } from '../../types/ntb'
 import { compound, setNodeLocked } from '../model/commands'
 import { newId } from '../model/factory'
@@ -24,6 +29,7 @@ import { LinkEdge } from './LinkEdge'
 import { useValidation } from '../validation/useValidation'
 import { Problems } from '../panels/Problems'
 import { DEVICE_MIME } from '../panels/Palette'
+import i18n from '@/i18n'
 
 const GRID_SIZES = [10, 20, 40] as const
 
@@ -36,7 +42,15 @@ function useEnsurePage() {
   const dispatch = useAppStore((s) => s.dispatch)
   useEffect(() => {
     if (pageId === null) {
-      dispatch(addPage({ id: newId(), name: 'Page 1', layer: 'physical', nodes: [], edges: [] }))
+      dispatch(
+        addPage({
+          id: newId(),
+          name: i18n.t('editor.page'),
+          layer: 'physical',
+          nodes: [],
+          edges: [],
+        }),
+      )
     }
   }, [pageId, dispatch])
   return pageId
@@ -44,6 +58,7 @@ function useEnsurePage() {
 
 /** Toolbar button toggling lock on the current selection (Ctrl+L). */
 function LockButton({ pageId }: { pageId: string }) {
+  const { t } = useTranslation()
   const selection = useAppStore((s) => s.selection)
   const nodes = useAppStore((s) => s.data.pages[pageId]?.nodes)
 
@@ -59,19 +74,22 @@ function LockButton({ pageId }: { pageId: string }) {
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={onClick}
       disabled={selection.length === 0}
-      className="rounded border border-border px-2 py-0.5 hover:bg-accent disabled:opacity-40"
-      title="Lock/unlock selection (Ctrl+L)"
+      title={t('editor.lockHint')}
+      aria-keyshortcuts="Control+L"
     >
-      {locked ? 'Unlock' : 'Lock'}
-    </button>
+      {locked ? <LockOpen aria-hidden /> : <Lock aria-hidden />}
+      {locked ? t('editor.unlock') : t('editor.lock')}
+    </Button>
   )
 }
 
 function CanvasInner() {
+  const { t } = useTranslation()
   const pageId = useEnsurePage()
   const data = useAppStore((s) => s.data)
   const selection = useAppStore((s) => s.selection)
@@ -80,6 +98,23 @@ function CanvasInner() {
   const [pending, setPending] = useState<PendingConnection | null>(null)
   const connectionSource = useRef<string | null>(null)
   const { fitView, screenToFlowPosition, setCenter } = useReactFlow()
+  const ariaLabels = useMemo(
+    () => ({
+      'node.a11yDescription.default': t('editor.rf.node'),
+      'node.a11yDescription.keyboardDisabled': t('editor.rf.nodeKeyboard'),
+      'node.a11yDescription.ariaLiveMessage': (p: { direction: string; x: number; y: number }) =>
+        t('editor.rf.moved', p),
+      'edge.a11yDescription.default': t('editor.rf.edge'),
+      'controls.ariaLabel': t('editor.rf.controls'),
+      'controls.zoomIn.ariaLabel': t('editor.rf.zoomIn'),
+      'controls.zoomOut.ariaLabel': t('editor.rf.zoomOut'),
+      'controls.fitView.ariaLabel': t('editor.rf.fitView'),
+      'controls.interactive.ariaLabel': t('editor.rf.interactive'),
+      'minimap.ariaLabel': t('editor.rf.minimap'),
+      'handle.ariaLabel': t('editor.rf.handle'),
+    }),
+    [t],
+  )
   useCanvasShortcuts(pageId)
   useValidation()
   const focusTarget = useAppStore((s) => s.focusTarget)
@@ -104,9 +139,17 @@ function CanvasInner() {
     }
   }, [focusTarget, pageId, setCenter, fitView])
 
+  // Measured node sizes are view state (not part of the document): React Flow needs them for the
+  // minimap and fitView of controlled nodes.
+  const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
   const nodes = useMemo(
-    () => (pageId ? buildNodes(data, pageId, selection) : []),
-    [data, pageId, selection],
+    () =>
+      pageId
+        ? buildNodes(data, pageId, selection).map((n) =>
+            measured[n.id] ? { ...n, measured: measured[n.id] } : n,
+          )
+        : [],
+    [data, pageId, selection, measured],
   )
   const edges = useMemo(() => (pageId ? buildEdges(data, pageId) : []), [data, pageId])
 
@@ -127,7 +170,10 @@ function CanvasInner() {
       if (!pageId) return
       const { dispatch, setSelection, selection: current } = useAppStore.getState()
       const selectionChanges = new Map<string, boolean>()
+      const sizes: Record<string, { width: number; height: number }> = {}
       for (const change of changes) {
+        if (change.type === 'dimensions' && change.dimensions) sizes[change.id] = change.dimensions
+
         if (change.type === 'position' && change.position) {
           // Consecutive drag moves share a mergeKey → one undo step per drag (SRS §3).
           dispatch(
@@ -143,6 +189,7 @@ function CanvasInner() {
           selectionChanges.set(change.id, change.selected)
         }
       }
+      if (Object.keys(sizes).length > 0) setMeasured((m) => ({ ...m, ...sizes }))
       if (selectionChanges.size > 0) {
         const next = new Set(current)
         for (const [id, selected] of selectionChanges) {
@@ -194,67 +241,83 @@ function CanvasInner() {
   }
 
   return (
-    <div className="relative h-full w-full">
-      {/* Toolbar overlay: grid snap toggle + grid size (SRS §3: lưới 10/20/40 px) */}
-      <div className="bg-popover absolute top-3 left-3 z-10 flex items-center gap-3 rounded-md border border-border px-3 py-1.5 text-xs shadow-sm">
-        <label className="flex cursor-pointer items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={snapEnabled}
-            onChange={(e) => setSnapEnabled(e.target.checked)}
-          />
-          Snap to grid
-        </label>
-        <select
-          value={gridSize}
-          onChange={(e) => setGridSize(Number(e.target.value))}
-          className="rounded border border-border bg-background px-1 py-0.5"
-          aria-label="Grid size"
+    <div className="flex h-full w-full flex-col">
+      <div className="relative min-h-0 flex-1" aria-label={t('editor.canvas')} role="region">
+        {/* Floating toolbar: grid snap + grid size (SRS §3: lưới 10/20/40 px), fit, lock. */}
+        <div
+          role="toolbar"
+          aria-label={t('editor.toolbar')}
+          className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-lg border border-border bg-popover p-1 shadow-sm"
         >
-          {GRID_SIZES.map((size) => (
-            <option key={size} value={size}>
-              {size} px
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => void fitView({ padding: 0.2, duration: 200 })}
-          className="rounded border border-border px-2 py-0.5 hover:bg-accent"
-          title="Fit to screen (Shift+1)"
-        >
-          Fit
-        </button>
-        <LockButton pageId={pageId} />
-      </div>
+          <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+            <ArrowLeft aria-hidden /> {t('editor.back')}
+          </Link>
+          <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+          <Button
+            variant={snapEnabled ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={snapEnabled}
+            onClick={() => setSnapEnabled(!snapEnabled)}
+          >
+            <Magnet aria-hidden /> {t('editor.snap')}
+          </Button>
+          <span className="w-20">
+            <NativeSelect
+              value={gridSize}
+              onChange={(e) => setGridSize(Number(e.target.value))}
+              aria-label={t('editor.gridSize')}
+              className="h-7"
+            >
+              {GRID_SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {size} px
+                </option>
+              ))}
+            </NativeSelect>
+          </span>
+          <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void fitView({ padding: 0.2, duration: 200 })}
+            title={t('editor.fitHint')}
+            aria-keyshortcuts="Shift+1"
+          >
+            <Maximize aria-hidden /> {t('editor.fit')}
+          </Button>
+          <LockButton pageId={pageId} />
+        </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={{ device: DeviceNode }}
-        edgeTypes={EDGE_TYPES}
-        onNodesChange={onNodesChange}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        minZoom={0.1}
-        maxZoom={4}
-        snapToGrid={snapEnabled}
-        snapGrid={[gridSize, gridSize]}
-        panOnDrag
-        panActivationKeyCode="Space"
-        selectionOnDrag
-        multiSelectionKeyCode="Shift"
-        deleteKeyCode={null}
-        fitView
-        proOptions={{ hideAttribution: false }}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1} />
-        <Controls showInteractive={false} />
-        <MiniMap pannable zoomable className="!bg-background" />
-      </ReactFlow>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={{ device: DeviceNode }}
+          edgeTypes={EDGE_TYPES}
+          onNodesChange={onNodesChange}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          minZoom={0.1}
+          maxZoom={4}
+          snapToGrid={snapEnabled}
+          snapGrid={[gridSize, gridSize]}
+          panOnDrag
+          panActivationKeyCode="Space"
+          selectionOnDrag
+          multiSelectionKeyCode="Shift"
+          deleteKeyCode={null}
+          fitView
+          proOptions={{ hideAttribution: false }}
+          ariaLabelConfig={ariaLabels}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1.5} />
+          <Controls showInteractive={false} />
+          <MiniMap pannable zoomable />
+        </ReactFlow>
+      </div>
       {pending && <LinkDialog pending={pending} pageId={pageId} onClose={() => setPending(null)} />}
+      {/* Below the canvas (not over it) so it never hides the controls or the minimap. */}
       <Problems />
     </div>
   )

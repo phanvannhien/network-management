@@ -9,15 +9,7 @@ export const DEVICE_GROUP_ORDER: DeviceGroup[] = [
   'other',
 ]
 
-/** Display names for the groups (i18n key: `group.<id>` from P1-12). */
-export const DEVICE_GROUP_LABELS: Record<DeviceGroup, string> = {
-  core_routing: 'Core & Routing',
-  access_switching: 'Access & Switching',
-  security: 'Security',
-  end_devices: 'End Devices',
-  cloud_wan: 'Cloud & WAN',
-  other: 'Other',
-}
+// Group display names live in i18n (`editor.groups.<id>`).
 
 const ETH = { media: 'rj45', speed: '1G' } as const
 const FAST = { media: 'rj45', speed: '100M' } as const

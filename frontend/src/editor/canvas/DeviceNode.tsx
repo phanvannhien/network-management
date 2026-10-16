@@ -1,14 +1,10 @@
 import { Handle, Position, useStore, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { SEVERITY } from '../panels/Problems'
 import { DeviceIcon } from '../catalog/icons'
 import { useAppStore } from '../model/store'
 import { severityForDevice } from '../validation/rules'
-
-const BADGE_STYLE: Record<string, string> = {
-  error: 'bg-red-500',
-  warning: 'bg-amber-500',
-  info: 'bg-blue-500',
-}
 
 /**
  * Custom React Flow node rendering one device. Subscribes only to its own
@@ -17,6 +13,7 @@ const BADGE_STYLE: Record<string, string> = {
  * label lines hide below 50% zoom (SRS §4).
  */
 function DeviceNodeImpl({ id, data, selected }: NodeProps) {
+  const { t } = useTranslation()
   const device = useAppStore((s) => s.data.devices[id])
   const zoom = useStore((s) => s.transform[2])
   const severity = useAppStore((s) => severityForDevice(s.problems, id))
@@ -28,7 +25,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps) {
   return (
     <div
       className={`flex w-28 flex-col items-center gap-1 rounded-md border bg-card px-2 py-2 text-card-foreground shadow-sm transition-shadow ${
-        selected ? 'border-primary ring-2 ring-primary' : 'border-border'
+        selected ? 'border-primary ring-2 ring-primary' : 'border-border-control'
       }`}
       title={[device.hostname, device.mgmtIp, device.vendor, device.model]
         .filter(Boolean)
@@ -43,12 +40,18 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps) {
       />
       <div className="relative">
         <DeviceIcon typeId={device.type} size={32} />
-        {severity !== null && (
-          <span
-            className={`absolute -top-1 -right-2 inline-block size-2.5 rounded-full ${BADGE_STYLE[severity]}`}
-            title={`Validation: ${severity}`}
-          />
-        )}
+        {severity !== null &&
+          (() => {
+            const { icon: Icon, color } = SEVERITY[severity]
+            return (
+              <span
+                className="absolute -top-1.5 -right-2.5 grid place-items-center rounded-full bg-card"
+                title={t('editor.validationBadge', { severity: t(`editor.severity.${severity}`) })}
+              >
+                <Icon aria-hidden className="size-3.5" style={{ color }} strokeWidth={2.25} />
+              </span>
+            )
+          })()}
       </div>
       <span className="w-full truncate text-center text-xs font-medium">{primary}</span>
       {zoom >= 0.5 &&

@@ -1,4 +1,10 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { NativeSelect } from '@/components/NativeSelect'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import i18n from '@/i18n'
 import { updateDevicesBulk, updateDevice, updateInterface, updateLink } from '../model/commands'
 import { useAppStore } from '../model/store'
 import { isValidCidr, parseCidrList } from '../../lib/validate'
@@ -6,11 +12,12 @@ import type { Device, Interface, Link } from '../../types/ntb'
 
 type Tab = 'general' | 'interfaces' | 'links'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'interfaces', label: 'Interfaces' },
-  { id: 'links', label: 'Links' },
-]
+const TABS: { id: Tab; label: 'editor.tabGeneral' | 'editor.tabInterfaces' | 'editor.tabLinks' }[] =
+  [
+    { id: 'general', label: 'editor.tabGeneral' },
+    { id: 'interfaces', label: 'editor.tabInterfaces' },
+    { id: 'links', label: 'editor.tabLinks' },
+  ]
 
 /**
  * Right sidebar (SRS §5): tabs General / Interfaces / Links for a single
@@ -18,6 +25,7 @@ const TABS: { id: Tab; label: string }[] = [
  * are selected. Text fields commit on blur, selects/checkboxes immediately.
  */
 export function Sidebar() {
+  const { t } = useTranslation()
   const selection = useAppStore((s) => s.selection)
   const devices = useAppStore((s) => s.data.devices)
   const [tab, setTab] = useState<Tab>('general')
@@ -26,25 +34,39 @@ export function Sidebar() {
 
   if (selectedDevices.length === 0) {
     return (
-      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
-        <p className="p-4 text-xs text-muted-foreground">Chọn một thiết bị để xem thuộc tính.</p>
+      <aside
+        aria-label={t('editor.properties')}
+        className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-card"
+      >
+        <p className="p-4 text-muted-foreground">{t('editor.selectHint')}</p>
       </aside>
     )
   }
 
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
-      <div className="flex border-b border-border">
+    <aside
+      aria-label={t('editor.properties')}
+      className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-card"
+    >
+      <div
+        role="tablist"
+        aria-label={t('editor.properties')}
+        className="flex border-b border-border"
+      >
         {TABS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
+            role="tab"
+            aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`flex-1 px-2 py-2 text-xs font-medium ${
-              tab === id ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'
+            className={`h-9 flex-1 px-2 font-medium ${
+              tab === id
+                ? 'text-foreground shadow-[inset_0_-2px_0_var(--brand)]'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>
@@ -63,18 +85,16 @@ export function Sidebar() {
   )
 }
 
-const inputClass =
-  'w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring'
-const labelClass = 'mb-1 block text-xs text-muted-foreground'
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="mb-2 block">
-      <span className={labelClass}>{label}</span>
+    <label className="mb-3 block space-y-1">
+      <span className="block text-label text-muted-foreground">{label}</span>
       {children}
     </label>
   )
 }
+
+const tr = (key: string) => i18n.t(key as never)
 
 const ROLE_OPTIONS = ['none', 'core', 'distribution', 'access', 'edge', 'dmz', 'oob'] as const
 const LIFECYCLE_OPTIONS = ['existing', 'planned', 'to_be_removed'] as const
@@ -94,23 +114,22 @@ const IF_SPEED_OPTIONS = [
 const LINK_STATUS_OPTIONS = ['up', 'down', 'admin_down', 'planned'] as const
 
 function GeneralForm({ device }: { device: Device }) {
+  const { t } = useTranslation()
   const [mgmtIp, setMgmtIp] = useState(device.mgmtIp ?? '')
   const cidrValid = isValidCidr(mgmtIp)
 
   return (
     <div data-testid="general-form">
-      <Row label="Hostname">
-        <input
-          className={inputClass}
+      <Row label={t('editor.hostname')}>
+        <Input
           value={device.hostname}
           onChange={(e) =>
             useAppStore.getState().dispatch(updateDevice(device.id, { hostname: e.target.value }))
           }
         />
       </Row>
-      <Row label="Vendor">
-        <input
-          className={inputClass}
+      <Row label={t('editor.vendor')}>
+        <Input
           value={device.vendor ?? ''}
           onBlur={(e) =>
             useAppStore.getState().dispatch(updateDevice(device.id, { vendor: e.target.value }))
@@ -118,18 +137,16 @@ function GeneralForm({ device }: { device: Device }) {
           defaultValue={device.vendor ?? ''}
         />
       </Row>
-      <Row label="Model">
-        <input
-          className={inputClass}
+      <Row label={t('editor.model')}>
+        <Input
           defaultValue={device.model ?? ''}
           onBlur={(e) =>
             useAppStore.getState().dispatch(updateDevice(device.id, { model: e.target.value }))
           }
         />
       </Row>
-      <Row label="Role">
-        <select
-          className={inputClass}
+      <Row label={t('editor.role')}>
+        <NativeSelect
           value={device.role ?? 'none'}
           onChange={(e) =>
             useAppStore
@@ -139,14 +156,13 @@ function GeneralForm({ device }: { device: Device }) {
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r} value={r}>
-              {r}
+              {tr(`editor.roles.${r}`)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Row>
-      <Row label="Lifecycle">
-        <select
-          className={inputClass}
+      <Row label={t('editor.lifecycle')}>
+        <NativeSelect
           value={device.lifecycle ?? 'planned'}
           onChange={(e) =>
             useAppStore
@@ -158,14 +174,15 @@ function GeneralForm({ device }: { device: Device }) {
         >
           {LIFECYCLE_OPTIONS.map((l) => (
             <option key={l} value={l}>
-              {l}
+              {tr(`editor.lifecycles.${l}`)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Row>
-      <Row label="Management IP (CIDR)">
-        <input
-          className={`${inputClass} ${cidrValid ? '' : 'border-destructive'}`}
+      <Row label={t('editor.mgmtIp')}>
+        <Input
+          aria-invalid={cidrValid ? undefined : true}
+          className="font-mono"
           value={mgmtIp}
           onChange={(e) => setMgmtIp(e.target.value)}
           onBlur={() => {
@@ -177,12 +194,13 @@ function GeneralForm({ device }: { device: Device }) {
           }}
         />
         {!cidrValid && (
-          <span className="text-xs text-destructive">IP không hợp lệ (dạng 10.0.0.1/24)</span>
+          <span role="alert" className="text-label text-destructive">
+            {t('editor.mgmtIpInvalid')}
+          </span>
         )}
       </Row>
-      <Row label="Site">
-        <input
-          className={inputClass}
+      <Row label={t('editor.site')}>
+        <Input
           defaultValue={device.site ?? ''}
           onBlur={(e) =>
             useAppStore.getState().dispatch(updateDevice(device.id, { site: e.target.value }))
@@ -194,9 +212,12 @@ function GeneralForm({ device }: { device: Device }) {
 }
 
 function InterfacesForm({ device }: { device: Device }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-3" data-testid="interfaces-form">
-      <p className="text-xs text-muted-foreground">{device.interfaces.length} interfaces</p>
+      <p className="text-muted-foreground">
+        {t('editor.interfacesCount', { count: device.interfaces.length })}
+      </p>
       {device.interfaces.map((iface) => (
         <InterfaceRow key={iface.id} deviceId={device.id} iface={iface} />
       ))}
@@ -205,6 +226,7 @@ function InterfacesForm({ device }: { device: Device }) {
 }
 
 function InterfaceRow({ deviceId, iface }: { deviceId: string; iface: Interface }) {
+  const { t } = useTranslation()
   const [ipText, setIpText] = useState(iface.ipAddresses?.join(', ') ?? '')
   const ipsValid = parseSafe(ipText)
 
@@ -228,16 +250,15 @@ function InterfaceRow({ deviceId, iface }: { deviceId: string; iface: Interface 
   }
 
   return (
-    <div className="rounded-md border border-border p-2 text-xs">
+    <div className="rounded-md border border-border p-2">
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="font-medium">{iface.name}</span>
+        <span className="font-mono text-tech font-medium">{iface.name}</span>
         <span className="text-muted-foreground">
           {iface.media} · {iface.speed}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-1.5">
-        <select
-          className={inputClass}
+        <NativeSelect
           value={iface.mode ?? 'access'}
           onChange={(e) =>
             useAppStore
@@ -246,16 +267,15 @@ function InterfaceRow({ deviceId, iface }: { deviceId: string; iface: Interface 
                 updateInterface(deviceId, iface.id, { mode: e.target.value as Interface['mode'] }),
               )
           }
-          aria-label={`${iface.name} mode`}
+          aria-label={t('editor.ifMode', { name: iface.name })}
         >
           {MODE_OPTIONS.map((m) => (
             <option key={m} value={m}>
-              {m}
+              {tr(`editor.modes.${m}`)}
             </option>
           ))}
-        </select>
-        <select
-          className={inputClass}
+        </NativeSelect>
+        <NativeSelect
           value={iface.speed}
           onChange={(e) =>
             useAppStore.getState().dispatch(
@@ -264,47 +284,44 @@ function InterfaceRow({ deviceId, iface }: { deviceId: string; iface: Interface 
               }),
             )
           }
-          aria-label={`${iface.name} speed`}
+          aria-label={t('editor.ifSpeed', { name: iface.name })}
         >
           {IF_SPEED_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
-      <input
-        className={`${inputClass} mt-1.5 ${ipsValid ? '' : 'border-destructive'}`}
+      <Input
+        className="mt-1.5 font-mono"
+        aria-invalid={ipsValid ? undefined : true}
         value={ipText}
         onChange={(e) => setIpText(e.target.value)}
         onBlur={commitIps}
-        placeholder="IP dạng CIDR, cách nhau bởi dấu phẩy"
-        aria-label={`${iface.name} IPs`}
+        placeholder={t('editor.ipsPlaceholder')}
+        aria-label={t('editor.ifIps', { name: iface.name })}
       />
       <div className="mt-1.5 flex gap-4">
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-1.5">
+          <Checkbox
             checked={iface.poe}
-            onChange={(e) =>
-              useAppStore
-                .getState()
-                .dispatch(updateInterface(deviceId, iface.id, { poe: e.target.checked }))
+            onCheckedChange={(on) =>
+              useAppStore.getState().dispatch(updateInterface(deviceId, iface.id, { poe: !!on }))
             }
           />
-          PoE
+          {t('editor.poe')}
         </label>
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-1.5">
+          <Checkbox
             checked={iface.adminUp}
-            onChange={(e) =>
+            onCheckedChange={(on) =>
               useAppStore
                 .getState()
-                .dispatch(updateInterface(deviceId, iface.id, { adminUp: e.target.checked }))
+                .dispatch(updateInterface(deviceId, iface.id, { adminUp: !!on }))
             }
           />
-          Admin up
+          {t('editor.adminUp')}
         </label>
       </div>
     </div>
@@ -312,6 +329,7 @@ function InterfaceRow({ deviceId, iface }: { deviceId: string; iface: Interface 
 }
 
 function LinksForm({ device }: { device: Device }) {
+  const { t } = useTranslation()
   const data = useAppStore((s) => s.data)
   const links = Object.values(data.links).filter(
     (l) => l.a.deviceId === device.id || l.b.deviceId === device.id,
@@ -319,15 +337,15 @@ function LinksForm({ device }: { device: Device }) {
 
   if (links.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground" data-testid="links-form">
-        Chưa có link nào.
+      <p className="text-muted-foreground" data-testid="links-form">
+        {t('editor.noLinks')}
       </p>
     )
   }
 
   return (
     <div className="space-y-3" data-testid="links-form">
-      <p className="text-xs text-muted-foreground">{links.length} links</p>
+      <p className="text-muted-foreground">{t('editor.linksCount', { count: links.length })}</p>
       {links.map((link) => (
         <LinkRow key={link.id} device={device} link={link} />
       ))}
@@ -336,6 +354,7 @@ function LinksForm({ device }: { device: Device }) {
 }
 
 function LinkRow({ device, link }: { device: Device; link: Link }) {
+  const { t } = useTranslation()
   const data = useAppStore((s) => s.data)
   const isA = link.a.deviceId === device.id
   const peer = data.devices[isA ? link.b.deviceId : link.a.deviceId]
@@ -346,36 +365,36 @@ function LinkRow({ device, link }: { device: Device; link: Link }) {
   const [notes, setNotes] = useState(link.notes ?? '')
 
   return (
-    <div className="rounded-md border border-border p-2 text-xs">
-      <p className="mb-1.5 font-medium">
-        {ownPort} ↔ {peer?.hostname ?? '?'} ({peerPort})
+    <div className="rounded-md border border-border p-2">
+      <p className="mb-1.5">
+        <span className="font-mono text-tech">{ownPort}</span> ↔{' '}
+        <span className="font-medium">{peer?.hostname ?? '?'}</span>{' '}
+        <span className="font-mono text-tech">({peerPort})</span>
       </p>
       <div className="grid grid-cols-2 gap-1.5">
-        <select
-          className={inputClass}
+        <NativeSelect
           value={link.status ?? 'planned'}
           onChange={(e) =>
             useAppStore
               .getState()
               .dispatch(updateLink(link.id, { status: e.target.value as Link['status'] }))
           }
-          aria-label="Link status"
+          aria-label={t('editor.linkStatus')}
         >
           {LINK_STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {tr(`editor.linkStatuses.${s}`)}
             </option>
           ))}
-        </select>
-        <select
-          className={inputClass}
+        </NativeSelect>
+        <NativeSelect
           value={link.speed ?? 'auto'}
           onChange={(e) =>
             useAppStore
               .getState()
               .dispatch(updateLink(link.id, { speed: e.target.value as Link['speed'] }))
           }
-          aria-label="Link speed"
+          aria-label={t('editor.linkSpeed')}
         >
           <option value="">—</option>
           {IF_SPEED_OPTIONS.map((s) => (
@@ -383,24 +402,24 @@ function LinkRow({ device, link }: { device: Device; link: Link }) {
               {s}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
-      <input
-        className={`${inputClass} mt-1.5`}
+      <Input
+        className="mt-1.5 font-mono"
         defaultValue={link.cableId ?? ''}
-        placeholder="Cable ID"
-        aria-label="Cable ID"
+        placeholder={t('editor.cableId')}
+        aria-label={t('editor.cableId')}
         onBlur={(e) =>
           useAppStore.getState().dispatch(updateLink(link.id, { cableId: e.target.value }))
         }
       />
-      <input
-        className={`${inputClass} mt-1.5`}
+      <Input
+        className="mt-1.5"
         type="number"
         min={0}
         defaultValue={link.lengthM ?? ''}
-        placeholder="Chiều dài (m)"
-        aria-label="Link length (m)"
+        placeholder={t('editor.lengthM')}
+        aria-label={t('editor.lengthM')}
         onBlur={(e) =>
           useAppStore.getState().dispatch(
             updateLink(link.id, {
@@ -409,11 +428,11 @@ function LinkRow({ device, link }: { device: Device; link: Link }) {
           )
         }
       />
-      <input
-        className={`${inputClass} mt-1.5`}
+      <Input
+        className="mt-1.5"
         value={notes}
-        placeholder="Ghi chú"
-        aria-label="Link notes"
+        placeholder={t('editor.notes')}
+        aria-label={t('editor.notes')}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={() => useAppStore.getState().dispatch(updateLink(link.id, { notes }))}
       />
@@ -422,6 +441,7 @@ function LinkRow({ device, link }: { device: Device; link: Link }) {
 }
 
 function BulkForm({ devices }: { devices: Device[] }) {
+  const { t } = useTranslation()
   const [role, setRole] = useState<Device['role'] | ''>('')
   const [lifecycle, setLifecycle] = useState<Device['lifecycle'] | ''>('')
   const [site, setSite] = useState('')
@@ -442,52 +462,40 @@ function BulkForm({ devices }: { devices: Device[] }) {
 
   return (
     <div data-testid="bulk-form">
-      <p className="mb-2 text-xs text-muted-foreground">
-        Sửa hàng loạt · {devices.length} thiết bị
-      </p>
-      <Row label="Role">
-        <select
-          className={inputClass}
-          value={role}
-          onChange={(e) => setRole(e.target.value as Device['role'] | '')}
-        >
-          <option value="">— không đổi —</option>
+      <p className="mb-3 font-medium">{t('editor.bulkTitle', { count: devices.length })}</p>
+      <Row label={t('editor.role')}>
+        <NativeSelect value={role} onChange={(e) => setRole(e.target.value as Device['role'] | '')}>
+          <option value="">{t('editor.unchanged')}</option>
           {ROLE_OPTIONS.map((r) => (
             <option key={r} value={r}>
-              {r}
+              {tr(`editor.roles.${r}`)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Row>
-      <Row label="Lifecycle">
-        <select
-          className={inputClass}
+      <Row label={t('editor.lifecycle')}>
+        <NativeSelect
           value={lifecycle}
           onChange={(e) => setLifecycle(e.target.value as Device['lifecycle'] | '')}
         >
-          <option value="">— không đổi —</option>
+          <option value="">{t('editor.unchanged')}</option>
           {LIFECYCLE_OPTIONS.map((l) => (
             <option key={l} value={l}>
-              {l}
+              {tr(`editor.lifecycles.${l}`)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Row>
-      <Row label="Site">
-        <input
-          className={inputClass}
+      <Row label={t('editor.site')}>
+        <Input
           value={site}
           onChange={(e) => setSite(e.target.value)}
-          placeholder="— không đổi —"
+          placeholder={t('editor.unchanged')}
         />
       </Row>
-      <button
-        type="button"
-        onClick={apply}
-        className="w-full rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
-      >
-        Áp dụng
-      </button>
+      <Button onClick={apply} className="w-full">
+        {t('editor.apply')}
+      </Button>
     </div>
   )
 }

@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · editor sơ đồ (token màu + i18n)
+- Đã làm:
+  - React Flow theo token Light/Dark qua biến `--xy-*` (nền lưới, cạnh, handle, minimap, controls, vùng chọn, attribution).
+  - Mọi nhãn qua i18n, kể cả nhãn trợ năng của React Flow (`ariaLabelConfig`): toolbar (Về tổ chức, Bám lưới, Cỡ lưới,
+    Vừa màn hình, Khóa), Palette (nhóm thiết bị, bỏ viết hoa toàn bộ), Sidebar thuộc tính (nhãn + giá trị vai trò/vòng đời/
+    mode/trạng thái link), LinkDialog (dùng Dialog chung), Problems.
+  - Problems: icon + chữ + màu theo mức (bỏ chấm màu và emoji), đặt **dưới** canvas nên không còn che Controls/minimap.
+    Badge mức lỗi trên node cũng là icon.
+  - Sửa lỗi có sẵn: minimap không vẽ node vì kích thước node không được giữ — nay lưu kích thước đo được ở state của canvas
+    (không đổi model/command, không vào undo).
+  - Script `scripts/editor-screenshots.mjs`.
+- Test / cách kiểm tra: `make check` pass (test model/command editor không đổi). Ảnh `29-editor-*`, `30-editor-connect-*`;
+  axe-core: 0 vấn đề.
+- Còn dở / lỗi đã biết:
+  - Thêm thiết bị bằng bàn phím chưa có (chỉ kéo thả); vùng Palette đã cuộn được bằng phím. Làm cùng "/" thêm nhanh (ADR-020, P1-13).
+  - Thông báo kiểm tra (validation) sinh trong worker vẫn là tiếng Việt cứng — cần đổi rule trả về key + tham số; làm khi
+    editor chuyển sang API (P1-13) để không đổi logic ở bước giao diện.
+  - Tên loại thiết bị trong catalog (Router, L2 Switch…) giữ nguyên tiếng Anh (thuật ngữ).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tách bundle theo route.
+
 ## 2026-10-16 — UI Bước 3 · trang tổ chức (Dashboard tạm)
 - Đã làm: `/o/:orgId` thành Dashboard tạm theo thiết kế: panel Tổ chức (avatar, loại, vai trò, ghi chú; sửa qua dialog,
   409 vẫn giải thích như cũ), panel Tài khoản (MFA bật/tắt — ô mã dùng MfaCodeInput), Đi nhanh tới Thiết bị/Sơ đồ/Thành viên.

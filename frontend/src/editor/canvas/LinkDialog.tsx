@@ -1,17 +1,19 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { NativeSelect } from '@/components/NativeSelect'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { connectPorts } from '../model/commands'
 import { useAppStore } from '../model/store'
 import { kindForMediaGroup, mediaGroup, usedPorts, type MediaGroup } from '../model/ports'
 import type { Device, Interface, Link } from '../../types/ntb'
-
-const KIND_LABELS: Record<Link['kind'], string> = {
-  ethernet: 'Ethernet',
-  fiber: 'Fiber',
-  wireless: 'Wireless',
-  serial: 'Serial',
-  logical: 'Logical',
-  console: 'Console',
-}
 
 const LINKABLE_GROUPS: MediaGroup[] = ['copper', 'fiber', 'wireless', 'serial']
 
@@ -56,6 +58,7 @@ export function LinkDialog({
   pageId: string
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const data = useAppStore((s) => s.data)
   const source = data.devices[pending.sourceId]
   const target = data.devices[pending.targetId]
@@ -91,18 +94,19 @@ export function LinkDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="bg-popover w-96 rounded-lg border border-border p-4 shadow-lg">
-        <h2 className="mb-3 text-sm font-semibold">
-          Nối dây: {source.hostname} ↔ {target.hostname}
-        </h2>
-        <div className="space-y-3 text-sm">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {t('editor.connectTitle', { a: source.hostname, b: target.hostname })}
+          </DialogTitle>
+          <DialogDescription>
+            {t('editor.linkKind', { kind: t(`editor.kinds.${kind}`) })}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
           <PortSelect
-            label={`Cổng ${source.hostname}`}
+            label={t('editor.portOf', { host: source.hostname })}
             device={source}
             group={group}
             used={used}
@@ -110,36 +114,24 @@ export function LinkDialog({
             onChange={setSourcePortId}
           />
           <PortSelect
-            label={`Cổng ${target.hostname}`}
+            label={t('editor.portOf', { host: target.hostname })}
             device={target}
             group={group}
             used={used}
             value={chosenTarget}
             onChange={setTargetPortId}
           />
-          <p className="text-xs text-muted-foreground">
-            Loại link: {KIND_LABELS[kind]} (theo loại cổng)
-          </p>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={create}
-            disabled={!canCreate}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-          >
-            Nối
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={create} disabled={!canCreate}>
+            {t('editor.connect')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -158,13 +150,14 @@ function PortSelect({
   value: string | null
   onChange: (id: string) => void
 }) {
+  const { t } = useTranslation()
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs text-muted-foreground">{label}</span>
-      <select
+    <label className="block space-y-1">
+      <span className="block font-medium">{label}</span>
+      <NativeSelect
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-border bg-background px-2 py-1.5"
+        className="font-mono text-tech"
       >
         {device.interfaces.map((iface: Interface) => {
           const isUsed = used.has(`${device.id}:${iface.id}`)
@@ -172,22 +165,17 @@ function PortSelect({
           const disabled =
             isUsed || wrongMedia || iface.media === 'logical' || iface.media === 'console'
           const suffix = isUsed
-            ? ' — đã dùng'
-            : wrongMedia || iface.media === 'logical' || iface.media === 'console'
-              ? ' — sai loại'
+            ? ` — ${t('editor.portUsed')}`
+            : disabled
+              ? ` — ${t('editor.portWrong')}`
               : ''
           return (
-            <option
-              key={iface.id}
-              value={iface.id}
-              disabled={disabled}
-              className={disabled ? 'opacity-40' : ''}
-            >
+            <option key={iface.id} value={iface.id} disabled={disabled}>
               {iface.name} ({iface.media}/{iface.speed}){suffix}
             </option>
           )
         })}
-      </select>
+      </NativeSelect>
     </label>
   )
 }

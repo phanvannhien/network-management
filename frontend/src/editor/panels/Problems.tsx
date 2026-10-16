@@ -1,15 +1,19 @@
+import { ChevronDown, ChevronUp, CircleX, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../model/store'
 import type { Problem, Severity } from '../validation/rules'
 
-const SEVERITY_STYLE: Record<Severity, { dot: string; label: string }> = {
-  error: { dot: 'bg-red-500', label: 'Error' },
-  warning: { dot: 'bg-amber-500', label: 'Warning' },
-  info: { dot: 'bg-blue-500', label: 'Info' },
+/** Severity = icon + text + colour (DESIGN.md §3.2), never a coloured dot alone. */
+export const SEVERITY: Record<Severity, { icon: LucideIcon; color: string }> = {
+  error: { icon: CircleX, color: 'var(--status-down)' },
+  warning: { icon: TriangleAlert, color: 'var(--status-warning)' },
+  info: { icon: Info, color: 'var(--brand)' },
 }
 
 /** Bottom panel listing validation problems; click focuses the object on the canvas. */
 export function Problems() {
+  const { t } = useTranslation()
   const problems = useAppStore((s) => s.problems)
   const setFocusTarget = useAppStore((s) => s.setFocusTarget)
   const [open, setOpen] = useState(true)
@@ -21,49 +25,57 @@ export function Problems() {
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 border-t border-border bg-background/95">
+    <section aria-label={t('editor.problems')} className="shrink-0 border-t border-border bg-card">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-3 px-3 py-1.5 text-xs font-medium hover:bg-accent"
+        aria-expanded={open}
+        className="flex h-8 w-full items-center gap-3 px-3 font-medium hover:bg-muted"
       >
-        Problems
-        <span className="flex items-center gap-2 text-muted-foreground">
-          {(['error', 'warning', 'info'] as const).map((severity) => (
-            <span key={severity} className="flex items-center gap-1">
-              <span
-                className={`inline-block size-2 rounded-full ${SEVERITY_STYLE[severity].dot}`}
-              />
-              {counts[severity]}
-            </span>
-          ))}
+        {t('editor.problems')}
+        <span className="flex items-center gap-3 font-normal">
+          {(['error', 'warning', 'info'] as const).map((severity) => {
+            const { icon: Icon, color } = SEVERITY[severity]
+            return (
+              <span key={severity} className="flex items-center gap-1" data-numeric>
+                <Icon aria-hidden className="size-3.5" style={{ color }} />
+                <span className="sr-only">{t(`editor.severity.${severity}`)}</span>
+                {counts[severity]}
+              </span>
+            )
+          })}
         </span>
-        <span className="ml-auto text-muted-foreground">{open ? '▾' : '▴'}</span>
+        {open ? (
+          <ChevronDown aria-hidden className="ml-auto size-4 text-muted-foreground" />
+        ) : (
+          <ChevronUp aria-hidden className="ml-auto size-4 text-muted-foreground" />
+        )}
       </button>
       {open && (
-        <ul className="max-h-40 overflow-y-auto text-xs">
+        <ul className="max-h-40 overflow-y-auto border-t border-border">
           {problems.length === 0 && (
-            <li className="px-3 py-2 text-muted-foreground">Không có vấn đề nào 🎉</li>
+            <li className="px-3 py-2 text-muted-foreground">{t('editor.noProblems')}</li>
           )}
-          {problems.map((problem: Problem) => (
-            <li key={problem.key}>
-              <button
-                type="button"
-                onClick={() => setFocusTarget({ ...problem.target, nonce: Date.now() })}
-                className="flex w-full items-center gap-2 px-3 py-1 text-left hover:bg-accent"
-              >
-                <span
-                  className={`inline-block size-2 shrink-0 rounded-full ${SEVERITY_STYLE[problem.severity].dot}`}
-                />
-                <span className="text-muted-foreground">
-                  {SEVERITY_STYLE[problem.severity].label}
-                </span>
-                <span className="truncate">{problem.message}</span>
-              </button>
-            </li>
-          ))}
+          {problems.map((problem: Problem) => {
+            const { icon: Icon, color } = SEVERITY[problem.severity]
+            return (
+              <li key={problem.key}>
+                <button
+                  type="button"
+                  onClick={() => setFocusTarget({ ...problem.target, nonce: Date.now() })}
+                  className="flex h-7 w-full items-center gap-2 px-3 text-left hover:bg-muted"
+                >
+                  <Icon aria-hidden className="size-3.5 shrink-0" style={{ color }} />
+                  <span className="w-20 shrink-0" style={{ color }}>
+                    {t(`editor.severity.${problem.severity}`)}
+                  </span>
+                  <span className="truncate">{problem.message}</span>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
-    </div>
+    </section>
   )
 }
