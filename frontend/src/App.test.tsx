@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
@@ -406,7 +406,8 @@ describe('admin organizations', () => {
     })
     renderAt('/admin/organizations')
     expect(await screen.findByText('Văn phòng mẫu')).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Tên'), { target: { value: 'Khách hàng C' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tổ chức' }))
+    fireEvent.change(await screen.findByLabelText('Tên'), { target: { value: 'Khách hàng C' } })
     fireEvent.click(screen.getByRole('button', { name: 'Tạo' }))
     await waitFor(() =>
       expect(calls.some((r) => r.method === 'POST' && r.url.endsWith('/admin/organizations'))).toBe(
@@ -420,6 +421,39 @@ describe('admin organizations', () => {
       notes: '',
       addMeAsOwner: true,
     })
+  })
+
+  it('deleting an organization requires typing its name', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/organizations': () =>
+        json({
+          organizations: [
+            {
+              id: ORG_ID,
+              name: 'Văn phòng mẫu',
+              kind: 'internal',
+              notes: '',
+              memberCount: 3,
+              createdAt: '2026-10-16T00:00:00Z',
+              version: 1,
+            },
+          ],
+        }),
+      [`DELETE /api/admin/organizations/${ORG_ID}`]: () => new Response(null, { status: 204 }),
+    })
+    renderAt('/admin/organizations')
+    fireEvent.click(await screen.findByRole('button', { name: 'Thao tác cho Văn phòng mẫu' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Xóa tổ chức' }))
+    const dialog = await screen.findByRole('alertdialog', { name: 'Xóa tổ chức Văn phòng mẫu?' })
+    expect(within(dialog).getByText('3 thành viên mất quyền truy cập')).toBeInTheDocument()
+    const confirm = within(dialog).getByRole('button', { name: 'Xóa tổ chức' })
+    expect(confirm).toBeDisabled()
+    fireEvent.change(within(dialog).getByLabelText(/Gõ chính xác/), {
+      target: { value: 'Văn phòng mẫu' },
+    })
+    fireEvent.click(confirm)
+    await waitFor(() => expect(calls.some((r) => r.method === 'DELETE')).toBe(true))
   })
 
   it('non-admins are sent away from the admin page', async () => {

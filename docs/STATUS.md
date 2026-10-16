@@ -5,6 +5,16 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · module Quản trị tổ chức
+- Đã làm: trang Tất cả tổ chức (khu vực Hệ thống) — DataTable có avatar tổ chức, lọc theo loại, tạo qua dialog,
+  xóa mềm qua ConfirmDialog **mức 2** (gõ đúng tên, liệt kê hậu quả: số thành viên mất quyền, link chia sẻ). Không đổi API.
+- Test / cách kiểm tra: `make check` pass; test tạo tổ chức (body gửi đi) và test xóa phải gõ tên mới bật nút.
+  Ảnh `docs/ui-screens/after/23..25-*`; axe-core + bàn phím: 0 vấn đề.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: module Quản trị người dùng + Tình trạng hệ thống.
+
 ## 2026-10-16 — UI Bước 3 · module Thành viên
 - Đã làm: trang Thành viên theo thiết kế mới — DataTable (phân trang/sắp xếp phía client qua `useLocalTable`), FilterBar
   (vai trò, trạng thái), mời qua dialog, sửa vai trò + quyền bổ sung trong sheet bên phải, gỡ/rời tổ chức qua ConfirmDialog

@@ -1,158 +1,332 @@
-import { useState, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router'
-import type { OrganizationKind } from '../../api/client'
-import { useSession } from '../../app/auth'
+import { Building2, MoreHorizontal, Plus } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Navigate } from 'react-router'
+import { toast } from 'sonner'
+import type { AdminOrganization, OrganizationKind } from '@/api/client'
+import { useSession } from '@/app/auth'
 import {
   useAdminCreateOrganization,
   useAdminDeleteOrganization,
   useAdminOrganizations,
-} from '../../app/orgs'
+} from '@/app/orgs'
+import { useBreadcrumbs } from '@/components/breadcrumbs'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { DataTable, type DataColumn } from '@/components/DataTable'
+import { EmptyState } from '@/components/EmptyState'
+import { FilterBar } from '@/components/FilterBar'
+import { emptyFilter, type FilterState } from '@/components/filters'
+import { FormField } from '@/components/FormField'
+import { useLocalTable } from '@/components/localTable'
+import { NativeSelect } from '@/components/NativeSelect'
+import { OrgAvatar } from '@/components/OrgAvatar'
+import { PageHeader } from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { formatDate } from '@/lib/format'
 
-const inputClass = 'w-full rounded-md border border-border bg-background px-2 py-1'
-
-/** System admin: list, create and soft-delete organizations (ADR-023). Server enforces the role. */
-export function AdminOrganizationsPage() {
-  const session = useSession()
-  const orgs = useAdminOrganizations()
+function CreateOrganizationDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useAdminCreateOrganization()
-  const remove = useAdminDeleteOrganization()
   const [name, setName] = useState('')
   const [kind, setKind] = useState<OrganizationKind>('customer')
   const [notes, setNotes] = useState('')
   const [addMeAsOwner, setAddMeAsOwner] = useState(true)
 
-  if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
-
-  const onCreate = (e: FormEvent) => {
+  const onSubmit = (e: FormEvent) => {
     e.preventDefault()
     create.mutate(
       { name, kind, notes, addMeAsOwner },
       {
-        onSuccess: () => {
+        onSuccess: (org) => {
+          toast.success(t('adminOrgs.created', { name: org.name }))
           setName('')
           setNotes('')
+          onClose()
         },
       },
     )
   }
 
   return (
-    <div className="max-w-5xl space-y-6 p-4 text-foreground">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Quản trị tổ chức</h1>
-        <Link to="/" className="text-primary underline">
-          Về trang chính
-        </Link>
-      </div>
-
-      <form
-        onSubmit={onCreate}
-        className="space-y-2 rounded-lg border border-border p-4"
-        aria-label="Tạo tổ chức"
-      >
-        <h2 className="font-medium">Tạo tổ chức</h2>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="space-y-1">
-            <span className="text-muted-foreground">Tên</span>
-            <input
-              required
-              maxLength={200}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={onSubmit} className="space-y-4" aria-label={t('adminOrgs.create')}>
+          <DialogHeader>
+            <DialogTitle>{t('adminOrgs.create')}</DialogTitle>
+          </DialogHeader>
+          <FormField label={t('adminOrgs.name')} required>
+            {(f) => (
+              <Input
+                {...f}
+                required
+                autoFocus
+                maxLength={200}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            )}
+          </FormField>
+          <FormField label={t('adminOrgs.kind')}>
+            {(f) => (
+              <NativeSelect
+                {...f}
+                value={kind}
+                onChange={(e) => setKind(e.target.value as OrganizationKind)}
+              >
+                <option value="customer">{t('adminOrgs.customer')}</option>
+                <option value="internal">{t('adminOrgs.internal')}</option>
+              </NativeSelect>
+            )}
+          </FormField>
+          <FormField label={t('adminOrgs.notes')}>
+            {(f) => (
+              <Textarea
+                {...f}
+                maxLength={2000}
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            )}
+          </FormField>
+          <label className="flex items-start gap-2 text-form">
+            <Checkbox
+              checked={addMeAsOwner}
+              onCheckedChange={(v) => setAddMeAsOwner(!!v)}
+              className="mt-1"
             />
+            <span>
+              {t('adminOrgs.addMeAsOwner')}
+              <span className="block text-label text-muted-foreground">
+                {t('adminOrgs.addMeAsOwnerHint')}
+              </span>
+            </span>
           </label>
-          <label className="space-y-1">
-            <span className="text-muted-foreground">Loại</span>
-            <select
-              value={kind}
-              onChange={(e) => setKind(e.target.value as OrganizationKind)}
-              className={inputClass}
-            >
-              <option value="customer">Khách hàng</option>
-              <option value="internal">Nội bộ</option>
-            </select>
-          </label>
-        </div>
-        <label className="block space-y-1">
-          <span className="text-muted-foreground">Ghi chú</span>
-          <input
-            maxLength={2000}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={addMeAsOwner}
-            onChange={(e) => setAddMeAsOwner(e.target.checked)}
-          />
-          Thêm tôi làm owner (bỏ chọn thì chưa ai truy cập được cho tới khi có thành viên)
-        </label>
-        {create.isError && (
-          <p role="alert" className="text-destructive">
-            {create.error.message}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={create.isPending}
-          className="rounded-md bg-primary px-3 py-1 text-primary-foreground"
-        >
-          Tạo
-        </button>
-      </form>
+          {create.isError && (
+            <p role="alert" className="text-destructive">
+              {create.error.message}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {t('adminOrgs.submit')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
-      {orgs.isError && (
-        <p role="alert" className="text-destructive">
-          {orgs.error.message}
-        </p>
-      )}
+/** System admin: list, create and soft-delete organizations (ADR-023). Server enforces the role. */
+export function AdminOrganizationsPage() {
+  const { t } = useTranslation()
+  const session = useSession()
+  const orgs = useAdminOrganizations()
+  const remove = useAdminDeleteOrganization()
+  const [filter, setFilter] = useState<FilterState>(emptyFilter)
+  const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState<AdminOrganization | null>(null)
+  const userId = session.data?.user.id ?? ''
+  useBreadcrumbs([{ label: t('adminOrgs.title') }])
+
+  const filtered = useMemo(() => {
+    const q = filter.q.trim().toLowerCase()
+    const kinds = filter.facets.kind ?? []
+    return orgs.data?.filter(
+      (o) =>
+        (!q || o.name.toLowerCase().includes(q)) && (kinds.length === 0 || kinds.includes(o.kind)),
+    )
+  }, [orgs.data, filter])
+  const table = useLocalTable(
+    filtered,
+    {
+      name: (o) => o.name,
+      kind: (o) => o.kind,
+      memberCount: (o) => o.memberCount,
+      createdAt: (o) => o.createdAt,
+    },
+    [{ id: 'name', desc: false }],
+  )
+
+  if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
+
+  const kindLabel = (k: OrganizationKind) =>
+    k === 'customer' ? t('adminOrgs.customer') : t('adminOrgs.internal')
+  const columns: DataColumn<AdminOrganization>[] = [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: t('adminOrgs.name'),
+      meta: { label: t('adminOrgs.name'), width: 320, pin: true, alwaysVisible: true },
+      cell: ({ row: { original: o } }) => (
+        <span className="flex items-center gap-2">
+          <OrgAvatar id={o.id} name={o.name} size="sm" />
+          <span className="truncate font-medium">{o.name}</span>
+        </span>
+      ),
+    },
+    {
+      id: 'kind',
+      accessorKey: 'kind',
+      header: t('adminOrgs.kind'),
+      meta: { label: t('adminOrgs.kind'), width: 120 },
+      cell: ({ row }) => kindLabel(row.original.kind),
+    },
+    {
+      id: 'memberCount',
+      accessorKey: 'memberCount',
+      header: t('adminOrgs.members'),
+      meta: { label: t('adminOrgs.members'), width: 120, align: 'right' },
+      cell: ({ row }) => <span data-numeric>{row.original.memberCount}</span>,
+    },
+    {
+      id: 'createdAt',
+      accessorKey: 'createdAt',
+      header: t('adminOrgs.createdAt'),
+      meta: { label: t('adminOrgs.createdAt'), width: 130 },
+      cell: ({ row }) => (
+        <time dateTime={row.original.createdAt}>{formatDate(row.original.createdAt)}</time>
+      ),
+    },
+    {
+      id: 'notes',
+      accessorKey: 'notes',
+      header: t('adminOrgs.notes'),
+      enableSorting: false,
+      meta: { label: t('adminOrgs.notes'), width: 360 },
+      cell: ({ row }) =>
+        row.original.notes || <span className="text-muted-foreground">{t('common.none')}</span>,
+    },
+    {
+      id: 'actions',
+      header: () => <span className="sr-only">{t('common.more')}</span>,
+      enableSorting: false,
+      meta: { label: t('common.more'), width: 48, alwaysVisible: true, align: 'right' },
+      cell: ({ row: { original: o } }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('table.rowActions', { name: o.name })}
+              />
+            }
+          >
+            <MoreHorizontal aria-hidden />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem variant="destructive" onClick={() => setDeleting(o)}>
+              {t('adminOrgs.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ]
+
+  const count = (k: OrganizationKind) => orgs.data?.filter((o) => o.kind === k).length ?? 0
+
+  return (
+    <div className="space-y-3 p-4">
+      <PageHeader
+        title={t('adminOrgs.title')}
+        count={orgs.data?.length}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus aria-hidden /> {t('adminOrgs.create')}
+          </Button>
+        }
+      />
       {remove.isError && (
         <p role="alert" className="text-destructive">
           {remove.error.message}
         </p>
       )}
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-border text-left text-muted-foreground">
-            <th className="py-2">Tên</th>
-            <th>Loại</th>
-            <th>Thành viên</th>
-            <th>Ngày tạo</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {orgs.data?.map((o) => (
-            <tr key={o.id} className="border-b border-border">
-              <td className="py-2">{o.name}</td>
-              <td>{o.kind === 'customer' ? 'Khách hàng' : 'Nội bộ'}</td>
-              <td>{o.memberCount}</td>
-              <td>{new Date(o.createdAt).toLocaleDateString('vi-VN')}</td>
-              <td className="text-right">
-                <button
-                  type="button"
-                  className="text-destructive underline"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Xóa tổ chức "${o.name}"? Tổ chức sẽ bị ẩn với mọi người; lịch sử vẫn được giữ.`,
-                      )
-                    ) {
-                      remove.mutate(o.id)
-                    }
-                  }}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable
+        tableId="admin-organizations"
+        userId={userId}
+        caption={t('adminOrgs.title')}
+        columns={columns}
+        data={table.data}
+        total={table.total}
+        isLoading={orgs.isPending}
+        error={orgs.error}
+        getRowId={(o) => o.id}
+        rowLabel={(o) => o.name}
+        pagination={table.pagination}
+        onPaginationChange={table.onPaginationChange}
+        sorting={table.sorting}
+        onSortingChange={table.onSortingChange}
+        maxHeight="calc(100vh - 220px)"
+        filters={
+          <FilterBar
+            value={filter}
+            onChange={(f) => {
+              setFilter(f)
+              table.resetPage()
+            }}
+            facets={[
+              {
+                id: 'kind',
+                label: t('adminOrgs.kind'),
+                options: (['customer', 'internal'] as const).map((k) => ({
+                  value: k,
+                  label: kindLabel(k),
+                  count: count(k),
+                })),
+              },
+            ]}
+            searchPlaceholder={t('adminOrgs.searchPlaceholder')}
+            storageKey={`ntb-filters:${userId}:admin-organizations`}
+          />
+        }
+        empty={<EmptyState icon={<Building2 />} title={t('adminOrgs.emptyTitle')} />}
+      />
+
+      <CreateOrganizationDialog open={creating} onClose={() => setCreating(false)} />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={t('adminOrgs.deleteTitle', { name: deleting?.name ?? '' })}
+        description={t('adminOrgs.deleteBody')}
+        consequences={[
+          t('adminOrgs.deleteConsequenceMembers', { count: deleting?.memberCount ?? 0 }),
+          t('adminOrgs.deleteConsequenceLinks'),
+        ]}
+        confirmText={deleting?.name}
+        confirmLabel={t('adminOrgs.delete')}
+        pending={remove.isPending}
+        onConfirm={() => {
+          if (deleting) {
+            const name = deleting.name
+            remove.mutate(deleting.id, {
+              onSuccess: () => toast.success(t('adminOrgs.deleted', { name })),
+            })
+          }
+          setDeleting(null)
+        }}
+      />
     </div>
   )
 }
