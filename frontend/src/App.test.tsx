@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { usePreferences } from './lib/preferences'
 import { useScopeStore } from './modules/sites/access'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
@@ -1767,5 +1768,39 @@ describe('device inventory (P1-08)', () => {
       vlanTag: 10,
       mac: 'aabb.ccdd.ee01',
     })
+  })
+
+  it('explains fields: (?) opens the glossary entry, guides can be turned off', async () => {
+    fakeApi(ifaceRoutes())
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=interfaces`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm interface' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm interface' })
+    // The plain-language guide is shown by default…
+    expect(within(dialog).getByText(/Access: cổng mang 1 VLAN/)).toBeInTheDocument()
+    // …and (?) explains the term with an example and a glossary link.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Giải thích: Mode của cổng' }))
+    expect(await screen.findByText(/Routed: cổng có IP như cổng router/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Xem trong bảng thuật ngữ' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/glossary#mode`,
+    )
+    act(() => usePreferences.getState().setShowGuides(false))
+    expect(within(dialog).queryByText(/Access: cổng mang 1 VLAN/)).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole('button', { name: 'Giải thích: Mode của cổng' }),
+    ).toBeInTheDocument()
+    act(() => usePreferences.getState().setShowGuides(true))
+  })
+
+  it('the glossary page lists and searches terms', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/glossary#vrf`)
+    expect(await screen.findByRole('heading', { name: 'Thuật ngữ mạng' })).toBeInTheDocument()
+    expect(screen.getByText('VRF')).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm thuật ngữ…' }), {
+      target: { value: 'trunk' },
+    })
+    expect(screen.getByText('Cổng trunk')).toBeInTheDocument()
+    expect(screen.queryByText('VRF')).not.toBeInTheDocument()
   })
 })

@@ -56,7 +56,7 @@ export function SiteSharesPanel({ orgId, site }: { orgId: string; site: Site }) 
         onSubmit={onShare}
         className="grid grid-cols-[1fr_180px_auto] items-end gap-2 rounded-lg border border-border bg-card p-4"
       >
-        <FormField label={t('shares.target')}>
+        <FormField label={t('shares.target')} help="share">
           {(p) => (
             <NativeSelect
               {...p}
@@ -84,7 +84,7 @@ export function SiteSharesPanel({ orgId, site }: { orgId: string; site: Site }) 
             </NativeSelect>
           )}
         </FormField>
-        <FormField label={t('shares.access')}>
+        <FormField label={t('shares.access')} guide={t('guides.shareAccess')} help="share">
           {(p) => (
             <NativeSelect
               {...p}

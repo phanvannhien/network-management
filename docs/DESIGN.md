@@ -109,6 +109,24 @@ Bước 2 sẽ kiểm tra lại bằng công cụ trên ảnh chụp thật (axe
 
 ---
 
+## 4a. Hướng dẫn trên form và màn vẽ (bắt buộc, chốt 2026-10-16)
+
+Người dùng phần lớn không chuyên mạng. Mọi form, panel thuộc tính và màn vẽ đều có hướng dẫn theo **3 tầng**:
+
+1. **`hint`** — quy tắc/định dạng bắt buộc phải theo (luôn hiện): "2–8 ký tự A–Z…", "Phân cách bằng dấu phẩy".
+2. **`guide`** — giải thích khái niệm bằng lời thường, ≤ 1 câu, có ví dụ (ẩn được qua menu tài khoản → "Hiện hướng dẫn trên
+   form", lưu theo trình duyệt): "Trunk: cổng mang nhiều VLAN (nối switch–switch…)". Chỉ cho ô kỹ thuật, không cho ô hiển nhiên
+   (Tên, Ghi chú, Email).
+3. **`help`** — nút (?) cạnh nhãn, mở giải thích đầy đủ + ví dụ + link tới **trang Thuật ngữ** (`/o/:orgId/glossary`, dữ liệu
+   `frontend/src/help/glossary.ts`, bản đọc `docs/GLOSSARY.md`). Mọi ô dùng khái niệm mạng phải có `help`.
+
+Dùng qua `FormField` (`hint` / `guide` / `help`); checkbox hoặc ô ngoài `FormField` dùng `FieldHelp` trực tiếp.
+Khi thêm khái niệm mới: thêm mục vào `glossary.ts` (vi + en) **và** `docs/GLOSSARY.md`.
+
+**Màn vẽ sơ đồ (P1-14 trở đi):** tooltip cho mọi nút toolbar (tên + phím tắt); mỗi mục thư viện có mô tả 1 dòng ("Switch PoE: cấp
+nguồn cho camera, AP"); panel thuộc tính dùng đúng 3 tầng trên; lần đầu mở editor có gợi ý thao tác (kéo thả, nối dây, phím `/`),
+tắt được.
+
 ## 5. Mật độ, khoảng cách, hình khối
 
 - **Thang khoảng cách 4px**: 4 · 8 · 12 · 16 · 24 · 32. Không dùng giá trị khác.

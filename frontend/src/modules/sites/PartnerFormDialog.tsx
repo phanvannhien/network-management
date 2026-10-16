@@ -72,6 +72,7 @@ export function PartnerFormDialog({
           <div className="grid grid-cols-[180px_1fr] gap-3">
             <FormField
               label={t('partners.code')}
+              help="partner-unit"
               required
               hint={partner ? t('partners.renameHint') : t('partners.codeHint')}
               error={f.code && !codeValid ? t('partners.codeHint') : undefined}
@@ -96,7 +97,7 @@ export function PartnerFormDialog({
               )}
             </FormField>
           </div>
-          <FormField label={t('partners.relationWith', { org })}>
+          <FormField label={t('partners.relationWith', { org })} guide={t('guides.relation')}>
             {(p) => (
               <NativeSelect
                 {...p}

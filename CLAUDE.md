@@ -77,6 +77,7 @@ Makefile
 - **SNMP / SSH:** chỉ đọc. SNMP chỉ GET/WALK/BULKWALK; SSH (Phase 4) chỉ lệnh show. Không bao giờ ghi cấu hình thiết bị.
 - **Editor sơ đồ:** thay đổi đi qua command (undo/redo); không re-render toàn canvas khi một node đổi; validation trong Web Worker.
 - **Ngôn ngữ:** code, biến, comment, commit tiếng Anh; trao đổi với người dùng và docs tiếng Việt.
+- **Hướng dẫn trên UI (DESIGN.md §4a):** mọi form/panel mới có `hint`/`guide`/`help` cho ô kỹ thuật; khái niệm mạng mới → thêm vào `frontend/src/help/glossary.ts` và `docs/GLOSSARY.md`.
 
 ## Mẫu ghi `docs/STATUS.md` (thêm vào ĐẦU file)
 ```

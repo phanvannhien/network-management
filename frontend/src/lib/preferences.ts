@@ -5,6 +5,7 @@ export type Density = 'compact' | 'comfortable'
 
 export const THEME_KEY = 'ntb-theme'
 export const DENSITY_KEY = 'ntb-density'
+export const GUIDES_KEY = 'ntb-guides'
 
 const storage = () => globalThis.localStorage as Storage | undefined
 
@@ -32,14 +33,22 @@ export function applyPreferences(theme: Theme, density: Density): void {
 interface PreferencesState {
   theme: Theme
   density: Density
+  /** Show the short explanations under technical fields (the (?) help stays either way). */
+  showGuides: boolean
   setTheme: (theme: Theme) => void
   setDensity: (density: Density) => void
+  setShowGuides: (on: boolean) => void
 }
 
 /** UI preferences saved per browser (per-user server storage comes with the profile page). */
 export const usePreferences = create<PreferencesState>((set, get) => ({
   theme: readTheme(),
   density: readDensity(),
+  showGuides: storage()?.getItem(GUIDES_KEY) !== 'off',
+  setShowGuides: (on) => {
+    storage()?.setItem(GUIDES_KEY, on ? 'on' : 'off')
+    set({ showGuides: on })
+  },
   setTheme: (theme) => {
     storage()?.setItem(THEME_KEY, theme)
     applyPreferences(theme, get().density)

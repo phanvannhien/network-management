@@ -80,7 +80,7 @@ export function GrantMembersPanel({
             />
           )}
         </FormField>
-        <FormField label={t('grants.role')}>
+        <FormField label={t('grants.role')} guide={t('guides.grantRole')}>
           {(p) => (
             <NativeSelect {...p} value={role} onChange={(e) => setRole(e.target.value)}>
               {roles.map((r) => (

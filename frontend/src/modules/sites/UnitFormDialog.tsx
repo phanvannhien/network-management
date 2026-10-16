@@ -84,6 +84,7 @@ export function UnitFormDialog({
           </DialogHeader>
           <FormField
             label={t('units.partner')}
+            help="partner-unit"
             required
             hint={unit ? t('units.partnerFixed') : undefined}
             error={partners.data?.length === 0 ? t('units.needPartner') : undefined}
@@ -119,6 +120,7 @@ export function UnitFormDialog({
           <div className="grid grid-cols-[180px_1fr] gap-3">
             <FormField
               label={t('units.code')}
+              help="partner-unit"
               required
               hint={unit ? t('units.renameHint') : t('units.codeHint')}
               error={f.code && !codeValid ? t('units.codeHint') : undefined}

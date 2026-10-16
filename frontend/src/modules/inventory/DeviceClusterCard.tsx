@@ -95,7 +95,7 @@ function JoinClusterDialog({
             <DialogTitle>{t('clusters.joinTitle', { name: device.hostname })}</DialogTitle>
             <DialogDescription>{t('clusters.deviceHint')}</DialogDescription>
           </DialogHeader>
-          <FormField label={t('clusters.cluster')}>
+          <FormField label={t('clusters.cluster')} help="cluster">
             {(p) => (
               <NativeSelect {...p} value={clusterId} onChange={(e) => setClusterId(e.target.value)}>
                 <option value="">{t('clusters.chooseCluster')}</option>
@@ -108,7 +108,7 @@ function JoinClusterDialog({
             )}
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('clusters.role')}>
+            <FormField label={t('clusters.role')} guide={t('guides.clusterRole')} help="ha">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -123,7 +123,7 @@ function JoinClusterDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('clusters.memberNo')}>
+            <FormField label={t('clusters.memberNo')} guide={t('guides.memberNo')} help="member-no">
               {(p) => (
                 <Input
                   {...p}

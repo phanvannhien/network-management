@@ -78,7 +78,7 @@ export function BulkEditDialog({
             <DialogDescription>{t('devices.bulkHint')}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('devices.lifecycle')}>
+            <FormField label={t('devices.lifecycle')} help="lifecycle">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -94,7 +94,7 @@ export function BulkEditDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.role')}>
+            <FormField label={t('devices.role')} help="role">
               {(p) => (
                 <NativeSelect {...p} value={role} onChange={(e) => setRole(e.target.value)}>
                   {keep}
@@ -106,7 +106,7 @@ export function BulkEditDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.managed')}>
+            <FormField label={t('devices.managed')} help="managed">
               {(p) => (
                 <NativeSelect {...p} value={managed} onChange={(e) => setManaged(e.target.value)}>
                   {keep}

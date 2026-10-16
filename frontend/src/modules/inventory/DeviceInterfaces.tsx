@@ -162,7 +162,7 @@ function InterfaceDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-3 gap-3">
-            <FormField label={t('devices.ifaceName')} required>
+            <FormField label={t('devices.ifaceName')} help="interface" required>
               {(p) => (
                 <Input
                   {...p}
@@ -175,7 +175,11 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.ifaceKind')} hint={t(`hints.ifaceKinds.${f.kind}`)}>
+            <FormField
+              label={t('devices.ifaceKind')}
+              help="interface"
+              guide={t(`hints.ifaceKinds.${f.kind}`)}
+            >
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -190,7 +194,7 @@ function InterfaceDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.media')}>
+            <FormField label={t('devices.media')} help="media">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -208,7 +212,7 @@ function InterfaceDialog({
             <FormField label={t('devices.speed')}>
               {(p) => <Input {...p} maxLength={20} value={f.speed} onChange={set('speed')} />}
             </FormField>
-            <FormField label={t('devices.mode')} hint={t('hints.mode')}>
+            <FormField label={t('devices.mode')} help="mode" guide={t('hints.mode')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -223,7 +227,7 @@ function InterfaceDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.lag')} hint={t('hints.lag')}>
+            <FormField label={t('devices.lag')} help="lag" guide={t('hints.lag')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -240,7 +244,7 @@ function InterfaceDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.accessVlan')} hint={t('hints.accessVlan')}>
+            <FormField label={t('devices.accessVlan')} help="access" guide={t('hints.accessVlan')}>
               {(p) => (
                 <Input
                   {...p}
@@ -252,7 +256,11 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.nativeVlan')} hint={t('hints.nativeVlan')}>
+            <FormField
+              label={t('devices.nativeVlan')}
+              help="native-vlan"
+              guide={t('hints.nativeVlan')}
+            >
               {(p) => (
                 <Input
                   {...p}
@@ -264,7 +272,11 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.allowedVlans')} hint={t('hints.allowedVlans')}>
+            <FormField
+              label={t('devices.allowedVlans')}
+              help="allowed-vlans"
+              guide={t('hints.allowedVlans')}
+            >
               {(p) => (
                 <Input
                   {...p}
@@ -282,7 +294,7 @@ function InterfaceDialog({
                 <Input {...p} maxLength={200} value={f.description} onChange={set('description')} />
               )}
             </FormField>
-            <FormField label={t('devices.mac')} hint={t('hints.mac')}>
+            <FormField label={t('devices.mac')} help="mac" guide={t('hints.mac')}>
               {(p) => (
                 <Input
                   {...p}
@@ -293,7 +305,7 @@ function InterfaceDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.vlanTag')} hint={t('hints.vlanTag')}>
+            <FormField label={t('devices.vlanTag')} help="dot1q" guide={t('hints.vlanTag')}>
               {(p) => (
                 <Input
                   {...p}
@@ -596,7 +608,7 @@ function IpDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('devices.address')} required hint={t('hints.cidr')}>
+            <FormField label={t('devices.address')} help="cidr" required guide={t('hints.cidr')}>
               {(p) => (
                 <Input
                   {...p}
@@ -608,7 +620,11 @@ function IpDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.ipRole')} hint={t(`hints.ipRoles.${f.role}`)}>
+            <FormField
+              label={t('devices.ipRole')}
+              help="ip-role"
+              guide={t(`hints.ipRoles.${f.role}`)}
+            >
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -623,7 +639,7 @@ function IpDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.ipInterface')}>
+            <FormField label={t('devices.ipInterface')} help="interface">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -639,7 +655,7 @@ function IpDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.vrf')} hint={t('hints.vrf')}>
+            <FormField label={t('devices.vrf')} help="vrf" guide={t('hints.vrf')}>
               {(p) => (
                 <Input
                   {...p}

@@ -110,7 +110,11 @@ export function ClusterDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('clusters.kind')} hint={t(`hints.clusterKinds.${f.kind}`)}>
+            <FormField
+              label={t('clusters.kind')}
+              help="cluster"
+              guide={t(`hints.clusterKinds.${f.kind}`)}
+            >
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -125,7 +129,11 @@ export function ClusterDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('clusters.hostname')}>
+            <FormField
+              label={t('clusters.hostname')}
+              guide={t('guides.clusterHostname')}
+              help="hostname"
+            >
               {(p) => (
                 <Input
                   {...p}
@@ -136,12 +144,17 @@ export function ClusterDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('clusters.mgmtIp')} hint={t('clusters.mgmtHint')}>
+            <FormField
+              label={t('clusters.mgmtIp')}
+              help="mgmt-ip"
+              guide={t('guides.clusterMgmtIp')}
+              hint={t('clusters.mgmtHint')}
+            >
               {(p) => (
                 <Input {...p} value={f.mgmtIp} onChange={set('mgmtIp')} className="font-mono" />
               )}
             </FormField>
-            <FormField label={t('devices.site')} required>
+            <FormField label={t('devices.site')} help="site" required>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -160,7 +173,12 @@ export function ClusterDialog({
               )}
             </FormField>
             {shared && (
-              <FormField label={t('devices.unit')} required hint={t('devices.sharedSiteUnit')}>
+              <FormField
+                label={t('devices.unit')}
+                help="partner-unit"
+                required
+                hint={t('devices.sharedSiteUnit')}
+              >
                 {(p) => (
                   <NativeSelect
                     {...p}

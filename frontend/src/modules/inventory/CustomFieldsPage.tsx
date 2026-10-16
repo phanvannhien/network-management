@@ -90,7 +90,7 @@ function FieldDialog({
             <DialogTitle>{field ? t('customFields.edit') : t('customFields.add')}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label={t('customFields.label')} required>
+            <FormField label={t('customFields.label')} help="custom-field" required>
               {(p) => (
                 <Input
                   {...p}
@@ -118,7 +118,11 @@ function FieldDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('customFields.kind')}>
+            <FormField
+              label={t('customFields.kind')}
+              guide={t('guides.customKind')}
+              help="custom-field"
+            >
               {(p) => (
                 <NativeSelect
                   {...p}

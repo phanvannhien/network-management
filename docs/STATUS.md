@@ -5,6 +5,24 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Hướng dẫn trên form: gợi ý, nút (?), trang Thuật ngữ (DESIGN.md §4a)
+- Đã làm (người dùng đồng ý đề xuất):
+  - **3 tầng hướng dẫn** trong `FormField`: `hint` (quy tắc bắt buộc, luôn hiện), `guide` (giải thích bằng lời thường, ẩn được),
+    `help` (nút (?) mở giải thích + ví dụ + link sang trang Thuật ngữ). Component `FieldHelp` cho ô ngoài `FormField`.
+  - **Tùy chọn "Hiện hướng dẫn trên form"** trong menu tài khoản (lưu theo trình duyệt); tắt thì ẩn `guide`, nút (?) vẫn còn.
+  - **Trang Thuật ngữ mạng** `/o/:orgId/glossary` (menu tài khoản): ~45 thuật ngữ song ngữ, chia nhóm, tìm kiếm, mở đúng mục từ
+    nút (?). Dữ liệu `frontend/src/help/glossary.ts`; `docs/GLOSSARY.md` là bản đọc.
+  - **Rà mọi form hiện có:** thiết bị (nhận dạng, vị trí, rack/U, cụm, vận hành, ngày hỗ trợ, interface quản trị, poll, template),
+    interface, IP, cụm, thêm vào cụm, sửa hàng loạt, template, trường tùy biến, site, rack, đối tác, đơn vị, chia sẻ, cấp quyền.
+  - **Quy tắc cho phần sau:** DESIGN.md §4a + CLAUDE.md — mọi form/panel mới phải có hướng dẫn; màn vẽ (P1-14/P1-15) có tooltip
+    toolbar, mô tả từng mục thư viện, gợi ý lần đầu mở editor.
+- Test / cách kiểm tra: Vitest 170 pass (thêm: (?) mở đúng thuật ngữ + link, tắt hướng dẫn thì ẩn guide nhưng còn (?); trang
+  Thuật ngữ tìm kiếm); 2 mutation đều bị bắt; ảnh chụp + axe 4 trang × sáng/tối (kể cả popover đang mở): 0 lỗi; `make check` pass.
+- Còn dở / lỗi đã biết: tùy chọn lưu theo trình duyệt (chưa theo tài khoản — làm cùng trang hồ sơ).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-10** IPAM cơ bản.
+
 ## 2026-10-16 — Rà soát nghiệp vụ mạng: tên cổng stack, MAC, VLAN tag, thuật ngữ
 - Đã làm (người dùng chọn cả 4 mục):
   - **Tên cổng stack:** mẫu tên cổng của template có thêm `{m}` = số thứ tự thành viên stack (1 nếu đứng lẻ), vd `Gi{m}/0/{n}`

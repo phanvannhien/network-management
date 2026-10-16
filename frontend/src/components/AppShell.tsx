@@ -30,6 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuCheckboxItem,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -219,7 +220,8 @@ function AccountMenu() {
   const { t, i18n } = useTranslation()
   const session = useSession()
   const logout = useLogout()
-  const { theme, density, setTheme, setDensity } = usePreferences()
+  const { theme, density, setTheme, setDensity, showGuides, setShowGuides } = usePreferences()
+  const { orgId } = useParams()
   const user = session.data?.user
   if (!user) return null
   const initials = (user.displayName || user.email).slice(0, 2).toUpperCase()
@@ -282,6 +284,20 @@ function AccountMenu() {
               English
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuCheckboxItem
+            checked={showGuides}
+            onCheckedChange={(on) => setShowGuides(on === true)}
+          >
+            {t('help.showGuides')}
+          </DropdownMenuCheckboxItem>
+          {orgId && (
+            <DropdownMenuItem render={<Link to={`/o/${orgId}/glossary`} />}>
+              {t('help.glossary')}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link to="/mfa/setup?next=/" />}>

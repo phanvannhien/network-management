@@ -103,7 +103,7 @@ function RackDialog({
               />
             )}
           </FormField>
-          <FormField label={t('sites.rackLocation')} required>
+          <FormField label={t('sites.rackLocation')} help="location" required>
             {(p) => (
               <NativeSelect
                 {...p}
@@ -119,7 +119,7 @@ function RackDialog({
               </NativeSelect>
             )}
           </FormField>
-          <FormField label={t('sites.rackU')} required>
+          <FormField label={t('sites.rackU')} guide={t('guides.rackHeight')} help="rack-u" required>
             {(p) => (
               <Input
                 {...p}

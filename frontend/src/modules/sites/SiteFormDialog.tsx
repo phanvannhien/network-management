@@ -133,6 +133,7 @@ export function SiteFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <FormField
               label={t('sites.unit')}
+              help="partner-unit"
               hint={f.businessUnitId ? undefined : t('units.sharedHint')}
             >
               {(p) => (
@@ -170,7 +171,7 @@ export function SiteFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('sites.kind')}>
+            <FormField label={t('sites.kind')} guide={t('guides.siteKind')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -215,6 +216,7 @@ export function SiteFormDialog({
             </FormField>
             <FormField
               label={t('sites.code')}
+              help="site"
               required
               hint={t('sites.codeRule')}
               error={
@@ -254,11 +256,11 @@ export function SiteFormDialog({
             <FormField label={t('sites.address')}>
               {(p) => <Input {...p} maxLength={500} value={f.address} onChange={set('address')} />}
             </FormField>
-            <FormField label={t('sites.isp')}>
+            <FormField label={t('sites.isp')} guide={t('guides.isp')}>
               {(p) => <Input {...p} maxLength={200} value={f.isp} onChange={set('isp')} />}
             </FormField>
           </div>
-          <FormField label={t('sites.timezone')}>
+          <FormField label={t('sites.timezone')} guide={t('guides.timezone')}>
             {(p) => (
               <>
                 <Input

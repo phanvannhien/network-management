@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useOrganization } from '@/app/orgs'
+import { FieldHelp } from '@/components/FieldHelp'
 import { FormField } from '@/components/FormField'
 import { NativeSelect } from '@/components/NativeSelect'
 import { Button } from '@/components/ui/button'
@@ -44,6 +45,16 @@ import {
 } from './devices'
 
 type CustomValue = string | number | boolean
+
+/** Guidance for the identity fields rendered in a loop (DESIGN.md §4a). */
+const IDENTITY_HELP: Partial<
+  Record<string, { guide?: 'partNumber' | 'serial' | 'assetTag' | 'firmware'; help?: string }>
+> = {
+  partNumber: { guide: 'partNumber', help: 'part-number' },
+  serialNumber: { guide: 'serial', help: 'serial' },
+  assetTag: { guide: 'assetTag', help: 'asset-tag' },
+  firmware: { guide: 'firmware', help: 'firmware' },
+}
 
 /** One custom field control by kind (values are sent as JSON: text/date/select strings, numbers, booleans). */
 function CustomFieldInput({
@@ -253,7 +264,8 @@ export function DeviceFormDialog({
             {!device && (templates.data ?? []).length > 0 && (
               <FormField
                 label={t('devices.template')}
-                hint={t('devices.templateHint')}
+                guide={t('devices.templateHint')}
+                help="template"
                 className="col-span-3"
               >
                 {(p) => (
@@ -280,7 +292,13 @@ export function DeviceFormDialog({
                 )}
               </FormField>
             )}
-            <FormField label={t('devices.hostname')} required className="col-span-2">
+            <FormField
+              label={t('devices.hostname')}
+              guide={t('guides.hostname')}
+              help="hostname"
+              required
+              className="col-span-2"
+            >
               {(p) => (
                 <Input
                   {...p}
@@ -293,7 +311,7 @@ export function DeviceFormDialog({
                 />
               )}
             </FormField>
-            <FormField label={t('devices.type')} required>
+            <FormField label={t('devices.type')} guide={t('guides.type')} required>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -322,7 +340,12 @@ export function DeviceFormDialog({
                 ['firmware', 'firmware'],
               ] as const
             ).map(([k, label]) => (
-              <FormField key={k} label={t(`devices.${label}`)}>
+              <FormField
+                key={k}
+                label={t(`devices.${label}`)}
+                guide={IDENTITY_HELP[k]?.guide && t(`guides.${IDENTITY_HELP[k].guide}`)}
+                help={IDENTITY_HELP[k]?.help}
+              >
                 {(p) => <Input {...p} maxLength={100} value={f[k]} onChange={set(k)} />}
               </FormField>
             ))}
@@ -330,7 +353,7 @@ export function DeviceFormDialog({
 
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className={legend}>{t('devices.groupPlace')}</legend>
-            <FormField label={t('devices.site')} required>
+            <FormField label={t('devices.site')} guide={t('guides.site')} help="site" required>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -361,6 +384,8 @@ export function DeviceFormDialog({
               label={t('devices.unit')}
               required={shared}
               hint={shared ? t('devices.sharedSiteUnit') : undefined}
+              guide={t('guides.unit')}
+              help="partner-unit"
               className="col-span-2"
             >
               {(p) =>
@@ -393,7 +418,7 @@ export function DeviceFormDialog({
                 )
               }
             </FormField>
-            <FormField label={t('devices.location')}>
+            <FormField label={t('devices.location')} guide={t('guides.location')} help="location">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -412,7 +437,7 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.rack')}>
+            <FormField label={t('devices.rack')} help="rack-u">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -438,7 +463,7 @@ export function DeviceFormDialog({
               )}
             </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label={t('devices.rackU')}>
+              <FormField label={t('devices.rackU')} guide={t('guides.rackU')} help="rack-u">
                 {(p) => (
                   <Input
                     {...p}
@@ -451,7 +476,7 @@ export function DeviceFormDialog({
                   />
                 )}
               </FormField>
-              <FormField label={t('devices.uHeight')}>
+              <FormField label={t('devices.uHeight')} guide={t('guides.uHeight')}>
                 {(p) => (
                   <Input
                     {...p}
@@ -468,7 +493,7 @@ export function DeviceFormDialog({
 
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className={legend}>{t('clusters.cluster')}</legend>
-            <FormField label={t('clusters.cluster')} hint={t('clusters.deviceHint')}>
+            <FormField label={t('clusters.cluster')} help="cluster" hint={t('clusters.deviceHint')}>
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -492,7 +517,7 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('clusters.role')}>
+            <FormField label={t('clusters.role')} guide={t('guides.clusterRole')} help="ha">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -509,7 +534,7 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('clusters.memberNo')}>
+            <FormField label={t('clusters.memberNo')} guide={t('guides.memberNo')} help="member-no">
               {(p) => (
                 <Input
                   {...p}
@@ -526,7 +551,11 @@ export function DeviceFormDialog({
 
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className={legend}>{t('devices.groupOps')}</legend>
-            <FormField label={t('devices.lifecycle')}>
+            <FormField
+              label={t('devices.lifecycle')}
+              guide={t('guides.lifecycle')}
+              help="lifecycle"
+            >
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -541,7 +570,7 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.role')}>
+            <FormField label={t('devices.role')} guide={t('guides.role')} help="role">
               {(p) => (
                 <NativeSelect
                   {...p}
@@ -556,7 +585,7 @@ export function DeviceFormDialog({
                 </NativeSelect>
               )}
             </FormField>
-            <FormField label={t('devices.owner')}>
+            <FormField label={t('devices.owner')} guide={t('guides.owner')}>
               {(p) => (
                 <Input {...p} maxLength={200} value={f.ownerName} onChange={set('ownerName')} />
               )}
@@ -576,6 +605,7 @@ export function DeviceFormDialog({
               />
               <span>
                 {t('devices.managed')}
+                <FieldHelp term="managed" />
                 <span id="device-managed-hint" className="block text-label text-muted-foreground">
                   {t('devices.managedHint')}
                 </span>
@@ -594,7 +624,11 @@ export function DeviceFormDialog({
                 ['eosDate', 'eosDate'],
               ] as const
             ).map(([k, label]) => (
-              <FormField key={k} label={t(`devices.${label}`)}>
+              <FormField
+                key={k}
+                label={t(`devices.${label}`)}
+                help={k === 'eolDate' || k === 'eosDate' ? 'eol' : undefined}
+              >
                 {(p) => <Input {...p} type="date" value={f[k]} onChange={set(k)} />}
               </FormField>
             ))}
@@ -608,7 +642,11 @@ export function DeviceFormDialog({
           {device && (
             <fieldset className="grid grid-cols-3 gap-3">
               <legend className={legend}>{t('devices.mgmtInterface')}</legend>
-              <FormField label={t('devices.mgmtInterface')} hint={t('devices.mgmtHint')}>
+              <FormField
+                label={t('devices.mgmtInterface')}
+                help="mgmt-ip"
+                guide={t('devices.mgmtHint')}
+              >
                 {(p) => (
                   <NativeSelect {...p} value={f.mgmtInterfaceId} onChange={set('mgmtInterfaceId')}>
                     <option value="">{t('devices.noMgmt')}</option>
@@ -620,7 +658,11 @@ export function DeviceFormDialog({
                   </NativeSelect>
                 )}
               </FormField>
-              <FormField label={t('devices.pollAddress')} hint={t('devices.pollHint')}>
+              <FormField
+                label={t('devices.pollAddress')}
+                help="poll-address"
+                guide={t('devices.pollHint')}
+              >
                 {(p) => (
                   <Input
                     {...p}

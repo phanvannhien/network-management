@@ -194,7 +194,7 @@ function TemplateDialog({
             </NativeSelect>
           )}
           <div className="grid grid-cols-3 gap-3">
-            <FormField label={t('templates.name')} required className="col-span-2">
+            <FormField label={t('templates.name')} help="template" required className="col-span-2">
               {(p) => (
                 <Input
                   {...p}
@@ -232,7 +232,11 @@ function TemplateDialog({
                 ['partNumber', 'partNumber'],
               ] as const
             ).map(([k, label]) => (
-              <FormField key={k} label={t(`devices.${label}`)}>
+              <FormField
+                key={k}
+                label={t(`devices.${label}`)}
+                help={k === 'partNumber' ? 'part-number' : undefined}
+              >
                 {(p) => (
                   <Input
                     {...p}
@@ -252,7 +256,7 @@ function TemplateDialog({
                 key={i}
                 className="grid grid-cols-[1fr_80px_80px_110px_80px_auto_auto] items-end gap-2"
               >
-                <FormField label={t('templates.pattern')}>
+                <FormField label={t('templates.pattern')} help="interface">
                   {(p) => (
                     <Input
                       {...p}
@@ -287,7 +291,7 @@ function TemplateDialog({
                     />
                   )}
                 </FormField>
-                <FormField label={t('devices.media')}>
+                <FormField label={t('devices.media')} help="media">
                   {(p) => (
                     <NativeSelect
                       {...p}
