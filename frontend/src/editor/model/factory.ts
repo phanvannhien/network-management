@@ -1,4 +1,4 @@
-import type { Device, Interface, Link } from '../types/ntb'
+import type { Device, Interface, Link } from '../../types/ntb'
 
 export function newId(): string {
   return crypto.randomUUID()

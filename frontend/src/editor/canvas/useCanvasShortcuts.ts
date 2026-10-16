@@ -1,8 +1,6 @@
 import { useEffect } from 'react'
 import { buildPasteCommand, compound, deleteDevices, setNodeLocked } from '../model/commands'
 import { useAppStore } from '../model/store'
-import { downloadProjectFile } from '../io/file'
-import { markSaved, saveSession } from '../io/autosave'
 
 const PASTE_OFFSET = 20
 
@@ -74,15 +72,6 @@ export function useCanvasShortcuts(pageId: string | null): void {
           s.dispatch(command)
           s.setSelection(newDeviceIds)
         }
-        return
-      }
-      if (mod && key === 's') {
-        e.preventDefault()
-        // Ctrl+S per SRS §3: download the .ntb.json file and refresh autosave.
-        const { data } = s
-        downloadProjectFile(data)
-        void saveSession(data)
-        markSaved(data)
         return
       }
       if (mod && key === 'l') {

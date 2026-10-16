@@ -1,4 +1,4 @@
-import type { Link } from '../types/ntb'
+import type { Link } from '../../types/ntb'
 import type { NtbData } from './types'
 
 /** Media groups that can be linked together (SRS §4: cổng hợp lệ theo loại). */

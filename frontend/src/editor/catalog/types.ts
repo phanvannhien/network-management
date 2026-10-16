@@ -1,4 +1,4 @@
-import type { DeviceType, Interface } from '../types/ntb'
+import type { DeviceType, Interface } from '../../types/ntb'
 
 export type DeviceGroup =
   'core_routing' | 'access_switching' | 'security' | 'end_devices' | 'cloud_wan' | 'other'

@@ -1,4 +1,4 @@
-import type { DeviceType } from '../types/ntb'
+import type { DeviceType } from '../../types/ntb'
 import type { NtbData } from '../model/types'
 
 /** Short hostname prefixes per device type; unknown types fall back to typeId. */

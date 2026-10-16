@@ -1,6 +1,6 @@
-import { CanvasView } from './canvas/CanvasView'
-import { Palette } from './panels/Palette'
-import { Sidebar } from './panels/Sidebar'
+import { CanvasView } from './editor/canvas/CanvasView'
+import { Palette } from './editor/panels/Palette'
+import { Sidebar } from './editor/panels/Sidebar'
 
 function App() {
   return (

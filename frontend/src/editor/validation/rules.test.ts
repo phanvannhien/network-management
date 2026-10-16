@@ -257,7 +257,7 @@ describe('validation: engine', () => {
   })
 
   it('the sample project file is clean', () => {
-    const samplePath = path.resolve(__dirname, '../../../testdata/sample-small.ntb.json')
+    const samplePath = path.resolve(__dirname, '../../../../testdata/sample-small.ntb.json')
     const file = JSON.parse(fs.readFileSync(samplePath, 'utf8'))
     expect(runValidation(fromNtbProjectFile(file))).toEqual([])
   })

@@ -1,7 +1,7 @@
 // In-app model state, derived from the generated schema types (schema/ntb.schema.json
 // is the source of truth). Entities are keyed by id for O(1) lookup; conversion to and
 // from the array-based .ntb.json file format lives in io.ts.
-import type { Asset, Device, Group, Link, Page, Project, Subnet, Vlan } from '../types/ntb'
+import type { Asset, Device, Group, Link, Page, Project, Subnet, Vlan } from '../../types/ntb'
 
 export type {
   Asset,
@@ -15,7 +15,7 @@ export type {
   Project,
   Subnet,
   Vlan,
-} from '../types/ntb'
+} from '../../types/ntb'
 
 export interface NtbData {
   project: Project

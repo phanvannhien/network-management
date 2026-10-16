@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { connectPorts } from '../model/commands'
 import { useAppStore } from '../model/store'
 import { kindForMediaGroup, mediaGroup, usedPorts, type MediaGroup } from '../model/ports'
-import type { Device, Interface, Link } from '../types/ntb'
+import type { Device, Interface, Link } from '../../types/ntb'
 
 const KIND_LABELS: Record<Link['kind'], string> = {
   ethernet: 'Ethernet',

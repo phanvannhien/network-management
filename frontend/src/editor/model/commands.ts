@@ -1,5 +1,5 @@
 import type { Draft } from 'immer'
-import type { Device, Interface, Link, Page, Vlan } from '../types/ntb'
+import type { Device, Interface, Link, Page, Vlan } from '../../types/ntb'
 import type { NtbData } from './types'
 import { newId } from './factory'
 import { nextHostname } from '../catalog/hostname'

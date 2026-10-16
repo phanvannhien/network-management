@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { updateDevicesBulk, updateDevice, updateInterface, updateLink } from '../model/commands'
 import { useAppStore } from '../model/store'
-import { isValidCidr, parseCidrList } from '../lib/validate'
-import type { Device, Interface, Link } from '../types/ntb'
+import { isValidCidr, parseCidrList } from '../../lib/validate'
+import type { Device, Interface, Link } from '../../types/ntb'
 
 type Tab = 'general' | 'interfaces' | 'links'
 

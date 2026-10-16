@@ -1,5 +1,5 @@
 import { createDevice } from '../model/factory'
-import type { Device } from '../types/ntb'
+import type { Device } from '../../types/ntb'
 import { getTemplate } from './catalog'
 import { generateInterfaces } from './types'
 

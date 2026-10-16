@@ -4,7 +4,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { fromNtbProjectFile, toNtbProjectFile } from './io'
 
-const samplePath = path.resolve(__dirname, '../../../testdata/sample-small.ntb.json')
+const samplePath = path.resolve(__dirname, '../../../../testdata/sample-small.ntb.json')
 
 describe('io: NtbData <-> .ntb.json', () => {
   it('round-trips testdata/sample-small.ntb.json exactly', () => {

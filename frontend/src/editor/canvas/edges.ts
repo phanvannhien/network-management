@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { Link } from '../types/ntb'
+import type { Link } from '../../types/ntb'
 
 /** Stroke color per link status (SRS §4: Up xanh / Down đỏ / Admin down–Planned xám). */
 function colorFor(status: Link['status']): string {

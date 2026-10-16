@@ -1,4 +1,4 @@
-import type { Device } from '../types/ntb'
+import type { Device } from '../../types/ntb'
 
 export const DEFAULT_LABEL_TEMPLATE = '{hostname}\n{mgmtIp}'
 

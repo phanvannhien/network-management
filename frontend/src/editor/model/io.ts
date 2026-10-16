@@ -1,4 +1,4 @@
-import type { NtbProjectFile } from '../types/ntb'
+import type { NtbProjectFile } from '../../types/ntb'
 import type { NtbData } from './types'
 import { emptyData } from './types'
 

@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import type { DeviceType } from '../types/ntb'
+import type { DeviceType } from '../../types/ntb'
 
 /**
  * Line-art device icons on a 24×24 grid, stroked with currentColor so they

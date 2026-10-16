@@ -3,7 +3,7 @@ import { addDevice } from '../model/commands'
 import type { NtbData } from '../model/types'
 import { createDeviceFromTemplate } from '../catalog/createFromTemplate'
 import { nextHostname } from '../catalog/hostname'
-import type { DeviceType } from '../types/ntb'
+import type { DeviceType } from '../../types/ntb'
 
 /**
  * Builds the command for dropping a palette item onto the canvas: creates a

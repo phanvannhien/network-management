@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { DeviceType } from '../types/ntb'
+import type { DeviceType } from '../../types/ntb'
 import { compound, setNodeLocked } from '../model/commands'
 import { newId } from '../model/factory'
 import { addPage, setNodePosition } from '../model/commands'
@@ -23,10 +23,6 @@ import { LinkDialog, type PendingConnection } from './LinkDialog'
 import { LinkEdge } from './LinkEdge'
 import { useValidation } from '../validation/useValidation'
 import { Problems } from '../panels/Problems'
-import { useAutosave } from '../io/useAutosave'
-import { downloadProjectFile, readProjectFile } from '../io/file'
-import { markSaved, saveSession } from '../io/autosave'
-import { replaceDocument } from '../model/commands'
 import { DEVICE_MIME } from '../panels/Palette'
 
 const GRID_SIZES = [10, 20, 40] as const
@@ -86,7 +82,6 @@ function CanvasInner() {
   const { fitView, screenToFlowPosition, setCenter } = useReactFlow()
   useCanvasShortcuts(pageId)
   useValidation()
-  useAutosave()
   const focusTarget = useAppStore((s) => s.focusTarget)
 
   // Problem panel click → zoom to the object (SRS §6).
@@ -231,43 +226,6 @@ function CanvasInner() {
           Fit
         </button>
         <LockButton pageId={pageId} />
-        <label
-          className="cursor-pointer rounded border border-border px-2 py-0.5 hover:bg-accent"
-          title="Open .ntb.json"
-        >
-          Open
-          <input
-            type="file"
-            accept=".ntb.json,application/json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              e.target.value = '' // allow re-opening the same file
-              if (!file) return
-              void readProjectFile(file)
-                .then((next) => {
-                  useAppStore.getState().dispatch(replaceDocument(next))
-                  markSaved(next)
-                })
-                .catch((error: unknown) => {
-                  alert(error instanceof Error ? error.message : 'Không mở được file')
-                })
-            }}
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() => {
-            const { data } = useAppStore.getState()
-            downloadProjectFile(data)
-            void saveSession(data)
-            markSaved(data)
-          }}
-          className="rounded border border-border px-2 py-0.5 hover:bg-accent"
-          title="Save .ntb.json (Ctrl+S)"
-        >
-          Save
-        </button>
       </div>
 
       <ReactFlow
