@@ -44,6 +44,7 @@ const ORG_SORT: Record<string, (o: AdminOrganization) => string | number> = {
   name: (o) => o.name,
   kind: (o) => o.kind,
   memberCount: (o) => o.memberCount,
+  partnerCount: (o) => o.partnerCount,
   unitCount: (o) => o.unitCount,
   siteCount: (o) => o.siteCount,
   createdAt: (o) => o.createdAt,
@@ -198,6 +199,13 @@ export function AdminOrganizationsPage() {
       header: t('adminOrgs.members'),
       meta: { label: t('adminOrgs.members'), width: 120, align: 'right' },
       cell: ({ row }) => <span data-numeric>{row.original.memberCount}</span>,
+    },
+    {
+      id: 'partnerCount',
+      accessorKey: 'partnerCount',
+      header: t('adminOrgs.partners'),
+      meta: { label: t('adminOrgs.partners'), width: 90, align: 'right' },
+      cell: ({ row }) => <span data-numeric>{row.original.partnerCount}</span>,
     },
     {
       id: 'unitCount',

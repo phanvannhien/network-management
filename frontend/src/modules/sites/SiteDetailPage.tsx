@@ -327,9 +327,12 @@ export function SiteDetailPage() {
   const s = site.data
   useBreadcrumbs([
     { label: t('units.hub'), to: `/o/${orgId}/sites` },
-    s?.businessUnitId
-      ? { label: s.businessUnitCode, to: `/o/${orgId}/units/${s.businessUnitId}` }
-      : { label: t('units.sharedShort'), to: `/o/${orgId}/sites?tab=sites` },
+    ...(s?.businessUnitId && s.partnerId
+      ? [
+          { label: s.partnerCode, to: `/o/${orgId}/partners/${s.partnerId}` },
+          { label: s.businessUnitCode, to: `/o/${orgId}/units/${s.businessUnitId}` },
+        ]
+      : [{ label: t('units.sharedShort'), to: `/o/${orgId}/sites?tab=sites` }]),
     { label: s?.code ?? '…' },
   ])
 
@@ -363,7 +366,7 @@ export function SiteDetailPage() {
             <p className="text-muted-foreground">
               {t(`sites.siteKinds.${s.kind}`)} ·{' '}
               {s.businessUnitId
-                ? `${s.businessUnitCode} · ${s.businessUnitName}`
+                ? `${s.partnerCode} › ${s.businessUnitCode} · ${s.businessUnitName}`
                 : t('units.shared')}
               {s.address && ` · ${s.address}`}
             </p>

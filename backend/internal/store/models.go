@@ -28,9 +28,9 @@ type AuditLog struct {
 type BusinessUnit struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
+	PartnerID      pgtype.UUID
 	Code           string
 	Name           string
-	Relation       string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
@@ -94,6 +94,22 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz
 	Version   int32
 	DeletedAt pgtype.Timestamptz
+}
+
+type Partner struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Code           string
+	Name           string
+	Relation       string
+	ContactName    string
+	ContactPhone   string
+	ContactEmail   string
+	Notes          string
+	DeletedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
 }
 
 type Rack struct {

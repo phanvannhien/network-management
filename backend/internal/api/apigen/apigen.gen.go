@@ -35,27 +35,6 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 	}
 }
 
-// Defines values for BusinessUnitRelation.
-const (
-	BusinessUnitRelationCustomer   BusinessUnitRelation = "customer"
-	BusinessUnitRelationPartner    BusinessUnitRelation = "partner"
-	BusinessUnitRelationSubsidiary BusinessUnitRelation = "subsidiary"
-)
-
-// Valid indicates whether the value is a known member of the BusinessUnitRelation enum.
-func (e BusinessUnitRelation) Valid() bool {
-	switch e {
-	case BusinessUnitRelationCustomer:
-		return true
-	case BusinessUnitRelationPartner:
-		return true
-	case BusinessUnitRelationSubsidiary:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -125,6 +104,27 @@ func (e OrganizationKind) Valid() bool {
 	case OrganizationKindCustomer:
 		return true
 	case OrganizationKindInternal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PartnerRelation.
+const (
+	PartnerRelationCustomer   PartnerRelation = "customer"
+	PartnerRelationPartner    PartnerRelation = "partner"
+	PartnerRelationSubsidiary PartnerRelation = "subsidiary"
+)
+
+// Valid indicates whether the value is a known member of the PartnerRelation enum.
+func (e PartnerRelation) Valid() bool {
+	switch e {
+	case PartnerRelationCustomer:
+		return true
+	case PartnerRelationPartner:
+		return true
+	case PartnerRelationSubsidiary:
 		return true
 	default:
 		return false
@@ -245,6 +245,9 @@ type AdminOrganization struct {
 	Name        string             `json:"name"`
 	Notes       string             `json:"notes"`
 
+	// PartnerCount Live partners (count only)
+	PartnerCount int64 `json:"partnerCount"`
+
 	// SiteCount Live sites (count only)
 	SiteCount int64 `json:"siteCount"`
 
@@ -328,29 +331,31 @@ type AuthSession struct {
 
 // BusinessUnit defines model for BusinessUnit.
 type BusinessUnit struct {
-	Code         string               `json:"code"`
-	ContactEmail string               `json:"contactEmail"`
-	ContactName  string               `json:"contactName"`
-	ContactPhone string               `json:"contactPhone"`
-	CreatedAt    time.Time            `json:"createdAt"`
-	Id           openapi_types.UUID   `json:"id"`
-	Name         string               `json:"name"`
-	Notes        string               `json:"notes"`
-	Relation     BusinessUnitRelation `json:"relation"`
-	SiteCount    int64                `json:"siteCount"`
-	Version      int32                `json:"version"`
+	Code         string             `json:"code"`
+	ContactEmail string             `json:"contactEmail"`
+	ContactName  string             `json:"contactName"`
+	ContactPhone string             `json:"contactPhone"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	Id           openapi_types.UUID `json:"id"`
+	Name         string             `json:"name"`
+	Notes        string             `json:"notes"`
+	PartnerCode  string             `json:"partnerCode"`
+	PartnerId    openapi_types.UUID `json:"partnerId"`
+	PartnerName  string             `json:"partnerName"`
+	SiteCount    int64              `json:"siteCount"`
+	Version      int32              `json:"version"`
 }
 
 // BusinessUnitInput defines model for BusinessUnitInput.
 type BusinessUnitInput struct {
-	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
-	Code         string                `json:"code"`
-	ContactEmail *string               `json:"contactEmail,omitempty"`
-	ContactName  *string               `json:"contactName,omitempty"`
-	ContactPhone *string               `json:"contactPhone,omitempty"`
-	Name         string                `json:"name"`
-	Notes        *string               `json:"notes,omitempty"`
-	Relation     *BusinessUnitRelation `json:"relation,omitempty"`
+	// Code 2-8 characters A-Z/0-9 starting with a letter, unique within the partner (ADR-031)
+	Code         string             `json:"code"`
+	ContactEmail *string            `json:"contactEmail,omitempty"`
+	ContactName  *string            `json:"contactName,omitempty"`
+	ContactPhone *string            `json:"contactPhone,omitempty"`
+	Name         string             `json:"name"`
+	Notes        *string            `json:"notes,omitempty"`
+	PartnerId    openapi_types.UUID `json:"partnerId"`
 }
 
 // BusinessUnitList defines model for BusinessUnitList.
@@ -358,20 +363,15 @@ type BusinessUnitList struct {
 	BusinessUnits []BusinessUnit `json:"businessUnits"`
 }
 
-// BusinessUnitRelation defines model for BusinessUnitRelation.
-type BusinessUnitRelation string
-
 // BusinessUnitUpdate defines model for BusinessUnitUpdate.
 type BusinessUnitUpdate struct {
-	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
-	Code         string                `json:"code"`
-	ContactEmail *string               `json:"contactEmail,omitempty"`
-	ContactName  *string               `json:"contactName,omitempty"`
-	ContactPhone *string               `json:"contactPhone,omitempty"`
-	Name         string                `json:"name"`
-	Notes        *string               `json:"notes,omitempty"`
-	Relation     *BusinessUnitRelation `json:"relation,omitempty"`
-	Version      int32                 `json:"version"`
+	Code         string  `json:"code"`
+	ContactEmail *string `json:"contactEmail,omitempty"`
+	ContactName  *string `json:"contactName,omitempty"`
+	ContactPhone *string `json:"contactPhone,omitempty"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+	Version      int32   `json:"version"`
 }
 
 // CreateOrganizationRequest defines model for CreateOrganizationRequest.
@@ -557,6 +557,55 @@ type OrganizationView struct {
 	Organization Organization   `json:"organization"`
 }
 
+// Partner defines model for Partner.
+type Partner struct {
+	Code         string             `json:"code"`
+	ContactEmail string             `json:"contactEmail"`
+	ContactName  string             `json:"contactName"`
+	ContactPhone string             `json:"contactPhone"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	Id           openapi_types.UUID `json:"id"`
+	Name         string             `json:"name"`
+	Notes        string             `json:"notes"`
+	Relation     PartnerRelation    `json:"relation"`
+	SiteCount    int64              `json:"siteCount"`
+	UnitCount    int64              `json:"unitCount"`
+	Version      int32              `json:"version"`
+}
+
+// PartnerInput defines model for PartnerInput.
+type PartnerInput struct {
+	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
+	Code         string           `json:"code"`
+	ContactEmail *string          `json:"contactEmail,omitempty"`
+	ContactName  *string          `json:"contactName,omitempty"`
+	ContactPhone *string          `json:"contactPhone,omitempty"`
+	Name         string           `json:"name"`
+	Notes        *string          `json:"notes,omitempty"`
+	Relation     *PartnerRelation `json:"relation,omitempty"`
+}
+
+// PartnerList defines model for PartnerList.
+type PartnerList struct {
+	Partners []Partner `json:"partners"`
+}
+
+// PartnerRelation defines model for PartnerRelation.
+type PartnerRelation string
+
+// PartnerUpdate defines model for PartnerUpdate.
+type PartnerUpdate struct {
+	// Code ADR-030: 2-8 characters A-Z/0-9 starting with a letter (stored upper-case)
+	Code         string           `json:"code"`
+	ContactEmail *string          `json:"contactEmail,omitempty"`
+	ContactName  *string          `json:"contactName,omitempty"`
+	ContactPhone *string          `json:"contactPhone,omitempty"`
+	Name         string           `json:"name"`
+	Notes        *string          `json:"notes,omitempty"`
+	Relation     *PartnerRelation `json:"relation,omitempty"`
+	Version      int32            `json:"version"`
+}
+
 // PasswordResetLink defines model for PasswordResetLink.
 type PasswordResetLink struct {
 	// ResetToken One-time token (build the link /invite/{token})
@@ -620,10 +669,15 @@ type Site struct {
 	LocationCount    int64               `json:"locationCount"`
 	Name             string              `json:"name"`
 	Notes            string              `json:"notes"`
-	RackCount        int64               `json:"rackCount"`
-	Timezone         string              `json:"timezone"`
-	UpdatedAt        time.Time           `json:"updatedAt"`
-	Version          int32               `json:"version"`
+
+	// PartnerCode Empty for shared sites; the site code prefix (ADR-031)
+	PartnerCode string              `json:"partnerCode"`
+	PartnerId   *openapi_types.UUID `json:"partnerId"`
+	PartnerName string              `json:"partnerName"`
+	RackCount   int64               `json:"rackCount"`
+	Timezone    string              `json:"timezone"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	Version     int32               `json:"version"`
 }
 
 // SiteCodeSuggestion defines model for SiteCodeSuggestion.
@@ -635,10 +689,10 @@ type SiteCodeSuggestion struct {
 type SiteInput struct {
 	Address *string `json:"address,omitempty"`
 
-	// BusinessUnitId Owning business unit; null = shared by the whole organization (e.g. an IDC)
+	// BusinessUnitId Owning business unit (its partner gives the code prefix); null = shared by the whole organization (e.g. an IDC)
 	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
 
-	// Code ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
+	// Code ADR-030/031: <PARTNER>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
 	Code         string    `json:"code"`
 	ContactEmail *string   `json:"contactEmail,omitempty"`
 	ContactName  *string   `json:"contactName,omitempty"`
@@ -670,10 +724,10 @@ type SiteScopeInput struct {
 type SiteUpdate struct {
 	Address *string `json:"address,omitempty"`
 
-	// BusinessUnitId Owning business unit; null = shared by the whole organization (e.g. an IDC)
+	// BusinessUnitId Owning business unit (its partner gives the code prefix); null = shared by the whole organization (e.g. an IDC)
 	BusinessUnitId *openapi_types.UUID `json:"businessUnitId,omitempty"`
 
-	// Code ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
+	// Code ADR-030/031: <PARTNER>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>
 	Code         string    `json:"code"`
 	ContactEmail *string   `json:"contactEmail,omitempty"`
 	ContactName  *string   `json:"contactName,omitempty"`
@@ -739,6 +793,9 @@ type LocationId = openapi_types.UUID
 
 // OrgId defines model for OrgId.
 type OrgId = openapi_types.UUID
+
+// PartnerId defines model for PartnerId.
+type PartnerId = openapi_types.UUID
 
 // RackId defines model for RackId.
 type RackId = openapi_types.UUID
@@ -872,6 +929,11 @@ type ListOrgAuditParams struct {
 	To *AuditTo `form:"to,omitempty" json:"to,omitempty"`
 }
 
+// ListBusinessUnitsParams defines parameters for ListBusinessUnits.
+type ListBusinessUnitsParams struct {
+	PartnerId *openapi_types.UUID `form:"partnerId,omitempty" json:"partnerId,omitempty"`
+}
+
 // CreateBusinessUnitParams defines parameters for CreateBusinessUnit.
 type CreateBusinessUnitParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -907,10 +969,28 @@ type RegenerateInviteParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreatePartnerParams defines parameters for CreatePartner.
+type CreatePartnerParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeletePartnerParams defines parameters for DeletePartner.
+type DeletePartnerParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdatePartnerParams defines parameters for UpdatePartner.
+type UpdatePartnerParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListSitesParams defines parameters for ListSites.
 type ListSitesParams struct {
 	// BusinessUnitId Only sites of this business unit
 	BusinessUnitId *openapi_types.UUID `form:"businessUnitId,omitempty" json:"businessUnitId,omitempty"`
+
+	// PartnerId Only sites of this partner (all its units)
+	PartnerId *openapi_types.UUID `form:"partnerId,omitempty" json:"partnerId,omitempty"`
 
 	// Shared Only organization-wide (shared) sites
 	Shared *bool `form:"shared,omitempty" json:"shared,omitempty"`
@@ -923,8 +1003,8 @@ type CreateSiteParams struct {
 
 // SuggestSiteCodeParams defines parameters for SuggestSiteCode.
 type SuggestSiteCodeParams struct {
-	// BusinessUnitId Owning unit; omit for a shared site (SHARED- prefix)
-	BusinessUnitId *openapi_types.UUID `form:"businessUnitId,omitempty" json:"businessUnitId,omitempty"`
+	// PartnerId Partner of the site's unit; omit for a shared site (SHARED- prefix)
+	PartnerId *openapi_types.UUID `form:"partnerId,omitempty" json:"partnerId,omitempty"`
 
 	// Place Place abbreviation, 2-4 letters (e.g. HY for Hưng Yên)
 	Place string `form:"place" json:"place"`
@@ -1002,6 +1082,12 @@ type AddMemberJSONRequestBody = AddMemberRequest
 
 // UpdateMemberJSONRequestBody defines body for UpdateMember for application/json ContentType.
 type UpdateMemberJSONRequestBody = UpdateMemberRequest
+
+// CreatePartnerJSONRequestBody defines body for CreatePartner for application/json ContentType.
+type CreatePartnerJSONRequestBody = PartnerInput
+
+// UpdatePartnerJSONRequestBody defines body for UpdatePartner for application/json ContentType.
+type UpdatePartnerJSONRequestBody = PartnerUpdate
 
 // CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
 type CreateSiteJSONRequestBody = SiteInput
@@ -1095,19 +1181,19 @@ type ServerInterface interface {
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams)
-	// ListBusinessUnits Business units of the organization (ADR-026)
+	// ListBusinessUnits Business units of the organization, each under a partner (ADR-031)
 	// (GET /orgs/{orgId}/business-units)
-	ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId)
-	// CreateBusinessUnit Create a business unit (owner/admin)
+	ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListBusinessUnitsParams)
+	// CreateBusinessUnit Create a unit under a partner (owner/admin)
 	// (POST /orgs/{orgId}/business-units)
 	CreateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateBusinessUnitParams)
-	// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+	// DeleteBusinessUnit Soft-delete a unit without live sites (owner/admin)
 	// (DELETE /orgs/{orgId}/business-units/{businessUnitId})
 	DeleteBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params DeleteBusinessUnitParams)
 	// GetBusinessUnit One business unit
 	// (GET /orgs/{orgId}/business-units/{businessUnitId})
 	GetBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId)
-	// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+	// UpdateBusinessUnit Edit a unit (its partner cannot change)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
 	UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams)
 	// ListMembers Members of the organization
@@ -1125,13 +1211,28 @@ type ServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
+	// ListPartners Partners of the organization (ADR-031)
+	// (GET /orgs/{orgId}/partners)
+	ListPartners(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreatePartner Create a partner (owner/admin)
+	// (POST /orgs/{orgId}/partners)
+	CreatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreatePartnerParams)
+	// DeletePartner Soft-delete a partner without live units (owner/admin)
+	// (DELETE /orgs/{orgId}/partners/{partnerId})
+	DeletePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params DeletePartnerParams)
+	// GetPartner One partner
+	// (GET /orgs/{orgId}/partners/{partnerId})
+	GetPartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId)
+	// UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
+	// (PATCH /orgs/{orgId}/partners/{partnerId})
+	UpdatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params UpdatePartnerParams)
 	// ListSites Sites of the organization (filtered by the member site scope)
 	// (GET /orgs/{orgId}/sites)
 	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
 	// CreateSite Create a site (owner/admin/editor without a site scope)
 	// (POST /orgs/{orgId}/sites)
 	CreateSite(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSiteParams)
-	// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+	// SuggestSiteCode Next free site code for a partner and place (ADR-030/031)
 	// (GET /orgs/{orgId}/sites/next-code)
 	SuggestSiteCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params SuggestSiteCodeParams)
 	// DeleteSite Soft-delete a site (owner/admin)
@@ -1317,19 +1418,19 @@ func (_ Unimplemented) ListOrgAudit(w http.ResponseWriter, r *http.Request, orgI
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListBusinessUnits Business units of the organization (ADR-026)
+// ListBusinessUnits Business units of the organization, each under a partner (ADR-031)
 // (GET /orgs/{orgId}/business-units)
-func (_ Unimplemented) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+func (_ Unimplemented) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListBusinessUnitsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// CreateBusinessUnit Create a business unit (owner/admin)
+// CreateBusinessUnit Create a unit under a partner (owner/admin)
 // (POST /orgs/{orgId}/business-units)
 func (_ Unimplemented) CreateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateBusinessUnitParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+// DeleteBusinessUnit Soft-delete a unit without live sites (owner/admin)
 // (DELETE /orgs/{orgId}/business-units/{businessUnitId})
 func (_ Unimplemented) DeleteBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params DeleteBusinessUnitParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -1341,7 +1442,7 @@ func (_ Unimplemented) GetBusinessUnit(w http.ResponseWriter, r *http.Request, o
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+// UpdateBusinessUnit Edit a unit (its partner cannot change)
 // (PATCH /orgs/{orgId}/business-units/{businessUnitId})
 func (_ Unimplemented) UpdateBusinessUnit(w http.ResponseWriter, r *http.Request, orgId OrgId, businessUnitId BusinessUnitId, params UpdateBusinessUnitParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -1377,6 +1478,36 @@ func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListPartners Partners of the organization (ADR-031)
+// (GET /orgs/{orgId}/partners)
+func (_ Unimplemented) ListPartners(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreatePartner Create a partner (owner/admin)
+// (POST /orgs/{orgId}/partners)
+func (_ Unimplemented) CreatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreatePartnerParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeletePartner Soft-delete a partner without live units (owner/admin)
+// (DELETE /orgs/{orgId}/partners/{partnerId})
+func (_ Unimplemented) DeletePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params DeletePartnerParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetPartner One partner
+// (GET /orgs/{orgId}/partners/{partnerId})
+func (_ Unimplemented) GetPartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
+// (PATCH /orgs/{orgId}/partners/{partnerId})
+func (_ Unimplemented) UpdatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params UpdatePartnerParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListSites Sites of the organization (filtered by the member site scope)
 // (GET /orgs/{orgId}/sites)
 func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams) {
@@ -1389,7 +1520,7 @@ func (_ Unimplemented) CreateSite(w http.ResponseWriter, r *http.Request, orgId 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+// SuggestSiteCode Next free site code for a partner and place (ADR-030/031)
 // (GET /orgs/{orgId}/sites/next-code)
 func (_ Unimplemented) SuggestSiteCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params SuggestSiteCodeParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -2526,8 +2657,24 @@ func (siw *ServerInterfaceWrapper) ListBusinessUnits(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBusinessUnitsParams
+
+	// ------------- Optional query parameter "partnerId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "partnerId", r.URL.Query(), &params.PartnerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "partnerId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListBusinessUnits(w, r, orgId)
+		siw.Handler.ListBusinessUnits(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3021,6 +3168,247 @@ func (siw *ServerInterfaceWrapper) RegenerateInvite(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListPartners operation middleware
+func (siw *ServerInterfaceWrapper) ListPartners(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPartners(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreatePartner operation middleware
+func (siw *ServerInterfaceWrapper) CreatePartner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreatePartnerParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreatePartner(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePartner operation middleware
+func (siw *ServerInterfaceWrapper) DeletePartner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePartnerParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePartner(w, r, orgId, partnerId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPartner operation middleware
+func (siw *ServerInterfaceWrapper) GetPartner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPartner(w, r, orgId, partnerId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdatePartner operation middleware
+func (siw *ServerInterfaceWrapper) UpdatePartner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "partnerId" -------------
+	var partnerId PartnerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "partnerId", chi.URLParam(r, "partnerId"), &partnerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdatePartnerParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdatePartner(w, r, orgId, partnerId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSites operation middleware
 func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
 
@@ -3048,6 +3436,19 @@ func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "businessUnitId"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "partnerId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "partnerId", r.URL.Query(), &params.PartnerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "partnerId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
 		}
 		return
 	}
@@ -3148,15 +3549,15 @@ func (siw *ServerInterfaceWrapper) SuggestSiteCode(w http.ResponseWriter, r *htt
 	// Parameter object where we will unmarshal all parameters from the context
 	var params SuggestSiteCodeParams
 
-	// ------------- Optional query parameter "businessUnitId" -------------
+	// ------------- Optional query parameter "partnerId" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "businessUnitId", r.URL.Query(), &params.BusinessUnitId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "partnerId", r.URL.Query(), &params.PartnerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "businessUnitId"})
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "partnerId"})
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "businessUnitId", Err: err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "partnerId", Err: err})
 		}
 		return
 	}
@@ -4008,6 +4409,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/account-tokens/{token}", wrapper.AcceptAccountToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/partners", wrapper.ListPartners)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/partners", wrapper.CreatePartner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}", wrapper.DeletePartner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}", wrapper.GetPartner)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/partners/{partnerId}", wrapper.UpdatePartner)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/business-units", wrapper.ListBusinessUnits)
@@ -5451,7 +5867,8 @@ func (response ListOrgAudit404JSONResponse) VisitListOrgAuditResponse(w http.Res
 }
 
 type ListBusinessUnitsRequestObject struct {
-	OrgId OrgId `json:"orgId"`
+	OrgId  OrgId `json:"orgId"`
+	Params ListBusinessUnitsParams
 }
 
 type ListBusinessUnitsResponseObject interface {
@@ -6294,6 +6711,468 @@ func (response RegenerateInvite404JSONResponse) VisitRegenerateInviteResponse(w 
 type RegenerateInvite409JSONResponse struct{ ConflictJSONResponse }
 
 func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartnersRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListPartnersResponseObject interface {
+	VisitListPartnersResponse(w http.ResponseWriter) error
+}
+
+type ListPartners200JSONResponse PartnerList
+
+func (response ListPartners200JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartners400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListPartners400JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartners401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListPartners401JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartners403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListPartners403JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartners404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListPartners404JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPartners409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListPartners409JSONResponse) VisitListPartnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartnerRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreatePartnerParams
+	Body   *CreatePartnerJSONRequestBody
+}
+
+type CreatePartnerResponseObject interface {
+	VisitCreatePartnerResponse(w http.ResponseWriter) error
+}
+
+type CreatePartner201JSONResponse Partner
+
+func (response CreatePartner201JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartner400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreatePartner400JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartner401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreatePartner401JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartner403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreatePartner403JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartner404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreatePartner404JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePartner409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreatePartner409JSONResponse) VisitCreatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePartnerRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+	Params    DeletePartnerParams
+}
+
+type DeletePartnerResponseObject interface {
+	VisitDeletePartnerResponse(w http.ResponseWriter) error
+}
+
+type DeletePartner204Response struct {
+}
+
+func (response DeletePartner204Response) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeletePartner400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeletePartner400JSONResponse) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePartner401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeletePartner401JSONResponse) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePartner403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeletePartner403JSONResponse) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePartner404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeletePartner404JSONResponse) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePartner409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeletePartner409JSONResponse) VisitDeletePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartnerRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+}
+
+type GetPartnerResponseObject interface {
+	VisitGetPartnerResponse(w http.ResponseWriter) error
+}
+
+type GetPartner200JSONResponse Partner
+
+func (response GetPartner200JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartner400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetPartner400JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartner401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetPartner401JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartner403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetPartner403JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartner404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetPartner404JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPartner409JSONResponse struct{ ConflictJSONResponse }
+
+func (response GetPartner409JSONResponse) VisitGetPartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartnerRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	PartnerId PartnerId `json:"partnerId"`
+	Params    UpdatePartnerParams
+	Body      *UpdatePartnerJSONRequestBody
+}
+
+type UpdatePartnerResponseObject interface {
+	VisitUpdatePartnerResponse(w http.ResponseWriter) error
+}
+
+type UpdatePartner200JSONResponse Partner
+
+func (response UpdatePartner200JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartner400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdatePartner400JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartner401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdatePartner401JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartner403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdatePartner403JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartner404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdatePartner404JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePartner409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdatePartner409JSONResponse) VisitUpdatePartnerResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7681,19 +8560,19 @@ type StrictServerInterface interface {
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(ctx context.Context, request ListOrgAuditRequestObject) (ListOrgAuditResponseObject, error)
-	// ListBusinessUnits Business units of the organization (ADR-026)
+	// ListBusinessUnits Business units of the organization, each under a partner (ADR-031)
 	// (GET /orgs/{orgId}/business-units)
 	ListBusinessUnits(ctx context.Context, request ListBusinessUnitsRequestObject) (ListBusinessUnitsResponseObject, error)
-	// CreateBusinessUnit Create a business unit (owner/admin)
+	// CreateBusinessUnit Create a unit under a partner (owner/admin)
 	// (POST /orgs/{orgId}/business-units)
 	CreateBusinessUnit(ctx context.Context, request CreateBusinessUnitRequestObject) (CreateBusinessUnitResponseObject, error)
-	// DeleteBusinessUnit Soft-delete a business unit without live sites (owner/admin)
+	// DeleteBusinessUnit Soft-delete a unit without live sites (owner/admin)
 	// (DELETE /orgs/{orgId}/business-units/{businessUnitId})
 	DeleteBusinessUnit(ctx context.Context, request DeleteBusinessUnitRequestObject) (DeleteBusinessUnitResponseObject, error)
 	// GetBusinessUnit One business unit
 	// (GET /orgs/{orgId}/business-units/{businessUnitId})
 	GetBusinessUnit(ctx context.Context, request GetBusinessUnitRequestObject) (GetBusinessUnitResponseObject, error)
-	// UpdateBusinessUnit Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+	// UpdateBusinessUnit Edit a unit (its partner cannot change)
 	// (PATCH /orgs/{orgId}/business-units/{businessUnitId})
 	UpdateBusinessUnit(ctx context.Context, request UpdateBusinessUnitRequestObject) (UpdateBusinessUnitResponseObject, error)
 	// ListMembers Members of the organization
@@ -7711,13 +8590,28 @@ type StrictServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(ctx context.Context, request RegenerateInviteRequestObject) (RegenerateInviteResponseObject, error)
+	// ListPartners Partners of the organization (ADR-031)
+	// (GET /orgs/{orgId}/partners)
+	ListPartners(ctx context.Context, request ListPartnersRequestObject) (ListPartnersResponseObject, error)
+	// CreatePartner Create a partner (owner/admin)
+	// (POST /orgs/{orgId}/partners)
+	CreatePartner(ctx context.Context, request CreatePartnerRequestObject) (CreatePartnerResponseObject, error)
+	// DeletePartner Soft-delete a partner without live units (owner/admin)
+	// (DELETE /orgs/{orgId}/partners/{partnerId})
+	DeletePartner(ctx context.Context, request DeletePartnerRequestObject) (DeletePartnerResponseObject, error)
+	// GetPartner One partner
+	// (GET /orgs/{orgId}/partners/{partnerId})
+	GetPartner(ctx context.Context, request GetPartnerRequestObject) (GetPartnerResponseObject, error)
+	// UpdatePartner Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
+	// (PATCH /orgs/{orgId}/partners/{partnerId})
+	UpdatePartner(ctx context.Context, request UpdatePartnerRequestObject) (UpdatePartnerResponseObject, error)
 	// ListSites Sites of the organization (filtered by the member site scope)
 	// (GET /orgs/{orgId}/sites)
 	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
 	// CreateSite Create a site (owner/admin/editor without a site scope)
 	// (POST /orgs/{orgId}/sites)
 	CreateSite(ctx context.Context, request CreateSiteRequestObject) (CreateSiteResponseObject, error)
-	// SuggestSiteCode Next free site code for a unit and place (ADR-030)
+	// SuggestSiteCode Next free site code for a partner and place (ADR-030/031)
 	// (GET /orgs/{orgId}/sites/next-code)
 	SuggestSiteCode(ctx context.Context, request SuggestSiteCodeRequestObject) (SuggestSiteCodeResponseObject, error)
 	// DeleteSite Soft-delete a site (owner/admin)
@@ -8464,10 +9358,11 @@ func (sh *strictHandler) ListOrgAudit(w http.ResponseWriter, r *http.Request, or
 }
 
 // ListBusinessUnits operation middleware
-func (sh *strictHandler) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+func (sh *strictHandler) ListBusinessUnits(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListBusinessUnitsParams) {
 	var request ListBusinessUnitsRequestObject
 
 	request.OrgId = orgId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBusinessUnits(ctx, request.(ListBusinessUnitsRequestObject))
@@ -8757,6 +9652,156 @@ func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegenerateInviteResponseObject); ok {
 		if err := validResponse.VisitRegenerateInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListPartners operation middleware
+func (sh *strictHandler) ListPartners(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListPartnersRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPartners(ctx, request.(ListPartnersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPartners")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPartnersResponseObject); ok {
+		if err := validResponse.VisitListPartnersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreatePartner operation middleware
+func (sh *strictHandler) CreatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreatePartnerParams) {
+	var request CreatePartnerRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreatePartnerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreatePartner(ctx, request.(CreatePartnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreatePartner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreatePartnerResponseObject); ok {
+		if err := validResponse.VisitCreatePartnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeletePartner operation middleware
+func (sh *strictHandler) DeletePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params DeletePartnerParams) {
+	var request DeletePartnerRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeletePartner(ctx, request.(DeletePartnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeletePartner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeletePartnerResponseObject); ok {
+		if err := validResponse.VisitDeletePartnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPartner operation middleware
+func (sh *strictHandler) GetPartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId) {
+	var request GetPartnerRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPartner(ctx, request.(GetPartnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPartner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPartnerResponseObject); ok {
+		if err := validResponse.VisitGetPartnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdatePartner operation middleware
+func (sh *strictHandler) UpdatePartner(w http.ResponseWriter, r *http.Request, orgId OrgId, partnerId PartnerId, params UpdatePartnerParams) {
+	var request UpdatePartnerRequestObject
+
+	request.OrgId = orgId
+	request.PartnerId = partnerId
+	request.Params = params
+
+	var body UpdatePartnerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdatePartner(ctx, request.(UpdatePartnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdatePartner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdatePartnerResponseObject); ok {
+		if err := validResponse.VisitUpdatePartnerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

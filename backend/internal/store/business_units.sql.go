@@ -12,16 +12,16 @@ import (
 )
 
 const createBusinessUnit = `-- name: CreateBusinessUnit :one
-INSERT INTO business_units (organization_id, code, name, relation, contact_name, contact_phone, contact_email, notes)
+INSERT INTO business_units (organization_id, partner_id, code, name, contact_name, contact_phone, contact_email, notes)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, organization_id, code, name, relation, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+RETURNING id, organization_id, partner_id, code, name, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
 `
 
 type CreateBusinessUnitParams struct {
 	OrganizationID pgtype.UUID
+	PartnerID      pgtype.UUID
 	Code           string
 	Name           string
-	Relation       string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
@@ -31,9 +31,9 @@ type CreateBusinessUnitParams struct {
 func (q *Queries) CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error) {
 	row := q.db.QueryRow(ctx, createBusinessUnit,
 		arg.OrganizationID,
+		arg.PartnerID,
 		arg.Code,
 		arg.Name,
-		arg.Relation,
 		arg.ContactName,
 		arg.ContactPhone,
 		arg.ContactEmail,
@@ -43,9 +43,9 @@ func (q *Queries) CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnit
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
+		&i.PartnerID,
 		&i.Code,
 		&i.Name,
-		&i.Relation,
 		&i.ContactName,
 		&i.ContactPhone,
 		&i.ContactEmail,
@@ -59,10 +59,11 @@ func (q *Queries) CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnit
 }
 
 const getBusinessUnit = `-- name: GetBusinessUnit :one
-SELECT b.id, b.organization_id, b.code, b.name, b.relation, b.contact_name, b.contact_phone, b.contact_email, b.notes, b.deleted_at, b.created_at, b.updated_at, b.version,
-       (SELECT count(*) FROM sites s WHERE s.business_unit_id = b.id AND s.deleted_at IS NULL)::bigint AS site_count
-FROM business_units b
-WHERE b.id = $1 AND b.organization_id = $2 AND b.deleted_at IS NULL
+SELECT u.id, u.organization_id, u.partner_id, u.code, u.name, u.contact_name, u.contact_phone, u.contact_email, u.notes, u.deleted_at, u.created_at, u.updated_at, u.version, p.code::text AS partner_code, p.name AS partner_name,
+       (SELECT count(*) FROM sites s WHERE s.business_unit_id = u.id AND s.deleted_at IS NULL)::bigint AS site_count
+FROM business_units u
+JOIN partners p ON p.id = u.partner_id
+WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
 `
 
 type GetBusinessUnitParams struct {
@@ -73,9 +74,9 @@ type GetBusinessUnitParams struct {
 type GetBusinessUnitRow struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
+	PartnerID      pgtype.UUID
 	Code           string
 	Name           string
-	Relation       string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
@@ -84,6 +85,8 @@ type GetBusinessUnitRow struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	PartnerCode    string
+	PartnerName    string
 	SiteCount      int64
 }
 
@@ -93,9 +96,9 @@ func (q *Queries) GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
+		&i.PartnerID,
 		&i.Code,
 		&i.Name,
-		&i.Relation,
 		&i.ContactName,
 		&i.ContactPhone,
 		&i.ContactEmail,
@@ -104,6 +107,8 @@ func (q *Queries) GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.PartnerCode,
+		&i.PartnerName,
 		&i.SiteCount,
 	)
 	return i, err
@@ -111,19 +116,26 @@ func (q *Queries) GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams
 
 const listBusinessUnits = `-- name: ListBusinessUnits :many
 
-SELECT b.id, b.organization_id, b.code, b.name, b.relation, b.contact_name, b.contact_phone, b.contact_email, b.notes, b.deleted_at, b.created_at, b.updated_at, b.version,
-       (SELECT count(*) FROM sites s WHERE s.business_unit_id = b.id AND s.deleted_at IS NULL)::bigint AS site_count
-FROM business_units b
-WHERE b.organization_id = $1 AND b.deleted_at IS NULL
-ORDER BY b.code
+SELECT u.id, u.organization_id, u.partner_id, u.code, u.name, u.contact_name, u.contact_phone, u.contact_email, u.notes, u.deleted_at, u.created_at, u.updated_at, u.version, p.code::text AS partner_code, p.name AS partner_name,
+       (SELECT count(*) FROM sites s WHERE s.business_unit_id = u.id AND s.deleted_at IS NULL)::bigint AS site_count
+FROM business_units u
+JOIN partners p ON p.id = u.partner_id
+WHERE u.organization_id = $1 AND u.deleted_at IS NULL
+  AND ($2::uuid IS NULL OR u.partner_id = $2)
+ORDER BY p.code, u.code
 `
+
+type ListBusinessUnitsParams struct {
+	OrganizationID pgtype.UUID
+	PartnerFilter  pgtype.UUID
+}
 
 type ListBusinessUnitsRow struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
+	PartnerID      pgtype.UUID
 	Code           string
 	Name           string
-	Relation       string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
@@ -132,12 +144,14 @@ type ListBusinessUnitsRow struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	PartnerCode    string
+	PartnerName    string
 	SiteCount      int64
 }
 
-// Business units (P1-07, ADR-026). Every query takes organization_id.
-func (q *Queries) ListBusinessUnits(ctx context.Context, organizationID pgtype.UUID) ([]ListBusinessUnitsRow, error) {
-	rows, err := q.db.Query(ctx, listBusinessUnits, organizationID)
+// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
+func (q *Queries) ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error) {
+	rows, err := q.db.Query(ctx, listBusinessUnits, arg.OrganizationID, arg.PartnerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +162,9 @@ func (q *Queries) ListBusinessUnits(ctx context.Context, organizationID pgtype.U
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
+			&i.PartnerID,
 			&i.Code,
 			&i.Name,
-			&i.Relation,
 			&i.ContactName,
 			&i.ContactPhone,
 			&i.ContactEmail,
@@ -159,6 +173,8 @@ func (q *Queries) ListBusinessUnits(ctx context.Context, organizationID pgtype.U
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
+			&i.PartnerCode,
+			&i.PartnerName,
 			&i.SiteCount,
 		); err != nil {
 			return nil, err
@@ -171,38 +187,10 @@ func (q *Queries) ListBusinessUnits(ctx context.Context, organizationID pgtype.U
 	return items, nil
 }
 
-const renameUnitSitePrefix = `-- name: RenameUnitSitePrefix :execrows
-UPDATE sites
-SET code = $1::text || substr(code::text, length($2::text) + 1), version = version + 1
-WHERE organization_id = $3 AND business_unit_id = $4 AND deleted_at IS NULL
-  AND code::text LIKE $2::text || '-%'
-`
-
-type RenameUnitSitePrefixParams struct {
-	NewCode        string
-	OldCode        string
-	OrganizationID pgtype.UUID
-	ID             pgtype.UUID
-}
-
-// ADR-030: site codes carry the unit code; renaming the unit renames the prefix of its live sites.
-func (q *Queries) RenameUnitSitePrefix(ctx context.Context, arg RenameUnitSitePrefixParams) (int64, error) {
-	result, err := q.db.Exec(ctx, renameUnitSitePrefix,
-		arg.NewCode,
-		arg.OldCode,
-		arg.OrganizationID,
-		arg.ID,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const softDeleteBusinessUnit = `-- name: SoftDeleteBusinessUnit :one
 UPDATE business_units SET deleted_at = now(), version = version + 1
 WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
-RETURNING id, organization_id, code, name, relation, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+RETURNING id, organization_id, partner_id, code, name, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
 `
 
 type SoftDeleteBusinessUnitParams struct {
@@ -216,9 +204,9 @@ func (q *Queries) SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusi
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
+		&i.PartnerID,
 		&i.Code,
 		&i.Name,
-		&i.Relation,
 		&i.ContactName,
 		&i.ContactPhone,
 		&i.ContactEmail,
@@ -232,16 +220,15 @@ func (q *Queries) SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusi
 }
 
 const updateBusinessUnit = `-- name: UpdateBusinessUnit :one
-UPDATE business_units SET code = $1, name = $2, relation = $3, contact_name = $4,
-       contact_phone = $5, contact_email = $6, notes = $7, version = version + 1
-WHERE id = $8 AND organization_id = $9 AND deleted_at IS NULL AND version = $10
-RETURNING id, organization_id, code, name, relation, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
+UPDATE business_units SET code = $1, name = $2, contact_name = $3, contact_phone = $4,
+       contact_email = $5, notes = $6, version = version + 1
+WHERE id = $7 AND organization_id = $8 AND deleted_at IS NULL AND version = $9
+RETURNING id, organization_id, partner_id, code, name, contact_name, contact_phone, contact_email, notes, deleted_at, created_at, updated_at, version
 `
 
 type UpdateBusinessUnitParams struct {
 	Code           string
 	Name           string
-	Relation       string
 	ContactName    string
 	ContactPhone   string
 	ContactEmail   string
@@ -255,7 +242,6 @@ func (q *Queries) UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnit
 	row := q.db.QueryRow(ctx, updateBusinessUnit,
 		arg.Code,
 		arg.Name,
-		arg.Relation,
 		arg.ContactName,
 		arg.ContactPhone,
 		arg.ContactEmail,
@@ -268,9 +254,9 @@ func (q *Queries) UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnit
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
+		&i.PartnerID,
 		&i.Code,
 		&i.Name,
-		&i.Relation,
 		&i.ContactName,
 		&i.ContactPhone,
 		&i.ContactEmail,

@@ -1,6 +1,7 @@
 import {
   Activity,
   Building2,
+  Handshake,
   Languages,
   LayoutDashboard,
   MapPin,
@@ -30,7 +31,7 @@ import { setLanguage } from '@/i18n'
 import { usePreferences } from '@/lib/preferences'
 import { useMembers } from '@/modules/admin/members'
 import { SAMPLE_DEVICES } from '@/modules/inventory/sampleDevices'
-import { useBusinessUnits, useSites } from '@/modules/sites/sites'
+import { useBusinessUnits, usePartners, useSites } from '@/modules/sites/sites'
 import { OrgAvatar } from './OrgAvatar'
 
 interface Entry {
@@ -63,6 +64,7 @@ export function CommandPalette({
   const org = useOrganization(orgId)
   const members = useMembers(open ? orgId : '')
   const sites = useSites(orgId, open)
+  const partners = usePartners(orgId, open)
   const units = useBusinessUnits(orgId, open)
   const { theme, setTheme } = usePreferences()
   const isSysAdmin = session.data?.user.isSystemAdmin ?? false
@@ -148,10 +150,20 @@ export function CommandPalette({
       }))
     : []
 
+  const partnerEntries: Entry[] = base
+    ? (partners.data ?? []).map((p) => ({
+        key: `p-${p.id}`,
+        label: `${p.code} · ${p.name}`,
+        icon: <Handshake />,
+        run: go(`${base}/partners/${p.id}`),
+      }))
+    : []
+
+  // Unit codes repeat across partners (MAIN), so the label carries the partner code.
   const unitEntries: Entry[] = base
     ? (units.data ?? []).map((u) => ({
         key: `u-${u.id}`,
-        label: `${u.code} · ${u.name}`,
+        label: `${u.partnerCode} › ${u.code} · ${u.name}`,
         icon: <Building2 />,
         run: go(`${base}/units/${u.id}`),
       }))
@@ -197,6 +209,7 @@ export function CommandPalette({
   const groups: { heading: string; entries: Entry[] }[] = [
     { heading: t('palette.pages'), entries: pages },
     { heading: t('palette.organizations'), entries: organizations },
+    { heading: t('palette.partners'), entries: partnerEntries },
     { heading: t('palette.units'), entries: unitEntries },
     { heading: t('palette.sites'), entries: siteEntries },
     { heading: t('palette.members'), entries: people },

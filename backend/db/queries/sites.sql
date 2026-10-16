@@ -5,20 +5,25 @@
 -- @bu_filter: NULL = every site; @only_shared = organization-wide sites only.
 SELECT s.*,
        COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
+       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name,
        (SELECT count(*) FROM locations l WHERE l.site_id = s.id)::bigint AS location_count,
        (SELECT count(*) FROM racks r WHERE r.site_id = s.id)::bigint AS rack_count
 FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
+LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = @organization_id AND s.deleted_at IS NULL
   AND (sqlc.narg('scope')::uuid[] IS NULL OR s.id = ANY (sqlc.narg('scope')::uuid[]))
   AND (sqlc.narg('bu_filter')::uuid IS NULL OR s.business_unit_id = sqlc.narg('bu_filter'))
+  AND (sqlc.narg('partner_filter')::uuid IS NULL OR b.partner_id = sqlc.narg('partner_filter'))
   AND (NOT @only_shared::boolean OR s.business_unit_id IS NULL)
 ORDER BY s.code;
 
 -- name: GetSite :one
-SELECT s.*, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name
+SELECT s.*, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
+       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name
 FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
+LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = @id AND s.organization_id = @organization_id AND s.deleted_at IS NULL
   AND (sqlc.narg('scope')::uuid[] IS NULL OR s.id = ANY (sqlc.narg('scope')::uuid[]));
 

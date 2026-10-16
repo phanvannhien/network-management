@@ -45,6 +45,9 @@ const SiteListPage = lazy(() =>
 const SiteDetailPage = lazy(() =>
   import('./modules/sites/SiteDetailPage').then((m) => ({ default: m.SiteDetailPage })),
 )
+const PartnerDetailPage = lazy(() =>
+  import('./modules/sites/PartnerDetailPage').then((m) => ({ default: m.PartnerDetailPage })),
+)
 const UnitDetailPage = lazy(() =>
   import('./modules/sites/UnitDetailPage').then((m) => ({ default: m.UnitDetailPage })),
 )
@@ -78,6 +81,7 @@ export function AppRoutes() {
         <Route path="devices/:deviceId" element={<DeviceDetailPage />} />
         <Route path="sites" element={<SiteListPage />} />
         <Route path="sites/:siteId" element={<SiteDetailPage />} />
+        <Route path="partners/:partnerId" element={<PartnerDetailPage />} />
         <Route path="units/:unitId" element={<UnitDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage scope="org" />} />

@@ -488,12 +488,141 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/partners:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listPartners
+      summary: Partners of the organization (ADR-031)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    post:
+      operationId: createPartner
+      summary: Create a partner (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerInput'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/partners/{partnerId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/PartnerId'
+    get:
+      operationId: getPartner
+      summary: One partner
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      operationId: updatePartner
+      summary: Edit a partner; a code change renames the prefix of its site codes (ADR-030/031)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deletePartner
+      summary: Soft-delete a partner without live units (owner/admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/business-units:
     parameters:
       - $ref: '#/components/parameters/OrgId'
     get:
       operationId: listBusinessUnits
-      summary: Business units of the organization (ADR-026)
+      summary: Business units of the organization, each under a partner (ADR-031)
+      parameters:
+        - name: partnerId
+          in: query
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: OK
@@ -513,7 +642,7 @@ paths:
           $ref: '#/components/responses/Conflict'
     post:
       operationId: createBusinessUnit
-      summary: Create a business unit (owner/admin)
+      summary: Create a unit under a partner (owner/admin)
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
@@ -566,7 +695,7 @@ paths:
           $ref: '#/components/responses/Conflict'
     patch:
       operationId: updateBusinessUnit
-      summary: Edit a business unit; a code change renames the prefix of its site codes (ADR-030)
+      summary: Edit a unit (its partner cannot change)
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
@@ -594,7 +723,7 @@ paths:
           $ref: '#/components/responses/Conflict'
     delete:
       operationId: deleteBusinessUnit
-      summary: Soft-delete a business unit without live sites (owner/admin)
+      summary: Soft-delete a unit without live sites (owner/admin)
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       responses:
@@ -616,11 +745,11 @@ paths:
       - $ref: '#/components/parameters/OrgId'
     get:
       operationId: suggestSiteCode
-      summary: Next free site code for a unit and place (ADR-030)
+      summary: Next free site code for a partner and place (ADR-030/031)
       parameters:
-        - name: businessUnitId
+        - name: partnerId
           in: query
-          description: Owning unit; omit for a shared site (SHARED- prefix)
+          description: Partner of the site's unit; omit for a shared site (SHARED- prefix)
           schema:
             type: string
             format: uuid
@@ -659,6 +788,12 @@ paths:
         - name: businessUnitId
           in: query
           description: Only sites of this business unit
+          schema:
+            type: string
+            format: uuid
+        - name: partnerId
+          in: query
+          description: Only sites of this partner (all its units)
           schema:
             type: string
             format: uuid
@@ -1224,6 +1359,13 @@ components:
       schema:
         type: string
         format: date-time
+    PartnerId:
+      name: partnerId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     BusinessUnitId:
       name: businessUnitId
       in: path
@@ -1518,7 +1660,7 @@ components:
 
     AdminOrganization:
       type: object
-      required: [id, name, kind, notes, memberCount, unitCount, siteCount, createdAt, version]
+      required: [id, name, kind, notes, memberCount, partnerCount, unitCount, siteCount, createdAt, version]
       properties:
         id:
           type: string
@@ -1532,6 +1674,10 @@ components:
         memberCount:
           type: integer
           format: int64
+        partnerCount:
+          type: integer
+          format: int64
+          description: Live partners (count only)
         unitCount:
           type: integer
           format: int64
@@ -1764,11 +1910,11 @@ components:
           type: integer
           format: int32
 
-    BusinessUnitRelation:
+    PartnerRelation:
       type: string
       enum: [subsidiary, partner, customer]
 
-    BusinessUnitInput:
+    PartnerInput:
       type: object
       required: [code, name]
       properties:
@@ -1780,7 +1926,87 @@ components:
           type: string
           maxLength: 200
         relation:
-          $ref: '#/components/schemas/BusinessUnitRelation'
+          $ref: '#/components/schemas/PartnerRelation'
+        contactName:
+          type: string
+          maxLength: 200
+        contactPhone:
+          type: string
+          maxLength: 50
+        contactEmail:
+          type: string
+          maxLength: 320
+        notes:
+          type: string
+          maxLength: 2000
+
+    PartnerUpdate:
+      allOf:
+        - $ref: '#/components/schemas/PartnerInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Partner:
+      type: object
+      required: [id, code, name, relation, contactName, contactPhone, contactEmail, notes, unitCount, siteCount, version, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        relation:
+          $ref: '#/components/schemas/PartnerRelation'
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        notes:
+          type: string
+        unitCount:
+          type: integer
+          format: int64
+        siteCount:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+
+    PartnerList:
+      type: object
+      required: [partners]
+      properties:
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/Partner'
+
+    BusinessUnitInput:
+      type: object
+      required: [partnerId, code, name]
+      properties:
+        partnerId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          description: "2-8 characters A-Z/0-9 starting with a letter, unique within the partner (ADR-031)"
+          maxLength: 8
+        name:
+          type: string
+          maxLength: 200
         contactName:
           type: string
           maxLength: 200
@@ -1795,28 +2021,49 @@ components:
           maxLength: 2000
 
     BusinessUnitUpdate:
-      allOf:
-        - $ref: '#/components/schemas/BusinessUnitInput'
-        - type: object
-          required: [version]
-          properties:
-            version:
-              type: integer
-              format: int32
+      type: object
+      required: [code, name, version]
+      properties:
+        code:
+          type: string
+          maxLength: 8
+        name:
+          type: string
+          maxLength: 200
+        contactName:
+          type: string
+          maxLength: 200
+        contactPhone:
+          type: string
+          maxLength: 50
+        contactEmail:
+          type: string
+          maxLength: 320
+        notes:
+          type: string
+          maxLength: 2000
+        version:
+          type: integer
+          format: int32
 
     BusinessUnit:
       type: object
-      required: [id, code, name, relation, contactName, contactPhone, contactEmail, notes, siteCount, version, createdAt]
+      required: [id, partnerId, partnerCode, partnerName, code, name, contactName, contactPhone, contactEmail, notes, siteCount, version, createdAt]
       properties:
         id:
           type: string
           format: uuid
+        partnerId:
+          type: string
+          format: uuid
+        partnerCode:
+          type: string
+        partnerName:
+          type: string
         code:
           type: string
         name:
           type: string
-        relation:
-          $ref: '#/components/schemas/BusinessUnitRelation'
         contactName:
           type: string
         contactPhone:
@@ -1876,11 +2123,11 @@ components:
         code:
           type: string
           maxLength: 32
-          description: "ADR-030: <UNIT>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>"
+          description: "ADR-030/031: <PARTNER>-<PLACE><NN> (e.g. AGRI-BD01); shared sites SHARED-<PLACE><NN>"
         kind:
           $ref: '#/components/schemas/SiteKind'
         businessUnitId:
-          description: Owning business unit; null = shared by the whole organization (e.g. an IDC)
+          description: Owning business unit (its partner gives the code prefix); null = shared by the whole organization (e.g. an IDC)
           type: [string, 'null']
           format: uuid
         isp:
@@ -1920,7 +2167,7 @@ components:
 
     Site:
       type: object
-      required: [id, code, name, kind, businessUnitId, businessUnitCode, businessUnitName, isp, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt]
+      required: [id, code, name, kind, businessUnitId, businessUnitCode, businessUnitName, partnerId, partnerCode, partnerName, isp, address, timezone, contactName, contactPhone, contactEmail, notes, locationCount, rackCount, version, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -1936,6 +2183,14 @@ components:
           type: string
           description: Empty for shared sites
         businessUnitName:
+          type: string
+        partnerId:
+          type: [string, 'null']
+          format: uuid
+        partnerCode:
+          type: string
+          description: Empty for shared sites; the site code prefix (ADR-031)
+        partnerName:
           type: string
         isp:
           type: string

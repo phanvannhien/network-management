@@ -9,25 +9,28 @@ import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { useLocalTable } from '@/components/localTable'
 import { Button } from '@/components/ui/button'
-import { SITE_KINDS, useBusinessUnits, useSites, type Site } from './sites'
+import { SITE_KINDS, useBusinessUnits, usePartners, useSites, type Site } from './sites'
 
 const SITE_SORT: Record<string, (s: Site) => string | number> = {
   code: (s) => s.code,
   name: (s) => s.name,
+  partner: (s) => s.partnerCode || '~',
   unit: (s) => s.businessUnitCode || '~',
   kind: (s) => s.kind,
   locationCount: (s) => s.locationCount,
   rackCount: (s) => s.rackCount,
 }
 
-/** Sites table; `unitId` limits it to one unit (unit detail page). */
+/** Sites table; `partnerId` / `unitId` limit it to one partner / unit (their detail pages). */
 export function SitesTable({
   orgId,
+  partnerId,
   unitId,
   canEdit,
   onAdd,
 }: {
   orgId: string
+  partnerId?: string
   unitId?: string
   canEdit: boolean
   onAdd: () => void
@@ -35,42 +38,67 @@ export function SitesTable({
   const { t } = useTranslation()
   const userId = useSession().data?.user.id ?? ''
   const sites = useSites(orgId)
+  const partners = usePartners(orgId)
   const units = useBusinessUnits(orgId)
+  const scope = unitId ? 'unit-sites' : partnerId ? 'partner-sites' : 'sites'
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
 
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()
+    const partnerF = filter.facets.partner ?? []
     const unitF = filter.facets.unit ?? []
     const kindF = filter.facets.kind ?? []
     return sites.data?.filter(
       (s) =>
         (!unitId || s.businessUnitId === unitId) &&
+        (!partnerId || s.partnerId === partnerId) &&
+        (partnerF.length === 0 || partnerF.includes(s.partnerId ?? 'shared')) &&
         (!q || [s.code, s.name, s.address].some((v) => v.toLowerCase().includes(q))) &&
         (unitF.length === 0 || unitF.includes(s.businessUnitId ?? 'shared')) &&
         (kindF.length === 0 || kindF.includes(s.kind)),
     )
-  }, [sites.data, filter, unitId])
+  }, [sites.data, filter, unitId, partnerId])
   const table = useLocalTable(rows, SITE_SORT, [{ id: 'code', desc: false }])
 
   const count = (pred: (s: Site) => boolean) => sites.data?.filter(pred).length ?? 0
+  const shared = {
+    value: 'shared',
+    label: t('units.sharedShort'),
+    count: count((s) => s.businessUnitId === null),
+  }
   const facets: Facet[] = [
+    ...(unitId || partnerId
+      ? []
+      : [
+          {
+            id: 'partner',
+            label: t('units.partner'),
+            options: [
+              ...(partners.data ?? []).map((p) => ({
+                value: p.id,
+                label: p.code,
+                count: count((s) => s.partnerId === p.id),
+              })),
+              shared,
+            ],
+          },
+        ]),
     ...(unitId
       ? []
       : [
           {
             id: 'unit',
             label: t('sites.unit'),
+            // Unit codes repeat across partners (MAIN), so options carry the partner code.
             options: [
-              ...(units.data ?? []).map((u) => ({
-                value: u.id,
-                label: u.code,
-                count: count((s) => s.businessUnitId === u.id),
-              })),
-              {
-                value: 'shared',
-                label: t('units.sharedShort'),
-                count: count((s) => s.businessUnitId === null),
-              },
+              ...(units.data ?? [])
+                .filter((u) => !partnerId || u.partnerId === partnerId)
+                .map((u) => ({
+                  value: u.id,
+                  label: partnerId ? u.code : `${u.partnerCode} › ${u.code}`,
+                  count: count((s) => s.businessUnitId === u.id),
+                })),
+              ...(partnerId ? [] : [shared]),
             ],
           },
         ]),
@@ -105,6 +133,24 @@ export function SitesTable({
       accessorKey: 'name',
       header: t('sites.name'),
       meta: { label: t('sites.name'), width: 220 },
+    },
+    {
+      id: 'partner',
+      accessorFn: (s) => s.partnerCode,
+      header: t('units.partner'),
+      meta: { label: t('units.partner'), width: 110 },
+      cell: ({ row: { original: s } }) =>
+        s.partnerId ? (
+          <Link
+            to={`/o/${orgId}/partners/${s.partnerId}`}
+            className="hover:text-primary hover:underline"
+            title={s.partnerName}
+          >
+            {s.partnerCode}
+          </Link>
+        ) : (
+          <span className="text-muted-foreground">{t('units.sharedShort')}</span>
+        ),
     },
     {
       id: 'unit',
@@ -182,11 +228,11 @@ export function SitesTable({
 
   return (
     <DataTable
-      tableId={unitId ? 'unit-sites' : 'sites'}
+      tableId={scope}
       userId={userId}
       caption={t('sites.title')}
       columns={columns}
-      defaultHidden={unitId ? ['isp', 'unit'] : ['isp']}
+      defaultHidden={unitId ? ['isp', 'partner', 'unit'] : partnerId ? ['isp', 'partner'] : ['isp']}
       data={table.data}
       total={table.total}
       isLoading={sites.isPending}
@@ -207,7 +253,7 @@ export function SitesTable({
           }}
           facets={facets}
           searchPlaceholder={t('sites.searchPlaceholder')}
-          storageKey={`ntb-filters:${userId}:${unitId ? 'unit-sites' : 'sites'}`}
+          storageKey={`ntb-filters:${userId}:${scope}`}
         />
       }
       empty={

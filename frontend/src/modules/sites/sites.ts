@@ -214,7 +214,85 @@ export const SITE_KINDS: SiteKind[] = [
   'store',
   'other',
 ]
-export const UNIT_RELATIONS = ['subsidiary', 'partner', 'customer'] as const
+export type Partner = components['schemas']['Partner']
+export type PartnerInput = components['schemas']['PartnerInput']
+export type PartnerRelation = components['schemas']['PartnerRelation']
+export const PARTNER_RELATIONS: PartnerRelation[] = ['subsidiary', 'partner', 'customer']
+
+const partnerKeys = {
+  all: (orgId: string) => ['orgs', orgId, 'partners'] as const,
+  one: (orgId: string, id: string) => ['orgs', orgId, 'partners', id] as const,
+}
+
+export function usePartners(orgId: string, enabled = true) {
+  return useQuery({
+    queryKey: partnerKeys.all(orgId),
+    enabled: enabled && orgId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/partners', { params: { path: { orgId } } })
+      if (r.data) return r.data.partners
+      fail(r.error, r.response.status, i18n.t('errors.partnersLoad'))
+    },
+  })
+}
+
+export function usePartner(orgId: string, partnerId: string) {
+  return useQuery({
+    queryKey: partnerKeys.one(orgId, partnerId),
+    retry: false,
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/partners/{partnerId}', {
+        params: { path: { orgId, partnerId } },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.partnersLoad'))
+    },
+  })
+}
+
+/** Partner, unit and site data reference each other (codes, names, counts), so all three are refreshed. */
+function useInvalidateHierarchy(orgId: string) {
+  const qc = useQueryClient()
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: partnerKeys.all(orgId) }),
+      qc.invalidateQueries({ queryKey: unitKeys.all(orgId) }),
+      qc.invalidateQueries({ queryKey: keys.sites(orgId) }),
+    ])
+}
+
+export function useSavePartner(orgId: string) {
+  const invalidate = useInvalidateHierarchy(orgId)
+  return useMutation({
+    mutationFn: async (input: { partner?: Partner; body: PartnerInput }) => {
+      const r = input.partner
+        ? await api.PATCH('/orgs/{orgId}/partners/{partnerId}', {
+            params: { ...csrfParam, path: { orgId, partnerId: input.partner.id } },
+            body: { ...input.body, version: input.partner.version },
+          })
+        : await api.POST('/orgs/{orgId}/partners', {
+            params: { ...csrfParam, path: { orgId } },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled: invalidate,
+  })
+}
+
+export function useDeletePartner(orgId: string) {
+  const invalidate = useInvalidateHierarchy(orgId)
+  return useMutation({
+    mutationFn: async (partnerId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/partners/{partnerId}', {
+        params: { ...csrfParam, path: { orgId, partnerId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled: invalidate,
+  })
+}
 
 const unitKeys = {
   all: (orgId: string) => ['orgs', orgId, 'business-units'] as const,
@@ -247,24 +325,16 @@ export function useBusinessUnit(orgId: string, unitId: string) {
   })
 }
 
-/** Unit changes rename site codes (ADR-030), so sites are refreshed too. */
-function useInvalidateUnits(orgId: string) {
-  const qc = useQueryClient()
-  return () =>
-    Promise.all([
-      qc.invalidateQueries({ queryKey: unitKeys.all(orgId) }),
-      qc.invalidateQueries({ queryKey: keys.sites(orgId) }),
-    ])
-}
-
 export function useSaveUnit(orgId: string) {
-  const invalidate = useInvalidateUnits(orgId)
+  const invalidate = useInvalidateHierarchy(orgId)
   return useMutation({
     mutationFn: async (input: { unit?: BusinessUnit; body: BusinessUnitInput }) => {
+      // The partner is fixed after creation (ADR-031): updates do not carry it.
+      const { partnerId: _partner, ...update } = input.body
       const r = input.unit
         ? await api.PATCH('/orgs/{orgId}/business-units/{businessUnitId}', {
             params: { ...csrfParam, path: { orgId, businessUnitId: input.unit.id } },
-            body: { ...input.body, version: input.unit.version },
+            body: { ...update, version: input.unit.version },
           })
         : await api.POST('/orgs/{orgId}/business-units', {
             params: { ...csrfParam, path: { orgId } },
@@ -278,7 +348,7 @@ export function useSaveUnit(orgId: string) {
 }
 
 export function useDeleteUnit(orgId: string) {
-  const invalidate = useInvalidateUnits(orgId)
+  const invalidate = useInvalidateHierarchy(orgId)
   return useMutation({
     mutationFn: async (unitId: string) => {
       const r = await api.DELETE('/orgs/{orgId}/business-units/{businessUnitId}', {
@@ -290,21 +360,24 @@ export function useDeleteUnit(orgId: string) {
   })
 }
 
-/** Next free site code for a unit (or shared) and place — ADR-030. */
+/** Next free site code for a partner (or shared when null) and place — ADR-030/031. */
 export async function suggestSiteCode(
   orgId: string,
-  businessUnitId: string | null,
+  partnerId: string | null,
   place: string,
 ): Promise<string | null> {
   const r = await api.GET('/orgs/{orgId}/sites/next-code', {
-    params: { path: { orgId }, query: { place, businessUnitId: businessUnitId ?? undefined } },
+    params: { path: { orgId }, query: { place, partnerId: partnerId ?? undefined } },
   })
   return r.data?.code ?? null
 }
 
 /** Client-side check mirroring the server rule (the server stays authoritative). */
-export function siteCodeError(code: string, unitCode: string | null): 'format' | 'prefix' | null {
+export function siteCodeError(
+  code: string,
+  partnerCode: string | null,
+): 'format' | 'prefix' | null {
   const m = /^([A-Z][A-Z0-9]{1,7})-([A-Z]{2,4})([0-9]{2})$/.exec(code.toUpperCase())
   if (!m) return 'format'
-  return m[1] === (unitCode ?? 'SHARED') ? null : 'prefix'
+  return m[1] === (partnerCode ?? 'SHARED') ? null : 'prefix'
 }

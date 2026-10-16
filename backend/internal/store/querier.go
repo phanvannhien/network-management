@@ -32,6 +32,7 @@ type Querier interface {
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreatePartner(ctx context.Context, arg CreatePartnerParams) (Partner, error)
 	CreateRack(ctx context.Context, arg CreateRackParams) (Rack, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error)
@@ -56,6 +57,7 @@ type Querier interface {
 	// The tenant middleware's single source of truth: does this user belong to this (live) organization?
 	GetMembership(ctx context.Context, arg GetMembershipParams) (GetMembershipRow, error)
 	GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
+	GetPartner(ctx context.Context, arg GetPartnerParams) (GetPartnerRow, error)
 	GetRack(ctx context.Context, arg GetRackParams) (Rack, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
@@ -69,8 +71,8 @@ type Querier interface {
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
-	// Business units (P1-07, ADR-026). Every query takes organization_id.
-	ListBusinessUnits(ctx context.Context, organizationID pgtype.UUID) ([]ListBusinessUnitsRow, error)
+	// Business units (P1-07b, ADR-031): always under one partner. Every query takes organization_id.
+	ListBusinessUnits(ctx context.Context, arg ListBusinessUnitsParams) ([]ListBusinessUnitsRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
@@ -78,6 +80,8 @@ type Querier interface {
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
+	// Partners (P1-07b, ADR-031): the organization's subsidiaries / partners / customers. Every query takes organization_id.
+	ListPartners(ctx context.Context, organizationID pgtype.UUID) ([]ListPartnersRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
 	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
 	ListSiteCodesWithPrefix(ctx context.Context, arg ListSiteCodesWithPrefixParams) ([]string, error)
@@ -93,8 +97,8 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	// Increments the failure counter and locks the account once it reaches the threshold.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
-	// ADR-030: site codes carry the unit code; renaming the unit renames the prefix of its live sites.
-	RenameUnitSitePrefix(ctx context.Context, arg RenameUnitSitePrefixParams) (int64, error)
+	// ADR-030/031: site codes carry the partner code; renaming the partner renames the prefix of its live sites.
+	RenamePartnerSitePrefix(ctx context.Context, arg RenamePartnerSitePrefixParams) (int64, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
@@ -102,6 +106,7 @@ type Querier interface {
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SoftDeleteBusinessUnit(ctx context.Context, arg SoftDeleteBusinessUnitParams) (BusinessUnit, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
+	SoftDeletePartner(ctx context.Context, arg SoftDeletePartnerParams) (Partner, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
 	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
@@ -109,6 +114,7 @@ type Querier interface {
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
+	UpdatePartner(ctx context.Context, arg UpdatePartnerParams) (Partner, error)
 	UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)
 	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.

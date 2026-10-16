@@ -14,29 +14,34 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useOrganization } from '@/app/orgs'
-import { UNIT_RELATIONS, useSaveUnit, type BusinessUnit } from './sites'
+import { usePartners, useSaveUnit, type BusinessUnit } from './sites'
 
-type Relation = (typeof UNIT_RELATIONS)[number]
-
-/** Create or edit a business unit (ADR-026); the code follows ADR-030 and is upper-cased as typed. */
+/**
+ * Create or edit a business unit (ADR-031): a unit belongs to one partner, chosen at creation and fixed
+ * afterwards. The code is unique within the partner and upper-cased as typed.
+ */
 export function UnitFormDialog({
   orgId,
   unit,
+  defaultPartnerId,
   onClose,
   onSaved,
 }: {
   orgId: string
   unit?: BusinessUnit
+  defaultPartnerId?: string
   onClose: () => void
   onSaved?: (unit: BusinessUnit) => void
 }) {
   const { t } = useTranslation()
   const save = useSaveUnit(orgId)
   const org = useOrganization(orgId).data?.organization.name ?? ''
+  const partners = usePartners(orgId)
+  const defaultPartner = partners.data?.find((p) => p.id === defaultPartnerId)
   const [f, setF] = useState({
     code: unit?.code ?? '',
     name: unit?.name ?? '',
-    relation: (unit?.relation ?? 'subsidiary') as Relation,
+    partnerId: unit?.partnerId ?? defaultPartnerId ?? '',
     contactName: unit?.contactName ?? '',
     contactPhone: unit?.contactPhone ?? '',
     contactEmail: unit?.contactEmail ?? '',
@@ -44,7 +49,7 @@ export function UnitFormDialog({
   })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
-  const codeValid = /^[A-Z][A-Z0-9]{1,7}$/.test(f.code) && f.code !== 'SHARED'
+  const codeValid = /^[A-Z][A-Z0-9]{1,7}$/.test(f.code)
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -69,8 +74,45 @@ export function UnitFormDialog({
           aria-label={unit ? t('units.edit') : t('units.add')}
         >
           <DialogHeader>
-            <DialogTitle>{unit ? t('units.edit') : t('units.addTo', { org })}</DialogTitle>
+            <DialogTitle>
+              {unit
+                ? t('units.edit')
+                : defaultPartner
+                  ? t('units.addToPartner', { partner: defaultPartner.name })
+                  : t('units.addTo', { org })}
+            </DialogTitle>
           </DialogHeader>
+          <FormField
+            label={t('units.partner')}
+            required
+            hint={unit ? t('units.partnerFixed') : undefined}
+            error={partners.data?.length === 0 ? t('units.needPartner') : undefined}
+          >
+            {(p) => (
+              <NativeSelect
+                {...p}
+                required
+                disabled={Boolean(unit)}
+                value={f.partnerId}
+                onChange={(e) => setF({ ...f, partnerId: e.target.value })}
+              >
+                {unit ? (
+                  <option value={unit.partnerId}>
+                    {unit.partnerCode} · {unit.partnerName}
+                  </option>
+                ) : (
+                  <>
+                    <option value="">{t('units.choosePartner')}</option>
+                    {(partners.data ?? []).map((pt) => (
+                      <option key={pt.id} value={pt.id}>
+                        {pt.code} · {pt.name}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </NativeSelect>
+            )}
+          </FormField>
           <div className="grid grid-cols-[180px_1fr] gap-3">
             <FormField
               label={t('units.code')}
@@ -82,7 +124,7 @@ export function UnitFormDialog({
                 <Input
                   {...p}
                   required
-                  autoFocus
+                  autoFocus={Boolean(unit || defaultPartnerId)}
                   maxLength={8}
                   value={f.code}
                   onChange={(e) =>
@@ -98,21 +140,6 @@ export function UnitFormDialog({
               )}
             </FormField>
           </div>
-          <FormField label={t('units.relationWith', { org })}>
-            {(p) => (
-              <NativeSelect
-                {...p}
-                value={f.relation}
-                onChange={(e) => setF({ ...f, relation: e.target.value as Relation })}
-              >
-                {UNIT_RELATIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {t(`units.relationOf.${r}`, { org })}
-                  </option>
-                ))}
-              </NativeSelect>
-            )}
-          </FormField>
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className="mb-1 text-form font-medium">{t('units.contactGroup')}</legend>
             <FormField label={t('sites.contactName')}>
@@ -157,7 +184,7 @@ export function UnitFormDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={save.isPending || !codeValid}>
+            <Button type="submit" disabled={save.isPending || !codeValid || f.partnerId === ''}>
               {t('common.save')}
             </Button>
           </DialogFooter>

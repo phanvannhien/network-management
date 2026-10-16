@@ -21,6 +21,7 @@ import {
   siteCodeError,
   suggestSiteCode,
   useBusinessUnits,
+  usePartners,
   useSaveSite,
   type Site,
   type SiteKind,
@@ -37,8 +38,9 @@ const TIMEZONES = [
 ]
 
 /**
- * Create (site undefined) or edit a site. The code follows ADR-030 (<UNIT>-<PLACE><NN>): while the user
- * has not typed a code, it is suggested from the unit + place via the API (next free number).
+ * Create (site undefined) or edit a site. The code follows ADR-030/031 (<PARTNER>-<PLACE><NN>, the
+ * partner of the chosen unit): while the user has not typed a code, it is suggested from the partner +
+ * place via the API (next free number).
  */
 export function SiteFormDialog({
   orgId,
@@ -58,6 +60,7 @@ export function SiteFormDialog({
   const { t } = useTranslation()
   const save = useSaveSite(orgId)
   const units = useBusinessUnits(orgId)
+  const partners = usePartners(orgId)
   const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const [f, setF] = useState({
     code: site?.code ?? '',
@@ -79,24 +82,26 @@ export function SiteFormDialog({
   const codeTouched = useRef(Boolean(site))
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
-  const unitCode = units.data?.find((u) => u.id === f.businessUnitId)?.code ?? null
+  const unit = units.data?.find((u) => u.id === f.businessUnitId)
+  const partnerId = unit?.partnerId ?? null
+  const partnerCode = unit?.partnerCode ?? null
 
   // The place is derived from the name/address until the user types one.
   const effectivePlace = placeTouched ? place : placeCode(`${f.name} ${f.address}`).slice(0, 4)
 
   const suggest = async (force = false) => {
     if ((!force && codeTouched.current) || !/^[A-Z]{2,4}$/.test(effectivePlace)) return
-    const code = await suggestSiteCode(orgId, f.businessUnitId, effectivePlace)
+    const code = await suggestSiteCode(orgId, partnerId, effectivePlace)
     if (code) setF((cur) => ({ ...cur, code }))
     if (force) codeTouched.current = false
   }
   useEffect(() => {
     void suggest()
-    // re-suggest when the unit or place changes (not on every keystroke elsewhere)
+    // re-suggest when the partner or place changes (not on every keystroke elsewhere)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [f.businessUnitId, effectivePlace])
+  }, [partnerId, effectivePlace])
 
-  const codeProblem = f.code ? siteCodeError(f.code, unitCode) : null
+  const codeProblem = f.code ? siteCodeError(f.code, partnerCode) : null
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -135,10 +140,16 @@ export function SiteFormDialog({
                   onChange={(e) => setF({ ...f, businessUnitId: e.target.value || null })}
                 >
                   <option value="">{t('units.shared')}</option>
-                  {(units.data ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.code} · {u.name}
-                    </option>
+                  {(partners.data ?? []).map((pt) => (
+                    <optgroup key={pt.id} label={`${pt.code} · ${pt.name}`}>
+                      {(units.data ?? [])
+                        .filter((u) => u.partnerId === pt.id)
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {pt.code} › {u.code} · {u.name}
+                          </option>
+                        ))}
+                    </optgroup>
                   ))}
                 </NativeSelect>
               )}
@@ -192,7 +203,7 @@ export function SiteFormDialog({
               hint={t('sites.codeRule')}
               error={
                 codeProblem === 'prefix'
-                  ? `${t('sites.codeRule')} (${unitCode ?? 'SHARED'}-…)`
+                  ? `${t('sites.codeRule')} (${partnerCode ?? 'SHARED'}-…)`
                   : codeProblem === 'format'
                     ? t('sites.codeRule')
                     : undefined

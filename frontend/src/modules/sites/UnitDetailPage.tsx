@@ -1,7 +1,7 @@
 import { Building2, MoreHorizontal, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { useOrganization } from '@/app/orgs'
@@ -21,7 +21,7 @@ import { SitesTable } from './SitesTable'
 import { useBusinessUnit, useDeleteUnit } from './sites'
 import { UnitFormDialog } from './UnitFormDialog'
 
-/** Business unit detail (ADR-026): its details and its sites; owner/admin edit or delete it. */
+/** Business unit detail (ADR-031): its partner, details and sites; owner/admin edit or delete it. */
 export function UnitDetailPage() {
   const { t } = useTranslation()
   const { orgId = '', unitId = '' } = useParams()
@@ -33,7 +33,11 @@ export function UnitDetailPage() {
   const [addingSite, setAddingSite] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const u = unit.data
-  useBreadcrumbs([{ label: t('units.hub'), to: `/o/${orgId}/sites` }, { label: u?.code ?? '…' }])
+  useBreadcrumbs([
+    { label: t('units.hub'), to: `/o/${orgId}/sites` },
+    u ? { label: u.partnerCode, to: `/o/${orgId}/partners/${u.partnerId}` } : { label: '…' },
+    { label: u?.code ?? '…' },
+  ])
 
   const role = org.data?.membership.role
   const canAdmin = role === 'owner' || role === 'admin'
@@ -54,7 +58,13 @@ export function UnitDetailPage() {
               {u.code} <span className="font-normal text-muted-foreground">· {u.name}</span>
             </h1>
             <p className="text-muted-foreground">
-              {t(`units.relationOf.${u.relation}`, { org: org.data?.organization.name ?? '' })}
+              {t('units.partner')}:{' '}
+              <Link
+                to={`/o/${orgId}/partners/${u.partnerId}`}
+                className="hover:text-foreground hover:underline"
+              >
+                {u.partnerCode} · {u.partnerName}
+              </Link>
             </p>
           </div>
         </div>

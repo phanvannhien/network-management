@@ -59,7 +59,7 @@ func tooLong(s string, n int) bool { return utf8.RuneCountInString(s) > n }
 
 var (
 	siteKinds = []string{"office", "factory", "datacenter", "warehouse", "store", "other"}
-	// ADR-030: <UNIT>-<PLACE><NN>, PLACE = 2–4 letters, NN = 2 digits; organization-wide sites use SHARED.
+	// ADR-030/031: <PARTNER>-<PLACE><NN>, PLACE = 2–4 letters, NN = 2 digits; organization-wide sites use SHARED.
 	siteCodeRe = regexp.MustCompile(`^([A-Z][A-Z0-9]{1,7})-([A-Z]{2,4})([0-9]{2})$`)
 	placeRe    = regexp.MustCompile(`^[A-Z]{2,4}$`)
 )
@@ -82,7 +82,7 @@ func validateSite(code, name string, kind *apigen.SiteKind, bu *uuid.UUID, isp, 
 	}
 	switch {
 	case !siteCodeRe.MatchString(f.code):
-		return f, "Mã site phải theo dạng <MÃ ĐƠN VỊ>-<địa điểm 2–4 chữ><2 số>, vd AGRI-BD01 (site dùng chung: SHARED-HCM01)"
+		return f, "Mã site phải theo dạng <MÃ ĐỐI TÁC>-<địa điểm 2–4 chữ><2 số>, vd AGRI-BD01 (site dùng chung: SHARED-HCM01)"
 	case f.name == "" || tooLong(f.name, 200):
 		return f, "Tên site bắt buộc, tối đa 200 ký tự"
 	case !slices.Contains(siteKinds, f.kind):
@@ -120,8 +120,9 @@ func resolveUnit(ctx context.Context, q store.Querier, m tenant.Membership, f si
 	if err != nil {
 		return pgtype.UUID{}, "", fmt.Errorf("load business unit: %w", err)
 	}
-	if prefix != unit.Code {
-		return pgtype.UUID{}, fmt.Sprintf("Mã site của đơn vị %s phải bắt đầu bằng %s-", unit.Name, unit.Code), nil
+	// ADR-031: the prefix is the code of the unit's partner (sites can move between a partner's units).
+	if prefix != unit.PartnerCode {
+		return pgtype.UUID{}, fmt.Sprintf("Mã site của đối tác %s phải bắt đầu bằng %s-", unit.PartnerName, unit.PartnerCode), nil
 	}
 	return unit.ID, "", nil
 }
@@ -158,6 +159,7 @@ func toSite(s store.GetSiteRow, locations, racks int64) apigen.Site {
 	return apigen.Site{
 		Id: uuid.UUID(s.ID.Bytes), Code: s.Code, Name: s.Name, Kind: apigen.SiteKind(s.Kind), BusinessUnitId: bu,
 		BusinessUnitCode: s.BusinessUnitCode, BusinessUnitName: s.BusinessUnitName, Isp: s.Isp,
+		PartnerId: optUUID(s.PartnerID), PartnerCode: s.PartnerCode, PartnerName: s.PartnerName,
 		Address: s.Address, Timezone: s.Timezone,
 		ContactName: s.ContactName, ContactPhone: s.ContactPhone, ContactEmail: s.ContactEmail, Notes: s.Notes,
 		LocationCount: locations, RackCount: racks, Version: s.Version, CreatedAt: s.CreatedAt.Time, UpdatedAt: s.UpdatedAt.Time,
@@ -193,6 +195,9 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 	if req.Params.BusinessUnitId != nil {
 		params.BuFilter = pgUUID(*req.Params.BusinessUnitId)
 	}
+	if req.Params.PartnerId != nil {
+		params.PartnerFilter = pgUUID(*req.Params.PartnerId)
+	}
 	if req.Params.Shared != nil && *req.Params.Shared {
 		params.OnlyShared = true
 	}
@@ -207,6 +212,7 @@ func (s *Server) ListSites(ctx context.Context, req apigen.ListSitesRequestObjec
 			ContactName: r.ContactName, ContactPhone: r.ContactPhone, ContactEmail: r.ContactEmail, Notes: r.Notes,
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt, Version: r.Version, Kind: r.Kind, BusinessUnitID: r.BusinessUnitID,
 			Isp: r.Isp, BusinessUnitCode: r.BusinessUnitCode, BusinessUnitName: r.BusinessUnitName,
+			PartnerID: r.PartnerID, PartnerCode: r.PartnerCode, PartnerName: r.PartnerName,
 		}, r.LocationCount, r.RackCount))
 	}
 	return apigen.ListSites200JSONResponse(out), nil
@@ -242,15 +248,15 @@ func (s *Server) SuggestSiteCode(ctx context.Context, req apigen.SuggestSiteCode
 		return apigen.SuggestSiteCode400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Mã địa điểm gồm 2–4 chữ cái, vd HY"}}, nil
 	}
 	prefix := sharedPrefix
-	if req.Params.BusinessUnitId != nil {
-		unit, err := s.q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(*req.Params.BusinessUnitId), OrganizationID: m.OrgID})
+	if req.Params.PartnerId != nil {
+		partner, err := s.q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(*req.Params.PartnerId), OrganizationID: m.OrgID})
 		if errors.Is(err, pgx.ErrNoRows) {
-			return apigen.SuggestSiteCode404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy đơn vị"}}, nil
+			return apigen.SuggestSiteCode404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy đối tác"}}, nil
 		}
 		if err != nil {
-			return nil, fmt.Errorf("load business unit: %w", err)
+			return nil, fmt.Errorf("load partner: %w", err)
 		}
-		prefix = unit.Code
+		prefix = partner.Code
 	}
 	base := prefix + "-" + place
 	codes, err := s.q.ListSiteCodesWithPrefix(ctx, store.ListSiteCodesWithPrefixParams{OrganizationID: m.OrgID, Prefix: base})
@@ -1015,4 +1021,12 @@ func (s *Server) DeleteRack(ctx context.Context, req apigen.DeleteRackRequestObj
 		return nil, err
 	}
 	return apigen.DeleteRack204Response{}, nil
+}
+
+func optUUID(id pgtype.UUID) *uuid.UUID {
+	if !id.Valid {
+		return nil
+	}
+	u := uuid.UUID(id.Bytes)
+	return &u
 }

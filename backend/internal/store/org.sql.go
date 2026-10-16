@@ -43,6 +43,7 @@ const adminListOrganizations = `-- name: AdminListOrganizations :many
 SELECT o.id, o.name, o.kind, o.notes, o.created_at, o.updated_at, o.version,
        (SELECT count(*) FROM memberships m WHERE m.organization_id = o.id) AS member_count,
        -- Counts only (no content): the system area shows each customer's size without reading its data (ADR-023).
+       (SELECT count(*) FROM partners pa WHERE pa.organization_id = o.id AND pa.deleted_at IS NULL)::bigint AS partner_count,
        (SELECT count(*) FROM business_units b WHERE b.organization_id = o.id AND b.deleted_at IS NULL)::bigint AS unit_count,
        (SELECT count(*) FROM sites s WHERE s.organization_id = o.id AND s.deleted_at IS NULL)::bigint AS site_count
 FROM organizations o
@@ -51,16 +52,17 @@ ORDER BY lower(o.name), o.id
 `
 
 type AdminListOrganizationsRow struct {
-	ID          pgtype.UUID
-	Name        string
-	Kind        string
-	Notes       string
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-	Version     int32
-	MemberCount int64
-	UnitCount   int64
-	SiteCount   int64
+	ID           pgtype.UUID
+	Name         string
+	Kind         string
+	Notes        string
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Version      int32
+	MemberCount  int64
+	PartnerCount int64
+	UnitCount    int64
+	SiteCount    int64
 }
 
 // System admin (not tenant-scoped by design: managing the list of organizations).
@@ -82,6 +84,7 @@ func (q *Queries) AdminListOrganizations(ctx context.Context) ([]AdminListOrgani
 			&i.UpdatedAt,
 			&i.Version,
 			&i.MemberCount,
+			&i.PartnerCount,
 			&i.UnitCount,
 			&i.SiteCount,
 		); err != nil {

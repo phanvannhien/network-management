@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
-	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -18,37 +16,29 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
 
-// Business units (P1-07, ADR-026): the organization's subsidiaries / partners / customers, each with its
-// own sites. Managed by organization owners/admins (unit admins arrive with ADR-029, P1-07c).
+// Business units (P1-07b, ADR-031): units belong to exactly one partner of the organization (fixed after
+// creation) and own the sites. Managed by organization owners/admins (unit/partner admins arrive with P1-07c).
 
-var (
-	unitCodeRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,7}$`)
-	relations  = []string{"subsidiary", "partner", "customer"}
+const (
+	msgUnitNotFound  = "Không tìm thấy đơn vị"
+	msgUnitForbidden = "Chỉ owner/admin được quản lý đơn vị"
+	msgUnitDuplicate = "Mã đơn vị đã tồn tại trong đối tác"
 )
 
-const msgUnitNotFound = "Không tìm thấy đơn vị"
-
 type unitFields struct {
-	code, name, relation, contactName, contactPhone, contactEmail, notes string
+	code, name, contactName, contactPhone, contactEmail, notes string
 }
 
-func validateUnit(code, name string, relation *apigen.BusinessUnitRelation, contactName, contactPhone, contactEmail, notes *string) (unitFields, string) {
+func validateUnit(code, name string, contactName, contactPhone, contactEmail, notes *string) (unitFields, string) {
 	f := unitFields{
-		code: strings.ToUpper(strings.TrimSpace(code)), name: strings.TrimSpace(name), relation: "subsidiary",
+		code: strings.ToUpper(strings.TrimSpace(code)), name: strings.TrimSpace(name),
 		contactName: str(contactName), contactPhone: str(contactPhone), contactEmail: str(contactEmail), notes: str(notes),
 	}
-	if relation != nil {
-		f.relation = string(*relation)
-	}
 	switch {
-	case !unitCodeRe.MatchString(f.code):
-		return f, "Mã đơn vị gồm 2–8 ký tự A–Z, 0–9, bắt đầu bằng chữ (vd AGRI)"
-	case f.code == sharedPrefix:
-		return f, "SHARED là tiền tố dành cho site dùng chung, không dùng làm mã đơn vị"
+	case !entityCodeRe.MatchString(f.code):
+		return f, "Mã đơn vị gồm 2–8 ký tự A–Z, 0–9, bắt đầu bằng chữ (vd MAIN)"
 	case f.name == "" || tooLong(f.name, 200):
 		return f, "Tên đơn vị bắt buộc, tối đa 200 ký tự"
-	case !slices.Contains(relations, f.relation):
-		return f, "Loại quan hệ không hợp lệ"
 	case tooLong(f.contactName, 200) || tooLong(f.contactPhone, 50) || tooLong(f.notes, 2000):
 		return f, "Một trường vượt quá độ dài cho phép"
 	}
@@ -61,9 +51,9 @@ func validateUnit(code, name string, relation *apigen.BusinessUnitRelation, cont
 }
 
 type unitSnapshot struct {
+	PartnerID    string `json:"partnerId"`
 	Code         string `json:"code"`
 	Name         string `json:"name"`
-	Relation     string `json:"relation"`
 	ContactName  string `json:"contactName"`
 	ContactPhone string `json:"contactPhone"`
 	ContactEmail string `json:"contactEmail"`
@@ -71,22 +61,22 @@ type unitSnapshot struct {
 }
 
 func snapUnit(u store.BusinessUnit) unitSnapshot {
-	return unitSnapshot{u.Code, u.Name, u.Relation, u.ContactName, u.ContactPhone, u.ContactEmail, u.Notes}
+	return unitSnapshot{uuidStr(u.PartnerID), u.Code, u.Name, u.ContactName, u.ContactPhone, u.ContactEmail, u.Notes}
 }
 
 func unitFromRow(r store.GetBusinessUnitRow) store.BusinessUnit {
 	return store.BusinessUnit{
-		ID: r.ID, OrganizationID: r.OrganizationID, Code: r.Code, Name: r.Name, Relation: r.Relation,
+		ID: r.ID, OrganizationID: r.OrganizationID, PartnerID: r.PartnerID, Code: r.Code, Name: r.Name,
 		ContactName: r.ContactName, ContactPhone: r.ContactPhone, ContactEmail: r.ContactEmail, Notes: r.Notes,
 		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt, Version: r.Version,
 	}
 }
 
-func toUnit(u store.BusinessUnit, sites int64) apigen.BusinessUnit {
+func toUnit(u store.BusinessUnit, partnerCode, partnerName string, sites int64) apigen.BusinessUnit {
 	return apigen.BusinessUnit{
-		Id: uuid.UUID(u.ID.Bytes), Code: u.Code, Name: u.Name, Relation: apigen.BusinessUnitRelation(u.Relation),
-		ContactName: u.ContactName, ContactPhone: u.ContactPhone, ContactEmail: u.ContactEmail, Notes: u.Notes,
-		SiteCount: sites, Version: u.Version, CreatedAt: u.CreatedAt.Time,
+		Id: uuid.UUID(u.ID.Bytes), PartnerId: uuid.UUID(u.PartnerID.Bytes), PartnerCode: partnerCode, PartnerName: partnerName,
+		Code: u.Code, Name: u.Name, ContactName: u.ContactName, ContactPhone: u.ContactPhone, ContactEmail: u.ContactEmail,
+		Notes: u.Notes, SiteCount: sites, Version: u.Version, CreatedAt: u.CreatedAt.Time,
 	}
 }
 
@@ -95,13 +85,17 @@ func (s *Server) ListBusinessUnits(ctx context.Context, req apigen.ListBusinessU
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.q.ListBusinessUnits(ctx, m.OrgID)
+	params := store.ListBusinessUnitsParams{OrganizationID: m.OrgID}
+	if req.Params.PartnerId != nil {
+		params.PartnerFilter = pgUUID(*req.Params.PartnerId)
+	}
+	rows, err := s.q.ListBusinessUnits(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("list business units: %w", err)
 	}
 	out := apigen.BusinessUnitList{BusinessUnits: make([]apigen.BusinessUnit, 0, len(rows))}
 	for _, r := range rows {
-		out.BusinessUnits = append(out.BusinessUnits, toUnit(unitFromRow(store.GetBusinessUnitRow(r)), r.SiteCount))
+		out.BusinessUnits = append(out.BusinessUnits, toUnit(unitFromRow(store.GetBusinessUnitRow(r)), r.PartnerCode, r.PartnerName, r.SiteCount))
 	}
 	return apigen.ListBusinessUnits200JSONResponse(out), nil
 }
@@ -118,7 +112,7 @@ func (s *Server) GetBusinessUnit(ctx context.Context, req apigen.GetBusinessUnit
 	if err != nil {
 		return nil, fmt.Errorf("get business unit: %w", err)
 	}
-	return apigen.GetBusinessUnit200JSONResponse(toUnit(unitFromRow(r), r.SiteCount)), nil
+	return apigen.GetBusinessUnit200JSONResponse(toUnit(unitFromRow(r), r.PartnerCode, r.PartnerName, r.SiteCount)), nil
 }
 
 func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusinessUnitRequestObject) (apigen.CreateBusinessUnitResponseObject, error) {
@@ -127,23 +121,33 @@ func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusine
 		return nil, err
 	}
 	if !m.CanAdmin() {
-		return apigen.CreateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được quản lý đơn vị"}}, nil
+		return apigen.CreateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
 	}
 	if req.Body == nil {
 		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	b := req.Body
-	f, msg := validateUnit(b.Code, b.Name, b.Relation, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
+	f, msg := validateUnit(b.Code, b.Name, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
 	if msg != "" {
 		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
 	var (
-		unit      store.BusinessUnit
-		duplicate bool
+		unit                 store.BusinessUnit
+		partner              store.GetPartnerRow
+		duplicate, noPartner bool
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
+		// The partner must be a live partner of this organization (the composite FK backs this up).
+		partner, err = q.GetPartner(ctx, store.GetPartnerParams{ID: pgUUID(b.PartnerId), OrganizationID: m.OrgID})
+		if errors.Is(err, pgx.ErrNoRows) {
+			noPartner = true
+			return errRollback
+		}
+		if err != nil {
+			return fmt.Errorf("load partner: %w", err)
+		}
 		unit, err = q.CreateBusinessUnit(ctx, store.CreateBusinessUnitParams{
-			OrganizationID: m.OrgID, Code: f.code, Name: f.name, Relation: f.relation,
+			OrganizationID: m.OrgID, PartnerID: partner.ID, Code: f.code, Name: f.name,
 			ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
 		})
 		if isUniqueViolation(err) {
@@ -158,13 +162,15 @@ func (s *Server) CreateBusinessUnit(ctx context.Context, req apigen.CreateBusine
 			ObjectID: uuidStr(unit.ID), After: snapUnit(unit), Meta: infoFrom(ctx).meta,
 		})
 	})
-	if duplicate {
-		return apigen.CreateBusinessUnit409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: "Mã đơn vị đã tồn tại trong tổ chức"}}, nil
-	}
-	if err != nil {
+	switch {
+	case noPartner:
+		return apigen.CreateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msgPartnerNotFound}}, nil
+	case duplicate:
+		return apigen.CreateBusinessUnit409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: msgUnitDuplicate}}, nil
+	case err != nil:
 		return nil, err
 	}
-	return apigen.CreateBusinessUnit201JSONResponse(toUnit(unit, 0)), nil
+	return apigen.CreateBusinessUnit201JSONResponse(toUnit(unit, partner.Code, partner.Name, 0)), nil
 }
 
 func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusinessUnitRequestObject) (apigen.UpdateBusinessUnitResponseObject, error) {
@@ -176,15 +182,15 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 		return apigen.UpdateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
 	}
 	b := req.Body
-	f, msg := validateUnit(b.Code, b.Name, b.Relation, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
+	f, msg := validateUnit(b.Code, b.Name, b.ContactName, b.ContactPhone, b.ContactEmail, b.Notes)
 	var (
 		updated             store.BusinessUnit
-		sites               int64
+		before              store.GetBusinessUnitRow
 		notFound, forbidden bool
 		conflict            string
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
-		before, err := q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(req.BusinessUnitId), OrganizationID: m.OrgID})
+		before, err = q.GetBusinessUnit(ctx, store.GetBusinessUnitParams{ID: pgUUID(req.BusinessUnitId), OrganizationID: m.OrgID})
 		if errors.Is(err, pgx.ErrNoRows) {
 			notFound = true
 			return errRollback
@@ -199,8 +205,9 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 		if msg != "" {
 			return errRollback
 		}
+		// The unit code is not part of site codes (ADR-031), so renaming it touches nothing else.
 		updated, err = q.UpdateBusinessUnit(ctx, store.UpdateBusinessUnitParams{
-			ID: before.ID, OrganizationID: m.OrgID, Version: b.Version, Code: f.code, Name: f.name, Relation: f.relation,
+			ID: before.ID, OrganizationID: m.OrgID, Version: b.Version, Code: f.code, Name: f.name,
 			ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
 		})
 		switch {
@@ -208,37 +215,21 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 			conflict = msgStale
 			return errRollback
 		case isUniqueViolation(err):
-			conflict = "Mã đơn vị đã tồn tại trong tổ chức"
+			conflict = msgUnitDuplicate
 			return errRollback
 		case err != nil:
 			return fmt.Errorf("update business unit: %w", err)
 		}
-		after := map[string]any{"unit": snapUnit(updated)}
-		if updated.Code != before.Code {
-			// ADR-030: site codes carry the unit code — rename their prefix in the same transaction.
-			n, err := q.RenameUnitSitePrefix(ctx, store.RenameUnitSitePrefixParams{
-				OrganizationID: m.OrgID, ID: before.ID, OldCode: before.Code, NewCode: updated.Code,
-			})
-			if isUniqueViolation(err) {
-				conflict = "Đổi mã làm trùng mã site đang có"
-				return errRollback
-			}
-			if err != nil {
-				return fmt.Errorf("rename site codes: %w", err)
-			}
-			after["renamedSites"] = n
-		}
-		sites = before.SiteCount
 		return audit.Write(ctx, q, audit.Entry{
 			OrganizationID: m.OrgID, Actor: m.UserID, Action: "business_unit.update", ObjectType: "business_unit",
-			ObjectID: uuidStr(before.ID), Before: snapUnit(unitFromRow(before)), After: after, Meta: infoFrom(ctx).meta,
+			ObjectID: uuidStr(before.ID), Before: snapUnit(unitFromRow(before)), After: snapUnit(updated), Meta: infoFrom(ctx).meta,
 		})
 	})
 	switch {
 	case notFound:
 		return apigen.UpdateBusinessUnit404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgUnitNotFound}}, nil
 	case forbidden:
-		return apigen.UpdateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được quản lý đơn vị"}}, nil
+		return apigen.UpdateBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
 	case msg != "":
 		return apigen.UpdateBusinessUnit400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	case conflict != "":
@@ -246,7 +237,7 @@ func (s *Server) UpdateBusinessUnit(ctx context.Context, req apigen.UpdateBusine
 	case err != nil:
 		return nil, err
 	}
-	return apigen.UpdateBusinessUnit200JSONResponse(toUnit(updated, sites)), nil
+	return apigen.UpdateBusinessUnit200JSONResponse(toUnit(updated, before.PartnerCode, before.PartnerName, before.SiteCount)), nil
 }
 
 func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusinessUnitRequestObject) (apigen.DeleteBusinessUnitResponseObject, error) {
@@ -287,7 +278,7 @@ func (s *Server) DeleteBusinessUnit(ctx context.Context, req apigen.DeleteBusine
 	case notFound:
 		return apigen.DeleteBusinessUnit404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgUnitNotFound}}, nil
 	case forbidden:
-		return apigen.DeleteBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Chỉ owner/admin được quản lý đơn vị"}}, nil
+		return apigen.DeleteBusinessUnit403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgUnitForbidden}}, nil
 	case conflict != "":
 		return apigen.DeleteBusinessUnit409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: conflict}}, nil
 	case err != nil:

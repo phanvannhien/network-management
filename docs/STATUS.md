@@ -5,6 +5,38 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-07b Cấp Đối tác (ADR-031)
+- Đã làm:
+  - **Migration 000009:** bảng `business_units` cũ đổi tên thành `partners` (giữ id, mã, quan hệ, liên hệ); bảng
+    `business_units` mới (`partner_id` bắt buộc, FK ghép `(partner_id, organization_id)`, mã duy nhất trong đối tác);
+    mỗi đối tác sinh đơn vị `MAIN` và mọi site chuyển sang đơn vị đó — mã site không đổi. Down migration trả lại như cũ
+    (đã thử up/down trên DB nháp có dữ liệu).
+  - **API:** `/partners` (CRUD, owner/admin; xóa bị chặn khi còn đơn vị; đổi mã đối tác đổi tiền tố mã mọi site của đối tác
+    trong cùng transaction), `/business-units` (CRUD, lọc `partnerId`; đối tác chọn lúc tạo, không đổi sau; xóa bị chặn khi còn
+    site; đổi mã đơn vị không ảnh hưởng site). Site trả thêm `partnerId/partnerCode/partnerName`, lọc `partnerId`; mã site
+    kiểm tra tiền tố = mã **đối tác** của đơn vị; `next-code` nhận `partnerId`. Admin hệ thống thấy thêm số đối tác. Audit
+    `partner.*`, `business_unit.*`.
+  - **Giao diện:** "Đơn vị & Sites" có 3 tab Đối tác / Đơn vị / Sites; trang đối tác (thông tin, bảng đơn vị, bảng site,
+    nút Thêm đơn vị điền sẵn đối tác); trang đơn vị hiện đối tác (link); breadcrumb Đơn vị & Sites › AGRI › MAIN › site;
+    form đơn vị chọn đối tác (khóa khi sửa); form site chọn đơn vị nhóm theo đối tác, gợi ý mã theo đối tác; bảng site có
+    cột + bộ lọc Đối tác, bộ lọc đơn vị ghi `AGRI › MAIN` (mã đơn vị trùng giữa các đối tác); Ctrl+K có nhóm Đối tác;
+    trang Tất cả tổ chức có cột Đối tác.
+- Test / cách kiểm tra:
+  - Go: `partner_test.go` thay `business_unit_test.go` — test chéo tổ chức cho mọi endpoint đối tác/đơn vị (kể cả gắn đơn vị
+    vào đối tác của tổ chức khác, lọc `partnerId` của tổ chức khác); quy tắc mã đối tác/đơn vị; mã site theo đối tác (mã đơn
+    vị làm tiền tố bị từ chối); next-code; lọc; đổi mã đối tác đổi mã site, không đụng site dùng chung; đổi mã đơn vị không
+    đổi mã site; xóa từ dưới lên; số dòng audit. `org_test` kiểm tra số đối tác/đơn vị/site.
+  - Mutation check: so tiền tố với mã đơn vị → test fail; bỏ chặn xóa đơn vị còn site → test fail; form site dùng mã đơn vị
+    làm tiền tố → test frontend fail.
+  - Vitest 157 pass (4 test mới cho đối tác/đơn vị). Ảnh chụp + axe 10 trang × sáng/tối: 0 lỗi. `make check` pass.
+  - Dev DB: chạy `make migrate-up` (000008, 000009) rồi khởi động lại `make dev-api`.
+- Còn dở / lỗi đã biết:
+  - Quản lý đối tác/đơn vị vẫn chỉ owner/admin tổ chức; partner_admin/unit_admin và `site_scope` → thay ở P1-07c.
+  - Trang đối tác chỉ liệt kê site (thêm site từ trang đơn vị — đơn vị quyết định chủ sở hữu).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-07c** Phân quyền theo đối tác/đơn vị & chia sẻ — sẽ trình bày kế hoạch trước (nặng về bảo mật).
+
 ## 2026-10-16 — Thêm cấp Đối tác: Tổ chức → Đối tác → Đơn vị (ADR-031)
 - Đã làm (chỉ tài liệu, chưa code):
   - **ADR-031:** đơn vị bắt buộc thuộc một đối tác; quan hệ với tổ chức chuyển lên đối tác; mã đối tác theo quy tắc cũ của mã

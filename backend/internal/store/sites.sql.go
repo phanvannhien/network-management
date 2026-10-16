@@ -285,9 +285,11 @@ func (q *Queries) GetRack(ctx context.Context, arg GetRackParams) (Rack, error) 
 }
 
 const getSite = `-- name: GetSite :one
-SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version, s.kind, s.business_unit_id, s.isp, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name
+SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version, s.kind, s.business_unit_id, s.isp, COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
+       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name
 FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
+LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.id = $1 AND s.organization_id = $2 AND s.deleted_at IS NULL
   AND ($3::uuid[] IS NULL OR s.id = ANY ($3::uuid[]))
 `
@@ -318,6 +320,9 @@ type GetSiteRow struct {
 	Isp              string
 	BusinessUnitCode string
 	BusinessUnitName string
+	PartnerID        pgtype.UUID
+	PartnerCode      string
+	PartnerName      string
 }
 
 func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error) {
@@ -343,6 +348,9 @@ func (q *Queries) GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, e
 		&i.Isp,
 		&i.BusinessUnitCode,
 		&i.BusinessUnitName,
+		&i.PartnerID,
+		&i.PartnerCode,
+		&i.PartnerName,
 	)
 	return i, err
 }
@@ -466,14 +474,17 @@ const listSites = `-- name: ListSites :many
 
 SELECT s.id, s.organization_id, s.code, s.name, s.address, s.timezone, s.contact_name, s.contact_phone, s.contact_email, s.notes, s.deleted_at, s.created_at, s.updated_at, s.version, s.kind, s.business_unit_id, s.isp,
        COALESCE(b.code, '')::text AS business_unit_code, COALESCE(b.name, '')::text AS business_unit_name,
+       b.partner_id, COALESCE(p.code, '')::text AS partner_code, COALESCE(p.name, '')::text AS partner_name,
        (SELECT count(*) FROM locations l WHERE l.site_id = s.id)::bigint AS location_count,
        (SELECT count(*) FROM racks r WHERE r.site_id = s.id)::bigint AS rack_count
 FROM sites s
 LEFT JOIN business_units b ON b.id = s.business_unit_id
+LEFT JOIN partners p ON p.id = b.partner_id
 WHERE s.organization_id = $1 AND s.deleted_at IS NULL
   AND ($2::uuid[] IS NULL OR s.id = ANY ($2::uuid[]))
   AND ($3::uuid IS NULL OR s.business_unit_id = $3)
-  AND (NOT $4::boolean OR s.business_unit_id IS NULL)
+  AND ($4::uuid IS NULL OR b.partner_id = $4)
+  AND (NOT $5::boolean OR s.business_unit_id IS NULL)
 ORDER BY s.code
 `
 
@@ -481,6 +492,7 @@ type ListSitesParams struct {
 	OrganizationID pgtype.UUID
 	Scope          []pgtype.UUID
 	BuFilter       pgtype.UUID
+	PartnerFilter  pgtype.UUID
 	OnlyShared     bool
 }
 
@@ -504,6 +516,9 @@ type ListSitesRow struct {
 	Isp              string
 	BusinessUnitCode string
 	BusinessUnitName string
+	PartnerID        pgtype.UUID
+	PartnerCode      string
+	PartnerName      string
 	LocationCount    int64
 	RackCount        int64
 }
@@ -516,6 +531,7 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSit
 		arg.OrganizationID,
 		arg.Scope,
 		arg.BuFilter,
+		arg.PartnerFilter,
 		arg.OnlyShared,
 	)
 	if err != nil {
@@ -545,6 +561,9 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]ListSit
 			&i.Isp,
 			&i.BusinessUnitCode,
 			&i.BusinessUnitName,
+			&i.PartnerID,
+			&i.PartnerCode,
+			&i.PartnerName,
 			&i.LocationCount,
 			&i.RackCount,
 		); err != nil {

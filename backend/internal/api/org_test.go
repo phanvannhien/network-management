@@ -161,14 +161,15 @@ func TestAdminOrganizations(t *testing.T) {
 	if n := len(list["organizations"].([]any)); n != 4 {
 		t.Fatalf("admin list = %d orgs, want 4", n)
 	}
-	// Unit / site counts (counts only — the system admin is not a member of OrgA).
-	mustCreate(t, fx.A, unitsPath(fx.OrgA), map[string]any{"code": "FOOD", "name": "Food"})
+	// Partner / unit / site counts (counts only — the system admin is not a member of OrgA).
+	food, _ := mustPartnerUnit(t, fx.A, fx.OrgA, "FOOD")
+	mustCreate(t, fx.A, unitsPath(fx.OrgA), map[string]any{"code": "HN", "name": "Food HN", "partnerId": food})
 	mustCreate(t, fx.A, sitesPath(fx.OrgA), map[string]any{"code": "SHARED-HCM01", "name": "IDC"})
 	_, list = root.Do("GET", "/api/admin/organizations", nil)
 	for _, o := range list["organizations"].([]any) {
 		org := o.(map[string]any)
-		if org["id"] == fx.OrgA.String() && (org["unitCount"] != float64(1) || org["siteCount"] != float64(1)) {
-			t.Errorf("OrgA counts = %v / %v, want 1 / 1", org["unitCount"], org["siteCount"])
+		if org["id"] == fx.OrgA.String() && (org["partnerCount"] != float64(1) || org["unitCount"] != float64(2) || org["siteCount"] != float64(1)) {
+			t.Errorf("OrgA counts = %v / %v / %v, want 1 / 2 / 1", org["partnerCount"], org["unitCount"], org["siteCount"])
 		}
 	}
 
