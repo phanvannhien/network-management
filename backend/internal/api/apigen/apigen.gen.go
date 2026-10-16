@@ -244,7 +244,13 @@ type AdminOrganization struct {
 	MemberCount int64              `json:"memberCount"`
 	Name        string             `json:"name"`
 	Notes       string             `json:"notes"`
-	Version     int32              `json:"version"`
+
+	// SiteCount Live sites (count only)
+	SiteCount int64 `json:"siteCount"`
+
+	// UnitCount Live business units (count only)
+	UnitCount int64 `json:"unitCount"`
+	Version   int32 `json:"version"`
 }
 
 // AdminOrganizationList defines model for AdminOrganizationList.

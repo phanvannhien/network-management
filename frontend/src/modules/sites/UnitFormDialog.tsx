@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useOrganization } from '@/app/orgs'
 import { UNIT_RELATIONS, useSaveUnit, type BusinessUnit } from './sites'
 
 type Relation = (typeof UNIT_RELATIONS)[number]
@@ -31,6 +32,7 @@ export function UnitFormDialog({
 }) {
   const { t } = useTranslation()
   const save = useSaveUnit(orgId)
+  const org = useOrganization(orgId).data?.organization.name ?? ''
   const [f, setF] = useState({
     code: unit?.code ?? '',
     name: unit?.name ?? '',
@@ -67,7 +69,7 @@ export function UnitFormDialog({
           aria-label={unit ? t('units.edit') : t('units.add')}
         >
           <DialogHeader>
-            <DialogTitle>{unit ? t('units.edit') : t('units.add')}</DialogTitle>
+            <DialogTitle>{unit ? t('units.edit') : t('units.addTo', { org })}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-[180px_1fr] gap-3">
             <FormField
@@ -96,7 +98,7 @@ export function UnitFormDialog({
               )}
             </FormField>
           </div>
-          <FormField label={t('units.relation')}>
+          <FormField label={t('units.relationWith', { org })}>
             {(p) => (
               <NativeSelect
                 {...p}
@@ -105,14 +107,14 @@ export function UnitFormDialog({
               >
                 {UNIT_RELATIONS.map((r) => (
                   <option key={r} value={r}>
-                    {t(`units.relations.${r}`)}
+                    {t(`units.relationOf.${r}`, { org })}
                   </option>
                 ))}
               </NativeSelect>
             )}
           </FormField>
           <fieldset className="grid grid-cols-3 gap-3">
-            <legend className="mb-1 text-form font-medium">{t('units.contact')}</legend>
+            <legend className="mb-1 text-form font-medium">{t('units.contactGroup')}</legend>
             <FormField label={t('sites.contactName')}>
               {(p) => (
                 <Input {...p} maxLength={200} value={f.contactName} onChange={set('contactName')} />

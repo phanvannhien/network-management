@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useOrganization } from '@/app/orgs'
 import { placeCode } from '@/lib/placeCode'
 import {
   SITE_KINDS,
@@ -57,6 +58,7 @@ export function SiteFormDialog({
   const { t } = useTranslation()
   const save = useSaveSite(orgId)
   const units = useBusinessUnits(orgId)
+  const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const [f, setF] = useState({
     code: site?.code ?? '',
     name: site?.name ?? '',
@@ -119,7 +121,7 @@ export function SiteFormDialog({
           aria-label={site ? t('sites.edit') : t('sites.add')}
         >
           <DialogHeader>
-            <DialogTitle>{site ? t('sites.edit') : t('sites.add')}</DialogTitle>
+            <DialogTitle>{site ? t('sites.edit') : t('sites.addTo', { org: orgName })}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <FormField

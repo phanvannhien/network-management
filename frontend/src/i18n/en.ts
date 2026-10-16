@@ -333,6 +333,8 @@ export const en: Strings = {
     saved: 'Changes saved',
   },
   adminOrgs: {
+    units: 'Units',
+    sitesCount: 'Sites',
     title: 'All organizations',
     create: 'Create organization',
     name: 'Name',
@@ -616,6 +618,7 @@ export const en: Strings = {
     admin: 'Manage organizations',
   },
   sites: {
+    addTo: 'Add a site to {{org}}',
     kind: 'Site type',
     siteKinds: {
       office: 'Office',
@@ -701,6 +704,15 @@ export const en: Strings = {
     scopeIgnored: 'Owners/admins are never restricted by site.',
   },
   units: {
+    contactGroup: 'Unit contact',
+    hubOf: 'Units & Sites — {{org}}',
+    addTo: 'Add a unit to {{org}}',
+    relationWith: 'Relation to {{org}}',
+    relationOf: {
+      subsidiary: 'Subsidiary of {{org}}',
+      partner: 'Partner of {{org}}',
+      customer: 'Customer of {{org}}',
+    },
     hub: 'Units & Sites',
     tabUnits: 'Units',
     tabSites: 'Sites',

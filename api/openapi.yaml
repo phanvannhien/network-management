@@ -1518,7 +1518,7 @@ components:
 
     AdminOrganization:
       type: object
-      required: [id, name, kind, notes, memberCount, createdAt, version]
+      required: [id, name, kind, notes, memberCount, unitCount, siteCount, createdAt, version]
       properties:
         id:
           type: string
@@ -1532,6 +1532,14 @@ components:
         memberCount:
           type: integer
           format: int64
+        unitCount:
+          type: integer
+          format: int64
+          description: Live business units (count only)
+        siteCount:
+          type: integer
+          format: int64
+          description: Live sites (count only)
         createdAt:
           type: string
           format: date-time

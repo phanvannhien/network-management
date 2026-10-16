@@ -35,6 +35,7 @@ function UnitsTable({
   onAdd: () => void
 }) {
   const { t } = useTranslation()
+  const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const userId = useSession().data?.user.id ?? ''
   const units = useBusinessUnits(orgId)
   const sites = useSites(orgId)
@@ -75,8 +76,8 @@ function UnitsTable({
     {
       id: 'relation',
       accessorKey: 'relation',
-      header: t('units.relation'),
-      meta: { label: t('units.relation'), width: 140 },
+      header: t('units.relationWith', { org: orgName }),
+      meta: { label: t('units.relationWith', { org: orgName }), width: 180 },
       cell: ({ row }) => t(`units.relations.${row.original.relation}`),
     },
     {
@@ -191,7 +192,7 @@ export function SiteListPage() {
   return (
     <div className="space-y-3 p-4">
       <PageHeader
-        title={t('units.hub')}
+        title={org.data ? t('units.hubOf', { org: org.data.organization.name }) : t('units.hub')}
         actions={
           <>
             {canAdmin && (

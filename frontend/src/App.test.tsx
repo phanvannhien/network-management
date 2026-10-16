@@ -1138,7 +1138,18 @@ describe('business units (P1-07, ADR-026/030)', () => {
     renderAt(`/o/${ORG_ID}/sites`)
     expect(await screen.findByRole('link', { name: 'AGRI' })).toBeInTheDocument()
     expect(screen.getByText(/Dùng chung: 1/)).toBeInTheDocument()
+    // The organization is named: units belong to the organization being viewed (taken from the URL).
+    expect(
+      screen.getByRole('heading', { name: 'Đơn vị & Sites — Văn phòng mẫu' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /Quan hệ với Văn phòng mẫu/ }),
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Thêm đơn vị' }))
+    const unitDialog = await screen.findByRole('dialog', { name: 'Thêm đơn vị vào Văn phòng mẫu' })
+    expect(
+      within(unitDialog).getByRole('option', { name: 'Đối tác của Văn phòng mẫu' }),
+    ).toBeInTheDocument()
     fireEvent.change(await screen.findByLabelText('Mã đơn vị'), { target: { value: 'agri-1' } })
     expect(screen.getByLabelText('Mã đơn vị')).toHaveValue('AGRI1')
     fireEvent.change(screen.getByLabelText('Tên đơn vị'), { target: { value: 'Mẫu Agri' } })
@@ -1165,7 +1176,7 @@ describe('business units (P1-07, ADR-026/030)', () => {
     expect(await screen.findByRole('link', { name: 'AGRI-BD01' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'SHARED-HN01' })).not.toBeInTheDocument() // other unit's / shared sites
     fireEvent.click(screen.getAllByRole('button', { name: 'Thêm site' })[0])
-    const dialog = await screen.findByRole('dialog', { name: 'Thêm site' })
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm site vào Văn phòng mẫu' })
     expect(within(dialog).getByLabelText('Đơn vị')).toHaveValue(UNIT_ID)
     fireEvent.change(within(dialog).getByLabelText('Tên site'), {
       target: { value: 'Nhà máy Bình Định 2' },

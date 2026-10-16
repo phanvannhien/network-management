@@ -776,6 +776,16 @@ export interface components {
             notes: string;
             /** Format: int64 */
             memberCount: number;
+            /**
+             * Format: int64
+             * @description Live business units (count only)
+             */
+            unitCount: number;
+            /**
+             * Format: int64
+             * @description Live sites (count only)
+             */
+            siteCount: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: int32 */

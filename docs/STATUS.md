@@ -5,6 +5,23 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — Làm rõ "tổ chức" trên giao diện; số đơn vị/site trong khu vực Hệ thống
+- Bối cảnh: người dùng hỏi đơn vị thuộc tổ chức nào khi form không có ô chọn tổ chức. Giải thích: tổ chức = khách hàng của
+  bên vận hành (GVN), lấy từ đường dẫn `/o/{orgId}` (ADR-023, không lấy từ body); đơn vị luôn thuộc tổ chức đang mở và
+  "quan hệ" của đơn vị là quan hệ với tổ chức đó, không phải với GVN. Không đổi mô hình dữ liệu.
+- Đã làm:
+  - Giao diện ghi rõ tổ chức: tiêu đề "Đơn vị & Sites — <tổ chức>", dialog "Thêm đơn vị vào <tổ chức>",
+    "Thêm site vào <tổ chức>", nhãn "Quan hệ với <tổ chức>" + lựa chọn "Đối tác của <tổ chức>"…, trang đơn vị ghi
+    "Đối tác của <tổ chức>"; nhóm liên hệ trong form đơn vị đổi thành "Liên hệ của đơn vị" (hết trùng nhãn).
+  - API `GET /admin/organizations` thêm `unitCount`, `siteCount` (chỉ số đếm — system admin không phải thành viên vẫn
+    không đọc nội dung dữ liệu tổ chức, đúng ADR-023); trang Hệ thống › Tất cả tổ chức thêm 2 cột.
+- Test / cách kiểm tra: `make check` pass; test backend số đơn vị/site trong danh sách admin; test frontend tiêu đề, cột,
+  dialog và lựa chọn quan hệ có tên tổ chức. Ảnh `23-*`, `36..38-*`, `42..44-*`; axe-core 0 vấn đề.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-07c Phân quyền theo đơn vị & chia sẻ site (ADR-029) — trình kế hoạch trước khi code.
+
 ## 2026-10-16 — P1-07 hoàn tất: Đơn vị, loại site, site dùng chung, quy tắc mã (ADR-026, ADR-030)
 - Đã làm:
   - Migration 000008: `business_units` (mã theo ADR-030 ép bằng CHECK ở DB, cấm `SHARED`, duy nhất với đơn vị còn sống;

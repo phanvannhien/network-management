@@ -53,7 +53,9 @@ export function UnitDetailPage() {
             <h1 className="text-title font-semibold">
               {u.code} <span className="font-normal text-muted-foreground">· {u.name}</span>
             </h1>
-            <p className="text-muted-foreground">{t(`units.relations.${u.relation}`)}</p>
+            <p className="text-muted-foreground">
+              {t(`units.relationOf.${u.relation}`, { org: org.data?.organization.name ?? '' })}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -331,6 +331,8 @@ export const vi = {
     saved: 'Đã lưu thay đổi',
   },
   adminOrgs: {
+    units: 'Đơn vị',
+    sitesCount: 'Site',
     title: 'Tất cả tổ chức',
     create: 'Tạo tổ chức',
     name: 'Tên',
@@ -609,6 +611,7 @@ export const vi = {
     admin: 'Quản trị tổ chức',
   },
   sites: {
+    addTo: 'Thêm site vào {{org}}',
     kind: 'Loại site',
     siteKinds: {
       office: 'Văn phòng',
@@ -693,6 +696,15 @@ export const vi = {
     scopeIgnored: 'Owner/Admin không bị giới hạn theo site.',
   },
   units: {
+    contactGroup: 'Liên hệ của đơn vị',
+    hubOf: 'Đơn vị & Sites — {{org}}',
+    addTo: 'Thêm đơn vị vào {{org}}',
+    relationWith: 'Quan hệ với {{org}}',
+    relationOf: {
+      subsidiary: 'Công ty con của {{org}}',
+      partner: 'Đối tác của {{org}}',
+      customer: 'Khách hàng của {{org}}',
+    },
     hub: 'Đơn vị & Sites',
     tabUnits: 'Đơn vị',
     tabSites: 'Sites',

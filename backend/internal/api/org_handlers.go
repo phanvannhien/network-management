@@ -168,10 +168,10 @@ func (s *Server) ActivateOrganization(ctx context.Context, req apigen.ActivateOr
 
 // --- System admin (route gated by requireSystemAdmin) ---
 
-func toAdminOrganization(id pgtype.UUID, name, kind, notes string, members int64, created pgtype.Timestamptz, version int32) apigen.AdminOrganization {
+func toAdminOrganization(id pgtype.UUID, name, kind, notes string, members, units, sites int64, created pgtype.Timestamptz, version int32) apigen.AdminOrganization {
 	return apigen.AdminOrganization{
 		Id: uuid.UUID(id.Bytes), Name: name, Kind: apigen.OrganizationKind(kind), Notes: notes,
-		MemberCount: members, CreatedAt: created.Time, Version: version,
+		MemberCount: members, UnitCount: units, SiteCount: sites, CreatedAt: created.Time, Version: version,
 	}
 }
 
@@ -183,7 +183,7 @@ func (s *Server) AdminListOrganizations(ctx context.Context, _ apigen.AdminListO
 	}
 	out := apigen.AdminOrganizationList{Organizations: make([]apigen.AdminOrganization, 0, len(rows))}
 	for _, r := range rows {
-		out.Organizations = append(out.Organizations, toAdminOrganization(r.ID, r.Name, r.Kind, r.Notes, r.MemberCount, r.CreatedAt, r.Version))
+		out.Organizations = append(out.Organizations, toAdminOrganization(r.ID, r.Name, r.Kind, r.Notes, r.MemberCount, r.UnitCount, r.SiteCount, r.CreatedAt, r.Version))
 	}
 	return apigen.AdminListOrganizations200JSONResponse(out), nil
 }
@@ -233,7 +233,7 @@ func (s *Server) AdminCreateOrganization(ctx context.Context, req apigen.AdminCr
 		return nil, err
 	}
 	return apigen.AdminCreateOrganization201JSONResponse(
-		toAdminOrganization(org.ID, org.Name, org.Kind, org.Notes, members, org.CreatedAt, org.Version)), nil
+		toAdminOrganization(org.ID, org.Name, org.Kind, org.Notes, members, 0, 0, org.CreatedAt, org.Version)), nil
 }
 
 // AdminDeleteOrganization soft-deletes an organization (ADR-022): it disappears for everyone, history stays.
