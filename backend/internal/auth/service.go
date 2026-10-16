@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/netip"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/audit"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
@@ -37,11 +37,7 @@ var (
 )
 
 // RequestMeta is request context recorded with sessions and audit entries.
-type RequestMeta struct {
-	IP        netip.Addr
-	UserAgent string
-	RequestID string
-}
+type RequestMeta = audit.Meta
 
 // Session is an authenticated session as seen by handlers.
 type Session struct {
@@ -51,9 +47,10 @@ type Session struct {
 	Email         string
 	DisplayName   string
 	IsSystemAdmin bool
-	MFAEnabled    bool // user has confirmed TOTP enrollment
-	MFAVerified   bool // MFA code entered in this session
-	MFARequired   bool // system admin or org owner/admin (ADR-019)
+	MFAEnabled    bool        // user has confirmed TOTP enrollment
+	MFAVerified   bool        // MFA code entered in this session
+	MFARequired   bool        // system admin or org owner/admin (ADR-019)
+	ActiveOrgID   pgtype.UUID // organization used last; only a default for the UI (ADR-023)
 }
 
 func sessionFromRow(row store.GetSessionRow) Session {
@@ -61,6 +58,7 @@ func sessionFromRow(row store.GetSessionRow) Session {
 		TokenHash: row.TokenHash, CSRFToken: row.CsrfToken, UserID: row.UserID,
 		Email: row.Email, DisplayName: row.DisplayName, IsSystemAdmin: row.IsSystemAdmin,
 		MFAEnabled: row.MfaEnabled, MFAVerified: row.MfaVerifiedAt.Valid, MFARequired: row.MfaRequired,
+		ActiveOrgID: row.ActiveOrganizationID,
 	}
 }
 
@@ -255,15 +253,8 @@ func (s *Service) CreateUser(ctx context.Context, email, displayName, password s
 // audit records an authentication event. Failures are logged, not returned: auditing must not let an
 // attacker turn a DB hiccup into a login bypass, nor block logins entirely. Secrets never go in here.
 func (s *Service) audit(ctx context.Context, actor pgtype.UUID, action, email string, meta RequestMeta) {
-	params := store.InsertAuditLogParams{
-		ActorUserID: actor, Action: action, ObjectType: "user", ObjectID: email,
-		UserAgent: meta.UserAgent, RequestID: meta.RequestID,
-	}
-	if meta.IP.IsValid() {
-		ip := meta.IP
-		params.Ip = &ip
-	}
-	if err := s.q.InsertAuditLog(ctx, params); err != nil {
+	err := audit.Write(ctx, s.q, audit.Entry{Actor: actor, Action: action, ObjectType: "user", ObjectID: email, Meta: meta})
+	if err != nil {
 		s.logger.ErrorContext(ctx, "write audit log", "action", action, "error", err)
 	}
 }

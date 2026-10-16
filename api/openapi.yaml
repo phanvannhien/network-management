@@ -195,6 +195,140 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs:
+    get:
+      operationId: listMyOrganizations
+      summary: Organizations the current user belongs to
+      responses:
+        '200':
+          description: Memberships, sorted by name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyOrganizations'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orgs/{orgId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getOrganization
+      summary: Organization details and the caller's membership
+      responses:
+        '200':
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateOrganization
+      summary: Rename / edit notes (owner, admin). Optimistic lock on version.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/activate:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: activateOrganization
+      summary: Remember this organization as the default to open after sign-in
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Saved
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/organizations:
+    get:
+      operationId: adminListOrganizations
+      summary: All organizations (system admin)
+      responses:
+        '200':
+          description: Organizations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganizationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: adminCreateOrganization
+      summary: Create an organization (system admin)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/organizations/{orgId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    delete:
+      operationId: adminDeleteOrganization
+      summary: Soft-delete an organization (system admin, ADR-022)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Deleted (hidden everywhere; history kept)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   securitySchemes:
     sessionCookie:
@@ -203,6 +337,14 @@ components:
       name: ntb_session
 
   parameters:
+    OrgId:
+      name: orgId
+      in: path
+      required: true
+      description: Organization (tenant) the request is scoped to (ADR-023)
+      schema:
+        type: string
+        format: uuid
     CsrfToken:
       name: X-CSRF-Token
       in: header
@@ -211,6 +353,24 @@ components:
         type: string
 
   responses:
+    NotFound:
+      description: Not found (also returned for organizations the caller does not belong to)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Signed in but not allowed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Not signed in, or wrong credentials
       content:
@@ -272,7 +432,7 @@ components:
 
     AuthSession:
       type: object
-      required: [user, csrfToken, mfa]
+      required: [user, csrfToken, mfa, activeOrganizationId]
       properties:
         user:
           $ref: '#/components/schemas/CurrentUser'
@@ -280,6 +440,10 @@ components:
           type: string
         mfa:
           $ref: '#/components/schemas/MfaStatus'
+        activeOrganizationId:
+          description: Organization used last (UI default only; access is checked per request)
+          type: [string, 'null']
+          format: uuid
 
     MfaStatus:
       type: object
@@ -343,3 +507,143 @@ components:
       properties:
         message:
           type: string
+
+    OrganizationKind:
+      type: string
+      enum: [internal, customer]
+
+    Role:
+      type: string
+      enum: [owner, admin, editor, viewer]
+
+    OrganizationSummary:
+      type: object
+      required: [id, name, kind, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/OrganizationKind'
+        role:
+          $ref: '#/components/schemas/Role'
+
+    MyOrganizations:
+      type: object
+      required: [organizations]
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationSummary'
+
+    Organization:
+      type: object
+      required: [id, name, kind, notes, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/OrganizationKind'
+        notes:
+          type: string
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MembershipInfo:
+      type: object
+      required: [role, permissions]
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        permissions:
+          type: array
+          items:
+            type: string
+
+    OrganizationView:
+      type: object
+      required: [organization, membership]
+      properties:
+        organization:
+          $ref: '#/components/schemas/Organization'
+        membership:
+          $ref: '#/components/schemas/MembershipInfo'
+
+    UpdateOrganizationRequest:
+      type: object
+      required: [name, notes, version]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        notes:
+          type: string
+          maxLength: 2000
+        version:
+          type: integer
+          format: int32
+          description: Version the client last saw; mismatch → 409
+
+    AdminOrganization:
+      type: object
+      required: [id, name, kind, notes, memberCount, createdAt, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/OrganizationKind'
+        notes:
+          type: string
+        memberCount:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int32
+
+    AdminOrganizationList:
+      type: object
+      required: [organizations]
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrganization'
+
+    CreateOrganizationRequest:
+      type: object
+      required: [name, kind]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/OrganizationKind'
+        notes:
+          type: string
+          maxLength: 2000
+        addMeAsOwner:
+          type: boolean
+          default: true
+          description: Make the creating system admin an owner (otherwise nobody can access it until P1-04 adds members)

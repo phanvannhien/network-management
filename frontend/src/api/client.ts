@@ -13,6 +13,27 @@ export const api = createClient<paths>({
 })
 
 export type Health = components['schemas']['Health']
+export type OrganizationSummary = components['schemas']['OrganizationSummary']
+export type OrganizationView = components['schemas']['OrganizationView']
+export type AdminOrganization = components['schemas']['AdminOrganization']
+export type OrganizationKind = components['schemas']['OrganizationKind']
+export type Role = components['schemas']['Role']
+
+/** Extracts the server's user-facing message from an openapi-fetch error result. */
+export function errorMessage(error: unknown, status: number, fallback: string): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message
+  }
+  return `${fallback} (HTTP ${status})`
+}
+
+/** The CSRF header param is required by the spec; the client middleware fills in the real token. */
+export const csrfParam = { header: { 'X-CSRF-Token': '' } }
 export type AuthSession = components['schemas']['AuthSession']
 export type CurrentUser = components['schemas']['CurrentUser']
 

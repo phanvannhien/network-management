@@ -100,6 +100,7 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 
 const getSession = `-- name: GetSession :one
 SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s.mfa_verified_at,
+       s.active_organization_id,
        u.id AS user_id, u.email, u.display_name, u.is_system_admin,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.is_system_admin OR EXISTS (
@@ -114,18 +115,19 @@ WHERE s.token_hash = $1
 `
 
 type GetSessionRow struct {
-	TokenHash     []byte
-	CsrfToken     string
-	CreatedAt     pgtype.Timestamptz
-	LastSeenAt    pgtype.Timestamptz
-	ExpiresAt     pgtype.Timestamptz
-	MfaVerifiedAt pgtype.Timestamptz
-	UserID        pgtype.UUID
-	Email         string
-	DisplayName   string
-	IsSystemAdmin bool
-	MfaEnabled    bool
-	MfaRequired   bool
+	TokenHash            []byte
+	CsrfToken            string
+	CreatedAt            pgtype.Timestamptz
+	LastSeenAt           pgtype.Timestamptz
+	ExpiresAt            pgtype.Timestamptz
+	MfaVerifiedAt        pgtype.Timestamptz
+	ActiveOrganizationID pgtype.UUID
+	UserID               pgtype.UUID
+	Email                string
+	DisplayName          string
+	IsSystemAdmin        bool
+	MfaEnabled           bool
+	MfaRequired          bool
 }
 
 // Returns the live session joined with its (enabled) user and MFA state.
@@ -139,6 +141,7 @@ func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionR
 		&i.LastSeenAt,
 		&i.ExpiresAt,
 		&i.MfaVerifiedAt,
+		&i.ActiveOrganizationID,
 		&i.UserID,
 		&i.Email,
 		&i.DisplayName,

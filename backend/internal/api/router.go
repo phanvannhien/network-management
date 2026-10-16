@@ -11,6 +11,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
 
 // NewRouter returns the root handler; every route lives under /api (nginx proxies /api as-is).
@@ -23,6 +24,8 @@ func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResol
 	r.Use(withSession(server.auth))
 	r.Use(csrfGuard)
 	r.Use(mfaGate)
+	r.Use(requireSystemAdmin)
+	r.Use(tenant.Middleware(server.q, sessionUser))
 
 	strict := apigen.NewStrictHandlerWithOptions(server, nil, apigen.StrictHTTPServerOptions{
 		// Malformed JSON / params: generic 400, no parser internals echoed back.

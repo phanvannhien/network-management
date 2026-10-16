@@ -26,7 +26,7 @@ Phase hiện tại: **Phase 0**
 ### Nền tảng hệ thống
 - [x] **P1-01 Đăng nhập**: argon2id, session cookie HttpOnly/SameSite trong Postgres, logout, khóa tạm khi sai nhiều lần, CSRF, rate limit; lệnh CLI `ntb admin create` tạo system admin đầu tiên.
 - [x] **P1-02 MFA TOTP**: bật/tắt, mã khôi phục; bắt buộc với owner/admin; lưu secret mã hóa (envelope, `NTB_MASTER_KEY`).
-- [ ] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module.
+- [x] **P1-03 Tổ chức & tenant middleware**: CRUD tổ chức (system admin), chuyển tổ chức, middleware lấy organization từ session/route; bộ test mẫu chống truy cập chéo dùng lại cho mọi module.
 - [ ] **P1-04 Người dùng & vai trò**: mời/tạo user, membership nhiều tổ chức, vai trò owner/admin/editor/viewer, giới hạn theo site; kiểm tra quyền ở mọi endpoint.
 - [ ] **P1-05 Audit log**: ghi trước/sau cho thao tác ghi, đăng nhập, export; màn hình xem/lọc audit.
 - [ ] **P1-06 App shell**: layout menu trái theo SRS §2 (module chưa làm thì ẩn), org switcher, Ctrl+K (khung, kết quả bổ sung dần), Dark/Light, i18n vi/en.

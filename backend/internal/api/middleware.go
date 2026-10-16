@@ -5,8 +5,10 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
 )
@@ -124,6 +126,32 @@ func mfaGate(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// requireSystemAdmin guards /api/admin/… (system administration, ADR-023).
+func requireSystemAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/api/admin/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		sess, ok := sessionFrom(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "Chưa đăng nhập")
+			return
+		}
+		if !sess.IsSystemAdmin {
+			writeError(w, http.StatusForbidden, "Chỉ system admin được thực hiện thao tác này")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// sessionUser adapts the session context for the tenant middleware.
+func sessionUser(ctx context.Context) (pgtype.UUID, bool) {
+	sess, ok := sessionFrom(ctx)
+	return sess.UserID, ok
 }
 
 func isSafeMethod(m string) bool {

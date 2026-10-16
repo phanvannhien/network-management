@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
@@ -51,15 +52,84 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for OrganizationKind.
+const (
+	Customer OrganizationKind = "customer"
+	Internal OrganizationKind = "internal"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationKind enum.
+func (e OrganizationKind) Valid() bool {
+	switch e {
+	case Customer:
+		return true
+	case Internal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Role.
+const (
+	Admin  Role = "admin"
+	Editor Role = "editor"
+	Owner  Role = "owner"
+	Viewer Role = "viewer"
+)
+
+// Valid indicates whether the value is a known member of the Role enum.
+func (e Role) Valid() bool {
+	switch e {
+	case Admin:
+		return true
+	case Editor:
+		return true
+	case Owner:
+		return true
+	case Viewer:
+		return true
+	default:
+		return false
+	}
+}
+
+// AdminOrganization defines model for AdminOrganization.
+type AdminOrganization struct {
+	CreatedAt   time.Time          `json:"createdAt"`
+	Id          openapi_types.UUID `json:"id"`
+	Kind        OrganizationKind   `json:"kind"`
+	MemberCount int64              `json:"memberCount"`
+	Name        string             `json:"name"`
+	Notes       string             `json:"notes"`
+	Version     int32              `json:"version"`
+}
+
+// AdminOrganizationList defines model for AdminOrganizationList.
+type AdminOrganizationList struct {
+	Organizations []AdminOrganization `json:"organizations"`
+}
+
 // AuthSession defines model for AuthSession.
 type AuthSession struct {
-	CsrfToken string `json:"csrfToken"`
+	// ActiveOrganizationId Organization used last (UI default only; access is checked per request)
+	ActiveOrganizationId *openapi_types.UUID `json:"activeOrganizationId"`
+	CsrfToken            string              `json:"csrfToken"`
 
 	// Mfa enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
 	// account (system admin / org owner / org admin). The session is fully usable only when
 	// (enabled and verified) or (not enabled and not required).
 	Mfa  MfaStatus   `json:"mfa"`
 	User CurrentUser `json:"user"`
+}
+
+// CreateOrganizationRequest defines model for CreateOrganizationRequest.
+type CreateOrganizationRequest struct {
+	// AddMeAsOwner Make the creating system admin an owner (otherwise nobody can access it until P1-04 adds members)
+	AddMeAsOwner *bool            `json:"addMeAsOwner,omitempty"`
+	Kind         OrganizationKind `json:"kind"`
+	Name         string           `json:"name"`
+	Notes        *string          `json:"notes,omitempty"`
 }
 
 // CurrentUser defines model for CurrentUser.
@@ -92,6 +162,12 @@ type HealthStatus string
 type LoginRequest struct {
 	Email    openapi_types.Email `json:"email"`
 	Password string              `json:"password"`
+}
+
+// MembershipInfo defines model for MembershipInfo.
+type MembershipInfo struct {
+	Permissions []string `json:"permissions"`
+	Role        Role     `json:"role"`
 }
 
 // MfaCode defines model for MfaCode.
@@ -130,17 +206,84 @@ type MfaVerifyRequest struct {
 	RecoveryCode *string `json:"recoveryCode,omitempty"`
 }
 
+// MyOrganizations defines model for MyOrganizations.
+type MyOrganizations struct {
+	Organizations []OrganizationSummary `json:"organizations"`
+}
+
+// Organization defines model for Organization.
+type Organization struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+	Kind      OrganizationKind   `json:"kind"`
+	Name      string             `json:"name"`
+	Notes     string             `json:"notes"`
+	UpdatedAt time.Time          `json:"updatedAt"`
+	Version   int32              `json:"version"`
+}
+
+// OrganizationKind defines model for OrganizationKind.
+type OrganizationKind string
+
+// OrganizationSummary defines model for OrganizationSummary.
+type OrganizationSummary struct {
+	Id   openapi_types.UUID `json:"id"`
+	Kind OrganizationKind   `json:"kind"`
+	Name string             `json:"name"`
+	Role Role               `json:"role"`
+}
+
+// OrganizationView defines model for OrganizationView.
+type OrganizationView struct {
+	Membership   MembershipInfo `json:"membership"`
+	Organization Organization   `json:"organization"`
+}
+
+// Role defines model for Role.
+type Role string
+
+// UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
+type UpdateOrganizationRequest struct {
+	Name  string `json:"name"`
+	Notes string `json:"notes"`
+
+	// Version Version the client last saw; mismatch → 409
+	Version int32 `json:"version"`
+}
+
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
+
+// OrgId defines model for OrgId.
+type OrgId = openapi_types.UUID
+
+// BadRequest defines model for BadRequest.
+type BadRequest = Error
 
 // Conflict defines model for Conflict.
 type Conflict = Error
 
+// Forbidden defines model for Forbidden.
+type Forbidden = Error
+
 // InvalidCode defines model for InvalidCode.
 type InvalidCode = Error
 
+// NotFound defines model for NotFound.
+type NotFound = Error
+
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
+
+// AdminCreateOrganizationParams defines parameters for AdminCreateOrganization.
+type AdminCreateOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminDeleteOrganizationParams defines parameters for AdminDeleteOrganization.
+type AdminDeleteOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
 
 // LogoutParams defines parameters for Logout.
 type LogoutParams struct {
@@ -167,6 +310,19 @@ type VerifyMfaParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// UpdateOrganizationParams defines parameters for UpdateOrganization.
+type UpdateOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ActivateOrganizationParams defines parameters for ActivateOrganization.
+type ActivateOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminCreateOrganizationJSONRequestBody defines body for AdminCreateOrganization for application/json ContentType.
+type AdminCreateOrganizationJSONRequestBody = CreateOrganizationRequest
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
@@ -179,8 +335,20 @@ type EnableMfaJSONRequestBody = MfaCode
 // VerifyMfaJSONRequestBody defines body for VerifyMfa for application/json ContentType.
 type VerifyMfaJSONRequestBody = MfaVerifyRequest
 
+// UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
+type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// AdminListOrganizations All organizations (system admin)
+	// (GET /admin/organizations)
+	AdminListOrganizations(w http.ResponseWriter, r *http.Request)
+	// AdminCreateOrganization Create an organization (system admin)
+	// (POST /admin/organizations)
+	AdminCreateOrganization(w http.ResponseWriter, r *http.Request, params AdminCreateOrganizationParams)
+	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
+	// (DELETE /admin/organizations/{orgId})
+	AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams)
 	// Login Sign in with email and password
 	// (POST /auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
@@ -205,11 +373,41 @@ type ServerInterface interface {
 	// GetHealthz Liveness + database check
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
+	// ListMyOrganizations Organizations the current user belongs to
+	// (GET /orgs)
+	ListMyOrganizations(w http.ResponseWriter, r *http.Request)
+	// GetOrganization Organization details and the caller's membership
+	// (GET /orgs/{orgId})
+	GetOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// UpdateOrganization Rename / edit notes (owner, admin). Optimistic lock on version.
+	// (PATCH /orgs/{orgId})
+	UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams)
+	// ActivateOrganization Remember this organization as the default to open after sign-in
+	// (POST /orgs/{orgId}/activate)
+	ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// AdminListOrganizations All organizations (system admin)
+// (GET /admin/organizations)
+func (_ Unimplemented) AdminListOrganizations(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminCreateOrganization Create an organization (system admin)
+// (POST /admin/organizations)
+func (_ Unimplemented) AdminCreateOrganization(w http.ResponseWriter, r *http.Request, params AdminCreateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
+// (DELETE /admin/organizations/{orgId})
+func (_ Unimplemented) AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Login Sign in with email and password
 // (POST /auth/login)
@@ -259,6 +457,30 @@ func (_ Unimplemented) GetHealthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListMyOrganizations Organizations the current user belongs to
+// (GET /orgs)
+func (_ Unimplemented) ListMyOrganizations(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetOrganization Organization details and the caller's membership
+// (GET /orgs/{orgId})
+func (_ Unimplemented) GetOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateOrganization Rename / edit notes (owner, admin). Optimistic lock on version.
+// (PATCH /orgs/{orgId})
+func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ActivateOrganization Remember this organization as the default to open after sign-in
+// (POST /orgs/{orgId}/activate)
+func (_ Unimplemented) ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler            ServerInterface
@@ -267,6 +489,119 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// AdminListOrganizations operation middleware
+func (siw *ServerInterfaceWrapper) AdminListOrganizations(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListOrganizations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminCreateOrganization operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminCreateOrganizationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminCreateOrganization(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDeleteOrganization operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteOrganizationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDeleteOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // Login operation middleware
 func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
@@ -535,6 +870,154 @@ func (siw *ServerInterfaceWrapper) GetHealthz(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ListMyOrganizations operation middleware
+func (siw *ServerInterfaceWrapper) ListMyOrganizations(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyOrganizations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOrganization operation middleware
+func (siw *ServerInterfaceWrapper) GetOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOrganization(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateOrganization operation middleware
+func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateOrganizationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ActivateOrganization operation middleware
+func (siw *ServerInterfaceWrapper) ActivateOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ActivateOrganizationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ActivateOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -672,15 +1155,215 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/mfa/disable", wrapper.DisableMfa)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs", wrapper.ListMyOrganizations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}", wrapper.GetOrganization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}", wrapper.UpdateOrganization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/activate", wrapper.ActivateOrganization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/organizations", wrapper.AdminListOrganizations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/organizations", wrapper.AdminCreateOrganization)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/admin/organizations/{orgId}", wrapper.AdminDeleteOrganization)
+	})
 
 	return r
 }
 
+type BadRequestJSONResponse Error
+
 type ConflictJSONResponse Error
+
+type ForbiddenJSONResponse Error
 
 type InvalidCodeJSONResponse Error
 
+type NotFoundJSONResponse Error
+
 type UnauthorizedJSONResponse Error
+
+type AdminListOrganizationsRequestObject struct {
+}
+
+type AdminListOrganizationsResponseObject interface {
+	VisitAdminListOrganizationsResponse(w http.ResponseWriter) error
+}
+
+type AdminListOrganizations200JSONResponse AdminOrganizationList
+
+func (response AdminListOrganizations200JSONResponse) VisitAdminListOrganizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListOrganizations401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListOrganizations401JSONResponse) VisitAdminListOrganizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListOrganizations403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListOrganizations403JSONResponse) VisitAdminListOrganizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateOrganizationRequestObject struct {
+	Params AdminCreateOrganizationParams
+	Body   *AdminCreateOrganizationJSONRequestBody
+}
+
+type AdminCreateOrganizationResponseObject interface {
+	VisitAdminCreateOrganizationResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateOrganization201JSONResponse AdminOrganization
+
+func (response AdminCreateOrganization201JSONResponse) VisitAdminCreateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateOrganization400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminCreateOrganization400JSONResponse) VisitAdminCreateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateOrganization401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminCreateOrganization401JSONResponse) VisitAdminCreateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateOrganization403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateOrganization403JSONResponse) VisitAdminCreateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteOrganizationRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params AdminDeleteOrganizationParams
+}
+
+type AdminDeleteOrganizationResponseObject interface {
+	VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteOrganization204Response struct {
+}
+
+func (response AdminDeleteOrganization204Response) VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeleteOrganization401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDeleteOrganization401JSONResponse) VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteOrganization403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDeleteOrganization403JSONResponse) VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteOrganization404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDeleteOrganization404JSONResponse) VisitAdminDeleteOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
@@ -1103,8 +1786,241 @@ func (response GetHealthz503JSONResponse) VisitGetHealthzResponse(w http.Respons
 	return err
 }
 
+type ListMyOrganizationsRequestObject struct {
+}
+
+type ListMyOrganizationsResponseObject interface {
+	VisitListMyOrganizationsResponse(w http.ResponseWriter) error
+}
+
+type ListMyOrganizations200JSONResponse MyOrganizations
+
+func (response ListMyOrganizations200JSONResponse) VisitListMyOrganizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyOrganizations401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListMyOrganizations401JSONResponse) VisitListMyOrganizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrganizationRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type GetOrganizationResponseObject interface {
+	VisitGetOrganizationResponse(w http.ResponseWriter) error
+}
+
+type GetOrganization200JSONResponse OrganizationView
+
+func (response GetOrganization200JSONResponse) VisitGetOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrganization401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetOrganization401JSONResponse) VisitGetOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrganization404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetOrganization404JSONResponse) VisitGetOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganizationRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params UpdateOrganizationParams
+	Body   *UpdateOrganizationJSONRequestBody
+}
+
+type UpdateOrganizationResponseObject interface {
+	VisitUpdateOrganizationResponse(w http.ResponseWriter) error
+}
+
+type UpdateOrganization200JSONResponse OrganizationView
+
+func (response UpdateOrganization200JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganization400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateOrganization400JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganization401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateOrganization401JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganization403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateOrganization403JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganization404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateOrganization404JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOrganization409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateOrganization409JSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ActivateOrganizationRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ActivateOrganizationParams
+}
+
+type ActivateOrganizationResponseObject interface {
+	VisitActivateOrganizationResponse(w http.ResponseWriter) error
+}
+
+type ActivateOrganization204Response struct {
+}
+
+func (response ActivateOrganization204Response) VisitActivateOrganizationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ActivateOrganization401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ActivateOrganization401JSONResponse) VisitActivateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ActivateOrganization404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ActivateOrganization404JSONResponse) VisitActivateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// AdminListOrganizations All organizations (system admin)
+	// (GET /admin/organizations)
+	AdminListOrganizations(ctx context.Context, request AdminListOrganizationsRequestObject) (AdminListOrganizationsResponseObject, error)
+	// AdminCreateOrganization Create an organization (system admin)
+	// (POST /admin/organizations)
+	AdminCreateOrganization(ctx context.Context, request AdminCreateOrganizationRequestObject) (AdminCreateOrganizationResponseObject, error)
+	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
+	// (DELETE /admin/organizations/{orgId})
+	AdminDeleteOrganization(ctx context.Context, request AdminDeleteOrganizationRequestObject) (AdminDeleteOrganizationResponseObject, error)
 	// Login Sign in with email and password
 	// (POST /auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -1129,6 +2045,18 @@ type StrictServerInterface interface {
 	// GetHealthz Liveness + database check
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
+	// ListMyOrganizations Organizations the current user belongs to
+	// (GET /orgs)
+	ListMyOrganizations(ctx context.Context, request ListMyOrganizationsRequestObject) (ListMyOrganizationsResponseObject, error)
+	// GetOrganization Organization details and the caller's membership
+	// (GET /orgs/{orgId})
+	GetOrganization(ctx context.Context, request GetOrganizationRequestObject) (GetOrganizationResponseObject, error)
+	// UpdateOrganization Rename / edit notes (owner, admin). Optimistic lock on version.
+	// (PATCH /orgs/{orgId})
+	UpdateOrganization(ctx context.Context, request UpdateOrganizationRequestObject) (UpdateOrganizationResponseObject, error)
+	// ActivateOrganization Remember this organization as the default to open after sign-in
+	// (POST /orgs/{orgId}/activate)
+	ActivateOrganization(ctx context.Context, request ActivateOrganizationRequestObject) (ActivateOrganizationResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1168,6 +2096,90 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// AdminListOrganizations operation middleware
+func (sh *strictHandler) AdminListOrganizations(w http.ResponseWriter, r *http.Request) {
+	var request AdminListOrganizationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListOrganizations(ctx, request.(AdminListOrganizationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListOrganizations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListOrganizationsResponseObject); ok {
+		if err := validResponse.VisitAdminListOrganizationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminCreateOrganization operation middleware
+func (sh *strictHandler) AdminCreateOrganization(w http.ResponseWriter, r *http.Request, params AdminCreateOrganizationParams) {
+	var request AdminCreateOrganizationRequestObject
+
+	request.Params = params
+
+	var body AdminCreateOrganizationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateOrganization(ctx, request.(AdminCreateOrganizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateOrganization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminCreateOrganizationResponseObject); ok {
+		if err := validResponse.VisitAdminCreateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDeleteOrganization operation middleware
+func (sh *strictHandler) AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams) {
+	var request AdminDeleteOrganizationRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteOrganization(ctx, request.(AdminDeleteOrganizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteOrganization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDeleteOrganizationResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // Login operation middleware
@@ -1393,6 +2405,117 @@ func (sh *strictHandler) GetHealthz(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthzResponseObject); ok {
 		if err := validResponse.VisitGetHealthzResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMyOrganizations operation middleware
+func (sh *strictHandler) ListMyOrganizations(w http.ResponseWriter, r *http.Request) {
+	var request ListMyOrganizationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyOrganizations(ctx, request.(ListMyOrganizationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyOrganizations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyOrganizationsResponseObject); ok {
+		if err := validResponse.VisitListMyOrganizationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOrganization operation middleware
+func (sh *strictHandler) GetOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request GetOrganizationRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOrganization(ctx, request.(GetOrganizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOrganization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOrganizationResponseObject); ok {
+		if err := validResponse.VisitGetOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateOrganization operation middleware
+func (sh *strictHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams) {
+	var request UpdateOrganizationRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body UpdateOrganizationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateOrganization(ctx, request.(UpdateOrganizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateOrganization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateOrganizationResponseObject); ok {
+		if err := validResponse.VisitUpdateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ActivateOrganization operation middleware
+func (sh *strictHandler) ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams) {
+	var request ActivateOrganizationRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ActivateOrganization(ctx, request.(ActivateOrganizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ActivateOrganization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ActivateOrganizationResponseObject); ok {
+		if err := validResponse.VisitActivateOrganizationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

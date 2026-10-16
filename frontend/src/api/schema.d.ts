@@ -140,6 +140,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organizations the current user belongs to */
+        get: operations["listMyOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Organization details and the caller's membership */
+        get: operations["getOrganization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename / edit notes (owner, admin). Optimistic lock on version. */
+        patch: operations["updateOrganization"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remember this organization as the default to open after sign-in */
+        post: operations["activateOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All organizations (system admin) */
+        get: operations["adminListOrganizations"];
+        put?: never;
+        /** Create an organization (system admin) */
+        post: operations["adminCreateOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Soft-delete an organization (system admin, ADR-022) */
+        delete: operations["adminDeleteOrganization"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -167,6 +263,11 @@ export interface components {
             user: components["schemas"]["CurrentUser"];
             csrfToken: string;
             mfa: components["schemas"]["MfaStatus"];
+            /**
+             * Format: uuid
+             * @description Organization used last (UI default only; access is checked per request)
+             */
+            activeOrganizationId: string | null;
         };
         /**
          * @description enabled = TOTP enrolled; verified = code entered this session; required = mandatory for this
@@ -199,8 +300,105 @@ export interface components {
         Error: {
             message: string;
         };
+        /** @enum {string} */
+        OrganizationKind: "internal" | "customer";
+        /** @enum {string} */
+        Role: "owner" | "admin" | "editor" | "viewer";
+        OrganizationSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["OrganizationKind"];
+            role: components["schemas"]["Role"];
+        };
+        MyOrganizations: {
+            organizations: components["schemas"]["OrganizationSummary"][];
+        };
+        Organization: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["OrganizationKind"];
+            notes: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MembershipInfo: {
+            role: components["schemas"]["Role"];
+            permissions: string[];
+        };
+        OrganizationView: {
+            organization: components["schemas"]["Organization"];
+            membership: components["schemas"]["MembershipInfo"];
+        };
+        UpdateOrganizationRequest: {
+            name: string;
+            notes: string;
+            /**
+             * Format: int32
+             * @description Version the client last saw; mismatch → 409
+             */
+            version: number;
+        };
+        AdminOrganization: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["OrganizationKind"];
+            notes: string;
+            /** Format: int64 */
+            memberCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int32 */
+            version: number;
+        };
+        AdminOrganizationList: {
+            organizations: components["schemas"]["AdminOrganization"][];
+        };
+        CreateOrganizationRequest: {
+            name: string;
+            kind: components["schemas"]["OrganizationKind"];
+            notes?: string;
+            /**
+             * @description Make the creating system admin an owner (otherwise nobody can access it until P1-04 adds members)
+             * @default true
+             */
+            addMeAsOwner: boolean;
+        };
     };
     responses: {
+        /** @description Not found (also returned for organizations the caller does not belong to) */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Signed in but not allowed */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Invalid input */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Not signed in, or wrong credentials */
         Unauthorized: {
             headers: {
@@ -230,6 +428,8 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Organization (tenant) the request is scoped to (ADR-023) */
+        OrgId: string;
         CsrfToken: string;
     };
     requestBodies: never;
@@ -469,6 +669,188 @@ export interface operations {
                 };
             };
             409: components["responses"]["Conflict"];
+        };
+    };
+    listMyOrganizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memberships, sorted by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyOrganizations"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organization */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationView"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    activateOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminListOrganizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organizations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganizationList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminCreateOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganization"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminDeleteOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted (hidden everywhere; history kept) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, setCsrfToken, type AuthSession } from '../api/client'
+import { api, csrfParam, errorMessage, setCsrfToken, type AuthSession } from '../api/client'
 
 export const SESSION_QUERY_KEY = ['auth', 'session'] as const
 
@@ -11,19 +11,6 @@ export function mfaStep(session: AuthSession): MfaStep {
   if (enabled && !verified) return 'verify'
   if (!enabled && required) return 'setup'
   return 'ok'
-}
-
-/** Extracts the server's user-facing message from an openapi-fetch error result. */
-function errorMessage(error: unknown, status: number, fallback: string): string {
-  if (
-    error &&
-    typeof error === 'object' &&
-    'message' in error &&
-    typeof error.message === 'string'
-  ) {
-    return error.message
-  }
-  return `${fallback} (HTTP ${status})`
 }
 
 /** Current session, or null when not signed in (401). Network/server errors surface as query errors. */
@@ -81,9 +68,6 @@ export function useLogout() {
     },
   })
 }
-
-// The CSRF header param is required by the spec; the client middleware fills in the real token.
-const csrfParam = { header: { 'X-CSRF-Token': '' } }
 
 export function useMfaVerify() {
   const queryClient = useQueryClient()

@@ -22,6 +22,7 @@ const SESSION = {
   },
   // Admin with MFA enrolled and verified this session → full access.
   mfa: { enabled: true, verified: true, required: true },
+  activeOrganizationId: null,
 }
 
 const withMfa = (mfa: { enabled: boolean; verified: boolean; required: boolean }) => ({
@@ -36,13 +37,38 @@ function json(body: unknown, status = 200) {
   })
 }
 
+const ORG_ID = '11111111-1111-4111-8111-111111111111'
+const ORG_VIEW = {
+  organization: {
+    id: ORG_ID,
+    name: 'Văn phòng mẫu',
+    kind: 'internal',
+    notes: '',
+    version: 1,
+    createdAt: '2026-10-16T00:00:00Z',
+    updatedAt: '2026-10-16T00:00:00Z',
+  },
+  membership: { role: 'owner', permissions: [] },
+}
+
+/** Organization endpoints most pages need; individual tests override keys as required. */
+const ORG_ROUTES: Record<string, () => Response> = {
+  'GET /api/orgs': () =>
+    json({
+      organizations: [{ id: ORG_ID, name: 'Văn phòng mẫu', kind: 'internal', role: 'owner' }],
+    }),
+  [`GET /api/orgs/${ORG_ID}`]: () => json(ORG_VIEW),
+  [`POST /api/orgs/${ORG_ID}/activate`]: () => new Response(null, { status: 204 }),
+}
+
 /** Minimal fake API keyed by "METHOD /path"; records every request. */
 function fakeApi(routes: Record<string, () => Response>) {
   const calls: Request[] = []
+  const all = { ...ORG_ROUTES, ...routes }
   const fetchMock = vi.fn(async (request: Request) => {
     calls.push(request)
     const key = `${request.method} ${new URL(request.url).pathname}`
-    const handler = routes[key]
+    const handler = all[key]
     return handler ? handler() : new Response('', { status: 404 })
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -264,5 +290,140 @@ describe('MFA', () => {
     })
     renderAt('/')
     expect(await screen.findByRole('link', { name: 'Bật xác thực hai lớp' })).toBeInTheDocument()
+  })
+})
+
+describe('organizations', () => {
+  it('opens the remembered organization and records it as active', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/')
+    expect(await screen.findByRole('heading', { name: 'Văn phòng mẫu' })).toBeInTheDocument()
+    expect(screen.getByText(/Vai trò của bạn: Owner/)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(calls.some((r) => r.url.endsWith(`/orgs/${ORG_ID}/activate`))).toBe(true),
+    )
+  })
+
+  it('explains when the user has no organization yet', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/orgs': () => json({ organizations: [] }),
+    })
+    renderAt('/')
+    expect(
+      await screen.findByRole('heading', { name: 'Bạn chưa thuộc tổ chức nào' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Quản trị tổ chức' })).toBeInTheDocument()
+  })
+
+  it('shows "not found" for organizations the user cannot access', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/o/22222222-2222-4222-8222-222222222222')
+    expect(
+      await screen.findByRole('heading', { name: 'Không tìm thấy tổ chức' }),
+    ).toBeInTheDocument()
+  })
+
+  it('owner renames the organization; a 409 is explained', async () => {
+    let attempt = 0
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+      [`PATCH /api/orgs/${ORG_ID}`]: () =>
+        ++attempt === 1
+          ? json(
+              {
+                message:
+                  'Tổ chức vừa được người khác sửa. Tải lại để xem bản mới nhất rồi sửa lại.',
+              },
+              409,
+            )
+          : json({
+              ...ORG_VIEW,
+              organization: { ...ORG_VIEW.organization, name: 'Công ty A', version: 2 },
+            }),
+    })
+    renderAt(`/o/${ORG_ID}`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Sửa thông tin' }))
+    fireEvent.change(screen.getByLabelText('Tên tổ chức'), { target: { value: 'Công ty A' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('người khác sửa')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    expect(await screen.findByRole('heading', { name: 'Công ty A' })).toBeInTheDocument()
+    const patch = calls.find((r) => r.method === 'PATCH')!
+    expect(await patch.clone().json()).toEqual({ name: 'Công ty A', notes: '', version: 1 })
+    expect(patch.headers.get('X-CSRF-Token')).toBe('csrf-123')
+  })
+})
+
+describe('admin organizations', () => {
+  it('system admin creates an organization', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/organizations': () =>
+        json({
+          organizations: [
+            {
+              id: ORG_ID,
+              name: 'Văn phòng mẫu',
+              kind: 'internal',
+              notes: '',
+              memberCount: 3,
+              createdAt: '2026-10-16T00:00:00Z',
+              version: 1,
+            },
+          ],
+        }),
+      'POST /api/admin/organizations': () =>
+        json(
+          {
+            id: 'x',
+            name: 'Khách hàng C',
+            kind: 'customer',
+            notes: '',
+            memberCount: 1,
+            createdAt: '2026-10-16T00:00:00Z',
+            version: 1,
+          },
+          201,
+        ),
+    })
+    renderAt('/admin/organizations')
+    expect(await screen.findByText('Văn phòng mẫu')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Tên'), { target: { value: 'Khách hàng C' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo' }))
+    await waitFor(() =>
+      expect(calls.some((r) => r.method === 'POST' && r.url.endsWith('/admin/organizations'))).toBe(
+        true,
+      ),
+    )
+    const post = calls.find((r) => r.method === 'POST' && r.url.endsWith('/admin/organizations'))!
+    expect(await post.clone().json()).toEqual({
+      name: 'Khách hàng C',
+      kind: 'customer',
+      notes: '',
+      addMeAsOwner: true,
+    })
+  })
+
+  it('non-admins are sent away from the admin page', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({
+          ...SESSION,
+          user: { ...SESSION.user, isSystemAdmin: false },
+          mfa: { enabled: true, verified: true, required: true },
+        }),
+      'GET /api/healthz': () => json({ status: 'ok', version: 'test', database: 'ok' }),
+    })
+    renderAt('/admin/organizations')
+    expect(await screen.findByRole('heading', { name: 'Văn phòng mẫu' })).toBeInTheDocument()
   })
 })

@@ -120,3 +120,12 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** audit log phải giữ nguyên tối thiểu 1 năm (SRS §10) và append-only; FK `ON DELETE SET NULL` cũ mâu thuẫn với trigger
   chặn UPDATE nên xóa user/tổ chức báo lỗi khó hiểu. Mật khẩu gõ tay không được hiện trên màn hình.
 - **Chốt:** người dùng xác nhận 2026-10-16.
+
+### ADR-023 — Tổ chức xác định theo đường dẫn; system admin không mặc nhiên đọc dữ liệu tổ chức
+- **Quyết định:** API nghiệp vụ nằm dưới `/api/orgs/{orgId}/…`, URL web dưới `/o/{orgId}/…`. Middleware tenant đọc `orgId` từ đường dẫn,
+  kiểm tra membership của user trong session ở MỌI request; không phải thành viên (hoặc tổ chức đã xóa mềm) → 404, không lộ tổ chức có tồn tại.
+  Handler chỉ lấy tổ chức từ context do middleware đặt, không từ body. Session chỉ lưu "tổ chức dùng gần nhất" để mở mặc định.
+  System admin quản lý danh sách tổ chức (`/api/admin/organizations`: tạo, liệt kê, xóa mềm) nhưng chỉ đọc/sửa dữ liệu một tổ chức khi là thành viên.
+- **Lý do:** nhân viên MSP mở nhiều tab cho nhiều khách hàng cùng lúc mà không lẫn dữ liệu; link chia sẻ trỏ đúng tổ chức;
+  một tài khoản quản trị bị lộ không tự động lộ dữ liệu mọi khách hàng; mọi truy cập đi qua membership nên truy vết được.
+- **Chốt:** người dùng xác nhận 2026-10-16.

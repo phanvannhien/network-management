@@ -45,7 +45,7 @@ func newRouter(t *testing.T, db Pinger, pool *pgxpool.Pool) http.Handler {
 		t.Fatalf("auth service: %v", err)
 	}
 	resolver, _ := auth.NewClientIPResolver("127.0.0.1/32")
-	return NewRouter(logger, NewServer(logger, db, svc, "test"), resolver)
+	return NewRouter(logger, NewServer(logger, db, pool, svc, "test"), resolver)
 }
 
 // client wraps an httptest server with a cookie jar, like a browser tab.

@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
 // Pinger is the slice of store.Querier the health check needs (keeps handlers testable without a DB).
@@ -22,6 +25,8 @@ type Pinger interface {
 type Server struct {
 	logger  *slog.Logger
 	db      Pinger
+	pool    *pgxpool.Pool // nil in handler tests that never touch the database
+	q       store.Querier
 	auth    *auth.Service
 	version string
 }
@@ -29,8 +34,30 @@ type Server struct {
 var _ apigen.StrictServerInterface = (*Server)(nil)
 
 // NewServer builds the API handlers.
-func NewServer(logger *slog.Logger, db Pinger, authSvc *auth.Service, version string) *Server {
-	return &Server{logger: logger, db: db, auth: authSvc, version: version}
+func NewServer(logger *slog.Logger, db Pinger, pool *pgxpool.Pool, authSvc *auth.Service, version string) *Server {
+	return &Server{logger: logger, db: db, pool: pool, q: store.New(pool), auth: authSvc, version: version}
+}
+
+// errRollback aborts a transaction without being reported as a server error.
+var errRollback = errors.New("rollback")
+
+// withTx runs fn in one transaction; returning errRollback rolls back and yields nil.
+func (s *Server) withTx(ctx context.Context, fn func(q store.Querier) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := fn(store.New(tx)); err != nil {
+		if errors.Is(err, errRollback) {
+			return nil
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+	return nil
 }
 
 const msgBadCredentials = "Email hoặc mật khẩu không đúng, hoặc tài khoản đang tạm khóa"
@@ -103,8 +130,17 @@ func toAuthSession(s auth.Session) apigen.AuthSession {
 		User: apigen.CurrentUser{
 			Id: uuid.UUID(s.UserID.Bytes), Email: s.Email, DisplayName: s.DisplayName, IsSystemAdmin: s.IsSystemAdmin,
 		},
-		Mfa: apigen.MfaStatus{Enabled: s.MFAEnabled, Verified: s.MFAVerified, Required: s.MFARequired},
+		Mfa:                  apigen.MfaStatus{Enabled: s.MFAEnabled, Verified: s.MFAVerified, Required: s.MFARequired},
+		ActiveOrganizationId: activeOrg(s),
 	}
+}
+
+func activeOrg(s auth.Session) *uuid.UUID {
+	if !s.ActiveOrgID.Valid {
+		return nil
+	}
+	id := uuid.UUID(s.ActiveOrgID.Bytes)
+	return &id
 }
 
 // sessionCookie builds the Set-Cookie value; maxAge < 0 deletes the cookie.

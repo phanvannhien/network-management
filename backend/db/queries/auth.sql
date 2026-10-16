@@ -33,6 +33,7 @@ VALUES ($1, $2, $3, $4, $5, $6);
 -- name: GetSession :one
 -- Returns the live session joined with its (enabled) user and MFA state.
 SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s.mfa_verified_at,
+       s.active_organization_id,
        u.id AS user_id, u.email, u.display_name, u.is_system_admin,
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.is_system_admin OR EXISTS (

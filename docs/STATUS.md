@@ -5,6 +5,19 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-03 Tổ chức & tenant middleware
+- Đã làm:
+  - ADR-023 (người dùng chốt): tổ chức xác định theo đường dẫn `/api/orgs/{orgId}/…` (web `/o/{orgId}`); system admin không mặc nhiên đọc dữ liệu tổ chức không phải thành viên.
+  - `internal/tenant`: middleware tách `orgId` từ path (chỉ nhận UUID chuẩn), kiểm tra membership mỗi request; không phải thành viên / không tồn tại / đã xóa mềm → **404** giống nhau; `Membership` (CanEdit/CanAdmin/Has) trong context; `tenant.Require(ctx, orgId)` đối chiếu path param với context (lớp phòng thủ thứ hai).
+  - `internal/audit`: ghi audit dùng chung (before/after JSON), gọi trong cùng transaction với thao tác ghi; `auth` chuyển sang dùng.
+  - API: `GET /orgs` (tổ chức của tôi), `GET/PATCH /orgs/{orgId}` (PATCH: owner/admin, optimistic lock `version` → 409, audit `organization.update`), `POST /orgs/{orgId}/activate` (tổ chức mặc định, `AuthSession.activeOrganizationId`), `/admin/organizations` GET/POST (+`addMeAsOwner`, mặc định true) và DELETE (xóa mềm) — gate `requireSystemAdmin`; audit `organization.create/delete`.
+  - `internal/tenanttest`: bộ test chống truy cập chéo dùng lại — Fixture 2 tổ chức + owner mỗi bên (session đã xác thực MFA), `NewUser` theo vai trò, `AssertCrossTenantDenied` (A gọi tài nguyên B → 404, kèm request đối chứng của B).
+  - Frontend: `/` chuyển tới tổ chức dùng gần nhất / đầu tiên / thông báo chưa có tổ chức; `/o/:orgId` (bộ chọn tổ chức, thông tin + sửa cho owner/admin, báo 409, trang "không tìm thấy"); `/admin/organizations` (danh sách, tạo, xóa có xác nhận). `errorMessage`/`csrfParam` dùng chung trong `api/client.ts`.
+- Test / cách kiểm tra: tenant unit (parse path, middleware, vai trò, Require); API với Postgres thật: cách ly mọi endpoint tổ chức + dữ liệu B không đổi + tổ chức không tồn tại/xóa mềm → 404; danh sách theo membership; viewer/editor PATCH → 403 ở backend; tên trống 400; version cũ 409; audit đúng 1 dòng có before/after; activate; admin gate 403 với owner; system admin không đọc được tổ chức không phải thành viên; tạo/xóa + audit. **Mutation check**: gỡ middleware tenant → test cách ly fail. Vitest 104 (6 test mới). Chạy thật process API + DB tạm (đã xóa) với header Origin: tạo 2 tổ chức → /orgs chỉ thấy tổ chức là owner → tổ chức kia 404 → PATCH 200 rồi version cũ 409 → audit đủ. `make check` pass.
+- Còn dở / lỗi đã biết: chưa có thêm thành viên vào tổ chức có sẵn (P1-04); system admin tạo tổ chức với "không thêm tôi" thì chưa ai vào được cho tới P1-04; `site_scope` mới lưu, chưa áp dụng (khi có sites P1-07); editor `/editor` chưa gắn tổ chức (P1-13). Server `make dev-api` đang chạy của người dùng là bản cũ — cần khởi động lại.
+- Câu hỏi cho người dùng: không.
+- Task tiếp theo đề xuất: P1-04 Người dùng & vai trò.
+
 ## 2026-10-16 — Sửa lỗi: đăng nhập qua Vite (5173) bị chặn CSRF
 - Đã làm: proxy Vite viết dạng rút gọn `'/api': url` ngầm bật `changeOrigin: true` → đổi Host thành `localhost:8069`, khác `Origin: http://localhost:5173` của trình duyệt → `csrfGuard` chặn mọi lần đăng nhập ở cổng dev. Đổi sang dạng object với `changeOrigin: false` (giống nginx `$http_host`).
 - Test / cách kiểm tra: tái hiện bằng curl có header `Origin: http://localhost:5173` qua Vite → trước 403, sau 401 (đúng: tài khoản giả); Origin lạ vẫn 403; Docker 8068 vẫn đúng. `make check` pass. Bài học: kiểm tra trọn luồng phải gửi header `Origin` như trình duyệt (các lần trước dùng curl không có Origin nên không lộ lỗi).

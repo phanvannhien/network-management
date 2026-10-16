@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import { HomePage } from './app/HomePage'
+import { OrgHomePage } from './app/OrgHomePage'
 import { LoginPage } from './app/LoginPage'
 import { MfaSetupPage } from './app/MfaSetupPage'
 import { MfaVerifyPage } from './app/MfaVerifyPage'
 import { RequireAuth } from './app/RequireAuth'
+import { RootRedirect } from './app/RootRedirect'
+import { AdminOrganizationsPage } from './modules/admin/AdminOrganizationsPage'
 import { CanvasView } from './editor/canvas/CanvasView'
 import { Palette } from './editor/panels/Palette'
 import { Sidebar } from './editor/panels/Sidebar'
@@ -34,7 +36,23 @@ export function AppRoutes() {
         path="/"
         element={
           <RequireAuth>
-            <HomePage />
+            <RootRedirect />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/o/:orgId"
+        element={
+          <RequireAuth>
+            <OrgHomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/organizations"
+        element={
+          <RequireAuth>
+            <AdminOrganizationsPage />
           </RequireAuth>
         }
       />
