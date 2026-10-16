@@ -5,6 +5,17 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · trang tổ chức (Dashboard tạm)
+- Đã làm: `/o/:orgId` thành Dashboard tạm theo thiết kế: panel Tổ chức (avatar, loại, vai trò, ghi chú; sửa qua dialog,
+  409 vẫn giải thích như cũ), panel Tài khoản (MFA bật/tắt — ô mã dùng MfaCodeInput), Đi nhanh tới Thiết bị/Sơ đồ/Thành viên.
+  Dashboard đầy đủ để P1-06. KeyValueList thêm `columns={1}` và `wrap`. Không đổi API.
+- Test / cách kiểm tra: `make check` pass (test đổi tên tổ chức + 409, vai trò, link bật MFA). Ảnh `07-*`, `28-*`;
+  axe-core + bàn phím: 0 vấn đề.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: editor sơ đồ (token màu + i18n).
+
 ## 2026-10-16 — UI Bước 3 · module Quản trị người dùng + Tình trạng hệ thống
 - Đã làm: trang Người dùng (khu vực Hệ thống) trên DataTable, lọc trạng thái/MFA, nhãn System admin cùng màu khu vực hệ thống,
   thao tác trong menu ⋯; vô hiệu hóa và reset MFA qua ConfirmDialog mức 1, link đặt lại mật khẩu trong `OneTimeLinkDialog`
