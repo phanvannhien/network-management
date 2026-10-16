@@ -1679,6 +1679,92 @@ describe('device inventory (P1-08)', () => {
     })
   })
 
+  it('connections tab lists links and adds one on a free physical port', async () => {
+    const LINK = {
+      id: 'ln-1',
+      a: {
+        kind: 'device',
+        id: 'dev-1',
+        name: 'AGRI-BD-FW01',
+        type: 'firewall',
+        siteId: AGRI_SITE.id,
+        siteCode: 'AGRI-BD01',
+        interfaceId: 'if-2',
+        interfaceName: 'Gi1/0/1',
+        interfaceKind: 'physical',
+        interfaceMedia: 'RJ45',
+      },
+      b: {
+        kind: 'device',
+        id: 'dev-2',
+        name: 'AGRI-BD-SW01',
+        type: 'l2_switch',
+        siteId: AGRI_SITE.id,
+        siteCode: 'AGRI-BD01',
+        interfaceId: null,
+        interfaceName: '',
+        interfaceKind: '',
+        interfaceMedia: '',
+      },
+      kind: 'ethernet',
+      medium: 'Cat6',
+      speed: '1G',
+      lengthM: null,
+      cableId: 'BD-C001',
+      status: 'planned',
+      provider: '',
+      circuitId: '',
+      bandwidth: '',
+      notes: '',
+      access: 'edit',
+      version: 1,
+    }
+    const PORT2 = { ...PORT, id: 'if-3', name: 'Gi1/0/2' }
+    const calls = fakeApi(
+      ifaceRoutes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () =>
+          json({ interfaces: [IFACE, PORT, PORT2] }),
+        [`GET /api/orgs/${ORG_ID}/devices/dev-2/interfaces`]: () =>
+          json({ interfaces: [{ ...PORT, id: 'sw-p1', name: 'Gi1/0/24' }] }),
+        [`GET /api/orgs/${ORG_ID}/links`]: () => json({ links: [LINK] }),
+        [`POST /api/orgs/${ORG_ID}/links`]: () => json(LINK, 201),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=links`)
+    expect(await screen.findByRole('link', { name: 'AGRI-BD-SW01' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/devices/dev-2`,
+    )
+    expect(screen.getByText('BD-C001')).toBeInTheDocument()
+    expect(screen.getByText('Dự kiến')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm kết nối' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm kết nối' })
+    const near = within(dialog).getByLabelText(/Cổng của thiết bị này/)
+    await waitFor(() => expect(near).toContainHTML('Gi1/0/2'))
+    // A cable cannot go into the SVI, and Gi1/0/1 already has one.
+    expect(within(near).queryByText(/Vlan10/)).not.toBeInTheDocument()
+    expect(within(near).getByText(/Gi1\/0\/1.*đã có dây/)).toBeDisabled()
+    fireEvent.change(near, { target: { value: 'if-3' } })
+    const far = within(dialog).getByLabelText(/^Nối tới/)
+    await waitFor(() => expect(far).toContainHTML('AGRI-BD-SW01'))
+    fireEvent.change(far, { target: { value: 'dev-2' } })
+    const farPort = within(dialog).getByLabelText(/Cổng bên kia/)
+    await waitFor(() => expect(farPort).toContainHTML('Gi1/0/24'))
+    fireEvent.change(farPort, { target: { value: 'sw-p1' } })
+    fireEvent.change(within(dialog).getByLabelText(/Mã cáp/), { target: { value: 'BD-C002' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/links')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toMatchObject({
+      a: { kind: 'device', id: 'dev-1', interfaceId: 'if-3' },
+      b: { kind: 'device', id: 'dev-2', interfaceId: 'sw-p1' },
+      kind: 'ethernet',
+      cableId: 'BD-C002',
+      status: 'up',
+      lengthM: null,
+    })
+  })
+
   it('a template preset fills the form and its ports are previewed', async () => {
     const calls = fakeApi(
       ifaceRoutes({

@@ -953,6 +953,9 @@ func (s *Server) deleteDevices(ctx context.Context, m tenant.Membership, ids []u
 			if _, err := q.SoftDeleteDevice(ctx, store.SoftDeleteDeviceParams{ID: d.ID, OrganizationID: m.OrgID}); err != nil {
 				return fmt.Errorf("delete device: %w", err)
 			}
+			if err := deleteLinksOf(ctx, q, m, "device", d.ID); err != nil {
+				return err
+			}
 			if err := audit.Write(ctx, q, audit.Entry{
 				OrganizationID: m.OrgID, Actor: m.UserID, Action: "device.delete", ObjectType: "device", ObjectID: uuidStr(d.ID),
 				Before: snapDevice(d), Meta: infoFrom(ctx).meta,

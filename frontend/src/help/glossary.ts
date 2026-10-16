@@ -260,6 +260,19 @@ export const GLOSSARY: GlossaryEntry[] = [
   ),
   // --- VLAN ---
   e(
+    'link-kind',
+    'port',
+    ['Loại kết nối', 'Connection type'],
+    [
+      'Dây vật lý (Ethernet đồng, quang, không dây, serial, console) chiếm một cổng vật lý ở mỗi đầu — mỗi cổng chỉ một dây. Kết nối logical (VPN/IPsec, GRE, MPLS, LAG) không chiếm cổng: đầu mút là interface ảo như tunnel hoặc Port-channel.',
+      'Physical connections (copper Ethernet, fiber, wireless, serial, console) take one physical port at each end — one cable per port. Logical ones (VPN/IPsec, GRE, MPLS, LAG) take no port: their ends are virtual interfaces such as a tunnel or a port-channel.',
+    ],
+    [
+      'Switch Gi1/0/48 ↔ firewall port1 bằng Cat6; VPN IPsec giữa tunnel VPN-HN của 2 firewall.',
+      'Switch Gi1/0/48 ↔ firewall port1 over Cat6; an IPsec VPN between the VPN-HN tunnels of two firewalls.',
+    ],
+  ),
+  e(
     'vlan',
     'vlan',
     ['VLAN', 'VLAN'],

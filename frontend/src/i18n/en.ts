@@ -285,7 +285,6 @@ export const en: Strings = {
     tabHistory: 'History',
     interfacesSoon:
       'Interfaces, IPs and the management IP arrive with templates & interfaces (P1-09).',
-    linksSoon: 'Links arrive with diagrams (P1-12).',
     accessSoon: 'Access credentials live in the password vault (Phase 2).',
     diagramsSoon: 'Diagrams containing this device arrive with the editor (P1-13).',
     contractsHint: 'Contracts and vendors are linked in Phase 2.',
@@ -455,6 +454,13 @@ export const en: Strings = {
     },
   },
   guides: {
+    linkPort:
+      'Only fitting ports are listed: cables → physical ports; logical → tunnel/LAG. Cabled ports are greyed out.',
+    linkMedium: 'The exact cable, e.g. Cat6, OM4 (multimode), SM (single-mode), DAC, VPN/IPsec.',
+    linkStatus:
+      'Design status: Planned = not cabled yet. Live Up/Down comes with monitoring (Phase 3).',
+    cableId: 'The code on the cable label, to find the right cable in the rack, e.g. BD-C001.',
+    linkWan: 'For provider lines (Internet, MPLS, leased lines), handy when reporting an outage.',
     endpointGroup:
       'An endpoint group = many similar devices (cameras, PCs, IP phones…) managed as one item, drawn as one icon with a "used/total" badge.',
     endpointKind:
@@ -509,6 +515,16 @@ export const en: Strings = {
     rangePurpose: 'What the range is for, e.g. "Guest Wi-Fi DHCP", "Camera static IPs".',
   },
   hints: {
+    linkKinds: {
+      ethernet: 'A copper cable between two RJ45 ports (Cat5e/Cat6), up to ~100 m.',
+      fiber:
+        'A fiber cable between SFP/SFP+/QSFP ports; longer and faster than copper. DAC = copper cable with SFP ends, for short runs in a rack.',
+      wireless: 'A radio connection (AP, wireless bridge between buildings).',
+      serial: 'Legacy serial port (V.35, RS-232), mostly on older routers/modems.',
+      logical:
+        'A connection that takes no physical port: VPN/IPsec, GRE, MPLS between sites (pick the tunnel interface), or a LAG (port-channel).',
+      console: 'A console cable to configure the device directly (OOB management).',
+    },
     rangeKinds: {
       dhcp: 'A DHCP server hands out these addresses to clients — do not assign by hand; "next free IP" skips this range.',
       static:
@@ -693,6 +709,53 @@ export const en: Strings = {
     promoted: 'Device {{hostname}} created',
     promoteHint:
       'Split a member off when it needs its own record (S/N, warranty, monitoring, its own node on diagrams).',
+  },
+  links: {
+    title: 'Connections',
+    subtitle:
+      'Cables and logical connections to other devices / groups. Leave a port empty when not known yet.',
+    add: 'Add connection',
+    edit: 'Edit connection',
+    delete: 'Delete connection',
+    deleteTitle: 'Delete the connection to {{name}}?',
+    deleteBody: 'Only the connection goes; both devices and ports stay.',
+    saved: 'Connection saved',
+    empty: 'No connections yet',
+    emptyBody:
+      'Declare cables (port → port) or logical connections (VPN, GRE…) to draw diagrams and catch mistakes.',
+    kind: 'Connection type',
+    kinds: {
+      ethernet: 'Ethernet (copper)',
+      fiber: 'Fiber',
+      wireless: 'Wireless',
+      serial: 'Serial',
+      logical: 'Logical (VPN, GRE, LAG…)',
+      console: 'Console',
+    },
+    endKinds: { device: 'Device', endpoint_group: 'Endpoint group' },
+    nearPort: 'Port of this device',
+    far: 'Connected to',
+    farKind: 'Other end is',
+    chooseFar: 'Choose…',
+    farPort: 'Other port',
+    search: 'Find device',
+    searchPlaceholder: 'Hostname, IP, S/N…',
+    noPort: 'No port yet',
+    unassigned: 'Not assigned',
+    portTaken: 'already cabled',
+    groupNoPort: 'Endpoint groups have no ports.',
+    medium: 'Cable variant',
+    speed: 'Speed',
+    speedHint: 'e.g. 1G, 10G, 100M',
+    status: 'Status',
+    statuses: { up: 'Up', planned: 'Planned', down: 'Down' },
+    cableId: 'Cable ID',
+    length: 'Length (m)',
+    wan: 'WAN / provider details',
+    provider: 'Provider',
+    circuitId: 'Circuit ID',
+    bandwidth: 'Bandwidth',
+    notes: 'Notes',
   },
   clusters: {
     join: 'Join a cluster',
@@ -1106,6 +1169,7 @@ export const en: Strings = {
     },
   },
   errors: {
+    linksLoad: 'Could not load connections',
     endpointsLoad: 'Could not load endpoint groups',
     ipamLoad: 'Could not load IPAM data',
     templatesLoad: 'Could not load templates',

@@ -281,7 +281,6 @@ export const vi = {
     tabDiagrams: 'Sơ đồ',
     tabHistory: 'Lịch sử',
     interfacesSoon: 'Interface, IP và IP quản trị có ở bước Template & interface (P1-09).',
-    linksSoon: 'Kết nối có khi vẽ sơ đồ (P1-12).',
     accessSoon: 'Tài khoản truy cập nằm trong kho mật khẩu (Phase 2).',
     diagramsSoon: 'Danh sách sơ đồ có thiết bị này có khi làm editor (P1-13).',
     contractsHint: 'Liên kết hợp đồng và nhà cung cấp có ở Phase 2.',
@@ -451,6 +450,14 @@ export const vi = {
     },
   },
   guides: {
+    linkPort:
+      'Chỉ hiện cổng hợp loại: dây vật lý → cổng vật lý; logical → tunnel/LAG. Cổng đã có dây bị làm mờ.',
+    linkMedium: 'Loại cáp cụ thể, vd Cat6, OM4 (quang đa mode), SM (đơn mode), DAC, VPN/IPsec.',
+    linkStatus:
+      'Trạng thái thiết kế: Dự kiến = chưa kéo dây. Trạng thái thật (Up/Down) có khi bật giám sát (Phase 3).',
+    cableId: 'Mã in trên nhãn cáp, giúp tìm đúng dây ở tủ rack, vd BD-C001.',
+    linkWan:
+      'Dùng cho đường truyền nhà mạng (Internet, MPLS, kênh riêng) để tra nhanh khi báo sự cố.',
     endpointGroup:
       'Nhóm đầu cuối = nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) quản lý như một mục, vẽ thành một biểu tượng có số "đã dùng/tổng" trên sơ đồ.',
     endpointKind:
@@ -502,6 +509,16 @@ export const vi = {
     rangePurpose: 'Ghi ngắn dải dùng làm gì, vd "DHCP Wi-Fi khách", "IP tĩnh camera".',
   },
   hints: {
+    linkKinds: {
+      ethernet: 'Dây mạng đồng nối 2 cổng RJ45 (Cat5e/Cat6), tối đa ~100 m.',
+      fiber:
+        'Dây quang nối 2 cổng SFP/SFP+/QSFP; đi xa hơn và nhanh hơn dây đồng. DAC = cáp đồng gắn sẵn đầu SFP, dùng nối gần trong rack.',
+      wireless: 'Kết nối qua sóng (AP, bridge không dây giữa 2 tòa nhà).',
+      serial: 'Cổng serial kiểu cũ (V.35, RS-232), thường ở router/modem đời cũ.',
+      logical:
+        'Kết nối không chiếm cổng vật lý: VPN/IPsec, GRE, MPLS giữa các site (chọn interface tunnel), hoặc LAG (Port-channel).',
+      console: 'Dây console để cấu hình thiết bị trực tiếp (mạng quản trị OOB).',
+    },
     rangeKinds: {
       dhcp: 'Máy chủ DHCP tự cấp IP trong dải này cho máy trạm — không gán tay; "IP trống kế tiếp" bỏ qua dải này.',
       static:
@@ -685,6 +702,53 @@ export const vi = {
     promoted: 'Đã tạo thiết bị {{hostname}}',
     promoteHint:
       'Tách thành thiết bị khi cần quản lý riêng một thiết bị (S/N, bảo hành, giám sát, vẽ riêng trên sơ đồ).',
+  },
+  links: {
+    title: 'Kết nối',
+    subtitle:
+      'Dây và kết nối logical tới thiết bị / nhóm khác. Chưa biết cổng thì để trống, gán sau.',
+    add: 'Thêm kết nối',
+    edit: 'Sửa kết nối',
+    delete: 'Xóa kết nối',
+    deleteTitle: 'Xóa kết nối tới {{name}}?',
+    deleteBody: 'Chỉ xóa kết nối; hai thiết bị và cổng vẫn giữ nguyên.',
+    saved: 'Đã lưu kết nối',
+    empty: 'Chưa có kết nối',
+    emptyBody:
+      'Khai báo dây nối (cổng → cổng) hoặc kết nối logical (VPN, GRE…) để vẽ sơ đồ và kiểm tra lỗi.',
+    kind: 'Loại kết nối',
+    kinds: {
+      ethernet: 'Ethernet (dây đồng)',
+      fiber: 'Quang (fiber)',
+      wireless: 'Không dây',
+      serial: 'Serial',
+      logical: 'Logical (VPN, GRE, LAG…)',
+      console: 'Console',
+    },
+    endKinds: { device: 'Thiết bị', endpoint_group: 'Nhóm đầu cuối' },
+    nearPort: 'Cổng của thiết bị này',
+    far: 'Nối tới',
+    farKind: 'Đầu bên kia là',
+    chooseFar: 'Chọn…',
+    farPort: 'Cổng bên kia',
+    search: 'Tìm thiết bị',
+    searchPlaceholder: 'Hostname, IP, S/N…',
+    noPort: 'Chưa gán cổng',
+    unassigned: 'Chưa gán',
+    portTaken: 'đã có dây',
+    groupNoPort: 'Nhóm đầu cuối không có cổng.',
+    medium: 'Biến thể cáp',
+    speed: 'Tốc độ',
+    speedHint: 'vd 1G, 10G, 100M',
+    status: 'Trạng thái',
+    statuses: { up: 'Đang chạy', planned: 'Dự kiến', down: 'Đứt / tắt' },
+    cableId: 'Mã cáp',
+    length: 'Chiều dài (m)',
+    wan: 'Thông tin WAN / nhà mạng',
+    provider: 'Nhà mạng',
+    circuitId: 'Circuit ID',
+    bandwidth: 'Băng thông',
+    notes: 'Ghi chú',
   },
   clusters: {
     join: 'Thêm vào cụm',
@@ -1094,6 +1158,7 @@ export const vi = {
     },
   },
   errors: {
+    linksLoad: 'Không tải được kết nối',
     endpointsLoad: 'Không tải được nhóm thiết bị đầu cuối',
     ipamLoad: 'Không tải được dữ liệu IPAM',
     templatesLoad: 'Không tải được template',

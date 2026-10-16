@@ -32,6 +32,10 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **LAG / Port-channel / LACP** | Gộp nhiều cổng thành 1 đường: tăng băng thông, đứt 1 dây vẫn chạy | `Po1` = `Te1/1/1` + `Te1/1/2` |
 | **MAC** | Địa chỉ phần cứng duy nhất của cổng | `aa:bb:cc:dd:ee:ff` (Cisco viết `aabb.ccdd.eeff`) |
 | **Admin up / shutdown** | Cổng đang bật hay bị tắt bằng cấu hình | Cổng không dùng nên shutdown |
+| **Kết nối (link) vật lý** | Dây thật nối 2 cổng: Ethernet (đồng, RJ45), quang (SFP), không dây, serial, console. Mỗi cổng vật lý chỉ cắm 1 dây | `BD-SW01 Gi1/0/48` ↔ `BD-FW01 port1`, Cat6 |
+| **Kết nối logical** | Kết nối không chiếm cổng vật lý: VPN/IPsec, GRE, MPLS giữa các site (đầu mút là interface tunnel) hoặc LAG | VPN từ firewall Bình Định về IDC |
+| **Cable ID** | Mã in trên nhãn dây, để tìm đúng dây trong tủ rack | `BD-C001` |
+| **DAC** | Cáp đồng gắn sẵn 2 đầu SFP, nối gần (trong rack) thay cho quang | Switch ↔ server 10G cùng rack |
 
 ## 3. VLAN
 

@@ -35,6 +35,7 @@ type Querier interface {
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountPhysicalLinksOnInterface(ctx context.Context, arg CountPhysicalLinksOnInterfaceParams) (int64, error)
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
@@ -50,6 +51,7 @@ type Querier interface {
 	// Applying a template adds the ports a device does not have yet (by name, case-insensitive).
 	CreateInterfaceIfMissing(ctx context.Context, arg CreateInterfaceIfMissingParams) (int64, error)
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
+	CreateLink(ctx context.Context, arg CreateLinkParams) (pgtype.UUID, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreatePartner(ctx context.Context, arg CreatePartnerParams) (Partner, error)
@@ -72,6 +74,9 @@ type Querier interface {
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
 	DeleteIP(ctx context.Context, arg DeleteIPParams) (int64, error)
 	DeleteInterface(ctx context.Context, arg DeleteInterfaceParams) (int64, error)
+	DeleteLink(ctx context.Context, arg DeleteLinkParams) (int64, error)
+	// A deleted device / endpoint group takes its links along.
+	DeleteLinksOfEnd(ctx context.Context, arg DeleteLinksOfEndParams) ([]pgtype.UUID, error)
 	DeleteLocation(ctx context.Context, arg DeleteLocationParams) (int64, error)
 	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
 	DeletePartnerMember(ctx context.Context, arg DeletePartnerMemberParams) (int64, error)
@@ -100,6 +105,7 @@ type Querier interface {
 	GetEndpointMember(ctx context.Context, arg GetEndpointMemberParams) (EndpointMember, error)
 	GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
 	GetInterface(ctx context.Context, arg GetInterfaceParams) (Interface, error)
+	GetLinkEndInterface(ctx context.Context, arg GetLinkEndInterfaceParams) (GetLinkEndInterfaceRow, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
 	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
 	// Organizations and memberships (P1-03, ADR-016, ADR-023).
@@ -154,6 +160,9 @@ type Querier interface {
 	ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error)
 	ListEndpointMembers(ctx context.Context, arg ListEndpointMembersParams) ([]ListEndpointMembersRow, error)
 	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
+	// Links (P1-12, SRS §6.2). Every query takes organization_id. Each row carries both ends' names, ownership and
+	// interface so the API can check visibility per end (an end is visible like its device / group, ADR-031).
+	ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLinksRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
@@ -189,6 +198,8 @@ type Querier interface {
 	ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVlansRow, error)
 	// Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
 	LockHostname(ctx context.Context, lockKey string) error
+	// Serializes link writes touching one interface (one physical link per physical port).
+	LockInterfaceLinks(ctx context.Context, lockKey string) error
 	// Interfaces and clusters holding the address (any VRF).
 	LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error)
 	// Subnets containing the address (any VRF), most specific first.
@@ -226,6 +237,7 @@ type Querier interface {
 	UpdateEndpointMember(ctx context.Context, arg UpdateEndpointMemberParams) (int64, error)
 	UpdateIP(ctx context.Context, arg UpdateIPParams) (IpAddress, error)
 	UpdateInterface(ctx context.Context, arg UpdateInterfaceParams) (Interface, error)
+	UpdateLink(ctx context.Context, arg UpdateLinkParams) (int64, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).

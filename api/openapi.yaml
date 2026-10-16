@@ -2319,6 +2319,111 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /orgs/{orgId}/links:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listLinks
+      summary: Links whose both ends the caller may see, optionally of one device / endpoint group or site
+      parameters:
+        - name: endId
+          in: query
+          description: a device or endpoint group id
+          schema:
+            type: string
+            format: uuid
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createLink
+      summary: Connect two ends (edit on at least one end, view on both)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgId}/links/{linkId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/LinkId'
+    patch:
+      operationId: updateLink
+      summary: Update a link (optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteLink
+      summary: Delete a link
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /orgs/{orgId}/vlans:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -3118,6 +3223,13 @@ components:
         format: uuid
     MemberId:
       name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LinkId:
+      name: linkId
       in: path
       required: true
       schema:
@@ -5918,6 +6030,162 @@ components:
           type: string
           maxLength: 253
           description: the new device's hostname; defaults to the member name
+
+    LinkEndKind:
+      type: string
+      enum: [device, endpoint_group]
+
+    LinkKind:
+      type: string
+      description: >-
+        ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port;
+        logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+      enum: [ethernet, fiber, wireless, serial, logical, console]
+
+    LinkStatus:
+      type: string
+      description: design status (live state comes from monitoring in Phase 3)
+      enum: [planned, up, down]
+
+    LinkEndInput:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          $ref: '#/components/schemas/LinkEndKind'
+        id:
+          type: string
+          format: uuid
+        interfaceId:
+          type: [string, 'null']
+          format: uuid
+          description: a port of the device; empty while not known (logical drawing), always empty for a group
+
+    LinkEnd:
+      type: object
+      required: [kind, id, name, type, siteId, siteCode, interfaceId, interfaceName, interfaceKind, interfaceMedia]
+      properties:
+        kind:
+          $ref: '#/components/schemas/LinkEndKind'
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: device hostname or group name
+        type:
+          type: string
+          description: device type, or the group's device type
+        siteId:
+          type: string
+          format: uuid
+        siteCode:
+          type: string
+        interfaceId:
+          type: [string, 'null']
+          format: uuid
+        interfaceName:
+          type: string
+        interfaceKind:
+          type: string
+        interfaceMedia:
+          type: string
+
+    LinkInput:
+      type: object
+      required: [a, b, kind]
+      properties:
+        a:
+          $ref: '#/components/schemas/LinkEndInput'
+        b:
+          $ref: '#/components/schemas/LinkEndInput'
+        kind:
+          $ref: '#/components/schemas/LinkKind'
+        medium:
+          type: string
+          maxLength: 40
+          description: variant, e.g. Cat6, OM4, DAC, VPN/IPsec
+        speed:
+          type: string
+          maxLength: 20
+        lengthM:
+          type: [number, 'null']
+          description: cable length in metres
+        cableId:
+          type: string
+          maxLength: 64
+        status:
+          $ref: '#/components/schemas/LinkStatus'
+        provider:
+          type: string
+          maxLength: 100
+          description: WAN provider (vendors module in Phase 2)
+        circuitId:
+          type: string
+          maxLength: 100
+        bandwidth:
+          type: string
+          maxLength: 40
+        notes:
+          type: string
+          maxLength: 2000
+
+    LinkUpdate:
+      allOf:
+        - $ref: '#/components/schemas/LinkInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Link:
+      type: object
+      required: [id, a, b, kind, medium, speed, lengthM, cableId, status, provider, circuitId, bandwidth, notes, access,
+                 version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        a:
+          $ref: '#/components/schemas/LinkEnd'
+        b:
+          $ref: '#/components/schemas/LinkEnd'
+        kind:
+          $ref: '#/components/schemas/LinkKind'
+        medium:
+          type: string
+        speed:
+          type: string
+        lengthM:
+          type: [number, 'null']
+        cableId:
+          type: string
+        status:
+          $ref: '#/components/schemas/LinkStatus'
+        provider:
+          type: string
+        circuitId:
+          type: string
+        bandwidth:
+          type: string
+        notes:
+          type: string
+        access:
+          $ref: '#/components/schemas/AccessLevel'
+        version:
+          type: integer
+          format: int32
+
+    LinkList:
+      type: object
+      required: [links]
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
 
     IpAssignment:
       type: object

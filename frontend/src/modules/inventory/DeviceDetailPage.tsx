@@ -23,6 +23,7 @@ import { atLeast } from '@/modules/sites/access'
 import { WarrantyText } from './DeviceListPage'
 import { DeviceClusterCard } from './DeviceClusterCard'
 import { DeviceFormDialog } from './DeviceFormDialog'
+import { LinksPanel } from './LinksPanel'
 import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import {
   useCustomFields,
@@ -316,7 +317,13 @@ export function DeviceDetailPage() {
           {tab === 'ips' && <IpsTab orgId={orgId} device={d} canEdit={canEdit} />}
         </TabsContent>
         <TabsContent value="links" className="pt-3">
-          <Soon icon={<Network />} text={t('devices.linksSoon')} />
+          {tab === 'links' && (
+            <LinksPanel
+              orgId={orgId}
+              owner={{ kind: 'device', id: d.id, siteId: d.siteId }}
+              canEdit={canEdit}
+            />
+          )}
         </TabsContent>
         <TabsContent value="access" className="pt-3">
           <Soon icon={<KeyRound />} text={t('devices.accessSoon')} />

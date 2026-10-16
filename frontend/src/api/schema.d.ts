@@ -1111,6 +1111,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Links whose both ends the caller may see, optionally of one device / endpoint group or site */
+        get: operations["listLinks"];
+        put?: never;
+        /** Connect two ends (edit on at least one end, view on both) */
+        post: operations["createLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                linkId: components["parameters"]["LinkId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a link */
+        delete: operations["deleteLink"];
+        options?: never;
+        head?: never;
+        /** Update a link (optimistic lock) */
+        patch: operations["updateLink"];
+        trace?: never;
+    };
     "/orgs/{orgId}/vlans": {
         parameters: {
             query?: never;
@@ -2807,6 +2850,88 @@ export interface components {
             /** @description the new device's hostname; defaults to the member name */
             hostname?: string;
         };
+        /** @enum {string} */
+        LinkEndKind: "device" | "endpoint_group";
+        /**
+         * @description ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+         * @enum {string}
+         */
+        LinkKind: "ethernet" | "fiber" | "wireless" | "serial" | "logical" | "console";
+        /**
+         * @description design status (live state comes from monitoring in Phase 3)
+         * @enum {string}
+         */
+        LinkStatus: "planned" | "up" | "down";
+        LinkEndInput: {
+            kind: components["schemas"]["LinkEndKind"];
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description a port of the device; empty while not known (logical drawing), always empty for a group
+             */
+            interfaceId?: string | null;
+        };
+        LinkEnd: {
+            kind: components["schemas"]["LinkEndKind"];
+            /** Format: uuid */
+            id: string;
+            /** @description device hostname or group name */
+            name: string;
+            /** @description device type, or the group's device type */
+            type: string;
+            /** Format: uuid */
+            siteId: string;
+            siteCode: string;
+            /** Format: uuid */
+            interfaceId: string | null;
+            interfaceName: string;
+            interfaceKind: string;
+            interfaceMedia: string;
+        };
+        LinkInput: {
+            a: components["schemas"]["LinkEndInput"];
+            b: components["schemas"]["LinkEndInput"];
+            kind: components["schemas"]["LinkKind"];
+            /** @description variant, e.g. Cat6, OM4, DAC, VPN/IPsec */
+            medium?: string;
+            speed?: string;
+            /** @description cable length in metres */
+            lengthM?: number | null;
+            cableId?: string;
+            status?: components["schemas"]["LinkStatus"];
+            /** @description WAN provider (vendors module in Phase 2) */
+            provider?: string;
+            circuitId?: string;
+            bandwidth?: string;
+            notes?: string;
+        };
+        LinkUpdate: components["schemas"]["LinkInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        Link: {
+            /** Format: uuid */
+            id: string;
+            a: components["schemas"]["LinkEnd"];
+            b: components["schemas"]["LinkEnd"];
+            kind: components["schemas"]["LinkKind"];
+            medium: string;
+            speed: string;
+            lengthM: number | null;
+            cableId: string;
+            status: components["schemas"]["LinkStatus"];
+            provider: string;
+            circuitId: string;
+            bandwidth: string;
+            notes: string;
+            access: components["schemas"]["AccessLevel"];
+            /** Format: int32 */
+            version: number;
+        };
+        LinkList: {
+            links: components["schemas"]["Link"][];
+        };
         /** @description An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet). */
         IpAssignment: {
             address: string;
@@ -2959,6 +3084,7 @@ export interface components {
         ClusterId: string;
         GroupId: string;
         MemberId: string;
+        LinkId: string;
         VlanId: string;
         SubnetId: string;
         RangeId: string;
@@ -5878,6 +6004,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Device"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listLinks: {
+        parameters: {
+            query?: {
+                /** @description a device or endpoint group id */
+                endId?: string;
+                siteId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createLink: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Link"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteLink: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                linkId: components["parameters"]["LinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateLink: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                linkId: components["parameters"]["LinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Link"];
                 };
             };
             400: components["responses"]["BadRequest"];

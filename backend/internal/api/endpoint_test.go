@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -179,10 +178,16 @@ func TestPromoteEndpointMember(t *testing.T) {
 
 	status, dev := fx.A.Do("POST", members+"/"+m1+"/promote", map[string]any{})
 	if status != http.StatusCreated || dev["hostname"] != "BD-CAM-01" || dev["type"] != "ip_camera" || dev["siteId"] != bd ||
-		dev["mgmtIp"] != "10.72.120.10/24" || !strings.Contains(dev["notes"].(string), "BD-SW01 Gi1/0/5") {
+		dev["mgmtIp"] != "10.72.120.10/24" || dev["notes"] != "Cổng chính" {
 		t.Fatalf("promote: %d %v", status, dev)
 	}
 	devID := idOf(t, dev)
+	// The switch port became a real link eth0 ↔ Gi1/0/5.
+	_, links := fx.A.Do("GET", linksPath(org)+"?endId="+devID, nil)
+	if ls := links["links"].([]any); len(ls) != 1 || ls[0].(map[string]any)["b"].(map[string]any)["interfaceName"] != "Gi1/0/5" ||
+		ls[0].(map[string]any)["a"].(map[string]any)["interfaceName"] != "eth0" {
+		t.Errorf("promote link: %v", links)
+	}
 	_, ips := fx.A.Do("GET", devicePath(org, devID)+"/ips", nil)
 	if ip := ips["ips"].([]any)[0].(map[string]any); ip["address"] != "10.72.120.10/24" || ip["vrf"] != "OT" || ip["interfaceName"] != "eth0" {
 		t.Errorf("promoted IP: %v", ip)

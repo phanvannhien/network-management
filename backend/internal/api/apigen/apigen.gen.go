@@ -136,25 +136,25 @@ func (e CustomFieldKind) Valid() bool {
 
 // Defines values for DeviceLifecycle.
 const (
-	Active  DeviceLifecycle = "active"
-	Planned DeviceLifecycle = "planned"
-	Retired DeviceLifecycle = "retired"
-	Rma     DeviceLifecycle = "rma"
-	Spare   DeviceLifecycle = "spare"
+	DeviceLifecycleActive  DeviceLifecycle = "active"
+	DeviceLifecyclePlanned DeviceLifecycle = "planned"
+	DeviceLifecycleRetired DeviceLifecycle = "retired"
+	DeviceLifecycleRma     DeviceLifecycle = "rma"
+	DeviceLifecycleSpare   DeviceLifecycle = "spare"
 )
 
 // Valid indicates whether the value is a known member of the DeviceLifecycle enum.
 func (e DeviceLifecycle) Valid() bool {
 	switch e {
-	case Active:
+	case DeviceLifecycleActive:
 		return true
-	case Planned:
+	case DeviceLifecyclePlanned:
 		return true
-	case Retired:
+	case DeviceLifecycleRetired:
 		return true
-	case Rma:
+	case DeviceLifecycleRma:
 		return true
-	case Spare:
+	case DeviceLifecycleSpare:
 		return true
 	default:
 		return false
@@ -593,6 +593,75 @@ func (e IpRole) Valid() bool {
 	case IpRolePublic:
 		return true
 	case IpRoleSecondary:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkEndKind.
+const (
+	LinkEndKindDevice        LinkEndKind = "device"
+	LinkEndKindEndpointGroup LinkEndKind = "endpoint_group"
+)
+
+// Valid indicates whether the value is a known member of the LinkEndKind enum.
+func (e LinkEndKind) Valid() bool {
+	switch e {
+	case LinkEndKindDevice:
+		return true
+	case LinkEndKindEndpointGroup:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkKind.
+const (
+	LinkKindConsole  LinkKind = "console"
+	LinkKindEthernet LinkKind = "ethernet"
+	LinkKindFiber    LinkKind = "fiber"
+	LinkKindLogical  LinkKind = "logical"
+	LinkKindSerial   LinkKind = "serial"
+	LinkKindWireless LinkKind = "wireless"
+)
+
+// Valid indicates whether the value is a known member of the LinkKind enum.
+func (e LinkKind) Valid() bool {
+	switch e {
+	case LinkKindConsole:
+		return true
+	case LinkKindEthernet:
+		return true
+	case LinkKindFiber:
+		return true
+	case LinkKindLogical:
+		return true
+	case LinkKindSerial:
+		return true
+	case LinkKindWireless:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkStatus.
+const (
+	LinkStatusDown    LinkStatus = "down"
+	LinkStatusPlanned LinkStatus = "planned"
+	LinkStatusUp      LinkStatus = "up"
+)
+
+// Valid indicates whether the value is a known member of the LinkStatus enum.
+func (e LinkStatus) Valid() bool {
+	switch e {
+	case LinkStatusDown:
+		return true
+	case LinkStatusPlanned:
+		return true
+	case LinkStatusUp:
 		return true
 	default:
 		return false
@@ -1953,6 +2022,125 @@ type IpRangeUpdate struct {
 // IpRole defines model for IpRole.
 type IpRole string
 
+// Link defines model for Link.
+type Link struct {
+	A LinkEnd `json:"a"`
+
+	// Access The caller's access on a partner / unit / site — view, edit (data), admin (manage users, shares, delete)
+	Access    AccessLevel        `json:"access"`
+	B         LinkEnd            `json:"b"`
+	Bandwidth string             `json:"bandwidth"`
+	CableId   string             `json:"cableId"`
+	CircuitId string             `json:"circuitId"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	Kind     LinkKind `json:"kind"`
+	LengthM  *float32 `json:"lengthM"`
+	Medium   string   `json:"medium"`
+	Notes    string   `json:"notes"`
+	Provider string   `json:"provider"`
+	Speed    string   `json:"speed"`
+
+	// Status design status (live state comes from monitoring in Phase 3)
+	Status  LinkStatus `json:"status"`
+	Version int32      `json:"version"`
+}
+
+// LinkEnd defines model for LinkEnd.
+type LinkEnd struct {
+	Id             openapi_types.UUID  `json:"id"`
+	InterfaceId    *openapi_types.UUID `json:"interfaceId"`
+	InterfaceKind  string              `json:"interfaceKind"`
+	InterfaceMedia string              `json:"interfaceMedia"`
+	InterfaceName  string              `json:"interfaceName"`
+	Kind           LinkEndKind         `json:"kind"`
+
+	// Name device hostname or group name
+	Name     string             `json:"name"`
+	SiteCode string             `json:"siteCode"`
+	SiteId   openapi_types.UUID `json:"siteId"`
+
+	// Type device type, or the group's device type
+	Type string `json:"type"`
+}
+
+// LinkEndInput defines model for LinkEndInput.
+type LinkEndInput struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// InterfaceId a port of the device; empty while not known (logical drawing), always empty for a group
+	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
+	Kind        LinkEndKind         `json:"kind"`
+}
+
+// LinkEndKind defines model for LinkEndKind.
+type LinkEndKind string
+
+// LinkInput defines model for LinkInput.
+type LinkInput struct {
+	A         LinkEndInput `json:"a"`
+	B         LinkEndInput `json:"b"`
+	Bandwidth *string      `json:"bandwidth,omitempty"`
+	CableId   *string      `json:"cableId,omitempty"`
+	CircuitId *string      `json:"circuitId,omitempty"`
+
+	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	Kind LinkKind `json:"kind"`
+
+	// LengthM cable length in metres
+	LengthM *float32 `json:"lengthM,omitempty"`
+
+	// Medium variant, e.g. Cat6, OM4, DAC, VPN/IPsec
+	Medium *string `json:"medium,omitempty"`
+	Notes  *string `json:"notes,omitempty"`
+
+	// Provider WAN provider (vendors module in Phase 2)
+	Provider *string `json:"provider,omitempty"`
+	Speed    *string `json:"speed,omitempty"`
+
+	// Status design status (live state comes from monitoring in Phase 3)
+	Status *LinkStatus `json:"status,omitempty"`
+}
+
+// LinkKind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+type LinkKind string
+
+// LinkList defines model for LinkList.
+type LinkList struct {
+	Links []Link `json:"links"`
+}
+
+// LinkStatus design status (live state comes from monitoring in Phase 3)
+type LinkStatus string
+
+// LinkUpdate defines model for LinkUpdate.
+type LinkUpdate struct {
+	A         LinkEndInput `json:"a"`
+	B         LinkEndInput `json:"b"`
+	Bandwidth *string      `json:"bandwidth,omitempty"`
+	CableId   *string      `json:"cableId,omitempty"`
+	CircuitId *string      `json:"circuitId,omitempty"`
+
+	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	Kind LinkKind `json:"kind"`
+
+	// LengthM cable length in metres
+	LengthM *float32 `json:"lengthM,omitempty"`
+
+	// Medium variant, e.g. Cat6, OM4, DAC, VPN/IPsec
+	Medium *string `json:"medium,omitempty"`
+	Notes  *string `json:"notes,omitempty"`
+
+	// Provider WAN provider (vendors module in Phase 2)
+	Provider *string `json:"provider,omitempty"`
+	Speed    *string `json:"speed,omitempty"`
+
+	// Status design status (live state comes from monitoring in Phase 3)
+	Status  *LinkStatus `json:"status,omitempty"`
+	Version int32       `json:"version"`
+}
+
 // Location defines model for Location.
 type Location struct {
 	Id        openapi_types.UUID  `json:"id"`
@@ -2622,6 +2810,9 @@ type InterfaceId = openapi_types.UUID
 // IpId defines model for IpId.
 type IpId = openapi_types.UUID
 
+// LinkId defines model for LinkId.
+type LinkId = openapi_types.UUID
+
 // LocationId defines model for LocationId.
 type LocationId = openapi_types.UUID
 
@@ -2999,6 +3190,28 @@ type LookupIpParams struct {
 	Ip string `form:"ip" json:"ip"`
 }
 
+// ListLinksParams defines parameters for ListLinks.
+type ListLinksParams struct {
+	// EndId a device or endpoint group id
+	EndId  *openapi_types.UUID `form:"endId,omitempty" json:"endId,omitempty"`
+	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// CreateLinkParams defines parameters for CreateLink.
+type CreateLinkParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteLinkParams defines parameters for DeleteLink.
+type DeleteLinkParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateLinkParams defines parameters for UpdateLink.
+type UpdateLinkParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AddMemberParams defines parameters for AddMember.
 type AddMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -3281,6 +3494,12 @@ type UpdateEndpointMemberJSONRequestBody = EndpointMemberUpdate
 
 // PromoteEndpointMemberJSONRequestBody defines body for PromoteEndpointMember for application/json ContentType.
 type PromoteEndpointMemberJSONRequestBody = PromoteMemberInput
+
+// CreateLinkJSONRequestBody defines body for CreateLink for application/json ContentType.
+type CreateLinkJSONRequestBody = LinkInput
+
+// UpdateLinkJSONRequestBody defines body for UpdateLink for application/json ContentType.
+type UpdateLinkJSONRequestBody = LinkUpdate
 
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
@@ -3566,6 +3785,18 @@ type ServerInterface interface {
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
+	// ListLinks Links whose both ends the caller may see, optionally of one device / endpoint group or site
+	// (GET /orgs/{orgId}/links)
+	ListLinks(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListLinksParams)
+	// CreateLink Connect two ends (edit on at least one end, view on both)
+	// (POST /orgs/{orgId}/links)
+	CreateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateLinkParams)
+	// DeleteLink Delete a link
+	// (DELETE /orgs/{orgId}/links/{linkId})
+	DeleteLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params DeleteLinkParams)
+	// UpdateLink Update a link (optimistic lock)
+	// (PATCH /orgs/{orgId}/links/{linkId})
+	UpdateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params UpdateLinkParams)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -4148,6 +4379,30 @@ func (_ Unimplemented) PromoteEndpointMember(w http.ResponseWriter, r *http.Requ
 // LookupIp Which subnets contain an IP and which interfaces carry it
 // (GET /orgs/{orgId}/ipam/lookup)
 func (_ Unimplemented) LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListLinks Links whose both ends the caller may see, optionally of one device / endpoint group or site
+// (GET /orgs/{orgId}/links)
+func (_ Unimplemented) ListLinks(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListLinksParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateLink Connect two ends (edit on at least one end, view on both)
+// (POST /orgs/{orgId}/links)
+func (_ Unimplemented) CreateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateLinkParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteLink Delete a link
+// (DELETE /orgs/{orgId}/links/{linkId})
+func (_ Unimplemented) DeleteLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params DeleteLinkParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateLink Update a link (optimistic lock)
+// (PATCH /orgs/{orgId}/links/{linkId})
+func (_ Unimplemented) UpdateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params UpdateLinkParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8368,6 +8623,241 @@ func (siw *ServerInterfaceWrapper) LookupIp(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// ListLinks operation middleware
+func (siw *ServerInterfaceWrapper) ListLinks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListLinksParams
+
+	// ------------- Optional query parameter "endId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "endId", r.URL.Query(), &params.EndId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "endId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "endId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLinks(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateLink operation middleware
+func (siw *ServerInterfaceWrapper) CreateLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateLinkParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateLink(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteLink operation middleware
+func (siw *ServerInterfaceWrapper) DeleteLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "linkId" -------------
+	var linkId LinkId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "linkId", chi.URLParam(r, "linkId"), &linkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "linkId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteLinkParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteLink(w, r, orgId, linkId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateLink operation middleware
+func (siw *ServerInterfaceWrapper) UpdateLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "linkId" -------------
+	var linkId LinkId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "linkId", chi.URLParam(r, "linkId"), &linkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "linkId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateLinkParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateLink(w, r, orgId, linkId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -11325,6 +11815,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote", wrapper.PromoteEndpointMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/links", wrapper.ListLinks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/links", wrapper.CreateLink)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/links/{linkId}", wrapper.DeleteLink)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/links/{linkId}", wrapper.UpdateLink)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/vlans", wrapper.ListVlans)
@@ -16823,6 +17325,320 @@ func (response LookupIp404JSONResponse) VisitLookupIpResponse(w http.ResponseWri
 	return err
 }
 
+type ListLinksRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListLinksParams
+}
+
+type ListLinksResponseObject interface {
+	VisitListLinksResponse(w http.ResponseWriter) error
+}
+
+type ListLinks200JSONResponse LinkList
+
+func (response ListLinks200JSONResponse) VisitListLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinks400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListLinks400JSONResponse) VisitListLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinks401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListLinks401JSONResponse) VisitListLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinks404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListLinks404JSONResponse) VisitListLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLinkRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateLinkParams
+	Body   *CreateLinkJSONRequestBody
+}
+
+type CreateLinkResponseObject interface {
+	VisitCreateLinkResponse(w http.ResponseWriter) error
+}
+
+type CreateLink201JSONResponse Link
+
+func (response CreateLink201JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLink400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateLink400JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLink401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateLink401JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLink403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateLink403JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLink404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateLink404JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLink409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateLink409JSONResponse) VisitCreateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLinkRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	LinkId LinkId `json:"linkId"`
+	Params DeleteLinkParams
+}
+
+type DeleteLinkResponseObject interface {
+	VisitDeleteLinkResponse(w http.ResponseWriter) error
+}
+
+type DeleteLink204Response struct {
+}
+
+func (response DeleteLink204Response) VisitDeleteLinkResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteLink401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteLink401JSONResponse) VisitDeleteLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLink403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteLink403JSONResponse) VisitDeleteLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLink404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteLink404JSONResponse) VisitDeleteLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLinkRequestObject struct {
+	OrgId  OrgId  `json:"orgId"`
+	LinkId LinkId `json:"linkId"`
+	Params UpdateLinkParams
+	Body   *UpdateLinkJSONRequestBody
+}
+
+type UpdateLinkResponseObject interface {
+	VisitUpdateLinkResponse(w http.ResponseWriter) error
+}
+
+type UpdateLink200JSONResponse Link
+
+func (response UpdateLink200JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLink400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateLink400JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLink401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateLink401JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLink403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateLink403JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLink404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateLink404JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLink409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateLink409JSONResponse) VisitUpdateLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMembersRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -20946,6 +21762,18 @@ type StrictServerInterface interface {
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
+	// ListLinks Links whose both ends the caller may see, optionally of one device / endpoint group or site
+	// (GET /orgs/{orgId}/links)
+	ListLinks(ctx context.Context, request ListLinksRequestObject) (ListLinksResponseObject, error)
+	// CreateLink Connect two ends (edit on at least one end, view on both)
+	// (POST /orgs/{orgId}/links)
+	CreateLink(ctx context.Context, request CreateLinkRequestObject) (CreateLinkResponseObject, error)
+	// DeleteLink Delete a link
+	// (DELETE /orgs/{orgId}/links/{linkId})
+	DeleteLink(ctx context.Context, request DeleteLinkRequestObject) (DeleteLinkResponseObject, error)
+	// UpdateLink Update a link (optimistic lock)
+	// (PATCH /orgs/{orgId}/links/{linkId})
+	UpdateLink(ctx context.Context, request UpdateLinkRequestObject) (UpdateLinkResponseObject, error)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -23335,6 +24163,130 @@ func (sh *strictHandler) LookupIp(w http.ResponseWriter, r *http.Request, orgId 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LookupIpResponseObject); ok {
 		if err := validResponse.VisitLookupIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListLinks operation middleware
+func (sh *strictHandler) ListLinks(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListLinksParams) {
+	var request ListLinksRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLinks(ctx, request.(ListLinksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLinks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLinksResponseObject); ok {
+		if err := validResponse.VisitListLinksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateLink operation middleware
+func (sh *strictHandler) CreateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateLinkParams) {
+	var request CreateLinkRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateLinkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateLink(ctx, request.(CreateLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateLinkResponseObject); ok {
+		if err := validResponse.VisitCreateLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteLink operation middleware
+func (sh *strictHandler) DeleteLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params DeleteLinkParams) {
+	var request DeleteLinkRequestObject
+
+	request.OrgId = orgId
+	request.LinkId = linkId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteLink(ctx, request.(DeleteLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteLinkResponseObject); ok {
+		if err := validResponse.VisitDeleteLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateLink operation middleware
+func (sh *strictHandler) UpdateLink(w http.ResponseWriter, r *http.Request, orgId OrgId, linkId LinkId, params UpdateLinkParams) {
+	var request UpdateLinkRequestObject
+
+	request.OrgId = orgId
+	request.LinkId = linkId
+	request.Params = params
+
+	var body UpdateLinkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateLink(ctx, request.(UpdateLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateLinkResponseObject); ok {
+		if err := validResponse.VisitUpdateLinkResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

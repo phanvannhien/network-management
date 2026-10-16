@@ -236,6 +236,30 @@ type IpamAddress struct {
 	SiteID         pgtype.UUID
 }
 
+type Link struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	AKind          string
+	AID            pgtype.UUID
+	AInterfaceID   pgtype.UUID
+	BKind          string
+	BID            pgtype.UUID
+	BInterfaceID   pgtype.UUID
+	Kind           string
+	Medium         string
+	Speed          string
+	LengthM        pgtype.Numeric
+	CableID        string
+	Status         string
+	Provider       string
+	CircuitID      string
+	Bandwidth      string
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Location struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID

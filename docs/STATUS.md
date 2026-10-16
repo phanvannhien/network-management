@@ -5,6 +5,31 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-12 Link API
+- Đã làm:
+  - **Migration 000017:** bảng `links` — mỗi đầu là thiết bị hoặc nhóm đầu cuối, cổng để trống được (vẽ mức logic, gán sau, ADR-013);
+    loại ethernet/fiber/wireless/serial/logical/console, biến thể cáp, tốc độ, chiều dài, cable ID, trạng thái thiết kế
+    (Đang chạy / Dự kiến / Đứt), thông tin WAN (nhà mạng, circuit ID, băng thông — sẽ nối module Nhà cung cấp ở Phase 2).
+  - **API** `GET/POST /links` (lọc theo một đầu hoặc site), `PATCH/DELETE /links/{id}`. Quy tắc (SRS §7 mức Error):
+    **một cổng vật lý chỉ một dây** (kiểm dưới khóa theo cổng); **dây vật lý không vào interface ảo**; **logical (VPN/GRE/LAG)
+    không chiếm cổng vật lý**; cổng phải thuộc đúng thiết bị; nhóm đầu cuối không có cổng; ít nhất một đầu là thiết bị; không nối
+    một cổng với chính nó. Quyền: thấy link khi thấy **cả hai đầu**; sửa khi có quyền sửa ít nhất một đầu. Xóa thiết bị/nhóm thì
+    xóa link theo (có audit), xóa interface thì link còn nhưng thành "chưa gán cổng". Audit `link.*`.
+  - **Tách thành viên nhóm → thiết bị** (P1-11) giờ tạo **link thật** `eth0` ↔ cổng switch nếu cổng còn trống (không còn ghi chú).
+  - **Giao diện:** tab **Kết nối** ở trang thiết bị (thay chỗ "sắp có") và mục Kết nối ở trang nhóm đầu cuối: bảng cổng ↔ thiết
+    bị/nhóm bên kia (link, mã site nếu khác site), loại + biến thể + tốc độ, trạng thái (icon + chữ), cable ID; form chọn loại →
+    chỉ liệt kê cổng hợp loại, cổng đã có dây bị làm mờ; tìm thiết bị đầu kia (cùng site lên trước); gợi ý biến thể cáp theo loại;
+    phần "Thông tin WAN / nhà mạng" thu gọn. Hướng dẫn + thuật ngữ mới (`link-kind`; GLOSSARY.md: link vật lý/logical, Cable ID, DAC).
+- Test / cách kiểm tra: Go 3 test mới với DB thật (cách ly tổ chức, quy tắc cổng/loại/chiếm cổng/di chuyển/xóa kèm, phân quyền nửa
+  thấy nửa không); 7 mutation đều bị bắt; test tách thành viên kiểm link thật. Vitest 183 pass (thêm: tab Kết nối — SVI bị ẩn,
+  cổng đã có dây bị khóa, tạo link). Ảnh chụp + axe sáng/tối: 0 lỗi. `make check` pass.
+  **Cần chạy `make migrate-up` (000017) rồi khởi động lại `make dev-api`.**
+- Còn dở / lỗi đã biết: cảnh báo mức Warning (RJ45 ↔ SFP, hai đầu L3 khác subnet…) làm ở validation P1-20; link chưa hiện trong tab
+  Interfaces (cột "nối tới") — có thể thêm khi làm editor.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-13** Diagram API & store (bắt đầu editor sơ đồ).
+
 ## 2026-10-16 — P1-11 Nhóm thiết bị đầu cuối
 - Đã làm:
   - **Migration 000016:** `endpoint_groups` (loại = loại thiết bị đầu cuối, tên không trùng trong site, site + đơn vị sở hữu như

@@ -46,6 +46,7 @@ import { UsageBar } from '@/modules/ipam/UsageBar'
 import { atLeast, inScope, useScope } from '@/modules/sites/access'
 import { useBusinessUnits, useSites } from '@/modules/sites/sites'
 import { useDeviceList, useInterfaces } from './devices'
+import { LinksPanel } from './LinksPanel'
 import {
   ENDPOINT_KINDS,
   useEndpointGroup,
@@ -960,6 +961,16 @@ export function EndpointGroupPage() {
           </div>
         )}
         <p className="text-muted-foreground">{t('endpoints.promoteHint')}</p>
+      </section>
+      <section aria-labelledby="group-links" className="space-y-2">
+        <h2 id="group-links" className="font-semibold">
+          {t('links.title')}
+        </h2>
+        <LinksPanel
+          orgId={orgId}
+          owner={{ kind: 'endpoint_group', id: g.id, siteId: g.siteId }}
+          canEdit={canEdit}
+        />
       </section>
       {editing && <EndpointGroupDialog orgId={orgId} group={g} onClose={() => setEditing(false)} />}
       {member && (

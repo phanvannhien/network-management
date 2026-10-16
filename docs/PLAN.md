@@ -41,7 +41,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-10 IPAM cơ bản**: VLAN, subnet, ip_ranges; mức sử dụng; gợi ý IP trống; tìm IP thuộc ai.
 - [x] **P1-11 Nhóm thiết bị đầu cuối**: endpoint_groups + members, liên kết dải IP, đã dùng/tổng, tách thành viên thành device.
   IP của thành viên nhóm phải vào view `ipam_addresses` (P1-10) để được tính "đang dùng" và "IP trống kế tiếp" bỏ qua.
-- [ ] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.
+- [x] **P1-12 Link API**: links với đầu mút device/endpoint group, interface null được; chặn 2 link vào 1 cổng vật lý; chặn link vật lý vào interface ảo.
 
 ### Editor sơ đồ
 - [ ] **P1-13 Diagram API & store**: bảng diagrams (view JSONB), lưu có optimistic lock (409 khi xung đột); store editor (Zustand + Immer), commands, undo/redo ≥ 100; lưu = một request gồm thay đổi view + thay đổi dữ liệu kho trong một transaction; nháp chưa gửi giữ ở IndexedDB; diagram có scope organization | business_unit | site.

@@ -413,6 +413,9 @@ func (s *Server) DeleteEndpointGroup(ctx context.Context, req apigen.DeleteEndpo
 			out.code = code
 			return orRollback(err)
 		}
+		if err := deleteLinksOf(ctx, q, m, "endpoint_group", g.ID); err != nil {
+			return err
+		}
 		if _, err := q.DeleteEndpointGroup(ctx, store.DeleteEndpointGroupParams{ID: g.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("delete endpoint group: %w", err)
 		}
@@ -711,8 +714,8 @@ func (s *Server) DeleteEndpointMember(ctx context.Context, req apigen.DeleteEndp
 }
 
 // PromoteEndpointMember turns a member into a device of the group's type, site and unit in one transaction: an
-// "eth0" interface carries its MAC and IP (the management interface), the switch port goes into the notes until
-// links exist (P1-12), and the member leaves the group.
+// "eth0" interface carries its MAC and IP (the management interface) and is linked to the member's switch port when
+// that port is free (P1-12), and the member leaves the group.
 func (s *Server) PromoteEndpointMember(ctx context.Context, req apigen.PromoteEndpointMemberRequestObject) (apigen.PromoteEndpointMemberResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
@@ -740,12 +743,26 @@ func (s *Server) PromoteEndpointMember(ctx context.Context, req apigen.PromoteEn
 		if req.Body != nil && req.Body.Hostname != nil && strings.TrimSpace(*req.Body.Hostname) != "" {
 			hostname = *req.Body.Hostname
 		}
-		notes := mb.Notes
+		// The switch port becomes a real link when it is still free; otherwise it is kept in the notes.
+		notes, linkPort, linkDevice := mb.Notes, pgtype.UUID{}, pgtype.UUID{}
 		if mb.InterfaceID.Valid {
-			if pi, err := q.GetPortInterface(ctx, store.GetPortInterfaceParams{ID: mb.InterfaceID, OrganizationID: m.OrgID}); err == nil {
-				notes = strings.TrimSpace(fmt.Sprintf("%s\nCắm vào %s %s (từ nhóm %s)", notes, pi.Hostname, pi.Name, g.Name))
-			} else if !errors.Is(err, pgx.ErrNoRows) {
+			pi, err := q.GetPortInterface(ctx, store.GetPortInterfaceParams{ID: mb.InterfaceID, OrganizationID: m.OrgID})
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return fmt.Errorf("load port: %w", err)
+			}
+			if err == nil {
+				if err := q.LockInterfaceLinks(ctx, m.OrgID.String()+"/iface/"+uuidStr(pi.ID)); err != nil {
+					return fmt.Errorf("lock interface: %w", err)
+				}
+				n, err := q.CountPhysicalLinksOnInterface(ctx, store.CountPhysicalLinksOnInterfaceParams{OrganizationID: m.OrgID, InterfaceID: pi.ID})
+				if err != nil {
+					return fmt.Errorf("count port links: %w", err)
+				}
+				if n == 0 && pi.Kind == "physical" {
+					linkPort, linkDevice = pi.ID, pi.DeviceID
+				} else {
+					notes = strings.TrimSpace(fmt.Sprintf("%s\nCắm vào %s %s (từ nhóm %s; cổng đã có link khác)", notes, pi.Hostname, pi.Name, g.Name))
+				}
 			}
 		}
 		unit := uuid.UUID(g.BusinessUnitID.Bytes)
@@ -762,11 +779,17 @@ func (s *Server) PromoteEndpointMember(ctx context.Context, req apigen.PromoteEn
 			return errRollback
 		}
 		dev := dout.device.ID
-		if mb.Ip != nil || len(mb.Mac) > 0 {
+		if mb.Ip != nil || len(mb.Mac) > 0 || linkPort.Valid {
 			ifc, err := q.CreateInterface(ctx, store.CreateInterfaceParams{OrganizationID: m.OrgID, DeviceID: dev, Name: "eth0",
 				Kind: "physical", Media: "RJ45", Duplex: "auto", AdminUp: true, Mac: mb.Mac})
 			if err != nil {
 				return fmt.Errorf("create interface: %w", err)
+			}
+			if linkPort.Valid {
+				if _, err := q.CreateLink(ctx, store.CreateLinkParams{OrganizationID: m.OrgID, AKind: "device", AID: dev, AInterfaceID: ifc.ID,
+					BKind: "device", BID: linkDevice, BInterfaceID: linkPort, Kind: "ethernet", Status: "up"}); err != nil {
+					return fmt.Errorf("create link: %w", err)
+				}
 			}
 			if mb.Ip != nil {
 				bits := mb.Ip.BitLen()

@@ -70,6 +70,7 @@ export function useEndpointMutations(orgId: string) {
       qc.invalidateQueries({ queryKey: keys.all(orgId) }),
       qc.invalidateQueries({ queryKey: ['orgs', orgId, 'ipam'] }),
       qc.invalidateQueries({ queryKey: ['orgs', orgId, 'devices'] }),
+      qc.invalidateQueries({ queryKey: ['orgs', orgId, 'links'] }),
     ])
   const saveGroup = useMutation({
     mutationFn: async (input: { group?: EndpointGroup; body: EndpointGroupInput }) => {
