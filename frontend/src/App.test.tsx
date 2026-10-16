@@ -1375,6 +1375,10 @@ describe('device inventory (P1-08)', () => {
     rackName: '',
     rackU: null,
     uHeight: 1,
+    mgmtInterfaceId: null,
+    mgmtInterfaceName: '',
+    mgmtIp: '',
+    pollAddress: null,
     access: 'edit',
     version: 3,
     createdAt: '2026-10-16T00:00:00Z',
@@ -1497,5 +1501,138 @@ describe('device inventory (P1-08)', () => {
     fireEvent.change(input, { target: { value: 'FGT60F' } })
     fireEvent.click(await screen.findByRole('option', { name: /AGRI-BD-FW01/ }))
     expect(await screen.findByRole('heading', { name: 'AGRI-BD-FW01' })).toBeInTheDocument()
+  })
+
+  const IFACE = {
+    id: 'if-1',
+    name: 'Vlan10',
+    kind: 'svi',
+    media: '',
+    speed: '',
+    duplex: 'auto',
+    mode: '',
+    accessVlan: null,
+    nativeVlan: null,
+    allowedVlans: '',
+    poe: false,
+    lagId: null,
+    lagName: '',
+    description: 'MGMT',
+    adminUp: true,
+    sortOrder: 1,
+    isManagement: false,
+    version: 1,
+  }
+  const PORT = {
+    ...IFACE,
+    id: 'if-2',
+    name: 'Gi1/0/1',
+    kind: 'physical',
+    media: 'RJ45',
+    description: '',
+  }
+  const IP = {
+    id: 'ip-1',
+    interfaceId: 'if-1',
+    interfaceName: 'Vlan10',
+    address: '10.72.114.2/24',
+    vrf: '',
+    role: 'primary',
+    description: '',
+    version: 1,
+  }
+  const ifaceRoutes = (extra: Record<string, () => Response> = {}) =>
+    routes({
+      [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () =>
+        json({ interfaces: [IFACE, PORT] }),
+      [`GET /api/orgs/${ORG_ID}/devices/dev-1/ips`]: () => json({ ips: [IP] }),
+      [`GET /api/orgs/${ORG_ID}/device-templates`]: () => json({ templates: [] }),
+      ...extra,
+    })
+
+  it('interfaces tab lists ports with their IPs and sets the management interface', async () => {
+    const calls = fakeApi(
+      ifaceRoutes({
+        [`PATCH /api/orgs/${ORG_ID}/devices/dev-1`]: () =>
+          json({ ...DEVICE, mgmtInterfaceId: 'if-1', mgmtIp: '10.72.114.2/24', version: 4 }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=interfaces`)
+    expect(await screen.findByText('Gi1/0/1')).toBeInTheDocument()
+    expect(screen.getByText('10.72.114.2/24')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thao tác cho Vlan10' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Đặt làm interface quản trị' }))
+    const isPatch = (r: Request) => r.method === 'PATCH' && r.url.endsWith('/devices/dev-1')
+    await waitFor(() => expect(calls.some(isPatch)).toBe(true))
+    expect(await calls.find(isPatch)!.clone().json()).toMatchObject({
+      hostname: 'AGRI-BD-FW01',
+      mgmtInterfaceId: 'if-1',
+      version: 3,
+    })
+  })
+
+  it('adds an IP on an interface', async () => {
+    const calls = fakeApi(
+      ifaceRoutes({ [`POST /api/orgs/${ORG_ID}/devices/dev-1/ips`]: () => json(IP, 201) }),
+    )
+    renderAt(`/o/${ORG_ID}/devices/dev-1?tab=ips`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm IP' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm IP' })
+    fireEvent.change(within(dialog).getByLabelText(/Địa chỉ/), {
+      target: { value: ' 10.72.114.3/24 ' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Vai trò'), { target: { value: 'secondary' } })
+    fireEvent.change(within(dialog).getByLabelText('Interface'), { target: { value: 'if-1' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/ips')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    expect(await calls.find(isPost)!.clone().json()).toEqual({
+      address: '10.72.114.3/24',
+      interfaceId: 'if-1',
+      role: 'secondary',
+      vrf: '',
+      description: '',
+    })
+  })
+
+  it('a template preset fills the form and its ports are previewed', async () => {
+    const calls = fakeApi(
+      ifaceRoutes({
+        [`POST /api/orgs/${ORG_ID}/device-templates`]: () =>
+          json(
+            {
+              id: 'tp-1',
+              name: 'x',
+              type: 'firewall',
+              vendor: '',
+              model: '',
+              partNumber: '',
+              uHeight: 1,
+              ports: [],
+              portCount: 0,
+              notes: '',
+              version: 1,
+            },
+            201,
+          ),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/device-templates`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm template' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm template' })
+    fireEvent.change(within(dialog).getByLabelText('Điền từ mẫu có sẵn…'), {
+      target: { value: 'Fortinet FortiGate 100F' },
+    })
+    expect(within(dialog).getByText('21 cổng: mgmt … x2')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const isPost = (r: Request) => r.method === 'POST' && r.url.endsWith('/device-templates')
+    await waitFor(() => expect(calls.some(isPost)).toBe(true))
+    const body = await calls.find(isPost)!.clone().json()
+    expect(body).toMatchObject({
+      name: 'Fortinet FortiGate 100F',
+      type: 'firewall',
+      partNumber: 'FG-100F',
+    })
+    expect(body.ports).toHaveLength(4)
   })
 })

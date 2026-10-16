@@ -4,7 +4,11 @@
 -- name: ListDevices :many
 SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
-       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name
+       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
+       COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE((SELECT ip.address::text FROM ip_addresses ip
+                 WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 JOIN business_units du ON du.id = d.business_unit_id
@@ -12,6 +16,7 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
+LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -25,7 +30,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -45,6 +51,12 @@ ORDER BY
       WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'warranty_end' AND NOT @sort_desc::boolean THEN d.warranty_end END ASC NULLS LAST,
   CASE WHEN @sort_key::text = 'warranty_end' AND @sort_desc::boolean THEN d.warranty_end END DESC NULLS LAST,
+  CASE WHEN @sort_key::text = 'mgmt_ip' AND NOT @sort_desc::boolean THEN
+    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+     ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
+  CASE WHEN @sort_key::text = 'mgmt_ip' AND @sort_desc::boolean THEN
+    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+     ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'hostname' AND @sort_desc::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
 LIMIT @page_limit OFFSET @page_offset;
@@ -69,7 +81,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -100,7 +113,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
@@ -129,7 +143,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -158,7 +173,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -187,7 +203,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -216,7 +233,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -246,7 +264,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY (@grant_units::uuid[])
                          OR tu.partner_id = ANY (@grant_partners::uuid[]))))
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
-       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%')
+       OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%'))
   AND (sqlc.narg('partner_filter')::uuid IS NULL OR du.partner_id = sqlc.narg('partner_filter'))
   AND (sqlc.narg('unit_filter')::uuid IS NULL OR d.business_unit_id = sqlc.narg('unit_filter'))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
@@ -259,7 +278,11 @@ GROUP BY 2;
 -- name: GetDevice :one
 SELECT d.*, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
-       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name
+       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
+       COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE((SELECT ip.address::text FROM ip_addresses ip
+                 WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 JOIN business_units du ON du.id = d.business_unit_id
@@ -267,6 +290,7 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
+LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -283,11 +307,13 @@ WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NU
 -- name: CreateDevice :one
 INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
-                     purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields)
+                     purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
+                     template_id, poll_address)
 VALUES (@organization_id, @business_unit_id, @site_id, sqlc.narg('location_id'), sqlc.narg('rack_id'), sqlc.narg('rack_u'),
         @u_height, @hostname, @type, @vendor, @model, @part_number, @serial_number, @asset_tag, @firmware, @role, @lifecycle,
         @managed, @owner_name, sqlc.narg('purchase_date'), @po_number, sqlc.narg('warranty_end'), sqlc.narg('license_end'),
-        sqlc.narg('eol_date'), sqlc.narg('eos_date'), @notes, @tags, @custom_fields)
+        sqlc.narg('eol_date'), sqlc.narg('eos_date'), @notes, @tags, @custom_fields, sqlc.narg('template_id'),
+        sqlc.narg('poll_address'))
 RETURNING id;
 
 -- name: UpdateDevice :execrows
@@ -297,7 +323,8 @@ UPDATE devices SET business_unit_id = @business_unit_id, site_id = @site_id, loc
   firmware = @firmware, role = @role, lifecycle = @lifecycle, managed = @managed, owner_name = @owner_name,
   purchase_date = sqlc.narg('purchase_date'), po_number = @po_number, warranty_end = sqlc.narg('warranty_end'),
   license_end = sqlc.narg('license_end'), eol_date = sqlc.narg('eol_date'), eos_date = sqlc.narg('eos_date'),
-  notes = @notes, tags = @tags, custom_fields = @custom_fields, version = version + 1
+  notes = @notes, tags = @tags, custom_fields = @custom_fields, mgmt_interface_id = sqlc.narg('mgmt_interface_id'),
+  poll_address = sqlc.narg('poll_address'), version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL AND version = @version;
 
 -- name: SoftDeleteDevice :execrows
@@ -352,3 +379,7 @@ SELECT * FROM custom_field_defs WHERE id = @id AND organization_id = @organizati
 
 -- name: DeleteCustomFieldDef :execrows
 DELETE FROM custom_field_defs WHERE id = @id AND organization_id = @organization_id;
+
+-- name: TouchDevice :exec
+-- Interface / IP changes bump the device version so open device forms see the change.
+UPDATE devices SET version = version + 1 WHERE id = @id AND organization_id = @organization_id;

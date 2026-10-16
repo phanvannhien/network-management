@@ -112,31 +112,31 @@ func (e DeviceLifecycle) Valid() bool {
 
 // Defines values for DeviceRole.
 const (
-	Access       DeviceRole = "access"
-	Core         DeviceRole = "core"
-	Distribution DeviceRole = "distribution"
-	Dmz          DeviceRole = "dmz"
-	Edge         DeviceRole = "edge"
-	None         DeviceRole = "none"
-	Oob          DeviceRole = "oob"
+	DeviceRoleAccess       DeviceRole = "access"
+	DeviceRoleCore         DeviceRole = "core"
+	DeviceRoleDistribution DeviceRole = "distribution"
+	DeviceRoleDmz          DeviceRole = "dmz"
+	DeviceRoleEdge         DeviceRole = "edge"
+	DeviceRoleNone         DeviceRole = "none"
+	DeviceRoleOob          DeviceRole = "oob"
 )
 
 // Valid indicates whether the value is a known member of the DeviceRole enum.
 func (e DeviceRole) Valid() bool {
 	switch e {
-	case Access:
+	case DeviceRoleAccess:
 		return true
-	case Core:
+	case DeviceRoleCore:
 		return true
-	case Distribution:
+	case DeviceRoleDistribution:
 		return true
-	case Dmz:
+	case DeviceRoleDmz:
 		return true
-	case Edge:
+	case DeviceRoleEdge:
 		return true
-	case None:
+	case DeviceRoleNone:
 		return true
-	case Oob:
+	case DeviceRoleOob:
 		return true
 	default:
 		return false
@@ -287,6 +287,189 @@ func (e HealthStatus) Valid() bool {
 	case HealthStatusDegraded:
 		return true
 	case HealthStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceDuplex.
+const (
+	InterfaceDuplexAuto InterfaceDuplex = "auto"
+	InterfaceDuplexFull InterfaceDuplex = "full"
+	InterfaceDuplexHalf InterfaceDuplex = "half"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceDuplex enum.
+func (e InterfaceDuplex) Valid() bool {
+	switch e {
+	case InterfaceDuplexAuto:
+		return true
+	case InterfaceDuplexFull:
+		return true
+	case InterfaceDuplexHalf:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceInputDuplex.
+const (
+	InterfaceInputDuplexAuto InterfaceInputDuplex = "auto"
+	InterfaceInputDuplexFull InterfaceInputDuplex = "full"
+	InterfaceInputDuplexHalf InterfaceInputDuplex = "half"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceInputDuplex enum.
+func (e InterfaceInputDuplex) Valid() bool {
+	switch e {
+	case InterfaceInputDuplexAuto:
+		return true
+	case InterfaceInputDuplexFull:
+		return true
+	case InterfaceInputDuplexHalf:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceKind.
+const (
+	Lag          InterfaceKind = "lag"
+	Loopback     InterfaceKind = "loopback"
+	Physical     InterfaceKind = "physical"
+	Subinterface InterfaceKind = "subinterface"
+	Svi          InterfaceKind = "svi"
+	Tunnel       InterfaceKind = "tunnel"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceKind enum.
+func (e InterfaceKind) Valid() bool {
+	switch e {
+	case Lag:
+		return true
+	case Loopback:
+		return true
+	case Physical:
+		return true
+	case Subinterface:
+		return true
+	case Svi:
+		return true
+	case Tunnel:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceMedia.
+const (
+	InterfaceMediaConsole InterfaceMedia = "Console"
+	InterfaceMediaEmpty   InterfaceMedia = ""
+	InterfaceMediaQSFP    InterfaceMedia = "QSFP"
+	InterfaceMediaRJ45    InterfaceMedia = "RJ45"
+	InterfaceMediaRadio   InterfaceMedia = "Radio"
+	InterfaceMediaSFP     InterfaceMedia = "SFP"
+	InterfaceMediaSFP1    InterfaceMedia = "SFP+"
+	InterfaceMediaSFP28   InterfaceMedia = "SFP28"
+	InterfaceMediaSerial  InterfaceMedia = "Serial"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceMedia enum.
+func (e InterfaceMedia) Valid() bool {
+	switch e {
+	case InterfaceMediaConsole:
+		return true
+	case InterfaceMediaEmpty:
+		return true
+	case InterfaceMediaQSFP:
+		return true
+	case InterfaceMediaRJ45:
+		return true
+	case InterfaceMediaRadio:
+		return true
+	case InterfaceMediaSFP:
+		return true
+	case InterfaceMediaSFP1:
+		return true
+	case InterfaceMediaSFP28:
+		return true
+	case InterfaceMediaSerial:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceMode.
+const (
+	InterfaceModeAccess InterfaceMode = "access"
+	InterfaceModeEmpty  InterfaceMode = ""
+	InterfaceModeHybrid InterfaceMode = "hybrid"
+	InterfaceModeRouted InterfaceMode = "routed"
+	InterfaceModeTrunk  InterfaceMode = "trunk"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceMode enum.
+func (e InterfaceMode) Valid() bool {
+	switch e {
+	case InterfaceModeAccess:
+		return true
+	case InterfaceModeEmpty:
+		return true
+	case InterfaceModeHybrid:
+		return true
+	case InterfaceModeRouted:
+		return true
+	case InterfaceModeTrunk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InterfaceUpdateDuplex.
+const (
+	InterfaceUpdateDuplexAuto InterfaceUpdateDuplex = "auto"
+	InterfaceUpdateDuplexFull InterfaceUpdateDuplex = "full"
+	InterfaceUpdateDuplexHalf InterfaceUpdateDuplex = "half"
+)
+
+// Valid indicates whether the value is a known member of the InterfaceUpdateDuplex enum.
+func (e InterfaceUpdateDuplex) Valid() bool {
+	switch e {
+	case InterfaceUpdateDuplexAuto:
+		return true
+	case InterfaceUpdateDuplexFull:
+		return true
+	case InterfaceUpdateDuplexHalf:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IpRole.
+const (
+	Nat       IpRole = "nat"
+	Primary   IpRole = "primary"
+	Public    IpRole = "public"
+	Secondary IpRole = "secondary"
+)
+
+// Valid indicates whether the value is a known member of the IpRole enum.
+func (e IpRole) Valid() bool {
+	switch e {
+	case Nat:
+		return true
+	case Primary:
+		return true
+	case Public:
+		return true
+	case Secondary:
 		return true
 	default:
 		return false
@@ -513,6 +696,7 @@ func (e UnitGrantRole) Valid() bool {
 const (
 	DeviceSortHostname    DeviceSort = "hostname"
 	DeviceSortLifecycle   DeviceSort = "lifecycle"
+	DeviceSortMgmtIp      DeviceSort = "mgmtIp"
 	DeviceSortModel       DeviceSort = "model"
 	DeviceSortSerial      DeviceSort = "serial"
 	DeviceSortSite        DeviceSort = "site"
@@ -528,6 +712,8 @@ func (e DeviceSort) Valid() bool {
 	case DeviceSortHostname:
 		return true
 	case DeviceSortLifecycle:
+		return true
+	case DeviceSortMgmtIp:
 		return true
 	case DeviceSortModel:
 		return true
@@ -552,6 +738,7 @@ func (e DeviceSort) Valid() bool {
 const (
 	ListDevicesParamsSortHostname    ListDevicesParamsSort = "hostname"
 	ListDevicesParamsSortLifecycle   ListDevicesParamsSort = "lifecycle"
+	ListDevicesParamsSortMgmtIp      ListDevicesParamsSort = "mgmtIp"
 	ListDevicesParamsSortModel       ListDevicesParamsSort = "model"
 	ListDevicesParamsSortSerial      ListDevicesParamsSort = "serial"
 	ListDevicesParamsSortSite        ListDevicesParamsSort = "site"
@@ -567,6 +754,8 @@ func (e ListDevicesParamsSort) Valid() bool {
 	case ListDevicesParamsSortHostname:
 		return true
 	case ListDevicesParamsSortLifecycle:
+		return true
+	case ListDevicesParamsSortMgmtIp:
 		return true
 	case ListDevicesParamsSortModel:
 		return true
@@ -670,6 +859,16 @@ type AdminUser struct {
 // AdminUserList defines model for AdminUserList.
 type AdminUserList struct {
 	Users []AdminUser `json:"users"`
+}
+
+// ApplyTemplate defines model for ApplyTemplate.
+type ApplyTemplate struct {
+	TemplateId openapi_types.UUID `json:"templateId"`
+}
+
+// ApplyTemplateResult defines model for ApplyTemplateResult.
+type ApplyTemplateResult struct {
+	Added int64 `json:"added"`
 }
 
 // AuditActorRef defines model for AuditActorRef.
@@ -846,17 +1045,27 @@ type Device struct {
 	LocationName string                 `json:"locationName"`
 
 	// Managed false = belongs to someone else (e.g. the ISP's modem)
-	Managed bool   `json:"managed"`
-	Model   string `json:"model"`
-	Notes   string `json:"notes"`
+	Managed bool `json:"managed"`
+
+	// MgmtInterfaceId Management interface (ADR-012); the management IP is its primary IP. Ignored on create.
+	MgmtInterfaceId   *openapi_types.UUID `json:"mgmtInterfaceId"`
+	MgmtInterfaceName string              `json:"mgmtInterfaceName"`
+
+	// MgmtIp Primary IP (CIDR) of the management interface, '' when none
+	MgmtIp string `json:"mgmtIp"`
+	Model  string `json:"model"`
+	Notes  string `json:"notes"`
 
 	// OwnerName Person in charge
-	OwnerName    string              `json:"ownerName"`
-	PartNumber   string              `json:"partNumber"`
-	PartnerCode  string              `json:"partnerCode"`
-	PartnerId    openapi_types.UUID  `json:"partnerId"`
-	PartnerName  string              `json:"partnerName"`
-	PoNumber     string              `json:"poNumber"`
+	OwnerName   string             `json:"ownerName"`
+	PartNumber  string             `json:"partNumber"`
+	PartnerCode string             `json:"partnerCode"`
+	PartnerId   openapi_types.UUID `json:"partnerId"`
+	PartnerName string             `json:"partnerName"`
+	PoNumber    string             `json:"poNumber"`
+
+	// PollAddress Address the poller uses (Phase 3); null = the management IP
+	PollAddress  *string             `json:"pollAddress"`
 	PurchaseDate *openapi_types.Date `json:"purchaseDate"`
 	RackId       *openapi_types.UUID `json:"rackId"`
 	RackName     string              `json:"rackName"`
@@ -931,27 +1140,36 @@ type DeviceInput struct {
 	LocationId   *openapi_types.UUID     `json:"locationId,omitempty"`
 
 	// Managed false = belongs to someone else (e.g. the ISP's modem)
-	Managed *bool   `json:"managed,omitempty"`
-	Model   *string `json:"model,omitempty"`
-	Notes   *string `json:"notes,omitempty"`
+	Managed *bool `json:"managed,omitempty"`
+
+	// MgmtInterfaceId Management interface (ADR-012); the management IP is its primary IP. Ignored on create.
+	MgmtInterfaceId *openapi_types.UUID `json:"mgmtInterfaceId,omitempty"`
+	Model           *string             `json:"model,omitempty"`
+	Notes           *string             `json:"notes,omitempty"`
 
 	// OwnerName Person in charge
-	OwnerName    *string             `json:"ownerName,omitempty"`
-	PartNumber   *string             `json:"partNumber,omitempty"`
-	PoNumber     *string             `json:"poNumber,omitempty"`
+	OwnerName  *string `json:"ownerName,omitempty"`
+	PartNumber *string `json:"partNumber,omitempty"`
+	PoNumber   *string `json:"poNumber,omitempty"`
+
+	// PollAddress Address the poller uses (Phase 3); null = the management IP
+	PollAddress  *string             `json:"pollAddress,omitempty"`
 	PurchaseDate *openapi_types.Date `json:"purchaseDate,omitempty"`
 	RackId       *openapi_types.UUID `json:"rackId,omitempty"`
 
 	// RackU Lowest U the device occupies
-	RackU        *int32              `json:"rackU,omitempty"`
-	Role         *DeviceRole         `json:"role,omitempty"`
-	SerialNumber *string             `json:"serialNumber,omitempty"`
-	SiteId       openapi_types.UUID  `json:"siteId"`
-	Tags         *[]string           `json:"tags,omitempty"`
-	Type         DeviceType          `json:"type"`
-	UHeight      *int32              `json:"uHeight,omitempty"`
-	Vendor       *string             `json:"vendor,omitempty"`
-	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd,omitempty"`
+	RackU        *int32             `json:"rackU,omitempty"`
+	Role         *DeviceRole        `json:"role,omitempty"`
+	SerialNumber *string            `json:"serialNumber,omitempty"`
+	SiteId       openapi_types.UUID `json:"siteId"`
+	Tags         *[]string          `json:"tags,omitempty"`
+
+	// TemplateId Create only — fill empty type/vendor/model/part number from the template and generate its ports
+	TemplateId  *openapi_types.UUID `json:"templateId,omitempty"`
+	Type        DeviceType          `json:"type"`
+	UHeight     *int32              `json:"uHeight,omitempty"`
+	Vendor      *string             `json:"vendor,omitempty"`
+	WarrantyEnd *openapi_types.Date `json:"warrantyEnd,omitempty"`
 }
 
 // DeviceLifecycle defines model for DeviceLifecycle.
@@ -968,6 +1186,51 @@ type DeviceList struct {
 
 // DeviceRole defines model for DeviceRole.
 type DeviceRole string
+
+// DeviceTemplate defines model for DeviceTemplate.
+type DeviceTemplate struct {
+	Id         openapi_types.UUID `json:"id"`
+	Model      string             `json:"model"`
+	Name       string             `json:"name"`
+	Notes      string             `json:"notes"`
+	PartNumber string             `json:"partNumber"`
+	PortCount  int32              `json:"portCount"`
+	Ports      []PortGroup        `json:"ports"`
+	Type       DeviceType         `json:"type"`
+	UHeight    int32              `json:"uHeight"`
+	Vendor     string             `json:"vendor"`
+	Version    int32              `json:"version"`
+}
+
+// DeviceTemplateInput defines model for DeviceTemplateInput.
+type DeviceTemplateInput struct {
+	Model      *string      `json:"model,omitempty"`
+	Name       string       `json:"name"`
+	Notes      *string      `json:"notes,omitempty"`
+	PartNumber *string      `json:"partNumber,omitempty"`
+	Ports      *[]PortGroup `json:"ports,omitempty"`
+	Type       DeviceType   `json:"type"`
+	UHeight    *int32       `json:"uHeight,omitempty"`
+	Vendor     *string      `json:"vendor,omitempty"`
+}
+
+// DeviceTemplateList defines model for DeviceTemplateList.
+type DeviceTemplateList struct {
+	Templates []DeviceTemplate `json:"templates"`
+}
+
+// DeviceTemplateUpdate defines model for DeviceTemplateUpdate.
+type DeviceTemplateUpdate struct {
+	Model      *string      `json:"model,omitempty"`
+	Name       string       `json:"name"`
+	Notes      *string      `json:"notes,omitempty"`
+	PartNumber *string      `json:"partNumber,omitempty"`
+	Ports      *[]PortGroup `json:"ports,omitempty"`
+	Type       DeviceType   `json:"type"`
+	UHeight    *int32       `json:"uHeight,omitempty"`
+	Vendor     *string      `json:"vendor,omitempty"`
+	Version    int32        `json:"version"`
+}
 
 // DeviceType defines model for DeviceType.
 type DeviceType string
@@ -990,28 +1253,37 @@ type DeviceUpdate struct {
 	LocationId   *openapi_types.UUID     `json:"locationId,omitempty"`
 
 	// Managed false = belongs to someone else (e.g. the ISP's modem)
-	Managed *bool   `json:"managed,omitempty"`
-	Model   *string `json:"model,omitempty"`
-	Notes   *string `json:"notes,omitempty"`
+	Managed *bool `json:"managed,omitempty"`
+
+	// MgmtInterfaceId Management interface (ADR-012); the management IP is its primary IP. Ignored on create.
+	MgmtInterfaceId *openapi_types.UUID `json:"mgmtInterfaceId,omitempty"`
+	Model           *string             `json:"model,omitempty"`
+	Notes           *string             `json:"notes,omitempty"`
 
 	// OwnerName Person in charge
-	OwnerName    *string             `json:"ownerName,omitempty"`
-	PartNumber   *string             `json:"partNumber,omitempty"`
-	PoNumber     *string             `json:"poNumber,omitempty"`
+	OwnerName  *string `json:"ownerName,omitempty"`
+	PartNumber *string `json:"partNumber,omitempty"`
+	PoNumber   *string `json:"poNumber,omitempty"`
+
+	// PollAddress Address the poller uses (Phase 3); null = the management IP
+	PollAddress  *string             `json:"pollAddress,omitempty"`
 	PurchaseDate *openapi_types.Date `json:"purchaseDate,omitempty"`
 	RackId       *openapi_types.UUID `json:"rackId,omitempty"`
 
 	// RackU Lowest U the device occupies
-	RackU        *int32              `json:"rackU,omitempty"`
-	Role         *DeviceRole         `json:"role,omitempty"`
-	SerialNumber *string             `json:"serialNumber,omitempty"`
-	SiteId       openapi_types.UUID  `json:"siteId"`
-	Tags         *[]string           `json:"tags,omitempty"`
-	Type         DeviceType          `json:"type"`
-	UHeight      *int32              `json:"uHeight,omitempty"`
-	Vendor       *string             `json:"vendor,omitempty"`
-	Version      int32               `json:"version"`
-	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd,omitempty"`
+	RackU        *int32             `json:"rackU,omitempty"`
+	Role         *DeviceRole        `json:"role,omitempty"`
+	SerialNumber *string            `json:"serialNumber,omitempty"`
+	SiteId       openapi_types.UUID `json:"siteId"`
+	Tags         *[]string          `json:"tags,omitempty"`
+
+	// TemplateId Create only — fill empty type/vendor/model/part number from the template and generate its ports
+	TemplateId  *openapi_types.UUID `json:"templateId,omitempty"`
+	Type        DeviceType          `json:"type"`
+	UHeight     *int32              `json:"uHeight,omitempty"`
+	Vendor      *string             `json:"vendor,omitempty"`
+	Version     int32               `json:"version"`
+	WarrantyEnd *openapi_types.Date `json:"warrantyEnd,omitempty"`
 }
 
 // Error defines model for Error.
@@ -1053,10 +1325,156 @@ type HealthDatabase string
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// Interface defines model for Interface.
+type Interface struct {
+	AccessVlan *int32 `json:"accessVlan"`
+	AdminUp    bool   `json:"adminUp"`
+
+	// AllowedVlans e.g. "10,20-30"
+	AllowedVlans string             `json:"allowedVlans"`
+	Description  string             `json:"description"`
+	Duplex       InterfaceDuplex    `json:"duplex"`
+	Id           openapi_types.UUID `json:"id"`
+	IsManagement bool               `json:"isManagement"`
+	Kind         InterfaceKind      `json:"kind"`
+
+	// LagId Parent LAG (an interface of kind lag on the same device)
+	LagId      *openapi_types.UUID `json:"lagId"`
+	LagName    string              `json:"lagName"`
+	Media      InterfaceMedia      `json:"media"`
+	Mode       InterfaceMode       `json:"mode"`
+	Name       string              `json:"name"`
+	NativeVlan *int32              `json:"nativeVlan"`
+	Poe        bool                `json:"poe"`
+	SortOrder  int32               `json:"sortOrder"`
+
+	// Speed Free text, e.g. 1G, 10G, 100M
+	Speed   string `json:"speed"`
+	Version int32  `json:"version"`
+}
+
+// InterfaceDuplex defines model for Interface.Duplex.
+type InterfaceDuplex string
+
+// InterfaceInput defines model for InterfaceInput.
+type InterfaceInput struct {
+	AccessVlan *int32 `json:"accessVlan,omitempty"`
+	AdminUp    *bool  `json:"adminUp,omitempty"`
+
+	// AllowedVlans e.g. "10,20-30"
+	AllowedVlans *string               `json:"allowedVlans,omitempty"`
+	Description  *string               `json:"description,omitempty"`
+	Duplex       *InterfaceInputDuplex `json:"duplex,omitempty"`
+	Kind         InterfaceKind         `json:"kind"`
+
+	// LagId Parent LAG (an interface of kind lag on the same device)
+	LagId      *openapi_types.UUID `json:"lagId,omitempty"`
+	Media      *InterfaceMedia     `json:"media,omitempty"`
+	Mode       *InterfaceMode      `json:"mode,omitempty"`
+	Name       string              `json:"name"`
+	NativeVlan *int32              `json:"nativeVlan,omitempty"`
+	Poe        *bool               `json:"poe,omitempty"`
+
+	// Speed Free text, e.g. 1G, 10G, 100M
+	Speed *string `json:"speed,omitempty"`
+}
+
+// InterfaceInputDuplex defines model for InterfaceInput.Duplex.
+type InterfaceInputDuplex string
+
+// InterfaceKind defines model for InterfaceKind.
+type InterfaceKind string
+
+// InterfaceList defines model for InterfaceList.
+type InterfaceList struct {
+	Interfaces []Interface `json:"interfaces"`
+}
+
+// InterfaceMedia defines model for InterfaceMedia.
+type InterfaceMedia string
+
+// InterfaceMode defines model for InterfaceMode.
+type InterfaceMode string
+
+// InterfaceUpdate defines model for InterfaceUpdate.
+type InterfaceUpdate struct {
+	AccessVlan *int32 `json:"accessVlan,omitempty"`
+	AdminUp    *bool  `json:"adminUp,omitempty"`
+
+	// AllowedVlans e.g. "10,20-30"
+	AllowedVlans *string                `json:"allowedVlans,omitempty"`
+	Description  *string                `json:"description,omitempty"`
+	Duplex       *InterfaceUpdateDuplex `json:"duplex,omitempty"`
+	Kind         InterfaceKind          `json:"kind"`
+
+	// LagId Parent LAG (an interface of kind lag on the same device)
+	LagId      *openapi_types.UUID `json:"lagId,omitempty"`
+	Media      *InterfaceMedia     `json:"media,omitempty"`
+	Mode       *InterfaceMode      `json:"mode,omitempty"`
+	Name       string              `json:"name"`
+	NativeVlan *int32              `json:"nativeVlan,omitempty"`
+	Poe        *bool               `json:"poe,omitempty"`
+
+	// Speed Free text, e.g. 1G, 10G, 100M
+	Speed   *string `json:"speed,omitempty"`
+	Version int32   `json:"version"`
+}
+
+// InterfaceUpdateDuplex defines model for InterfaceUpdate.Duplex.
+type InterfaceUpdateDuplex string
+
 // InviteLink defines model for InviteLink.
 type InviteLink struct {
 	InviteToken string `json:"inviteToken"`
 }
+
+// IpAddress defines model for IpAddress.
+type IpAddress struct {
+	// Address CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128)
+	Address     string             `json:"address"`
+	Description string             `json:"description"`
+	Id          openapi_types.UUID `json:"id"`
+
+	// InterfaceId null only for NAT/public addresses kept on the device
+	InterfaceId   *openapi_types.UUID `json:"interfaceId"`
+	InterfaceName string              `json:"interfaceName"`
+	Role          IpRole              `json:"role"`
+	Version       int32               `json:"version"`
+	Vrf           string              `json:"vrf"`
+}
+
+// IpAddressInput defines model for IpAddressInput.
+type IpAddressInput struct {
+	// Address CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128)
+	Address     string  `json:"address"`
+	Description *string `json:"description,omitempty"`
+
+	// InterfaceId null only for NAT/public addresses kept on the device
+	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
+	Role        IpRole              `json:"role"`
+	Vrf         *string             `json:"vrf,omitempty"`
+}
+
+// IpAddressList defines model for IpAddressList.
+type IpAddressList struct {
+	Ips []IpAddress `json:"ips"`
+}
+
+// IpAddressUpdate defines model for IpAddressUpdate.
+type IpAddressUpdate struct {
+	// Address CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128)
+	Address     string  `json:"address"`
+	Description *string `json:"description,omitempty"`
+
+	// InterfaceId null only for NAT/public addresses kept on the device
+	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
+	Role        IpRole              `json:"role"`
+	Version     int32               `json:"version"`
+	Vrf         *string             `json:"vrf,omitempty"`
+}
+
+// IpRole defines model for IpRole.
+type IpRole string
 
 // Location defines model for Location.
 type Location struct {
@@ -1284,6 +1702,16 @@ type PasswordResetLink struct {
 
 // Permission defines model for Permission.
 type Permission string
+
+// PortGroup Ports named by pattern with {n} replaced by start … start+count-1, e.g. Gi1/0/{n}
+type PortGroup struct {
+	Count   int32           `json:"count"`
+	Media   *InterfaceMedia `json:"media,omitempty"`
+	Pattern string          `json:"pattern"`
+	Poe     *bool           `json:"poe,omitempty"`
+	Speed   *string         `json:"speed,omitempty"`
+	Start   int32           `json:"start"`
+}
 
 // Rack defines model for Rack.
 type Rack struct {
@@ -1545,6 +1973,12 @@ type DeviceVendorFilter = []string
 // FieldId defines model for FieldId.
 type FieldId = openapi_types.UUID
 
+// InterfaceId defines model for InterfaceId.
+type InterfaceId = openapi_types.UUID
+
+// IpId defines model for IpId.
+type IpId = openapi_types.UUID
+
 // LocationId defines model for LocationId.
 type LocationId = openapi_types.UUID
 
@@ -1562,6 +1996,9 @@ type ShareId = openapi_types.UUID
 
 // SiteId defines model for SiteId.
 type SiteId = openapi_types.UUID
+
+// TemplateId defines model for TemplateId.
+type TemplateId = openapi_types.UUID
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
@@ -1739,6 +2176,21 @@ type UpdateCustomFieldParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateDeviceTemplateParams defines parameters for CreateDeviceTemplate.
+type CreateDeviceTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteDeviceTemplateParams defines parameters for DeleteDeviceTemplate.
+type DeleteDeviceTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateDeviceTemplateParams defines parameters for UpdateDeviceTemplate.
+type UpdateDeviceTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListDevicesParams defines parameters for ListDevices.
 type ListDevicesParams struct {
 	// Q Substring of hostname, serial, part number, model or asset tag
@@ -1786,6 +2238,41 @@ type DeleteDeviceParams struct {
 
 // UpdateDeviceParams defines parameters for UpdateDevice.
 type UpdateDeviceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ApplyDeviceTemplateParams defines parameters for ApplyDeviceTemplate.
+type ApplyDeviceTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateInterfaceParams defines parameters for CreateInterface.
+type CreateInterfaceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteInterfaceParams defines parameters for DeleteInterface.
+type DeleteInterfaceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateInterfaceParams defines parameters for UpdateInterface.
+type UpdateInterfaceParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateDeviceIpParams defines parameters for CreateDeviceIp.
+type CreateDeviceIpParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteDeviceIpParams defines parameters for DeleteDeviceIp.
+type DeleteDeviceIpParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateDeviceIpParams defines parameters for UpdateDeviceIp.
+type UpdateDeviceIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -1959,6 +2446,12 @@ type CreateCustomFieldJSONRequestBody = CustomFieldInput
 // UpdateCustomFieldJSONRequestBody defines body for UpdateCustomField for application/json ContentType.
 type UpdateCustomFieldJSONRequestBody = CustomFieldUpdate
 
+// CreateDeviceTemplateJSONRequestBody defines body for CreateDeviceTemplate for application/json ContentType.
+type CreateDeviceTemplateJSONRequestBody = DeviceTemplateInput
+
+// UpdateDeviceTemplateJSONRequestBody defines body for UpdateDeviceTemplate for application/json ContentType.
+type UpdateDeviceTemplateJSONRequestBody = DeviceTemplateUpdate
+
 // CreateDeviceJSONRequestBody defines body for CreateDevice for application/json ContentType.
 type CreateDeviceJSONRequestBody = DeviceInput
 
@@ -1970,6 +2463,21 @@ type BulkUpdateDevicesJSONRequestBody = DeviceBulkUpdate
 
 // UpdateDeviceJSONRequestBody defines body for UpdateDevice for application/json ContentType.
 type UpdateDeviceJSONRequestBody = DeviceUpdate
+
+// ApplyDeviceTemplateJSONRequestBody defines body for ApplyDeviceTemplate for application/json ContentType.
+type ApplyDeviceTemplateJSONRequestBody = ApplyTemplate
+
+// CreateInterfaceJSONRequestBody defines body for CreateInterface for application/json ContentType.
+type CreateInterfaceJSONRequestBody = InterfaceInput
+
+// UpdateInterfaceJSONRequestBody defines body for UpdateInterface for application/json ContentType.
+type UpdateInterfaceJSONRequestBody = InterfaceUpdate
+
+// CreateDeviceIpJSONRequestBody defines body for CreateDeviceIp for application/json ContentType.
+type CreateDeviceIpJSONRequestBody = IpAddressInput
+
+// UpdateDeviceIpJSONRequestBody defines body for UpdateDeviceIp for application/json ContentType.
+type UpdateDeviceIpJSONRequestBody = IpAddressUpdate
 
 // AddMemberJSONRequestBody defines body for AddMember for application/json ContentType.
 type AddMemberJSONRequestBody = AddMemberRequest
@@ -2126,6 +2634,21 @@ type ServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams)
+	// ListDeviceTemplates Device templates of the organization
+	// (GET /orgs/{orgId}/device-templates)
+	ListDeviceTemplates(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateDeviceTemplate Create a template (organization owner/admin/editor)
+	// (POST /orgs/{orgId}/device-templates)
+	CreateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceTemplateParams)
+	// DeleteDeviceTemplate Delete a template (devices keep their ports)
+	// (DELETE /orgs/{orgId}/device-templates/{templateId})
+	DeleteDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params DeleteDeviceTemplateParams)
+	// GetDeviceTemplate One template
+	// (GET /orgs/{orgId}/device-templates/{templateId})
+	GetDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId)
+	// UpdateDeviceTemplate Update a template (existing devices keep their ports)
+	// (PATCH /orgs/{orgId}/device-templates/{templateId})
+	UpdateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params UpdateDeviceTemplateParams)
 	// ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
 	// (GET /orgs/{orgId}/devices)
 	ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams)
@@ -2147,9 +2670,36 @@ type ServerInterface interface {
 	// UpdateDevice Update a device (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId})
 	UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams)
+	// ApplyDeviceTemplate Generate the template ports the device does not have yet
+	// (POST /orgs/{orgId}/devices/{deviceId}/apply-template)
+	ApplyDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params ApplyDeviceTemplateParams)
 	// GetDeviceHistory Audit entries of the device, newest first
 	// (GET /orgs/{orgId}/devices/{deviceId}/history)
 	GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId)
+	// ListInterfaces Interfaces of the device
+	// (GET /orgs/{orgId}/devices/{deviceId}/interfaces)
+	ListInterfaces(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId)
+	// CreateInterface Add an interface, usually a virtual one (SVI, loopback, tunnel, sub-interface, LAG)
+	// (POST /orgs/{orgId}/devices/{deviceId}/interfaces)
+	CreateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateInterfaceParams)
+	// DeleteInterface Delete an interface and its IPs
+	// (DELETE /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+	DeleteInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params DeleteInterfaceParams)
+	// UpdateInterface Update an interface (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+	UpdateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params UpdateInterfaceParams)
+	// ListDeviceIps IP addresses of the device (on interfaces, or NAT/public on the device)
+	// (GET /orgs/{orgId}/devices/{deviceId}/ips)
+	ListDeviceIps(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId)
+	// CreateDeviceIp Add an IP address
+	// (POST /orgs/{orgId}/devices/{deviceId}/ips)
+	CreateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateDeviceIpParams)
+	// DeleteDeviceIp Delete an IP address
+	// (DELETE /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+	DeleteDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params DeleteDeviceIpParams)
+	// UpdateDeviceIp Update an IP address (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+	UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -2474,6 +3024,36 @@ func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request,
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListDeviceTemplates Device templates of the organization
+// (GET /orgs/{orgId}/device-templates)
+func (_ Unimplemented) ListDeviceTemplates(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDeviceTemplate Create a template (organization owner/admin/editor)
+// (POST /orgs/{orgId}/device-templates)
+func (_ Unimplemented) CreateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteDeviceTemplate Delete a template (devices keep their ports)
+// (DELETE /orgs/{orgId}/device-templates/{templateId})
+func (_ Unimplemented) DeleteDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params DeleteDeviceTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDeviceTemplate One template
+// (GET /orgs/{orgId}/device-templates/{templateId})
+func (_ Unimplemented) GetDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateDeviceTemplate Update a template (existing devices keep their ports)
+// (PATCH /orgs/{orgId}/device-templates/{templateId})
+func (_ Unimplemented) UpdateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params UpdateDeviceTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
 // (GET /orgs/{orgId}/devices)
 func (_ Unimplemented) ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams) {
@@ -2516,9 +3096,63 @@ func (_ Unimplemented) UpdateDevice(w http.ResponseWriter, r *http.Request, orgI
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ApplyDeviceTemplate Generate the template ports the device does not have yet
+// (POST /orgs/{orgId}/devices/{deviceId}/apply-template)
+func (_ Unimplemented) ApplyDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params ApplyDeviceTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // GetDeviceHistory Audit entries of the device, newest first
 // (GET /orgs/{orgId}/devices/{deviceId}/history)
 func (_ Unimplemented) GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListInterfaces Interfaces of the device
+// (GET /orgs/{orgId}/devices/{deviceId}/interfaces)
+func (_ Unimplemented) ListInterfaces(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateInterface Add an interface, usually a virtual one (SVI, loopback, tunnel, sub-interface, LAG)
+// (POST /orgs/{orgId}/devices/{deviceId}/interfaces)
+func (_ Unimplemented) CreateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateInterfaceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteInterface Delete an interface and its IPs
+// (DELETE /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+func (_ Unimplemented) DeleteInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params DeleteInterfaceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateInterface Update an interface (optimistic lock on version)
+// (PATCH /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+func (_ Unimplemented) UpdateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params UpdateInterfaceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDeviceIps IP addresses of the device (on interfaces, or NAT/public on the device)
+// (GET /orgs/{orgId}/devices/{deviceId}/ips)
+func (_ Unimplemented) ListDeviceIps(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDeviceIp Add an IP address
+// (POST /orgs/{orgId}/devices/{deviceId}/ips)
+func (_ Unimplemented) CreateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateDeviceIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteDeviceIp Delete an IP address
+// (DELETE /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+func (_ Unimplemented) DeleteDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params DeleteDeviceIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateDeviceIp Update an IP address (optimistic lock on version)
+// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+func (_ Unimplemented) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4469,6 +5103,247 @@ func (siw *ServerInterfaceWrapper) UpdateCustomField(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListDeviceTemplates operation middleware
+func (siw *ServerInterfaceWrapper) ListDeviceTemplates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDeviceTemplates(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDeviceTemplate operation middleware
+func (siw *ServerInterfaceWrapper) CreateDeviceTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDeviceTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDeviceTemplate(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDeviceTemplate operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDeviceTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "templateId" -------------
+	var templateId TemplateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "templateId", chi.URLParam(r, "templateId"), &templateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "templateId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteDeviceTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDeviceTemplate(w, r, orgId, templateId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeviceTemplate operation middleware
+func (siw *ServerInterfaceWrapper) GetDeviceTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "templateId" -------------
+	var templateId TemplateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "templateId", chi.URLParam(r, "templateId"), &templateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "templateId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeviceTemplate(w, r, orgId, templateId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateDeviceTemplate operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDeviceTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "templateId" -------------
+	var templateId TemplateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "templateId", chi.URLParam(r, "templateId"), &templateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "templateId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateDeviceTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateDeviceTemplate(w, r, orgId, templateId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListDevices operation middleware
 func (siw *ServerInterfaceWrapper) ListDevices(w http.ResponseWriter, r *http.Request) {
 
@@ -4990,6 +5865,69 @@ func (siw *ServerInterfaceWrapper) UpdateDevice(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ApplyDeviceTemplate operation middleware
+func (siw *ServerInterfaceWrapper) ApplyDeviceTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ApplyDeviceTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApplyDeviceTemplate(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetDeviceHistory operation middleware
 func (siw *ServerInterfaceWrapper) GetDeviceHistory(w http.ResponseWriter, r *http.Request) {
 
@@ -5016,6 +5954,490 @@ func (siw *ServerInterfaceWrapper) GetDeviceHistory(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeviceHistory(w, r, orgId, deviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInterfaces operation middleware
+func (siw *ServerInterfaceWrapper) ListInterfaces(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInterfaces(w, r, orgId, deviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateInterface operation middleware
+func (siw *ServerInterfaceWrapper) CreateInterface(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateInterfaceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateInterface(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteInterface operation middleware
+func (siw *ServerInterfaceWrapper) DeleteInterface(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "interfaceId" -------------
+	var interfaceId InterfaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "interfaceId", chi.URLParam(r, "interfaceId"), &interfaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "interfaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteInterfaceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteInterface(w, r, orgId, deviceId, interfaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateInterface operation middleware
+func (siw *ServerInterfaceWrapper) UpdateInterface(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "interfaceId" -------------
+	var interfaceId InterfaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "interfaceId", chi.URLParam(r, "interfaceId"), &interfaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "interfaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateInterfaceParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateInterface(w, r, orgId, deviceId, interfaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDeviceIps operation middleware
+func (siw *ServerInterfaceWrapper) ListDeviceIps(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDeviceIps(w, r, orgId, deviceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDeviceIp operation middleware
+func (siw *ServerInterfaceWrapper) CreateDeviceIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDeviceIpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDeviceIp(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDeviceIp operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDeviceIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "ipId" -------------
+	var ipId IpId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ipId", chi.URLParam(r, "ipId"), &ipId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ipId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteDeviceIpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDeviceIp(w, r, orgId, deviceId, ipId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateDeviceIp operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDeviceIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "ipId" -------------
+	var ipId IpId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ipId", chi.URLParam(r, "ipId"), &ipId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ipId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateDeviceIpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateDeviceIp(w, r, orgId, deviceId, ipId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7151,6 +8573,48 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/history", wrapper.GetDeviceHistory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/device-templates", wrapper.ListDeviceTemplates)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/device-templates", wrapper.CreateDeviceTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/device-templates/{templateId}", wrapper.DeleteDeviceTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/device-templates/{templateId}", wrapper.GetDeviceTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/device-templates/{templateId}", wrapper.UpdateDeviceTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/interfaces", wrapper.ListInterfaces)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/interfaces", wrapper.CreateInterface)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}", wrapper.DeleteInterface)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}", wrapper.UpdateInterface)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/apply-template", wrapper.ApplyDeviceTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/ips", wrapper.ListDeviceIps)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/ips", wrapper.CreateDeviceIp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/ips/{ipId}", wrapper.DeleteDeviceIp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/ips/{ipId}", wrapper.UpdateDeviceIp)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/custom-fields", wrapper.ListCustomFields)
@@ -9669,6 +11133,384 @@ func (response UpdateCustomField409JSONResponse) VisitUpdateCustomFieldResponse(
 	return err
 }
 
+type ListDeviceTemplatesRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListDeviceTemplatesResponseObject interface {
+	VisitListDeviceTemplatesResponse(w http.ResponseWriter) error
+}
+
+type ListDeviceTemplates200JSONResponse DeviceTemplateList
+
+func (response ListDeviceTemplates200JSONResponse) VisitListDeviceTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceTemplates401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDeviceTemplates401JSONResponse) VisitListDeviceTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceTemplates404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDeviceTemplates404JSONResponse) VisitListDeviceTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplateRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateDeviceTemplateParams
+	Body   *CreateDeviceTemplateJSONRequestBody
+}
+
+type CreateDeviceTemplateResponseObject interface {
+	VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error
+}
+
+type CreateDeviceTemplate201JSONResponse DeviceTemplate
+
+func (response CreateDeviceTemplate201JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDeviceTemplate400JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDeviceTemplate401JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDeviceTemplate403JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateDeviceTemplate404JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDeviceTemplate409JSONResponse) VisitCreateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceTemplateRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	TemplateId TemplateId `json:"templateId"`
+	Params     DeleteDeviceTemplateParams
+}
+
+type DeleteDeviceTemplateResponseObject interface {
+	VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error
+}
+
+type DeleteDeviceTemplate204Response struct {
+}
+
+func (response DeleteDeviceTemplate204Response) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDeviceTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteDeviceTemplate400JSONResponse) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDeviceTemplate401JSONResponse) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteDeviceTemplate403JSONResponse) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDeviceTemplate404JSONResponse) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteDeviceTemplate409JSONResponse) VisitDeleteDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceTemplateRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	TemplateId TemplateId `json:"templateId"`
+}
+
+type GetDeviceTemplateResponseObject interface {
+	VisitGetDeviceTemplateResponse(w http.ResponseWriter) error
+}
+
+type GetDeviceTemplate200JSONResponse DeviceTemplate
+
+func (response GetDeviceTemplate200JSONResponse) VisitGetDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDeviceTemplate401JSONResponse) VisitGetDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeviceTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDeviceTemplate404JSONResponse) VisitGetDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplateRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	TemplateId TemplateId `json:"templateId"`
+	Params     UpdateDeviceTemplateParams
+	Body       *UpdateDeviceTemplateJSONRequestBody
+}
+
+type UpdateDeviceTemplateResponseObject interface {
+	VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error
+}
+
+type UpdateDeviceTemplate200JSONResponse DeviceTemplate
+
+func (response UpdateDeviceTemplate200JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateDeviceTemplate400JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateDeviceTemplate401JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateDeviceTemplate403JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateDeviceTemplate404JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateDeviceTemplate409JSONResponse) VisitUpdateDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListDevicesRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListDevicesParams
@@ -10264,6 +12106,101 @@ func (response UpdateDevice409JSONResponse) VisitUpdateDeviceResponse(w http.Res
 	return err
 }
 
+type ApplyDeviceTemplateRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   ApplyDeviceTemplateParams
+	Body     *ApplyDeviceTemplateJSONRequestBody
+}
+
+type ApplyDeviceTemplateResponseObject interface {
+	VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error
+}
+
+type ApplyDeviceTemplate200JSONResponse ApplyTemplateResult
+
+func (response ApplyDeviceTemplate200JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDeviceTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ApplyDeviceTemplate400JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDeviceTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ApplyDeviceTemplate401JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDeviceTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ApplyDeviceTemplate403JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDeviceTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ApplyDeviceTemplate404JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDeviceTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ApplyDeviceTemplate409JSONResponse) VisitApplyDeviceTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetDeviceHistoryRequestObject struct {
 	OrgId    OrgId    `json:"orgId"`
 	DeviceId DeviceId `json:"deviceId"`
@@ -10325,6 +12262,668 @@ func (response GetDeviceHistory404JSONResponse) VisitGetDeviceHistoryResponse(w 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInterfacesRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+}
+
+type ListInterfacesResponseObject interface {
+	VisitListInterfacesResponse(w http.ResponseWriter) error
+}
+
+type ListInterfaces200JSONResponse InterfaceList
+
+func (response ListInterfaces200JSONResponse) VisitListInterfacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInterfaces401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListInterfaces401JSONResponse) VisitListInterfacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInterfaces404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListInterfaces404JSONResponse) VisitListInterfacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterfaceRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   CreateInterfaceParams
+	Body     *CreateInterfaceJSONRequestBody
+}
+
+type CreateInterfaceResponseObject interface {
+	VisitCreateInterfaceResponse(w http.ResponseWriter) error
+}
+
+type CreateInterface201JSONResponse Interface
+
+func (response CreateInterface201JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterface400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateInterface400JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterface401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateInterface401JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterface403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateInterface403JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterface404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateInterface404JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInterface409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateInterface409JSONResponse) VisitCreateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInterfaceRequestObject struct {
+	OrgId       OrgId       `json:"orgId"`
+	DeviceId    DeviceId    `json:"deviceId"`
+	InterfaceId InterfaceId `json:"interfaceId"`
+	Params      DeleteInterfaceParams
+}
+
+type DeleteInterfaceResponseObject interface {
+	VisitDeleteInterfaceResponse(w http.ResponseWriter) error
+}
+
+type DeleteInterface204Response struct {
+}
+
+func (response DeleteInterface204Response) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteInterface400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteInterface400JSONResponse) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInterface401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteInterface401JSONResponse) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInterface403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteInterface403JSONResponse) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInterface404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteInterface404JSONResponse) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInterface409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteInterface409JSONResponse) VisitDeleteInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterfaceRequestObject struct {
+	OrgId       OrgId       `json:"orgId"`
+	DeviceId    DeviceId    `json:"deviceId"`
+	InterfaceId InterfaceId `json:"interfaceId"`
+	Params      UpdateInterfaceParams
+	Body        *UpdateInterfaceJSONRequestBody
+}
+
+type UpdateInterfaceResponseObject interface {
+	VisitUpdateInterfaceResponse(w http.ResponseWriter) error
+}
+
+type UpdateInterface200JSONResponse Interface
+
+func (response UpdateInterface200JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterface400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateInterface400JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterface401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateInterface401JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterface403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateInterface403JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterface404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateInterface404JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateInterface409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateInterface409JSONResponse) VisitUpdateInterfaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceIpsRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+}
+
+type ListDeviceIpsResponseObject interface {
+	VisitListDeviceIpsResponse(w http.ResponseWriter) error
+}
+
+type ListDeviceIps200JSONResponse IpAddressList
+
+func (response ListDeviceIps200JSONResponse) VisitListDeviceIpsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceIps401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDeviceIps401JSONResponse) VisitListDeviceIpsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceIps404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDeviceIps404JSONResponse) VisitListDeviceIpsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIpRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   CreateDeviceIpParams
+	Body     *CreateDeviceIpJSONRequestBody
+}
+
+type CreateDeviceIpResponseObject interface {
+	VisitCreateDeviceIpResponse(w http.ResponseWriter) error
+}
+
+type CreateDeviceIp201JSONResponse IpAddress
+
+func (response CreateDeviceIp201JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDeviceIp400JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDeviceIp401JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDeviceIp403JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateDeviceIp404JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeviceIp409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDeviceIp409JSONResponse) VisitCreateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceIpRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	IpId     IpId     `json:"ipId"`
+	Params   DeleteDeviceIpParams
+}
+
+type DeleteDeviceIpResponseObject interface {
+	VisitDeleteDeviceIpResponse(w http.ResponseWriter) error
+}
+
+type DeleteDeviceIp204Response struct {
+}
+
+func (response DeleteDeviceIp204Response) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDeviceIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteDeviceIp400JSONResponse) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDeviceIp401JSONResponse) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceIp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteDeviceIp403JSONResponse) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDeviceIp404JSONResponse) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDeviceIp409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteDeviceIp409JSONResponse) VisitDeleteDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIpRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	IpId     IpId     `json:"ipId"`
+	Params   UpdateDeviceIpParams
+	Body     *UpdateDeviceIpJSONRequestBody
+}
+
+type UpdateDeviceIpResponseObject interface {
+	VisitUpdateDeviceIpResponse(w http.ResponseWriter) error
+}
+
+type UpdateDeviceIp200JSONResponse IpAddress
+
+func (response UpdateDeviceIp200JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateDeviceIp400JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateDeviceIp401JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateDeviceIp403JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateDeviceIp404JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDeviceIp409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateDeviceIp409JSONResponse) VisitUpdateDeviceIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -13247,6 +15846,21 @@ type StrictServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(ctx context.Context, request UpdateCustomFieldRequestObject) (UpdateCustomFieldResponseObject, error)
+	// ListDeviceTemplates Device templates of the organization
+	// (GET /orgs/{orgId}/device-templates)
+	ListDeviceTemplates(ctx context.Context, request ListDeviceTemplatesRequestObject) (ListDeviceTemplatesResponseObject, error)
+	// CreateDeviceTemplate Create a template (organization owner/admin/editor)
+	// (POST /orgs/{orgId}/device-templates)
+	CreateDeviceTemplate(ctx context.Context, request CreateDeviceTemplateRequestObject) (CreateDeviceTemplateResponseObject, error)
+	// DeleteDeviceTemplate Delete a template (devices keep their ports)
+	// (DELETE /orgs/{orgId}/device-templates/{templateId})
+	DeleteDeviceTemplate(ctx context.Context, request DeleteDeviceTemplateRequestObject) (DeleteDeviceTemplateResponseObject, error)
+	// GetDeviceTemplate One template
+	// (GET /orgs/{orgId}/device-templates/{templateId})
+	GetDeviceTemplate(ctx context.Context, request GetDeviceTemplateRequestObject) (GetDeviceTemplateResponseObject, error)
+	// UpdateDeviceTemplate Update a template (existing devices keep their ports)
+	// (PATCH /orgs/{orgId}/device-templates/{templateId})
+	UpdateDeviceTemplate(ctx context.Context, request UpdateDeviceTemplateRequestObject) (UpdateDeviceTemplateResponseObject, error)
 	// ListDevices Devices visible to the caller, server-side filtered / sorted / paginated (P1-08)
 	// (GET /orgs/{orgId}/devices)
 	ListDevices(ctx context.Context, request ListDevicesRequestObject) (ListDevicesResponseObject, error)
@@ -13268,9 +15882,36 @@ type StrictServerInterface interface {
 	// UpdateDevice Update a device (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId})
 	UpdateDevice(ctx context.Context, request UpdateDeviceRequestObject) (UpdateDeviceResponseObject, error)
+	// ApplyDeviceTemplate Generate the template ports the device does not have yet
+	// (POST /orgs/{orgId}/devices/{deviceId}/apply-template)
+	ApplyDeviceTemplate(ctx context.Context, request ApplyDeviceTemplateRequestObject) (ApplyDeviceTemplateResponseObject, error)
 	// GetDeviceHistory Audit entries of the device, newest first
 	// (GET /orgs/{orgId}/devices/{deviceId}/history)
 	GetDeviceHistory(ctx context.Context, request GetDeviceHistoryRequestObject) (GetDeviceHistoryResponseObject, error)
+	// ListInterfaces Interfaces of the device
+	// (GET /orgs/{orgId}/devices/{deviceId}/interfaces)
+	ListInterfaces(ctx context.Context, request ListInterfacesRequestObject) (ListInterfacesResponseObject, error)
+	// CreateInterface Add an interface, usually a virtual one (SVI, loopback, tunnel, sub-interface, LAG)
+	// (POST /orgs/{orgId}/devices/{deviceId}/interfaces)
+	CreateInterface(ctx context.Context, request CreateInterfaceRequestObject) (CreateInterfaceResponseObject, error)
+	// DeleteInterface Delete an interface and its IPs
+	// (DELETE /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+	DeleteInterface(ctx context.Context, request DeleteInterfaceRequestObject) (DeleteInterfaceResponseObject, error)
+	// UpdateInterface Update an interface (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId})
+	UpdateInterface(ctx context.Context, request UpdateInterfaceRequestObject) (UpdateInterfaceResponseObject, error)
+	// ListDeviceIps IP addresses of the device (on interfaces, or NAT/public on the device)
+	// (GET /orgs/{orgId}/devices/{deviceId}/ips)
+	ListDeviceIps(ctx context.Context, request ListDeviceIpsRequestObject) (ListDeviceIpsResponseObject, error)
+	// CreateDeviceIp Add an IP address
+	// (POST /orgs/{orgId}/devices/{deviceId}/ips)
+	CreateDeviceIp(ctx context.Context, request CreateDeviceIpRequestObject) (CreateDeviceIpResponseObject, error)
+	// DeleteDeviceIp Delete an IP address
+	// (DELETE /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+	DeleteDeviceIp(ctx context.Context, request DeleteDeviceIpRequestObject) (DeleteDeviceIpResponseObject, error)
+	// UpdateDeviceIp Update an IP address (optimistic lock on version)
+	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
+	UpdateDeviceIp(ctx context.Context, request UpdateDeviceIpRequestObject) (UpdateDeviceIpResponseObject, error)
 	// ListMembers Members of the organization (not for grant-only members)
 	// (GET /orgs/{orgId}/members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -14478,6 +17119,156 @@ func (sh *strictHandler) UpdateCustomField(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListDeviceTemplates operation middleware
+func (sh *strictHandler) ListDeviceTemplates(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListDeviceTemplatesRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDeviceTemplates(ctx, request.(ListDeviceTemplatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDeviceTemplates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDeviceTemplatesResponseObject); ok {
+		if err := validResponse.VisitListDeviceTemplatesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDeviceTemplate operation middleware
+func (sh *strictHandler) CreateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceTemplateParams) {
+	var request CreateDeviceTemplateRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateDeviceTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDeviceTemplate(ctx, request.(CreateDeviceTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDeviceTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDeviceTemplateResponseObject); ok {
+		if err := validResponse.VisitCreateDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDeviceTemplate operation middleware
+func (sh *strictHandler) DeleteDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params DeleteDeviceTemplateParams) {
+	var request DeleteDeviceTemplateRequestObject
+
+	request.OrgId = orgId
+	request.TemplateId = templateId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDeviceTemplate(ctx, request.(DeleteDeviceTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDeviceTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDeviceTemplateResponseObject); ok {
+		if err := validResponse.VisitDeleteDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeviceTemplate operation middleware
+func (sh *strictHandler) GetDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId) {
+	var request GetDeviceTemplateRequestObject
+
+	request.OrgId = orgId
+	request.TemplateId = templateId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDeviceTemplate(ctx, request.(GetDeviceTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeviceTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeviceTemplateResponseObject); ok {
+		if err := validResponse.VisitGetDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateDeviceTemplate operation middleware
+func (sh *strictHandler) UpdateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params UpdateDeviceTemplateParams) {
+	var request UpdateDeviceTemplateRequestObject
+
+	request.OrgId = orgId
+	request.TemplateId = templateId
+	request.Params = params
+
+	var body UpdateDeviceTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateDeviceTemplate(ctx, request.(UpdateDeviceTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateDeviceTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateDeviceTemplateResponseObject); ok {
+		if err := validResponse.VisitUpdateDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListDevices operation middleware
 func (sh *strictHandler) ListDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListDevicesParams) {
 	var request ListDevicesRequestObject
@@ -14697,6 +17488,41 @@ func (sh *strictHandler) UpdateDevice(w http.ResponseWriter, r *http.Request, or
 	}
 }
 
+// ApplyDeviceTemplate operation middleware
+func (sh *strictHandler) ApplyDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params ApplyDeviceTemplateParams) {
+	var request ApplyDeviceTemplateRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body ApplyDeviceTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApplyDeviceTemplate(ctx, request.(ApplyDeviceTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApplyDeviceTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApplyDeviceTemplateResponseObject); ok {
+		if err := validResponse.VisitApplyDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetDeviceHistory operation middleware
 func (sh *strictHandler) GetDeviceHistory(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
 	var request GetDeviceHistoryRequestObject
@@ -14717,6 +17543,260 @@ func (sh *strictHandler) GetDeviceHistory(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetDeviceHistoryResponseObject); ok {
 		if err := validResponse.VisitGetDeviceHistoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInterfaces operation middleware
+func (sh *strictHandler) ListInterfaces(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	var request ListInterfacesRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInterfaces(ctx, request.(ListInterfacesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInterfaces")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInterfacesResponseObject); ok {
+		if err := validResponse.VisitListInterfacesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateInterface operation middleware
+func (sh *strictHandler) CreateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateInterfaceParams) {
+	var request CreateInterfaceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body CreateInterfaceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateInterface(ctx, request.(CreateInterfaceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateInterface")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateInterfaceResponseObject); ok {
+		if err := validResponse.VisitCreateInterfaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteInterface operation middleware
+func (sh *strictHandler) DeleteInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params DeleteInterfaceParams) {
+	var request DeleteInterfaceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.InterfaceId = interfaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteInterface(ctx, request.(DeleteInterfaceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteInterface")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteInterfaceResponseObject); ok {
+		if err := validResponse.VisitDeleteInterfaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateInterface operation middleware
+func (sh *strictHandler) UpdateInterface(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, interfaceId InterfaceId, params UpdateInterfaceParams) {
+	var request UpdateInterfaceRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.InterfaceId = interfaceId
+	request.Params = params
+
+	var body UpdateInterfaceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateInterface(ctx, request.(UpdateInterfaceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateInterface")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateInterfaceResponseObject); ok {
+		if err := validResponse.VisitUpdateInterfaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDeviceIps operation middleware
+func (sh *strictHandler) ListDeviceIps(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId) {
+	var request ListDeviceIpsRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDeviceIps(ctx, request.(ListDeviceIpsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDeviceIps")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDeviceIpsResponseObject); ok {
+		if err := validResponse.VisitListDeviceIpsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDeviceIp operation middleware
+func (sh *strictHandler) CreateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params CreateDeviceIpParams) {
+	var request CreateDeviceIpRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body CreateDeviceIpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDeviceIp(ctx, request.(CreateDeviceIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDeviceIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDeviceIpResponseObject); ok {
+		if err := validResponse.VisitCreateDeviceIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDeviceIp operation middleware
+func (sh *strictHandler) DeleteDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params DeleteDeviceIpParams) {
+	var request DeleteDeviceIpRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.IpId = ipId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDeviceIp(ctx, request.(DeleteDeviceIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDeviceIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDeviceIpResponseObject); ok {
+		if err := validResponse.VisitDeleteDeviceIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateDeviceIp operation middleware
+func (sh *strictHandler) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams) {
+	var request UpdateDeviceIpRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.IpId = ipId
+	request.Params = params
+
+	var body UpdateDeviceIpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateDeviceIp(ctx, request.(UpdateDeviceIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateDeviceIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateDeviceIpResponseObject); ok {
+		if err := validResponse.VisitUpdateDeviceIpResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

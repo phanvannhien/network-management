@@ -12,3 +12,7 @@ sql:
         sql_package: pgx/v5
         emit_json_tags: false
         emit_interface: true
+        overrides:
+          # Interface IPs carry their prefix length (CIDR, ADR-012).
+          - column: "ip_addresses.address"
+            go_type: "net/netip.Prefix"

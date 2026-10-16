@@ -1,4 +1,4 @@
-import { Cable, History, KeyRound, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
+import { History, KeyRound, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -22,6 +22,7 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { WarrantyText } from './DeviceListPage'
 import { DeviceFormDialog } from './DeviceFormDialog'
+import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import {
   useCustomFields,
   useDeleteDevices,
@@ -221,11 +222,15 @@ export function DeviceDetailPage() {
         <KeyValueList
           columns={4}
           items={[
+            {
+              label: t('devices.mgmtIp'),
+              value: d.mgmtIp ? <TechText value={d.mgmtIp} label={t('devices.mgmtIp')} /> : dash,
+            },
             { label: t('devices.vendor'), value: none(d.vendor, dash) },
             { label: t('devices.model'), value: none(d.model, dash) },
             { label: t('devices.partNumber'), value: tech(d.partNumber, t('devices.partNumber')) },
             { label: t('devices.serial'), value: tech(d.serialNumber, t('devices.serial')) },
-            { label: t('devices.assetTag'), value: none(d.assetTag, dash) },
+
             { label: t('devices.firmware'), value: none(d.firmware, dash) },
             { label: t('devices.role'), value: t(`devices.roleValues.${d.role}`) },
             { label: t('devices.warranty'), value: <WarrantyText date={d.warrantyEnd} /> },
@@ -270,6 +275,8 @@ export function DeviceDetailPage() {
                 },
                 { label: t('devices.owner'), value: none(d.ownerName, dash) },
                 { label: t('devices.tags'), value: d.tags.length ? d.tags.join(', ') : dash },
+                { label: t('devices.assetTag'), value: none(d.assetTag, dash) },
+                { label: t('devices.pollAddress'), value: none(d.pollAddress, dash) },
                 { label: t('devices.notes'), value: none(d.notes, dash) },
               ]}
             />
@@ -292,10 +299,10 @@ export function DeviceDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="interfaces" className="pt-3">
-          <Soon icon={<Cable />} text={t('devices.interfacesSoon')} />
+          {tab === 'interfaces' && <InterfacesTab orgId={orgId} device={d} canEdit={canEdit} />}
         </TabsContent>
         <TabsContent value="ips" className="pt-3">
-          <Soon icon={<Cable />} text={t('devices.interfacesSoon')} />
+          {tab === 'ips' && <IpsTab orgId={orgId} device={d} canEdit={canEdit} />}
         </TabsContent>
         <TabsContent value="links" className="pt-3">
           <Soon icon={<Network />} text={t('devices.linksSoon')} />

@@ -199,6 +199,18 @@ export function DeviceListPage() {
         ),
       },
       {
+        id: 'mgmtIp',
+        accessorKey: 'mgmtIp',
+        header: t('devices.mgmtIp'),
+        meta: { label: t('devices.mgmtIp'), width: 160 },
+        cell: ({ row }) =>
+          row.original.mgmtIp ? (
+            <TechText value={row.original.mgmtIp} label={t('devices.mgmtIp')} />
+          ) : (
+            <span className="text-muted-foreground">{t('common.none')}</span>
+          ),
+      },
+      {
         id: 'type',
         accessorKey: 'type',
         header: t('devices.type'),

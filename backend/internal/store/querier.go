@@ -23,6 +23,7 @@ type Querier interface {
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
+	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
 	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
 	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
@@ -36,6 +37,11 @@ type Querier interface {
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) (BusinessUnit, error)
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
+	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
+	CreateIP(ctx context.Context, arg CreateIPParams) (IpAddress, error)
+	CreateInterface(ctx context.Context, arg CreateInterfaceParams) (Interface, error)
+	// Applying a template adds the ports a device does not have yet (by name, case-insensitive).
+	CreateInterfaceIfMissing(ctx context.Context, arg CreateInterfaceIfMissingParams) (int64, error)
 	CreateInvitedUser(ctx context.Context, email string) (User, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
@@ -49,7 +55,10 @@ type Querier interface {
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
+	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
+	DeleteIP(ctx context.Context, arg DeleteIPParams) (int64, error)
+	DeleteInterface(ctx context.Context, arg DeleteInterfaceParams) (int64, error)
 	DeleteLocation(ctx context.Context, arg DeleteLocationParams) (int64, error)
 	DeleteMembership(ctx context.Context, arg DeleteMembershipParams) (int64, error)
 	DeletePartnerMember(ctx context.Context, arg DeletePartnerMemberParams) (int64, error)
@@ -69,6 +78,9 @@ type Querier interface {
 	GetBusinessUnit(ctx context.Context, arg GetBusinessUnitParams) (GetBusinessUnitRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
+	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
+	GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
+	GetInterface(ctx context.Context, arg GetInterfaceParams) (Interface, error)
 	GetLocation(ctx context.Context, arg GetLocationParams) (Location, error)
 	GetMember(ctx context.Context, arg GetMemberParams) (GetMemberRow, error)
 	// Organizations and memberships (P1-03, ADR-016, ADR-023).
@@ -100,9 +112,14 @@ type Querier interface {
 	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
 	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
 	ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryParams) ([]ListDeviceHistoryRow, error)
+	ListDeviceIPs(ctx context.Context, arg ListDeviceIPsParams) ([]ListDeviceIPsRow, error)
+	// Templates, interfaces and IP addresses (P1-09, ADR-012). Every query takes organization_id; interface / IP queries
+	// also take the device, which the API has already checked for visibility.
+	ListDeviceTemplates(ctx context.Context, organizationID pgtype.UUID) ([]DeviceTemplate, error)
 	// Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
 	// see devices of their granted units plus every device in a site visible to them.
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
+	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
 	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
@@ -129,6 +146,7 @@ type Querier interface {
 	ListUnitMembers(ctx context.Context, arg ListUnitMembersParams) ([]ListUnitMembersRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
+	MaxInterfaceSort(ctx context.Context, arg MaxInterfaceSortParams) (int32, error)
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
 	// Live devices placed in a rack (for U overlap checks and the rack view).
@@ -147,10 +165,15 @@ type Querier interface {
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeletePartner(ctx context.Context, arg SoftDeletePartnerParams) (Partner, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
+	// Interface / IP changes bump the device version so open device forms see the change.
+	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
 	UpdateBusinessUnit(ctx context.Context, arg UpdateBusinessUnitParams) (BusinessUnit, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
+	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)
+	UpdateIP(ctx context.Context, arg UpdateIPParams) (IpAddress, error)
+	UpdateInterface(ctx context.Context, arg UpdateInterfaceParams) (Interface, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
 	UpdateMembership(ctx context.Context, arg UpdateMembershipParams) (Membership, error)
 	// Optimistic lock: succeeds only when the caller saw the latest version (else no row → 409).

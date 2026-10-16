@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/netip"
 	"regexp"
 	"slices"
 	"strings"
@@ -50,6 +51,9 @@ type deviceFields struct {
 	unit, location, rack                                                                                    *uuid.UUID
 	rackU                                                                                                   pgtype.Int4
 	uHeight                                                                                                 int32
+	uHeightSet                                                                                              bool
+	mgmt, template                                                                                          *uuid.UUID
+	poll                                                                                                    *netip.Addr
 }
 
 func pgDate(d *openapi_types.Date) pgtype.Date {
@@ -103,6 +107,8 @@ type deviceBody struct {
 	SiteId                                                                                  uuid.UUID
 	BusinessUnitId, LocationId, RackId                                                      *uuid.UUID
 	RackU, UHeight                                                                          *int32
+	MgmtInterfaceId, TemplateId                                                             *uuid.UUID
+	PollAddress                                                                             *string
 }
 
 func validateDevice(b deviceBody) (deviceFields, string) {
@@ -113,6 +119,15 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 		purchase: pgDate(b.PurchaseDate), warranty: pgDate(b.WarrantyEnd), license: pgDate(b.LicenseEnd),
 		eol: pgDate(b.EolDate), eos: pgDate(b.EosDate), site: b.SiteId, unit: b.BusinessUnitId,
 		location: b.LocationId, rack: b.RackId, uHeight: 1, custom: map[string]any{},
+		mgmt: b.MgmtInterfaceId, template: b.TemplateId,
+	}
+	if b.PollAddress != nil && strings.TrimSpace(*b.PollAddress) != "" {
+		a, err := netip.ParseAddr(strings.TrimSpace(*b.PollAddress))
+		if err != nil || a.Zone() != "" {
+			return f, "Địa chỉ poll không hợp lệ (một địa chỉ IP, không kèm /prefix)"
+		}
+		a = a.Unmap()
+		f.poll = &a
 	}
 	if b.Role != nil {
 		f.role = string(*b.Role)
@@ -124,7 +139,7 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 		f.managed = *b.Managed
 	}
 	if b.UHeight != nil {
-		f.uHeight = *b.UHeight
+		f.uHeight, f.uHeightSet = *b.UHeight, true
 	}
 	if b.RackU != nil {
 		f.rackU = pgtype.Int4{Int32: *b.RackU, Valid: true}
@@ -340,6 +355,8 @@ type deviceSnapshot struct {
 	Rack         string         `json:"rack,omitempty"`
 	RackU        int32          `json:"rackU,omitempty"`
 	UHeight      int32          `json:"uHeight"`
+	MgmtIface    string         `json:"mgmtInterface,omitempty"`
+	PollAddress  string         `json:"pollAddress,omitempty"`
 }
 
 func dateStr(d pgtype.Date) string {
@@ -367,6 +384,10 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 	if d.RackID.Valid && d.RackU.Valid {
 		s.RackU = d.RackU.Int32
 	}
+	s.MgmtIface = d.MgmtInterfaceName
+	if p := pollString(d.PollAddress); p != nil {
+		s.PollAddress = *p
+	}
 	return s
 }
 
@@ -382,7 +403,8 @@ func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 		BusinessUnitId: uuid.UUID(d.BusinessUnitID.Bytes), UnitCode: d.UnitCode, UnitName: d.UnitName,
 		PartnerId: uuid.UUID(d.PartnerID.Bytes), PartnerCode: d.PartnerCode, PartnerName: d.PartnerName,
 		LocationId: optUUID(d.LocationID), LocationName: d.LocationName, RackId: optUUID(d.RackID), RackName: d.RackName,
-		UHeight: d.UHeight, Access: levelName(level), Version: d.Version, CreatedAt: d.CreatedAt.Time, UpdatedAt: d.UpdatedAt.Time,
+		UHeight: d.UHeight, MgmtInterfaceId: optUUID(d.MgmtInterfaceID), MgmtInterfaceName: d.MgmtInterfaceName,
+		MgmtIp: d.MgmtIp, PollAddress: pollString(d.PollAddress), Access: levelName(level), Version: d.Version, CreatedAt: d.CreatedAt.Time, UpdatedAt: d.UpdatedAt.Time,
 	}
 	if out.Tags == nil {
 		out.Tags = []string{}
@@ -510,7 +532,9 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		if !p.Sort.Valid() {
 			return bad("Cột sắp xếp không hợp lệ")
 		}
-		params.SortKey = map[apigen.ListDevicesParamsSort]string{apigen.ListDevicesParamsSortWarrantyEnd: "warranty_end"}[*p.Sort]
+		params.SortKey = map[apigen.ListDevicesParamsSort]string{
+			apigen.ListDevicesParamsSortWarrantyEnd: "warranty_end", apigen.ListDevicesParamsSortMgmtIp: "mgmt_ip",
+		}[*p.Sort]
 		if params.SortKey == "" {
 			params.SortKey = string(*p.Sort)
 		}
@@ -628,6 +652,44 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 			out.forbidden = true
 			return errRollback
 		}
+		// A template fills what the user left empty and later generates the ports (create only, P1-09).
+		var tpl *store.DeviceTemplate
+		if id == nil && f.template != nil {
+			t, err := q.GetDeviceTemplate(ctx, store.GetDeviceTemplateParams{ID: pgUUID(*f.template), OrganizationID: m.OrgID})
+			if errors.Is(err, pgx.ErrNoRows) {
+				out.bad = msgTemplateNotFound
+				return errRollback
+			}
+			if err != nil {
+				return fmt.Errorf("load template: %w", err)
+			}
+			tpl = &t
+			if f.vendor == "" {
+				f.vendor = t.Vendor
+			}
+			if f.model == "" {
+				f.model = t.Model
+			}
+			if f.partNumber == "" {
+				f.partNumber = t.PartNumber
+			}
+			if !f.uHeightSet {
+				f.uHeight = t.UHeight
+			}
+		}
+		// The management interface must be one of the device's own (ADR-012).
+		var mgmt pgtype.UUID
+		if id != nil && f.mgmt != nil {
+			i, err := q.GetInterface(ctx, store.GetInterfaceParams{ID: pgUUID(*f.mgmt), OrganizationID: m.OrgID, DeviceID: before.ID})
+			if errors.Is(err, pgx.ErrNoRows) {
+				out.bad = "Interface quản trị phải là interface của thiết bị này"
+				return errRollback
+			}
+			if err != nil {
+				return fmt.Errorf("load interface: %w", err)
+			}
+			mgmt = i.ID
+		}
 		defs, err := q.ListCustomFieldDefs(ctx, m.OrgID)
 		if err != nil {
 			return fmt.Errorf("list custom fields: %w", err)
@@ -649,7 +711,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 				PartNumber: f.partNumber, SerialNumber: f.serial, AssetTag: f.assetTag, Firmware: f.firmware, Role: f.role,
 				Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner, PurchaseDate: f.purchase, PoNumber: f.po,
 				WarrantyEnd: f.warranty, LicenseEnd: f.license, EolDate: f.eol, EosDate: f.eos, Notes: f.notes, Tags: f.tags,
-				CustomFields: customJSON,
+				CustomFields: customJSON, TemplateID: templateID(tpl), PollAddress: f.poll,
 			})
 		} else {
 			devID = before.ID
@@ -660,7 +722,7 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 				Vendor: f.vendor, Model: f.model, PartNumber: f.partNumber, SerialNumber: f.serial, AssetTag: f.assetTag,
 				Firmware: f.firmware, Role: f.role, Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner,
 				PurchaseDate: f.purchase, PoNumber: f.po, WarrantyEnd: f.warranty, LicenseEnd: f.license, EolDate: f.eol,
-				EosDate: f.eos, Notes: f.notes, Tags: f.tags, CustomFields: customJSON,
+				EosDate: f.eos, Notes: f.notes, Tags: f.tags, CustomFields: customJSON, MgmtInterfaceID: mgmt, PollAddress: f.poll,
 			})
 			if err == nil && n == 0 {
 				out.conflict = msgStale
@@ -673,6 +735,11 @@ func (s *Server) saveDevice(ctx context.Context, m tenant.Membership, f deviceFi
 		}
 		if err != nil {
 			return fmt.Errorf("save device: %w", err)
+		}
+		if tpl != nil {
+			if _, err := generatePorts(ctx, q, m, devID, *tpl); err != nil {
+				return err
+			}
 		}
 		after, ok, err := loadDevice(ctx, q, m, uuid.UUID(devID.Bytes))
 		if err != nil {
@@ -703,6 +770,7 @@ func bodyFromInput(b apigen.DeviceInput) deviceBody {
 		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
 		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
+		MgmtInterfaceId: b.MgmtInterfaceId, TemplateId: b.TemplateId, PollAddress: b.PollAddress,
 	}
 }
 
@@ -751,6 +819,7 @@ func (s *Server) UpdateDevice(ctx context.Context, req apigen.UpdateDeviceReques
 		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
 		BusinessUnitId: b.BusinessUnitId, LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
+		MgmtInterfaceId: b.MgmtInterfaceId, PollAddress: b.PollAddress,
 	}))
 	if msg != "" {
 		// Unknown / invisible devices answer 404 before validation messages reveal anything.
@@ -943,6 +1012,7 @@ func (s *Server) BulkUpdateDevices(ctx context.Context, req apigen.BulkUpdateDev
 				Firmware: d.Firmware, Role: next.Role, Lifecycle: next.Lifecycle, Managed: next.Managed, OwnerName: next.OwnerName,
 				PurchaseDate: d.PurchaseDate, PoNumber: d.PoNumber, WarrantyEnd: d.WarrantyEnd, LicenseEnd: d.LicenseEnd,
 				EolDate: d.EolDate, EosDate: d.EosDate, Notes: d.Notes, Tags: next.Tags, CustomFields: d.CustomFields,
+				MgmtInterfaceID: d.MgmtInterfaceID, PollAddress: d.PollAddress,
 			}); err != nil {
 				return fmt.Errorf("bulk update device: %w", err)
 			}
@@ -1010,4 +1080,19 @@ func (s *Server) GetDeviceHistory(ctx context.Context, req apigen.GetDeviceHisto
 		e.Before, e.After = obj(r.Before), obj(r.After)
 	}
 	return apigen.GetDeviceHistory200JSONResponse(out), nil
+}
+
+func templateID(t *store.DeviceTemplate) pgtype.UUID {
+	if t == nil {
+		return pgtype.UUID{}
+	}
+	return t.ID
+}
+
+func pollString(a *netip.Addr) *string {
+	if a == nil {
+		return nil
+	}
+	v := a.String()
+	return &v
 }

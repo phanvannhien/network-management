@@ -802,6 +802,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/device-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Device templates of the organization */
+        get: operations["listDeviceTemplates"];
+        put?: never;
+        /** Create a template (organization owner/admin/editor) */
+        post: operations["createDeviceTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/device-templates/{templateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        /** One template */
+        get: operations["getDeviceTemplate"];
+        put?: never;
+        post?: never;
+        /** Delete a template (devices keep their ports) */
+        delete: operations["deleteDeviceTemplate"];
+        options?: never;
+        head?: never;
+        /** Update a template (existing devices keep their ports) */
+        patch: operations["updateDeviceTemplate"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/interfaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        /** Interfaces of the device */
+        get: operations["listInterfaces"];
+        put?: never;
+        /** Add an interface, usually a virtual one (SVI, loopback, tunnel, sub-interface, LAG) */
+        post: operations["createInterface"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                interfaceId: components["parameters"]["InterfaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an interface and its IPs */
+        delete: operations["deleteInterface"];
+        options?: never;
+        head?: never;
+        /** Update an interface (optimistic lock on version) */
+        patch: operations["updateInterface"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/apply-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate the template ports the device does not have yet */
+        post: operations["applyDeviceTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/ips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        /** IP addresses of the device (on interfaces, or NAT/public on the device) */
+        get: operations["listDeviceIps"];
+        put?: never;
+        /** Add an IP address */
+        post: operations["createDeviceIp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/ips/{ipId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                ipId: components["parameters"]["IpId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an IP address */
+        delete: operations["deleteDeviceIp"];
+        options?: never;
+        head?: never;
+        /** Update an IP address (optimistic lock on version) */
+        patch: operations["updateDeviceIp"];
+        trace?: never;
+    };
     "/orgs/{orgId}/custom-fields": {
         parameters: {
             query?: never;
@@ -1602,6 +1757,18 @@ export interface components {
             rackU?: number | null;
             /** Format: int32 */
             uHeight?: number;
+            /**
+             * Format: uuid
+             * @description Management interface (ADR-012); the management IP is its primary IP. Ignored on create.
+             */
+            mgmtInterfaceId?: string | null;
+            /** @description Address the poller uses (Phase 3); null = the management IP */
+            pollAddress?: string | null;
+            /**
+             * Format: uuid
+             * @description Create only — fill empty type/vendor/model/part number from the template and generate its ports
+             */
+            templateId?: string | null;
         };
         DeviceUpdate: components["schemas"]["DeviceInput"] & {
             /** Format: int32 */
@@ -1656,6 +1823,16 @@ export interface components {
             rackU: number | null;
             /** Format: int32 */
             uHeight: number;
+            /**
+             * Format: uuid
+             * @description Management interface (ADR-012); the management IP is its primary IP. Ignored on create.
+             */
+            mgmtInterfaceId: string | null;
+            /** @description Address the poller uses (Phase 3); null = the management IP */
+            pollAddress: string | null;
+            mgmtInterfaceName: string;
+            /** @description Primary IP (CIDR) of the management interface, '' when none */
+            mgmtIp: string;
             siteCode: string;
             siteName: string;
             unitCode: string;
@@ -1755,6 +1932,208 @@ export interface components {
             /** Format: int32 */
             version: number;
         };
+        /** @enum {string} */
+        InterfaceKind: "physical" | "svi" | "loopback" | "tunnel" | "subinterface" | "lag";
+        /** @enum {string} */
+        InterfaceMedia: "" | "RJ45" | "SFP" | "SFP+" | "SFP28" | "QSFP" | "Serial" | "Radio" | "Console";
+        /** @enum {string} */
+        InterfaceMode: "" | "access" | "trunk" | "routed" | "hybrid";
+        /** @enum {string} */
+        IpRole: "primary" | "secondary" | "nat" | "public";
+        InterfaceInput: {
+            name: string;
+            kind: components["schemas"]["InterfaceKind"];
+            media?: components["schemas"]["InterfaceMedia"];
+            /** @description Free text, e.g. 1G, 10G, 100M */
+            speed?: string;
+            /** @enum {string} */
+            duplex?: "auto" | "full" | "half";
+            mode?: components["schemas"]["InterfaceMode"];
+            /** Format: int32 */
+            accessVlan?: number | null;
+            /** Format: int32 */
+            nativeVlan?: number | null;
+            /** @description e.g. "10,20-30" */
+            allowedVlans?: string;
+            poe?: boolean;
+            /**
+             * Format: uuid
+             * @description Parent LAG (an interface of kind lag on the same device)
+             */
+            lagId?: string | null;
+            description?: string;
+            adminUp?: boolean;
+        };
+        InterfaceUpdate: {
+            name: string;
+            kind: components["schemas"]["InterfaceKind"];
+            media?: components["schemas"]["InterfaceMedia"];
+            /** @description Free text, e.g. 1G, 10G, 100M */
+            speed?: string;
+            /** @enum {string} */
+            duplex?: "auto" | "full" | "half";
+            mode?: components["schemas"]["InterfaceMode"];
+            /** Format: int32 */
+            accessVlan?: number | null;
+            /** Format: int32 */
+            nativeVlan?: number | null;
+            /** @description e.g. "10,20-30" */
+            allowedVlans?: string;
+            poe?: boolean;
+            /**
+             * Format: uuid
+             * @description Parent LAG (an interface of kind lag on the same device)
+             */
+            lagId?: string | null;
+            description?: string;
+            adminUp?: boolean;
+            /** Format: int32 */
+            version: number;
+        };
+        Interface: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["InterfaceKind"];
+            media: components["schemas"]["InterfaceMedia"];
+            /** @description Free text, e.g. 1G, 10G, 100M */
+            speed: string;
+            /** @enum {string} */
+            duplex: "auto" | "full" | "half";
+            mode: components["schemas"]["InterfaceMode"];
+            /** Format: int32 */
+            accessVlan: number | null;
+            /** Format: int32 */
+            nativeVlan: number | null;
+            /** @description e.g. "10,20-30" */
+            allowedVlans: string;
+            poe: boolean;
+            /**
+             * Format: uuid
+             * @description Parent LAG (an interface of kind lag on the same device)
+             */
+            lagId: string | null;
+            description: string;
+            adminUp: boolean;
+            lagName: string;
+            /** Format: int32 */
+            sortOrder: number;
+            isManagement: boolean;
+            /** Format: int32 */
+            version: number;
+        };
+        InterfaceList: {
+            interfaces: components["schemas"]["Interface"][];
+        };
+        IpAddressInput: {
+            /**
+             * Format: uuid
+             * @description null only for NAT/public addresses kept on the device
+             */
+            interfaceId?: string | null;
+            /** @description CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128) */
+            address: string;
+            vrf?: string;
+            role: components["schemas"]["IpRole"];
+            description?: string;
+        };
+        IpAddressUpdate: {
+            /**
+             * Format: uuid
+             * @description null only for NAT/public addresses kept on the device
+             */
+            interfaceId?: string | null;
+            /** @description CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128) */
+            address: string;
+            vrf?: string;
+            role: components["schemas"]["IpRole"];
+            description?: string;
+            /** Format: int32 */
+            version: number;
+        };
+        IpAddress: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description null only for NAT/public addresses kept on the device
+             */
+            interfaceId: string | null;
+            /** @description CIDR, e.g. 10.72.114.2/24 or 2001:db8::1/64 (a bare address means /32 or /128) */
+            address: string;
+            vrf: string;
+            role: components["schemas"]["IpRole"];
+            description: string;
+            interfaceName: string;
+            /** Format: int32 */
+            version: number;
+        };
+        IpAddressList: {
+            ips: components["schemas"]["IpAddress"][];
+        };
+        /** @description Ports named by pattern with {n} replaced by start … start+count-1, e.g. Gi1/0/{n} */
+        PortGroup: {
+            pattern: string;
+            /** Format: int32 */
+            start: number;
+            /** Format: int32 */
+            count: number;
+            media?: components["schemas"]["InterfaceMedia"];
+            speed?: string;
+            poe?: boolean;
+        };
+        DeviceTemplateInput: {
+            name: string;
+            type: components["schemas"]["DeviceType"];
+            vendor?: string;
+            model?: string;
+            partNumber?: string;
+            /** Format: int32 */
+            uHeight?: number;
+            ports?: components["schemas"]["PortGroup"][];
+            notes?: string;
+        };
+        DeviceTemplateUpdate: {
+            name: string;
+            type: components["schemas"]["DeviceType"];
+            vendor?: string;
+            model?: string;
+            partNumber?: string;
+            /** Format: int32 */
+            uHeight?: number;
+            ports?: components["schemas"]["PortGroup"][];
+            notes?: string;
+            /** Format: int32 */
+            version: number;
+        };
+        DeviceTemplate: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            type: components["schemas"]["DeviceType"];
+            vendor: string;
+            model: string;
+            partNumber: string;
+            /** Format: int32 */
+            uHeight: number;
+            ports: components["schemas"]["PortGroup"][];
+            notes: string;
+            /** Format: int32 */
+            portCount: number;
+            /** Format: int32 */
+            version: number;
+        };
+        DeviceTemplateList: {
+            templates: components["schemas"]["DeviceTemplate"][];
+        };
+        ApplyTemplate: {
+            /** Format: uuid */
+            templateId: string;
+        };
+        ApplyTemplateResult: {
+            /** Format: int64 */
+            added: number;
+        };
     };
     responses: {
         /** @description Not found (also returned for organizations the caller does not belong to) */
@@ -1829,9 +2208,12 @@ export interface components {
         DeviceRoleFilter: components["schemas"]["DeviceRole"][];
         /** @description Devices carrying any of the tags */
         DeviceTagFilter: string[];
-        DeviceSort: "hostname" | "type" | "vendor" | "model" | "serial" | "site" | "unit" | "lifecycle" | "warrantyEnd";
+        DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "unit" | "lifecycle" | "warrantyEnd";
         DeviceSortDesc: boolean;
         DeviceId: string;
+        TemplateId: string;
+        InterfaceId: string;
+        IpId: string;
         FieldId: string;
         AuditPageSize: number;
         /** @description Case-insensitive text in action, object id or actor email */
@@ -3880,6 +4262,444 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listDeviceTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplateList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDeviceTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceTemplateInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplate"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getDeviceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplate"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteDeviceTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateDeviceTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceTemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplate"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listInterfaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterfaceList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createInterface: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterfaceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Interface"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteInterface: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                interfaceId: components["parameters"]["InterfaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateInterface: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                interfaceId: components["parameters"]["InterfaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterfaceUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Interface"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    applyDeviceTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyTemplate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplyTemplateResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listDeviceIps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpAddressList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDeviceIp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IpAddressInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpAddress"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteDeviceIp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                ipId: components["parameters"]["IpId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateDeviceIp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+                ipId: components["parameters"]["IpId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IpAddressUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpAddress"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     listCustomFields: {

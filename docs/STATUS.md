@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — P1-09 Template & interface
+- Đã làm:
+  - **Migration 000012:** `device_templates` (theo tổ chức: loại, hãng, model, part number, chiều cao U, nhóm cổng dạng mẫu tên
+    `Gi1/0/{n}` + số bắt đầu + số cổng + media/tốc độ/PoE); `interfaces` (physical/svi/loopback/tunnel/subinterface/lag, media,
+    tốc độ, duplex, mode, access/native VLAN, VLAN cho phép, PoE, LAG cha cùng thiết bị, mô tả, bật/tắt; tên không trùng trong
+    thiết bị); `ip_addresses` (CIDR giữ host bits, VRF, vai trò primary/secondary/nat/public — IP chính/phụ bắt buộc gắn interface,
+    NAT/public có thể gắn thẳng thiết bị; một IP chính mỗi interface mỗi họ IPv4/IPv6); thiết bị thêm `mgmt_interface_id`,
+    `poll_address`, `template_id` (FK ghép theo thiết bị / tổ chức).
+  - **API:** CRUD template (owner/admin/editor tổ chức ghi, mọi thành viên đọc); tạo thiết bị kèm `templateId` → điền hãng/model/
+    part number/chiều cao còn trống và sinh cổng vật lý; "áp template" cho thiết bị có sẵn (chỉ thêm cổng còn thiếu); CRUD interface
+    và IP theo thiết bị (quyền theo thiết bị như P1-08); chọn interface quản trị → **IP quản trị = IP chính của interface đó**
+    (ADR-012); `pollAddress`; danh sách thiết bị có cột IP quản trị, sắp xếp theo IP, tìm theo IP. Thay đổi interface/IP ghi
+    audit dưới thiết bị (`interface.*`, `ip.*`, `device.apply_template`) nên hiện trong tab Lịch sử; `template.*` cho template.
+  - **Giao diện:** tab Interfaces (bảng cổng + IP, thêm/sửa/xóa, đặt làm interface quản trị, áp template), tab IP (thêm/sửa/xóa,
+    gắn interface hoặc NAT/public trên thiết bị); form thiết bị chọn template khi tạo, chọn interface quản trị + địa chỉ poll khi
+    sửa; trang "Template thiết bị" (nhóm cổng, xem trước tên cổng, điền nhanh từ 5 mẫu phổ biến: Cisco C9200/C9300, FortiGate
+    100F, Aruba CX 6100, MikroTik CCR2004); cột IP quản trị trong danh sách.
+- Test / cách kiểm tra:
+  - Go `interface_test.go`: test chéo tổ chức cho mọi endpoint template/interface/IP/áp template (kể cả dùng template, interface
+    của tổ chức khác); template sai (thiếu `{n}`, quá 1024 cổng, trùng tên cổng, media sai), trùng tên; sinh cổng + giá trị mặc
+    định từ template; áp lại không thêm; interface trùng tên, VLAN sai, LAG cha sai; IP chính thứ hai → 409, IPv6 tách riêng, IP
+    chính không interface → 400; IP quản trị, sắp xếp/tìm theo IP; xóa interface quản trị → mất IP quản trị; lịch sử; quyền theo
+    đối tác/đơn vị. Mutation check 10 điểm backend + 3 điểm frontend.
+  - Vitest 165 pass (3 test mới). Ảnh chụp + axe 7 trang × sáng/tối: 0 lỗi. `make check` pass.
+  - Dev DB: chạy `make migrate-up` (000012) rồi khởi động lại `make dev-api`.
+- Còn dở / lỗi đã biết:
+  - Chưa kiểm IP trùng giữa các thiết bị — rule validation P1-20 (trừ cụm HA, P1-09b). VLAN/subnet và gợi ý IP trống: P1-10.
+  - Template theo tổ chức; thư viện model theo hãng dùng chung là Phase 2 (SRS §4.3). Icon tùy chỉnh chưa làm.
+  - Sửa template không đổi cổng của thiết bị đã tạo (có nút "Áp template" để thêm cổng còn thiếu).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: **P1-09b** Cụm thiết bị (HA/stack).
+
 ## 2026-10-16 — P1-08 Kho thiết bị
 - Đã làm:
   - **Migration 000011:** bảng `devices` theo SRS §4.1 (nhận dạng, vị trí đơn vị/site/location/rack + U, vận hành, vòng đời

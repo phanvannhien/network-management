@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"net/netip"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -31,7 +32,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($9::uuid[]), 0) = 0 OR d.site_id = ANY ($9::uuid[]))
@@ -192,11 +194,13 @@ func (q *Queries) CreateCustomFieldDef(ctx context.Context, arg CreateCustomFiel
 const createDevice = `-- name: CreateDevice :one
 INSERT INTO devices (organization_id, business_unit_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
-                     purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields)
+                     purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
+                     template_id, poll_address)
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
         $18, $19, $20, $21, $22, $23,
-        $24, $25, $26, $27, $28)
+        $24, $25, $26, $27, $28, $29,
+        $30)
 RETURNING id
 `
 
@@ -229,6 +233,8 @@ type CreateDeviceParams struct {
 	Notes          string
 	Tags           []string
 	CustomFields   []byte
+	TemplateID     pgtype.UUID
+	PollAddress    *netip.Addr
 }
 
 func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error) {
@@ -261,6 +267,8 @@ func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgt
 		arg.Notes,
 		arg.Tags,
 		arg.CustomFields,
+		arg.TemplateID,
+		arg.PollAddress,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
@@ -304,7 +312,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.type = ANY ($9::text[]))
@@ -333,7 +342,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($14::uuid[]), 0) = 0 OR d.site_id = ANY ($14::uuid[]))
@@ -362,7 +372,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($14::uuid[]), 0) = 0 OR d.site_id = ANY ($14::uuid[]))
@@ -391,7 +402,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($14::uuid[]), 0) = 0 OR d.site_id = ANY ($14::uuid[]))
@@ -420,7 +432,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($14::uuid[]), 0) = 0 OR d.site_id = ANY ($14::uuid[]))
@@ -450,7 +463,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($14::uuid[]), 0) = 0 OR d.site_id = ANY ($14::uuid[]))
@@ -549,9 +563,13 @@ func (q *Queries) GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefPa
 }
 
 const getDevice = `-- name: GetDevice :one
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
-       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name
+       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
+       COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE((SELECT ip.address::text FROM ip_addresses ip
+                 WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 JOIN business_units du ON du.id = d.business_unit_id
@@ -559,6 +577,7 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
+LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 WHERE d.id = $1 AND d.organization_id = $2 AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -583,50 +602,55 @@ type GetDeviceParams struct {
 }
 
 type GetDeviceRow struct {
-	ID             pgtype.UUID
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
-	LocationID     pgtype.UUID
-	RackID         pgtype.UUID
-	RackU          pgtype.Int4
-	UHeight        int32
-	Hostname       string
-	Type           string
-	Vendor         string
-	Model          string
-	PartNumber     string
-	SerialNumber   string
-	AssetTag       string
-	Firmware       string
-	Role           string
-	Lifecycle      string
-	Managed        bool
-	OwnerName      string
-	PurchaseDate   pgtype.Date
-	PoNumber       string
-	WarrantyEnd    pgtype.Date
-	LicenseEnd     pgtype.Date
-	EolDate        pgtype.Date
-	EosDate        pgtype.Date
-	Notes          string
-	Tags           []string
-	CustomFields   []byte
-	DeletedAt      pgtype.Timestamptz
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
-	SiteCode       string
-	SiteName       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
-	UnitCode       string
-	UnitName       string
-	PartnerID      pgtype.UUID
-	PartnerCode    string
-	PartnerName    string
-	LocationName   string
-	RackName       string
+	ID                pgtype.UUID
+	OrganizationID    pgtype.UUID
+	BusinessUnitID    pgtype.UUID
+	SiteID            pgtype.UUID
+	LocationID        pgtype.UUID
+	RackID            pgtype.UUID
+	RackU             pgtype.Int4
+	UHeight           int32
+	Hostname          string
+	Type              string
+	Vendor            string
+	Model             string
+	PartNumber        string
+	SerialNumber      string
+	AssetTag          string
+	Firmware          string
+	Role              string
+	Lifecycle         string
+	Managed           bool
+	OwnerName         string
+	PurchaseDate      pgtype.Date
+	PoNumber          string
+	WarrantyEnd       pgtype.Date
+	LicenseEnd        pgtype.Date
+	EolDate           pgtype.Date
+	EosDate           pgtype.Date
+	Notes             string
+	Tags              []string
+	CustomFields      []byte
+	DeletedAt         pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Version           int32
+	MgmtInterfaceID   pgtype.UUID
+	PollAddress       *netip.Addr
+	TemplateID        pgtype.UUID
+	SiteCode          string
+	SiteName          string
+	SiteUnitID        pgtype.UUID
+	SitePartnerID     pgtype.UUID
+	UnitCode          string
+	UnitName          string
+	PartnerID         pgtype.UUID
+	PartnerCode       string
+	PartnerName       string
+	LocationName      string
+	RackName          string
+	MgmtInterfaceName string
+	MgmtIp            string
 }
 
 func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error) {
@@ -673,6 +697,9 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,
+		&i.MgmtInterfaceID,
+		&i.PollAddress,
+		&i.TemplateID,
 		&i.SiteCode,
 		&i.SiteName,
 		&i.SiteUnitID,
@@ -684,6 +711,8 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.PartnerName,
 		&i.LocationName,
 		&i.RackName,
+		&i.MgmtInterfaceName,
+		&i.MgmtIp,
 	)
 	return i, err
 }
@@ -780,9 +809,13 @@ func (q *Queries) ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryPa
 
 const listDevices = `-- name: ListDevices :many
 
-SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
+SELECT d.id, d.organization_id, d.business_unit_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, s.code AS site_code, s.name AS site_name, s.business_unit_id AS site_unit_id, sb.partner_id AS site_partner_id,
        du.code AS unit_code, du.name AS unit_name, du.partner_id, dp.code AS partner_code, dp.name AS partner_name,
-       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name
+       COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
+       COALESCE(mi.name, '')::text AS mgmt_interface_name,
+       COALESCE((SELECT ip.address::text FROM ip_addresses ip
+                 WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 JOIN business_units du ON du.id = d.business_unit_id
@@ -790,6 +823,7 @@ JOIN partners dp ON dp.id = du.partner_id
 LEFT JOIN business_units sb ON sb.id = s.business_unit_id
 LEFT JOIN locations l ON l.id = d.location_id
 LEFT JOIN racks r ON r.id = d.rack_id
+LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   -- Visibility (ADR-031): the device's unit is granted (directly or via its partner), or its site is visible
   -- to the caller (site's unit granted, or the site shared to the caller).
@@ -803,7 +837,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
                          OR rs.target_unit_id = ANY ($3::uuid[])
                          OR tu.partner_id = ANY ($4::uuid[]))))
   AND ($6::text = '' OR d.hostname ILIKE '%' || $6 || '%' OR d.serial_number ILIKE '%' || $6 || '%'
-       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%')
+       OR d.part_number ILIKE '%' || $6 || '%' OR d.model ILIKE '%' || $6 || '%' OR d.asset_tag ILIKE '%' || $6 || '%'
+       OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $6 || '%'))
   AND ($7::uuid IS NULL OR du.partner_id = $7)
   AND ($8::uuid IS NULL OR d.business_unit_id = $8)
   AND (COALESCE(cardinality($9::uuid[]), 0) = 0 OR d.site_id = ANY ($9::uuid[]))
@@ -823,6 +858,12 @@ ORDER BY
       WHEN 'unit' THEN dp.code || '/' || du.code ELSE NULL END END DESC NULLS LAST,
   CASE WHEN $16::text = 'warranty_end' AND NOT $15::boolean THEN d.warranty_end END ASC NULLS LAST,
   CASE WHEN $16::text = 'warranty_end' AND $15::boolean THEN d.warranty_end END DESC NULLS LAST,
+  CASE WHEN $16::text = 'mgmt_ip' AND NOT $15::boolean THEN
+    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+     ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
+  CASE WHEN $16::text = 'mgmt_ip' AND $15::boolean THEN
+    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+     ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
   CASE WHEN $16::text = 'hostname' AND $15::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
 LIMIT $18 OFFSET $17
@@ -850,50 +891,55 @@ type ListDevicesParams struct {
 }
 
 type ListDevicesRow struct {
-	ID             pgtype.UUID
-	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
-	LocationID     pgtype.UUID
-	RackID         pgtype.UUID
-	RackU          pgtype.Int4
-	UHeight        int32
-	Hostname       string
-	Type           string
-	Vendor         string
-	Model          string
-	PartNumber     string
-	SerialNumber   string
-	AssetTag       string
-	Firmware       string
-	Role           string
-	Lifecycle      string
-	Managed        bool
-	OwnerName      string
-	PurchaseDate   pgtype.Date
-	PoNumber       string
-	WarrantyEnd    pgtype.Date
-	LicenseEnd     pgtype.Date
-	EolDate        pgtype.Date
-	EosDate        pgtype.Date
-	Notes          string
-	Tags           []string
-	CustomFields   []byte
-	DeletedAt      pgtype.Timestamptz
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	Version        int32
-	SiteCode       string
-	SiteName       string
-	SiteUnitID     pgtype.UUID
-	SitePartnerID  pgtype.UUID
-	UnitCode       string
-	UnitName       string
-	PartnerID      pgtype.UUID
-	PartnerCode    string
-	PartnerName    string
-	LocationName   string
-	RackName       string
+	ID                pgtype.UUID
+	OrganizationID    pgtype.UUID
+	BusinessUnitID    pgtype.UUID
+	SiteID            pgtype.UUID
+	LocationID        pgtype.UUID
+	RackID            pgtype.UUID
+	RackU             pgtype.Int4
+	UHeight           int32
+	Hostname          string
+	Type              string
+	Vendor            string
+	Model             string
+	PartNumber        string
+	SerialNumber      string
+	AssetTag          string
+	Firmware          string
+	Role              string
+	Lifecycle         string
+	Managed           bool
+	OwnerName         string
+	PurchaseDate      pgtype.Date
+	PoNumber          string
+	WarrantyEnd       pgtype.Date
+	LicenseEnd        pgtype.Date
+	EolDate           pgtype.Date
+	EosDate           pgtype.Date
+	Notes             string
+	Tags              []string
+	CustomFields      []byte
+	DeletedAt         pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Version           int32
+	MgmtInterfaceID   pgtype.UUID
+	PollAddress       *netip.Addr
+	TemplateID        pgtype.UUID
+	SiteCode          string
+	SiteName          string
+	SiteUnitID        pgtype.UUID
+	SitePartnerID     pgtype.UUID
+	UnitCode          string
+	UnitName          string
+	PartnerID         pgtype.UUID
+	PartnerCode       string
+	PartnerName       string
+	LocationName      string
+	RackName          string
+	MgmtInterfaceName string
+	MgmtIp            string
 }
 
 // Devices (P1-08, SRS §4.1). Every query takes organization_id; restricted callers (role member, ADR-031)
@@ -960,6 +1006,9 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
+			&i.MgmtInterfaceID,
+			&i.PollAddress,
+			&i.TemplateID,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.SiteUnitID,
@@ -971,6 +1020,8 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.PartnerName,
 			&i.LocationName,
 			&i.RackName,
+			&i.MgmtInterfaceName,
+			&i.MgmtIp,
 		); err != nil {
 			return nil, err
 		}
@@ -1044,6 +1095,21 @@ func (q *Queries) SoftDeleteDevice(ctx context.Context, arg SoftDeleteDevicePara
 	return result.RowsAffected(), nil
 }
 
+const touchDevice = `-- name: TouchDevice :exec
+UPDATE devices SET version = version + 1 WHERE id = $1 AND organization_id = $2
+`
+
+type TouchDeviceParams struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+}
+
+// Interface / IP changes bump the device version so open device forms see the change.
+func (q *Queries) TouchDevice(ctx context.Context, arg TouchDeviceParams) error {
+	_, err := q.db.Exec(ctx, touchDevice, arg.ID, arg.OrganizationID)
+	return err
+}
+
 const updateCustomFieldDef = `-- name: UpdateCustomFieldDef :one
 UPDATE custom_field_defs SET label = $1, options = $2, required = $3, sort_order = $4,
   version = version + 1
@@ -1095,41 +1161,44 @@ UPDATE devices SET business_unit_id = $1, site_id = $2, location_id = $3,
   firmware = $14, role = $15, lifecycle = $16, managed = $17, owner_name = $18,
   purchase_date = $19, po_number = $20, warranty_end = $21,
   license_end = $22, eol_date = $23, eos_date = $24,
-  notes = $25, tags = $26, custom_fields = $27, version = version + 1
-WHERE id = $28 AND organization_id = $29 AND deleted_at IS NULL AND version = $30
+  notes = $25, tags = $26, custom_fields = $27, mgmt_interface_id = $28,
+  poll_address = $29, version = version + 1
+WHERE id = $30 AND organization_id = $31 AND deleted_at IS NULL AND version = $32
 `
 
 type UpdateDeviceParams struct {
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
-	LocationID     pgtype.UUID
-	RackID         pgtype.UUID
-	RackU          pgtype.Int4
-	UHeight        int32
-	Hostname       string
-	Type           string
-	Vendor         string
-	Model          string
-	PartNumber     string
-	SerialNumber   string
-	AssetTag       string
-	Firmware       string
-	Role           string
-	Lifecycle      string
-	Managed        bool
-	OwnerName      string
-	PurchaseDate   pgtype.Date
-	PoNumber       string
-	WarrantyEnd    pgtype.Date
-	LicenseEnd     pgtype.Date
-	EolDate        pgtype.Date
-	EosDate        pgtype.Date
-	Notes          string
-	Tags           []string
-	CustomFields   []byte
-	ID             pgtype.UUID
-	OrganizationID pgtype.UUID
-	Version        int32
+	BusinessUnitID  pgtype.UUID
+	SiteID          pgtype.UUID
+	LocationID      pgtype.UUID
+	RackID          pgtype.UUID
+	RackU           pgtype.Int4
+	UHeight         int32
+	Hostname        string
+	Type            string
+	Vendor          string
+	Model           string
+	PartNumber      string
+	SerialNumber    string
+	AssetTag        string
+	Firmware        string
+	Role            string
+	Lifecycle       string
+	Managed         bool
+	OwnerName       string
+	PurchaseDate    pgtype.Date
+	PoNumber        string
+	WarrantyEnd     pgtype.Date
+	LicenseEnd      pgtype.Date
+	EolDate         pgtype.Date
+	EosDate         pgtype.Date
+	Notes           string
+	Tags            []string
+	CustomFields    []byte
+	MgmtInterfaceID pgtype.UUID
+	PollAddress     *netip.Addr
+	ID              pgtype.UUID
+	OrganizationID  pgtype.UUID
+	Version         int32
 }
 
 func (q *Queries) UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error) {
@@ -1161,6 +1230,8 @@ func (q *Queries) UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int
 		arg.Notes,
 		arg.Tags,
 		arg.CustomFields,
+		arg.MgmtInterfaceID,
+		arg.PollAddress,
 		arg.ID,
 		arg.OrganizationID,
 		arg.Version,

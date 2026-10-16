@@ -28,6 +28,8 @@ import {
   DEVICE_TYPE_GROUPS,
   LIFECYCLES,
   useCustomFields,
+  useInterfaces,
+  useTemplates,
   useSaveDevice,
   type CustomField,
   type Device,
@@ -118,6 +120,8 @@ export function DeviceFormDialog({
   const sites = useSites(orgId)
   const units = useBusinessUnits(orgId)
   const fields = useCustomFields(orgId)
+  const templates = useTemplates(orgId, !device)
+  const interfaces = useInterfaces(orgId, device?.id ?? '', Boolean(device))
   const [f, setF] = useState({
     hostname: device?.hostname ?? '',
     type: (device?.type ?? 'l2_switch') as DeviceType,
@@ -145,6 +149,9 @@ export function DeviceFormDialog({
     rackId: device?.rackId ?? '',
     rackU: device?.rackU ? String(device.rackU) : '',
     uHeight: String(device?.uHeight ?? 1),
+    templateId: '',
+    mgmtInterfaceId: device?.mgmtInterfaceId ?? '',
+    pollAddress: device?.pollAddress ?? '',
   })
   const [custom, setCustom] = useState<Record<string, CustomValue>>(
     (device?.customFields ?? {}) as Record<string, CustomValue>,
@@ -195,6 +202,9 @@ export function DeviceFormDialog({
       rackId: f.rackId || null,
       rackU: f.rackId && f.rackU ? Number(f.rackU) : null,
       uHeight: Number(f.uHeight) || 1,
+      templateId: device ? null : f.templateId || null,
+      mgmtInterfaceId: f.mgmtInterfaceId || null,
+      pollAddress: f.pollAddress.trim() || null,
     }
     save.mutate(
       { device, body },
@@ -229,6 +239,36 @@ export function DeviceFormDialog({
 
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className={legend}>{t('devices.groupIdentity')}</legend>
+            {!device && (templates.data ?? []).length > 0 && (
+              <FormField
+                label={t('devices.template')}
+                hint={t('devices.templateHint')}
+                className="col-span-3"
+              >
+                {(p) => (
+                  <NativeSelect
+                    {...p}
+                    value={f.templateId}
+                    onChange={(e) => {
+                      const tp = templates.data?.find((x) => x.id === e.target.value)
+                      setF({
+                        ...f,
+                        templateId: e.target.value,
+                        type: tp ? tp.type : f.type,
+                        uHeight: tp ? String(tp.uHeight) : f.uHeight,
+                      })
+                    }}
+                  >
+                    <option value="">{t('devices.noTemplate')}</option>
+                    {(templates.data ?? []).map((tp) => (
+                      <option key={tp.id} value={tp.id}>
+                        {tp.name} ({t('templates.portCount', { count: tp.portCount })})
+                      </option>
+                    ))}
+                  </NativeSelect>
+                )}
+              </FormField>
+            )}
             <FormField label={t('devices.hostname')} required className="col-span-2">
               {(p) => (
                 <Input
@@ -494,6 +534,35 @@ export function DeviceFormDialog({
               )}
             </FormField>
           </fieldset>
+
+          {device && (
+            <fieldset className="grid grid-cols-3 gap-3">
+              <legend className={legend}>{t('devices.mgmtInterface')}</legend>
+              <FormField label={t('devices.mgmtInterface')} hint={t('devices.mgmtHint')}>
+                {(p) => (
+                  <NativeSelect {...p} value={f.mgmtInterfaceId} onChange={set('mgmtInterfaceId')}>
+                    <option value="">{t('devices.noMgmt')}</option>
+                    {(interfaces.data ?? []).map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                )}
+              </FormField>
+              <FormField label={t('devices.pollAddress')} hint={t('devices.pollHint')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    maxLength={45}
+                    value={f.pollAddress}
+                    onChange={set('pollAddress')}
+                    className="font-mono"
+                  />
+                )}
+              </FormField>
+            </fieldset>
+          )}
 
           {(fields.data ?? []).length > 0 && (
             <fieldset className="grid grid-cols-3 gap-3">

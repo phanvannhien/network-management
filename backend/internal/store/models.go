@@ -67,36 +67,92 @@ type CustomFieldDef struct {
 }
 
 type Device struct {
+	ID              pgtype.UUID
+	OrganizationID  pgtype.UUID
+	BusinessUnitID  pgtype.UUID
+	SiteID          pgtype.UUID
+	LocationID      pgtype.UUID
+	RackID          pgtype.UUID
+	RackU           pgtype.Int4
+	UHeight         int32
+	Hostname        string
+	Type            string
+	Vendor          string
+	Model           string
+	PartNumber      string
+	SerialNumber    string
+	AssetTag        string
+	Firmware        string
+	Role            string
+	Lifecycle       string
+	Managed         bool
+	OwnerName       string
+	PurchaseDate    pgtype.Date
+	PoNumber        string
+	WarrantyEnd     pgtype.Date
+	LicenseEnd      pgtype.Date
+	EolDate         pgtype.Date
+	EosDate         pgtype.Date
+	Notes           string
+	Tags            []string
+	CustomFields    []byte
+	DeletedAt       pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	Version         int32
+	MgmtInterfaceID pgtype.UUID
+	PollAddress     *netip.Addr
+	TemplateID      pgtype.UUID
+}
+
+type DeviceTemplate struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
-	BusinessUnitID pgtype.UUID
-	SiteID         pgtype.UUID
-	LocationID     pgtype.UUID
-	RackID         pgtype.UUID
-	RackU          pgtype.Int4
-	UHeight        int32
-	Hostname       string
+	Name           string
 	Type           string
 	Vendor         string
 	Model          string
 	PartNumber     string
-	SerialNumber   string
-	AssetTag       string
-	Firmware       string
-	Role           string
-	Lifecycle      string
-	Managed        bool
-	OwnerName      string
-	PurchaseDate   pgtype.Date
-	PoNumber       string
-	WarrantyEnd    pgtype.Date
-	LicenseEnd     pgtype.Date
-	EolDate        pgtype.Date
-	EosDate        pgtype.Date
+	UHeight        int32
+	Ports          []byte
 	Notes          string
-	Tags           []string
-	CustomFields   []byte
-	DeletedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
+type Interface struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	DeviceID       pgtype.UUID
+	Name           string
+	Kind           string
+	Media          string
+	Speed          string
+	Duplex         string
+	Mode           string
+	AccessVlan     pgtype.Int4
+	NativeVlan     pgtype.Int4
+	AllowedVlans   string
+	Poe            bool
+	LagID          pgtype.UUID
+	Description    string
+	AdminUp        bool
+	SortOrder      int32
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
+type IpAddress struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	DeviceID       pgtype.UUID
+	InterfaceID    pgtype.UUID
+	Address        netip.Prefix
+	Vrf            string
+	Role           string
+	Description    string
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32

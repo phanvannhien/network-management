@@ -268,3 +268,234 @@ export function useCustomFieldMutations(orgId: string) {
   })
   return { save, remove }
 }
+
+// --- templates, interfaces, IPs (P1-09, ADR-012) ---
+
+export type DeviceTemplate = components['schemas']['DeviceTemplate']
+export type DeviceTemplateInput = components['schemas']['DeviceTemplateInput']
+export type PortGroup = components['schemas']['PortGroup']
+export type Interface = components['schemas']['Interface']
+export type InterfaceInput = components['schemas']['InterfaceInput']
+export type InterfaceKind = components['schemas']['InterfaceKind']
+export type InterfaceMedia = components['schemas']['InterfaceMedia']
+export type InterfaceMode = components['schemas']['InterfaceMode']
+export type IpAddress = components['schemas']['IpAddress']
+export type IpAddressInput = components['schemas']['IpAddressInput']
+export type IpRole = components['schemas']['IpRole']
+
+export const INTERFACE_KINDS: InterfaceKind[] = [
+  'physical',
+  'svi',
+  'loopback',
+  'tunnel',
+  'subinterface',
+  'lag',
+]
+export const MEDIA: InterfaceMedia[] = [
+  '',
+  'RJ45',
+  'SFP',
+  'SFP+',
+  'SFP28',
+  'QSFP',
+  'Serial',
+  'Radio',
+  'Console',
+]
+export const MODES: InterfaceMode[] = ['', 'access', 'trunk', 'routed', 'hybrid']
+export const IP_ROLES: IpRole[] = ['primary', 'secondary', 'nat', 'public']
+
+/** The full update body of a device, to change one thing (e.g. the management interface) from a page. */
+export function deviceToInput(d: Device): DeviceInput {
+  return {
+    hostname: d.hostname,
+    type: d.type,
+    vendor: d.vendor,
+    model: d.model,
+    partNumber: d.partNumber,
+    serialNumber: d.serialNumber,
+    assetTag: d.assetTag,
+    firmware: d.firmware,
+    role: d.role,
+    lifecycle: d.lifecycle,
+    managed: d.managed,
+    ownerName: d.ownerName,
+    poNumber: d.poNumber,
+    purchaseDate: d.purchaseDate,
+    warrantyEnd: d.warrantyEnd,
+    licenseEnd: d.licenseEnd,
+    eolDate: d.eolDate,
+    eosDate: d.eosDate,
+    notes: d.notes,
+    tags: d.tags,
+    customFields: d.customFields,
+    siteId: d.siteId,
+    businessUnitId: d.businessUnitId,
+    locationId: d.locationId,
+    rackId: d.rackId,
+    rackU: d.rackU,
+    uHeight: d.uHeight,
+    mgmtInterfaceId: d.mgmtInterfaceId,
+    pollAddress: d.pollAddress,
+  }
+}
+
+const subKeys = {
+  interfaces: (orgId: string, id: string) => ['orgs', orgId, 'devices', 'interfaces', id] as const,
+  ips: (orgId: string, id: string) => ['orgs', orgId, 'devices', 'ips', id] as const,
+  templates: (orgId: string) => ['orgs', orgId, 'device-templates'] as const,
+}
+
+export function useInterfaces(orgId: string, deviceId: string, enabled = true) {
+  return useQuery({
+    queryKey: subKeys.interfaces(orgId, deviceId),
+    enabled: enabled && deviceId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/devices/{deviceId}/interfaces', {
+        params: { path: { orgId, deviceId } },
+      })
+      if (r.data) return r.data.interfaces
+      fail(r.error, r.response.status, i18n.t('errors.devicesLoad'))
+    },
+  })
+}
+
+export function useDeviceIps(orgId: string, deviceId: string, enabled = true) {
+  return useQuery({
+    queryKey: subKeys.ips(orgId, deviceId),
+    enabled: enabled && deviceId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/devices/{deviceId}/ips', {
+        params: { path: { orgId, deviceId } },
+      })
+      if (r.data) return r.data.ips
+      fail(r.error, r.response.status, i18n.t('errors.devicesLoad'))
+    },
+  })
+}
+
+/** Interface / IP writes change the device (version, management IP, history): refresh all device data. */
+export function useInterfaceMutations(orgId: string, deviceId: string) {
+  const invalidate = useInvalidateDevices(orgId)
+  const path = { orgId, deviceId }
+  const save = useMutation({
+    mutationFn: async (input: { iface?: Interface; body: InterfaceInput }) => {
+      const r = input.iface
+        ? await api.PATCH('/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}', {
+            params: { ...csrfParam, path: { ...path, interfaceId: input.iface.id } },
+            body: { ...input.body, version: input.iface.version },
+          })
+        : await api.POST('/orgs/{orgId}/devices/{deviceId}/interfaces', {
+            params: { ...csrfParam, path },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled: invalidate,
+  })
+  const remove = useMutation({
+    mutationFn: async (interfaceId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}', {
+        params: { ...csrfParam, path: { ...path, interfaceId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled: invalidate,
+  })
+  const apply = useMutation({
+    mutationFn: async (templateId: string) => {
+      const r = await api.POST('/orgs/{orgId}/devices/{deviceId}/apply-template', {
+        params: { ...csrfParam, path },
+        body: { templateId },
+      })
+      if (r.data) return r.data.added
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled: invalidate,
+  })
+  return { save, remove, apply }
+}
+
+export function useIpMutations(orgId: string, deviceId: string) {
+  const invalidate = useInvalidateDevices(orgId)
+  const path = { orgId, deviceId }
+  const save = useMutation({
+    mutationFn: async (input: { ip?: IpAddress; body: IpAddressInput }) => {
+      const r = input.ip
+        ? await api.PATCH('/orgs/{orgId}/devices/{deviceId}/ips/{ipId}', {
+            params: { ...csrfParam, path: { ...path, ipId: input.ip.id } },
+            body: { ...input.body, version: input.ip.version },
+          })
+        : await api.POST('/orgs/{orgId}/devices/{deviceId}/ips', {
+            params: { ...csrfParam, path },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled: invalidate,
+  })
+  const remove = useMutation({
+    mutationFn: async (ipId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/devices/{deviceId}/ips/{ipId}', {
+        params: { ...csrfParam, path: { ...path, ipId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled: invalidate,
+  })
+  return { save, remove }
+}
+
+export function useTemplates(orgId: string, enabled = true) {
+  return useQuery({
+    queryKey: subKeys.templates(orgId),
+    enabled: enabled && orgId !== '',
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/device-templates', { params: { path: { orgId } } })
+      if (r.data) return r.data.templates
+      fail(r.error, r.response.status, i18n.t('errors.templatesLoad'))
+    },
+  })
+}
+
+export function useTemplateMutations(orgId: string) {
+  const qc = useQueryClient()
+  const onSettled = () => qc.invalidateQueries({ queryKey: subKeys.templates(orgId) })
+  const save = useMutation({
+    mutationFn: async (input: { template?: DeviceTemplate; body: DeviceTemplateInput }) => {
+      const r = input.template
+        ? await api.PATCH('/orgs/{orgId}/device-templates/{templateId}', {
+            params: { ...csrfParam, path: { orgId, templateId: input.template.id } },
+            body: { ...input.body, version: input.template.version },
+          })
+        : await api.POST('/orgs/{orgId}/device-templates', {
+            params: { ...csrfParam, path: { orgId } },
+            body: input.body,
+          })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSettled,
+  })
+  const remove = useMutation({
+    mutationFn: async (templateId: string) => {
+      const r = await api.DELETE('/orgs/{orgId}/device-templates/{templateId}', {
+        params: { ...csrfParam, path: { orgId, templateId } },
+      })
+      if (r.response.status !== 204) fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+    onSettled,
+  })
+  return { save, remove }
+}
+
+/** Expand port groups like the server does (preview in the template form). */
+export function expandPorts(groups: PortGroup[]): string[] {
+  return groups.flatMap((g) =>
+    Array.from({ length: Math.max(0, Math.min(g.count, 512)) }, (_, i) =>
+      g.pattern.replaceAll('{n}', String(g.start + i)),
+    ),
+  )
+}
