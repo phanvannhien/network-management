@@ -1,7 +1,7 @@
 import { Handle, Position, useStore, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SEVERITY } from '../panels/Problems'
+import { SEVERITY } from '../panels/severity'
 import { DeviceIcon } from '../catalog/icons'
 import { useAppStore } from '../model/store'
 import { severityForDevice } from '../validation/rules'

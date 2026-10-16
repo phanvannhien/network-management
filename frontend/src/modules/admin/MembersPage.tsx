@@ -76,6 +76,12 @@ function memberStatus(m: Member) {
   return m.disabled ? 'disabled' : m.pendingInvite ? 'pending' : 'active'
 }
 
+const MEMBER_SORT: Record<string, (m: Member) => string | number> = {
+  user: (m) => m.displayName || m.email,
+  role: (m) => ROLES.indexOf(m.role),
+  status: memberStatus,
+}
+
 /** Right-hand sheet for role + extra permissions (DESIGN.md §7d: no inline checkboxes per row). */
 function EditMemberSheet({
   orgId,
@@ -293,15 +299,7 @@ export function MembersPage() {
         (statuses.length === 0 || statuses.includes(memberStatus(m))),
     )
   }, [members.data, filter])
-  const table = useLocalTable(
-    filtered,
-    {
-      user: (m) => m.displayName || m.email,
-      role: (m) => ROLES.indexOf(m.role),
-      status: (m) => memberStatus(m),
-    },
-    [{ id: 'user', desc: false }],
-  )
+  const table = useLocalTable(filtered, MEMBER_SORT, [{ id: 'user', desc: false }])
 
   const count = (pred: (m: Member) => boolean) => members.data?.filter(pred).length ?? 0
   const facets = [

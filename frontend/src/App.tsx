@@ -12,37 +12,44 @@ import { RequireAuth } from './app/RequireAuth'
 import { RootRedirect } from './app/RootRedirect'
 import { OrgShell, SystemShell } from './components/AppShell'
 import { Toaster } from './components/Toaster'
-import { CanvasView } from './editor/canvas/CanvasView'
-import { Palette } from './editor/panels/Palette'
-import { Sidebar } from './editor/panels/Sidebar'
-import { AdminOrganizationsPage } from './modules/admin/AdminOrganizationsPage'
-import { AdminUsersPage } from './modules/admin/AdminUsersPage'
-import { MembersPage } from './modules/admin/MembersPage'
-import { SystemHealthPage } from './modules/admin/SystemHealthPage'
-import { DeviceDetailPage } from './modules/inventory/DeviceDetailPage'
-import { DeviceListPage } from './modules/inventory/DeviceListPage'
 
 const queryClient = new QueryClient()
+
+// Route-level code splitting: React Flow and the module pages load on first use.
+const AdminOrganizationsPage = lazy(() =>
+  import('./modules/admin/AdminOrganizationsPage').then((m) => ({
+    default: m.AdminOrganizationsPage,
+  })),
+)
+const AdminUsersPage = lazy(() =>
+  import('./modules/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })),
+)
+const MembersPage = lazy(() =>
+  import('./modules/admin/MembersPage').then((m) => ({ default: m.MembersPage })),
+)
+const SystemHealthPage = lazy(() =>
+  import('./modules/admin/SystemHealthPage').then((m) => ({ default: m.SystemHealthPage })),
+)
+const DeviceDetailPage = lazy(() =>
+  import('./modules/inventory/DeviceDetailPage').then((m) => ({ default: m.DeviceDetailPage })),
+)
+const DeviceListPage = lazy(() =>
+  import('./modules/inventory/DeviceListPage').then((m) => ({ default: m.DeviceListPage })),
+)
+const EditorPage = lazy(() =>
+  import('./editor/EditorPage').then((m) => ({ default: m.EditorPage })),
+)
 
 // Component gallery: only in dev builds (tree-shaken from production).
 const DevUiPage = import.meta.env.DEV
   ? lazy(() => import('./dev/DevUiPage').then((m) => ({ default: m.DevUiPage })))
   : null
 
-/** Diagram editor screen; becomes /diagrams/:id once diagrams are served by the API (P1-13). */
-function EditorPage() {
-  return (
-    <main className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      <Palette />
-      <div className="flex-1">
-        <CanvasView />
-      </div>
-      <Sidebar />
-    </main>
-  )
-}
-
-const guard = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>
+const guard = (el: ReactNode) => (
+  <RequireAuth>
+    <Suspense fallback={null}>{el}</Suspense>
+  </RequireAuth>
+)
 
 export function AppRoutes() {
   return (

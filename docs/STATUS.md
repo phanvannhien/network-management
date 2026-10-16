@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-16 — UI Bước 3 · tách bundle theo route (kết thúc Bước 3)
+- Đã làm: các trang module (Thiết bị, Thành viên, Quản trị, Tình trạng hệ thống) và editor tải lười (`React.lazy`);
+  shell giữ nguyên khi trang con đang tải (Suspense + skeleton ở Outlet). Bundle chính 1.073 kB → 389 kB, editor 247 kB riêng.
+  Dọn cảnh báo lint trong code mới (sort key ra module scope, map mức lỗi tách file).
+- Test / cách kiểm tra: `make check` pass (138 test frontend). Chụp lại toàn bộ `docs/ui-screens/after/` (104 ảnh:
+  26 màn × 1440/1280 × Light/Dark); `a11y-report.md`: 0 vấn đề trên 25 trang × 2 theme.
+- Còn dở / lỗi đã biết: xem mục editor (thêm thiết bị bằng bàn phím, thông báo validation qua i18n). Cảnh báo
+  only-export-components còn trong 3 file shadcn gốc (button/badge/tabs) — để nguyên theo mẫu shadcn.
+- Câu hỏi cho người dùng: duyệt kết quả Bước 3.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-05 Audit log (màn hình) — dùng DataTable + FilterBar mới.
+
 ## 2026-10-16 — UI Bước 3 · editor sơ đồ (token màu + i18n)
 - Đã làm:
   - React Flow theo token Light/Dark qua biến `--xy-*` (nền lưới, cạnh, handle, minimap, controls, vùng chọn, attribution).

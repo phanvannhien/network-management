@@ -1,15 +1,9 @@
-import { ChevronDown, ChevronUp, CircleX, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../model/store'
-import type { Problem, Severity } from '../validation/rules'
-
-/** Severity = icon + text + colour (DESIGN.md §3.2), never a coloured dot alone. */
-export const SEVERITY: Record<Severity, { icon: LucideIcon; color: string }> = {
-  error: { icon: CircleX, color: 'var(--status-down)' },
-  warning: { icon: TriangleAlert, color: 'var(--status-warning)' },
-  info: { icon: Info, color: 'var(--brand)' },
-}
+import type { Problem } from '../validation/rules'
+import { SEVERITY } from './severity'
 
 /** Bottom panel listing validation problems; click focuses the object on the canvas. */
 export function Problems() {

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
  * Client-side paging/sorting for short lists (members, organizations, users) so they can use the
  * same DataTable as server-paginated lists.
  */
+/** `sortKeys` must be stable (define it at module scope). */
 export function useLocalTable<T>(
   rows: T[] | undefined,
   sortKeys: Record<string, (row: T) => string | number>,
@@ -28,8 +29,7 @@ export function useLocalTable<T>(
       })
     }
     return list
-    // sortKeys is a literal per page; re-sorting only follows data and sort state.
-  }, [rows, sorting])
+  }, [rows, sorting, sortKeys])
   const start = pagination.pageIndex * pagination.pageSize
   return {
     data: rows ? sorted.slice(start, start + pagination.pageSize) : undefined,

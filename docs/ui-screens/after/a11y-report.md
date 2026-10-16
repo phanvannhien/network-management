@@ -1,6 +1,6 @@
 # Kiểm tra truy cập (axe-core + bàn phím)
 
-Chạy: 2026-10-16T06:15:18.973Z · http://localhost:5180
+Chạy: 2026-10-16T06:44:59.591Z · http://localhost:5180
 Tổng vấn đề: **0**
 
 
@@ -19,6 +19,16 @@ Tổng vấn đề: **0**
 ## ✅ 13-system-area — light
 ## ✅ 14-not-found — light
 ## ✅ 15-dev-ui — light
+## ✅ 20-members — light
+## ✅ 21-members-edit-sheet — light
+## ✅ 22-members-invite — light
+## ✅ 23-admin-organizations — light
+## ✅ 24-admin-organizations-create — light
+## ✅ 25-admin-organizations-delete — light
+## ✅ 26-admin-users-menu — light
+## ✅ 27-system-health — light
+## ✅ 28-org-home-edit — light
+## ✅ 29-editor — light
 ## ✅ 01-login — dark
 ## ✅ 02-forgot-password — dark
 ## ✅ 03-mfa-verify — dark
@@ -34,3 +44,13 @@ Tổng vấn đề: **0**
 ## ✅ 13-system-area — dark
 ## ✅ 14-not-found — dark
 ## ✅ 15-dev-ui — dark
+## ✅ 20-members — dark
+## ✅ 21-members-edit-sheet — dark
+## ✅ 22-members-invite — dark
+## ✅ 23-admin-organizations — dark
+## ✅ 24-admin-organizations-create — dark
+## ✅ 25-admin-organizations-delete — dark
+## ✅ 26-admin-users-menu — dark
+## ✅ 27-system-health — dark
+## ✅ 28-org-home-edit — dark
+## ✅ 29-editor — dark

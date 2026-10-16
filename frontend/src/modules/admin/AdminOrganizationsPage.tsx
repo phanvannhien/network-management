@@ -40,6 +40,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDate } from '@/lib/format'
 
+const ORG_SORT: Record<string, (o: AdminOrganization) => string | number> = {
+  name: (o) => o.name,
+  kind: (o) => o.kind,
+  memberCount: (o) => o.memberCount,
+  createdAt: (o) => o.createdAt,
+}
+
 function CreateOrganizationDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation()
   const create = useAdminCreateOrganization()
@@ -157,16 +164,7 @@ export function AdminOrganizationsPage() {
         (!q || o.name.toLowerCase().includes(q)) && (kinds.length === 0 || kinds.includes(o.kind)),
     )
   }, [orgs.data, filter])
-  const table = useLocalTable(
-    filtered,
-    {
-      name: (o) => o.name,
-      kind: (o) => o.kind,
-      memberCount: (o) => o.memberCount,
-      createdAt: (o) => o.createdAt,
-    },
-    [{ id: 'name', desc: false }],
-  )
+  const table = useLocalTable(filtered, ORG_SORT, [{ id: 'name', desc: false }])
 
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
 

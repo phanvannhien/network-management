@@ -15,7 +15,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useLogout, useSession } from '@/app/auth'
@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePreferences, type Density, type Theme } from '@/lib/preferences'
 import { cn } from '@/lib/utils'
@@ -41,6 +42,16 @@ import { CommandPalette } from './CommandPalette'
 import { EnvBadge } from './EnvBadge'
 import { OrgAvatar, SystemAvatar } from './OrgAvatar'
 import { SessionExpiryWarning } from './SessionExpiryWarning'
+
+/** Placeholder while a lazily loaded page arrives (route code splitting). */
+function PageSkeleton() {
+  return (
+    <div className="space-y-3 p-4" aria-busy>
+      <Skeleton className="h-7 w-56" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  )
+}
 
 const WIDE_QUERY = '(min-width: 1440px)'
 
@@ -412,7 +423,9 @@ export function OrgShell() {
 
   return (
     <Shell area={<OrgSwitcher orgId={orgId} />} nav={nav}>
-      <Outlet />
+      <Suspense fallback={<PageSkeleton />}>
+        <Outlet />
+      </Suspense>
     </Shell>
   )
 }
@@ -447,7 +460,9 @@ export function SystemShell() {
         </>
       }
     >
-      <Outlet />
+      <Suspense fallback={<PageSkeleton />}>
+        <Outlet />
+      </Suspense>
     </Shell>
   )
 }

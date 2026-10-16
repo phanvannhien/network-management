@@ -36,6 +36,13 @@ type Confirm = { user: AdminUser; action: 'disable' | 'reset-mfa' }
 const userStatus = (u: AdminUser) =>
   u.disabled ? 'disabled' : u.pendingInvite ? 'pending' : 'active'
 
+const USER_SORT: Record<string, (u: AdminUser) => string | number> = {
+  user: (u) => u.displayName || u.email,
+  organizationCount: (u) => u.organizationCount,
+  status: userStatus,
+  createdAt: (u) => u.createdAt,
+}
+
 /** System admin: all users — disable/enable, reset MFA, issue password-reset links (P1-04). */
 export function AdminUsersPage() {
   const { t } = useTranslation()
@@ -60,16 +67,7 @@ export function AdminUsersPage() {
         (mfa.length === 0 || mfa.includes(u.mfaEnabled ? 'on' : 'off')),
     )
   }, [users.data, filter])
-  const table = useLocalTable(
-    filtered,
-    {
-      user: (u) => u.displayName || u.email,
-      organizationCount: (u) => u.organizationCount,
-      status: userStatus,
-      createdAt: (u) => u.createdAt,
-    },
-    [{ id: 'user', desc: false }],
-  )
+  const table = useLocalTable(filtered, USER_SORT, [{ id: 'user', desc: false }])
 
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
 
