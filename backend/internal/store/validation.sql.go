@@ -78,6 +78,8 @@ SELECT m.device_id::uuid AS device_id, host(m.h)::text AS address, m.vrf::text A
               AND m.lifecycle = 'active' AND o.lifecycle = 'active' THEN 'error' ELSE 'warning' END)::text AS severity
 FROM holders m
 JOIN holders o ON o.vrf = m.vrf AND o.h = m.h AND o.owner <> m.owner
+  -- A VRRP / HSRP virtual IP configured on each router of the group (ADR-038).
+  AND NOT (m.role = 'vip' AND o.role = 'vip')
 WHERE m.device_id = ANY ($1::uuid[])
 `
 

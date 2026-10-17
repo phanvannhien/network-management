@@ -308,7 +308,7 @@ export const MEDIA: InterfaceMedia[] = [
   'Cellular',
 ]
 export const MODES: InterfaceMode[] = ['', 'access', 'trunk', 'routed', 'hybrid']
-export const IP_ROLES: IpRole[] = ['primary', 'secondary', 'nat', 'public']
+export const IP_ROLES: IpRole[] = ['primary', 'secondary', 'vip', 'nat', 'public']
 
 /** The full update body of a device, to change one thing (e.g. the management interface) from a page. */
 export function deviceToInput(d: Device): DeviceInput {

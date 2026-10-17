@@ -360,6 +360,7 @@ export const en: Strings = {
     ipRoles: {
       primary: 'Primary',
       secondary: 'Secondary',
+      vip: 'VIP (VRRP/HSRP)',
       nat: 'NAT',
       public: 'Public',
     },
@@ -635,6 +636,7 @@ export const en: Strings = {
       primary:
         "The interface's main IP. The primary IP of the management interface is the device's management IP.",
       secondary: 'An extra IP on the same interface.',
+      vip: 'Shared virtual gateway IP of two redundant routers/cores (VRRP/HSRP). Add it on both devices with role VIP — only then may the address repeat.',
       nat: 'The IP the device is seen as after NAT; not configured on the device.',
       public: 'A public IP used to reach the device from the Internet (usually NATed to it).',
     },

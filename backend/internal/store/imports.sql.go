@@ -12,53 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const iPHolders = `-- name: IPHolders :many
-SELECT DISTINCT a.hostname::text AS hostname
-FROM ipam_addresses a
-LEFT JOIN devices d ON d.id = a.device_id
-WHERE a.organization_id = $1 AND a.vrf = $2 AND a.host = $3::inet
-  AND a.device_id IS DISTINCT FROM $4::uuid
-  AND NOT ($5::uuid IS NOT NULL
-           AND (a.cluster_id = $5::uuid OR d.cluster_id = $5::uuid))
-LIMIT 3
-`
-
-type IPHoldersParams struct {
-	OrganizationID pgtype.UUID
-	Vrf            string
-	Ip             netip.Addr
-	DeviceID       pgtype.UUID
-	ClusterID      pgtype.UUID
-}
-
-// Other holders of an address in a VRF (devices, cluster VIPs, group members), members of the device's own cluster
-// left out (ADR-027): shown as a warning when a management IP is set.
-func (q *Queries) IPHolders(ctx context.Context, arg IPHoldersParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, iPHolders,
-		arg.OrganizationID,
-		arg.Vrf,
-		arg.Ip,
-		arg.DeviceID,
-		arg.ClusterID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var hostname string
-		if err := rows.Scan(&hostname); err != nil {
-			return nil, err
-		}
-		items = append(items, hostname)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const importClusterByName = `-- name: ImportClusterByName :one
 SELECT id, site_id FROM device_clusters
 WHERE organization_id = $1 AND lower(name) = lower($2)

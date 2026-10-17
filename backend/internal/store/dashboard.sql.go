@@ -224,6 +224,7 @@ SELECT host(h)::text AS address, vrf::text AS vrf,
 FROM holders
 GROUP BY vrf, h
 HAVING count(DISTINCT owner) > 1
+   AND NOT bool_and(role = 'vip') -- a VRRP / HSRP virtual IP on every router of the group (ADR-038)
    AND ($1::uuid IS NULL OR bool_or(category_id IN (SELECT id FROM scope)))
 ORDER BY h
 LIMIT 100

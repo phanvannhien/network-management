@@ -5209,7 +5209,10 @@ components:
 
     IpRole:
       type: string
-      enum: [primary, secondary, nat, public]
+      description: >-
+        primary / secondary address of an interface; nat / public: a translated or public address (may be shared);
+        vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+      enum: [primary, secondary, nat, public, vip]
 
     InterfaceInput:
       type: object

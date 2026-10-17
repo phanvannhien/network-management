@@ -427,6 +427,18 @@ func (s *Server) DeleteEndpointGroup(ctx context.Context, req apigen.DeleteEndpo
 	return apigen.DeleteEndpointGroup204Response{}, nil
 }
 
+// memberAddressTaken: a member's address is unique in its group's VRF like any other (ADR-038).
+func memberAddressTaken(ctx context.Context, q store.Querier, m tenant.Membership, group pgtype.UUID, ip *netip.Addr, self pgtype.UUID) (string, error) {
+	if ip == nil {
+		return "", nil
+	}
+	vrf, err := q.GroupVrf(ctx, store.GroupVrfParams{ID: group, OrganizationID: m.OrgID})
+	if err != nil {
+		return "", fmt.Errorf("group vrf: %w", err)
+	}
+	return addressTaken(ctx, q, m, addrClaim{vrf: vrf, host: *ip, role: "primary", member: self})
+}
+
 // --- members ---
 
 // groupWrite loads a group for a change: 404 when invisible, 403 below edit.
@@ -566,6 +578,9 @@ func (s *Server) CreateEndpointMember(ctx context.Context, req apigen.CreateEndp
 			out.bad = bad
 			return orRollback(err)
 		}
+		if out.conf, err = memberAddressTaken(ctx, q, m, g.ID, f.ip, pgtype.UUID{}); err != nil || out.conf != "" {
+			return orRollback(err)
+		}
 		mid, err := q.CreateEndpointMember(ctx, store.CreateEndpointMemberParams{OrganizationID: m.OrgID, GroupID: g.ID,
 			Name: f.name, Ip: f.ip, Mac: f.mac, InterfaceID: f.port, Notes: f.notes})
 		if isUniqueViolation(err) {
@@ -628,6 +643,11 @@ func (s *Server) UpdateEndpointMember(ctx context.Context, req apigen.UpdateEndp
 		if err != nil || bad != "" {
 			out.bad = bad
 			return orRollback(err)
+		}
+		if f.ip != nil && (before.Ip == nil || *before.Ip != *f.ip) {
+			if out.conf, err = memberAddressTaken(ctx, q, m, g.ID, f.ip, before.ID); err != nil || out.conf != "" {
+				return orRollback(err)
+			}
 		}
 		n, err := q.UpdateEndpointMember(ctx, store.UpdateEndpointMemberParams{ID: before.ID, OrganizationID: m.OrgID, GroupID: g.ID,
 			Version: b.Version, Name: f.name, Ip: f.ip, Mac: f.mac, InterfaceID: f.port, Notes: f.notes})

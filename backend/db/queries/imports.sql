@@ -29,15 +29,3 @@ WHERE organization_id = @organization_id AND vrf = @vrf AND cidr >>= @ip::inet;
 -- name: ImportDeviceHasIP :one
 SELECT count(*) FROM ip_addresses
 WHERE organization_id = @organization_id AND device_id = @device_id AND host(address) = host(@ip::inet);
-
--- name: IPHolders :many
--- Other holders of an address in a VRF (devices, cluster VIPs, group members), members of the device's own cluster
--- left out (ADR-027): shown as a warning when a management IP is set.
-SELECT DISTINCT a.hostname::text AS hostname
-FROM ipam_addresses a
-LEFT JOIN devices d ON d.id = a.device_id
-WHERE a.organization_id = @organization_id AND a.vrf = @vrf AND a.host = @ip::inet
-  AND a.device_id IS DISTINCT FROM @device_id::uuid
-  AND NOT (sqlc.narg('cluster_id')::uuid IS NOT NULL
-           AND (a.cluster_id = sqlc.narg('cluster_id')::uuid OR d.cluster_id = sqlc.narg('cluster_id')::uuid))
-LIMIT 3;

@@ -528,7 +528,8 @@
               "primary",
               "secondary",
               "nat",
-              "public"
+              "public",
+              "vip"
             ]
           },
           "description": {

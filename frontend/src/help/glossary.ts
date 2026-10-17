@@ -513,8 +513,21 @@ export const GLOSSARY: GlossaryEntry[] = [
     'ip',
     ['Vai trò IP', 'IP role'],
     [
-      'Chính: IP chính của cổng (mỗi IPv4/IPv6 một cái). Phụ: IP thêm trên cùng cổng. NAT: IP mà thiết bị được nhìn thấy sau khi đổi địa chỉ. Public: IP Internet để vào thiết bị từ xa.',
-      "Primary: the port's main IP (one per IPv4/IPv6). Secondary: extra IP on the port. NAT: the address the device appears as after translation. Public: the Internet IP used to reach it.",
+      'Chính: IP chính của cổng (mỗi IPv4/IPv6 một cái). Phụ: IP thêm trên cùng cổng. NAT: IP mà thiết bị được nhìn thấy sau khi đổi địa chỉ. Public: IP Internet để vào thiết bị từ xa. VIP: IP gateway ảo dùng chung của nhóm VRRP/HSRP.',
+      "Primary: the port's main IP (one per IPv4/IPv6). Secondary: extra IP on the port. NAT: the address the device appears as after translation. Public: the Internet IP used to reach it. VIP: the shared virtual gateway IP of a VRRP/HSRP group.",
+    ],
+  ),
+  e(
+    'vrrp',
+    'ip',
+    ['VIP / VRRP / HSRP (gateway dự phòng)', 'VIP / VRRP / HSRP (gateway redundancy)'],
+    [
+      'Hai router (hoặc core switch) cùng làm gateway cho một mạng: mỗi máy có IP riêng và cùng chia một IP ảo (VIP). Máy tính đặt gateway là IP ảo; máy nào đang chạy thì giữ IP đó, một máy hỏng máy kia nhận thay. VRRP là chuẩn chung, HSRP là của Cisco. Trong hệ thống: khai IP ảo trên cả hai thiết bị với vai trò VIP — đây là trường hợp duy nhất một IP được phép trùng giữa hai thiết bị khác cụm.',
+      "Two routers (or core switches) act as the gateway of one network: each has its own IP and they share one virtual IP (VIP). Hosts use the VIP as gateway; whichever unit is up holds it, the other takes over on failure. VRRP is the standard, HSRP is Cisco's. Here: add the VIP on both devices with role VIP — the one case where an address may repeat across devices outside a cluster.",
+    ],
+    [
+      'CORE1 10.0.10.2, CORE2 10.0.10.3, VIP 10.0.10.1 (gateway của VLAN 10) trên cả hai.',
+      'CORE1 10.0.10.2, CORE2 10.0.10.3, VIP 10.0.10.1 (gateway of VLAN 10) on both.',
     ],
   ),
   e(

@@ -964,6 +964,10 @@ func (s *Server) CreateDeviceIp(ctx context.Context, req apigen.CreateDeviceIpRe
 			return orRollback(err)
 		}
 		name = n
+		if out.conf, err = addressTaken(ctx, q, m, addrClaim{vrf: f.vrf, host: f.addr.Addr(), role: f.role, device: dev.ID,
+			cluster: dev.ClusterID, lifecycle: dev.Lifecycle}); err != nil || out.conf != "" {
+			return orRollback(err)
+		}
 		created, err = q.CreateIP(ctx, store.CreateIPParams{
 			OrganizationID: m.OrgID, DeviceID: dev.ID, InterfaceID: iface, Address: f.addr, Vrf: f.vrf, Role: f.role, Description: f.descr,
 		})
@@ -1028,6 +1032,13 @@ func (s *Server) UpdateDeviceIp(ctx context.Context, req apigen.UpdateDeviceIpRe
 			return orRollback(err)
 		}
 		name = n
+		// Re-checked only when what makes it unique changes: editing the description of an old clash stays possible.
+		if before.Address.Addr() != f.addr.Addr() || before.Vrf != f.vrf || before.Role != f.role {
+			if out.conf, err = addressTaken(ctx, q, m, addrClaim{vrf: f.vrf, host: f.addr.Addr(), role: f.role, device: dev.ID,
+				cluster: dev.ClusterID, self: before.ID, lifecycle: dev.Lifecycle}); err != nil || out.conf != "" {
+				return orRollback(err)
+			}
+		}
 		updated, err = q.UpdateIP(ctx, store.UpdateIPParams{
 			ID: before.ID, OrganizationID: m.OrgID, DeviceID: dev.ID, Version: b.Version, InterfaceID: iface, Address: f.addr,
 			Vrf: f.vrf, Role: f.role, Description: f.descr,

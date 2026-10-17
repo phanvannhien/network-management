@@ -2573,8 +2573,11 @@ export interface components {
         InterfaceMedia: "" | "RJ45" | "SFP" | "SFP+" | "SFP28" | "QSFP" | "PON" | "xDSL" | "Serial" | "Radio" | "Console" | "Cellular";
         /** @enum {string} */
         InterfaceMode: "" | "access" | "trunk" | "routed" | "hybrid";
-        /** @enum {string} */
-        IpRole: "primary" | "secondary" | "nat" | "public";
+        /**
+         * @description primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+         * @enum {string}
+         */
+        IpRole: "primary" | "secondary" | "nat" | "public" | "vip";
         InterfaceInput: {
             name: string;
             kind: components["schemas"]["InterfaceKind"];

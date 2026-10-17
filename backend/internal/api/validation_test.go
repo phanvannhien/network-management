@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"testing"
@@ -24,7 +25,7 @@ func TestValidationContext(t *testing.T) {
 	}
 	fw1 := dev("FW", map[string]any{"clusterId": cl, "clusterRole": "primary", "clusterMemberNo": 1, "serialNumber": "SN-1"})
 	fw2 := dev("FW", map[string]any{"clusterId": cl, "clusterRole": "member", "clusterMemberNo": 2})
-	sw := dev("SW01", map[string]any{"serialNumber": "sn-1"})
+	sw := dev("SW01", nil)
 	other := dev("SW02", nil)
 	old := dev("SW-OLD", map[string]any{"lifecycle": "retired", "serialNumber": "SN-1"})
 	ip := func(d, name, addr, role string) {
@@ -35,7 +36,17 @@ func TestValidationContext(t *testing.T) {
 	ip(fw1, "port1", "10.0.0.1/24", "primary")
 	ip(fw2, "port1", "10.0.0.1/24", "primary") // same cluster: not a conflict
 	ip(sw, "Vlan1", "10.0.0.5/24", "primary")
-	ip(other, "Vlan1", "10.0.0.5/24", "primary") // conflict for SW01
+	// Clashes the API now refuses (ADR-038) still come from older data: written straight to the database.
+	legacy := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := fx.Pool.Exec(context.Background(), sql, args...); err != nil {
+			t.Fatalf("legacy data: %v", err)
+		}
+	}
+	legacy(`UPDATE devices SET serial_number = 'sn-1' WHERE id = $1`, sw)
+	otherIf := idOf(t, mustCreate(t, fx.A, devicePath(org, other)+"/interfaces", map[string]any{"name": "Vlan1", "kind": "physical"}))
+	legacy(`INSERT INTO ip_addresses (organization_id, device_id, interface_id, address, role) VALUES ($1, $2, $3, '10.0.0.5/24', 'primary')`,
+		org, other, otherIf) // conflict for SW01
 	ip(old, "Vlan1", "10.0.0.1/24", "primary")   // retired: never a conflict
 	mustCreate(t, fx.A, devicePath(org, sw)+"/ips", map[string]any{"address": "203.0.113.9/32", "role": "public"})
 	mustCreate(t, fx.A, devicePath(org, other)+"/ips", map[string]any{"address": "203.0.113.9/32", "role": "public"}) // NAT/public repeat: warning only

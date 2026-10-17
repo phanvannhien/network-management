@@ -207,14 +207,14 @@ bản sao được nhân bản (không giữ cable ID/circuit). Nhóm thiết b�
 ## §7. Validation
 
 Chạy trong Web Worker khi đang vẽ (debounce 300 ms) và chạy ở backend khi lưu/import. Kết quả **không chặn lưu sơ đồ**; các rule Error
-về cổng/dây/hostname đã bị API từ chối ngay khi ghi. Trùng IP/serial hiện chỉ báo (ADR-034) — chờ chốt có chặn khi ghi/import hay không. Kết quả ở panel Problems và trang thiết bị;
+về cổng/dây/hostname đã bị API từ chối ngay khi ghi. Trùng IP và trùng serial cũng bị API từ chối khi ghi/nhập (ADR-038); rule chỉ còn bắt dữ liệu cũ và các bản trùng được phép nhưng cần lưu ý. Kết quả ở panel Problems và trang thiết bị;
 click → zoom tới đối tượng; badge trên node.
 
 | Quy tắc | Mức | Phase |
 | --- | --- | --- |
 | IP không gán được cho interface (sai định dạng, 0.0.0.0, multicast, loopback, 169.254.x) | Error | 1 |
 | IP là địa chỉ network/broadcast của subnet IPv4 (trừ /31, /32; IP trần lấy mask theo subnet IPAM) — thường do nhập sai mask (PLAN 2026-10-16) | Warning | 1 |
-| Trùng IP trong cùng VRF (interface, IP quản trị cụm, thành viên nhóm) (bỏ qua nếu cùng cụm HA/stack, thiết bị retired, IPv6 link-local) | Error | 1 |
+| Trùng IP trong cùng VRF (interface, IP quản trị cụm, thành viên nhóm) (bỏ qua nếu cùng cụm HA/stack, cùng là VIP VRRP/HSRP, thiết bị retired, IPv6 link-local) — API chặn khi ghi (ADR-038) | Error | 1 |
 | Trùng IP mà một bản là NAT/public (PAT nhiều máy sau một IP WAN là bình thường) hoặc thiết bị chưa vận hành (planned/spare/RMA) | Warning | 1 |
 | Trùng hostname trong tổ chức (bỏ qua nếu cùng cụm); trùng serial number | Error | 1 |
 | Một cổng vật lý có > 1 link | Error | 1 |
@@ -347,7 +347,7 @@ không có bí mật (chỉ tên credential nếu chọn); có `schemaVersion`.
 
 | Chỉ tiêu | Mục tiêu |
 | --- | --- |
-| Sơ đồ 500 thiết bị + 1.000 link | kéo thả ≥ 50 FPS; mở < 2 s |
+| Sơ đồ 500 thiết bị + 1.000 link | kéo thả ≥ 50 FPS ở mức zoom làm việc (~1×; người dùng chốt 2026-10-17: không cần khi thu nhỏ thấy toàn bộ); mở < 2 s |
 | Sơ đồ tối đa | 2.000 thiết bị + 4.000 link |
 | Kho thiết bị | 50.000 thiết bị / hệ thống; bảng danh sách phân trang server, lọc < 500 ms |
 | Tìm kiếm toàn cục | < 300 ms |

@@ -289,6 +289,16 @@ func writeCluster(ctx context.Context, q store.Querier, m tenant.Membership, f c
 		out.bad = "Cụm còn thành viên: không đổi site được (thành viên phải cùng site với cụm)"
 		return store.GetClusterRow{}, errRollback
 	}
+	// The shared IP is the cluster's (its members may hold it too, ADR-027); anyone else in VRF '' is a clash (ADR-038).
+	if f.mgmt != nil && (id == nil || before.MgmtIp == nil || before.MgmtIp.Addr() != f.mgmt.Addr()) {
+		claim := addrClaim{host: f.mgmt.Addr(), role: "primary"}
+		if id != nil {
+			claim.cluster = before.ID
+		}
+		if out.conf, err = addressTaken(ctx, q, m, claim); err != nil || out.conf != "" {
+			return store.GetClusterRow{}, orRollback(err)
+		}
+	}
 	var cid pgtype.UUID
 	if id == nil {
 		cid, err = q.CreateCluster(ctx, store.CreateClusterParams{

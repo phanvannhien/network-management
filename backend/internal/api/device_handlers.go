@@ -772,6 +772,22 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 		if err != nil {
 			return fmt.Errorf("encode custom fields: %w", err)
 		}
+		// A serial is one box (ADR-038): checked when it is set, changed, or the device comes back from retired.
+		check := id == nil
+		if id != nil {
+			check = !strings.EqualFold(strings.TrimSpace(before.SerialNumber), strings.TrimSpace(f.serial)) ||
+				(before.Lifecycle == "retired" && f.lifecycle != "retired")
+		}
+		if check {
+			msg, err := serialTaken(ctx, q, m, f.serial, f.lifecycle, self)
+			if err != nil {
+				return err
+			}
+			if msg != "" {
+				out.bad = msg
+				return errRollback
+			}
+		}
 		var devID pgtype.UUID
 		if id == nil {
 			devID, err = q.CreateDevice(ctx, store.CreateDeviceParams{
@@ -1141,6 +1157,14 @@ func (s *Server) BulkUpdateDevices(ctx context.Context, req apigen.BulkUpdateDev
 			}
 			if b.Managed != nil {
 				next.Managed = *b.Managed
+			}
+			if d.Lifecycle == "retired" && next.Lifecycle != "retired" {
+				if msg, err = serialTaken(ctx, q, m, d.SerialNumber, next.Lifecycle, d.ID); err != nil {
+					return err
+				} else if msg != "" {
+					code = 400
+					return errRollback
+				}
 			}
 			tags := slices.DeleteFunc(slices.Clone(d.Tags), func(t string) bool {
 				return slices.ContainsFunc(remove, func(r string) bool { return strings.EqualFold(r, t) })

@@ -76,6 +76,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **IP chính / phụ** | Mỗi interface có 1 IP chính (mỗi IPv4/IPv6), có thể thêm IP phụ | |
 | **IP quản trị** | IP kỹ sư dùng để SSH/web vào thiết bị = IP chính của interface quản trị | Switch quản trị qua `Vlan10` |
 | **NAT** | Đổi địa chỉ khi đi qua firewall/router; thiết bị bên trong được "nhìn thấy" bằng IP khác | Camera `10.72.120.5` được truy cập qua `203.0.113.10:8080` |
+| **VIP / VRRP / HSRP** | Hai router (hoặc core) cùng làm gateway dự phòng cho một mạng: mỗi máy một IP riêng, cùng chia một IP ảo (VIP); máy nào đang chạy thì giữ VIP. VRRP là chuẩn chung, HSRP của Cisco. Là trường hợp duy nhất một IP được phép trùng giữa hai thiết bị khác cụm (vai trò IP "VIP") | CORE1 `10.0.10.2`, CORE2 `10.0.10.3`, VIP `10.0.10.1` trên cả hai |
 | **IP public** | IP trên Internet | `203.0.113.10` |
 | **Template thiết bị / Thư viện thiết bị** | Template = khuôn của một model (hãng, model, số U, danh sách cổng đúng tên CLI); thiết bị tạo từ template tự có đủ cổng. Thư viện thiết bị = các template có sẵn của dòng phổ biến (Cisco, Fortinet, TP-Link…) đi kèm phần mềm; dùng thì chép thành template của tổ chức | Kho → Template → "Thêm từ thư viện"; nhập Excel tự dùng thư viện |
 | **Kiểm tra sơ đồ (Vấn đề)** | Hệ thống tự soát sơ đồ khi vẽ: **Lỗi** = gần như chắc chắn sai (IP trùng, 2 dây một cổng), **Cảnh báo** = nên xem (RJ45 cắm SFP, IP là địa chỉ broadcast), **Ghi chú** = còn thiếu (dây chưa gán cổng). Không chặn lưu | Nút ⚠ trên toolbar sơ đồ → panel Vấn đề → bấm dòng để tới thiết bị |

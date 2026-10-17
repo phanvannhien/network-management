@@ -306,6 +306,14 @@ func importMgmtIP(ctx context.Context, q store.Querier, m tenant.Membership, dev
 	if has > 0 {
 		return nil // re-import: the address is there already
 	}
+	// Someone else's address (ADR-038): the device is imported, its management IP is not.
+	if taken, err := addressTaken(ctx, q, m, addrClaim{host: addr.Addr(), role: "primary", device: dev.ID, cluster: dev.ClusterID,
+		lifecycle: dev.Lifecycle}); err != nil {
+		return err
+	} else if taken != "" {
+		res.Warnings = append(res.Warnings, taken+" — không gắn IP quản trị")
+		return nil
+	}
 	name, kind := mgmtInterfaceFor(dev.Type, ifName)
 	iface, err := q.ImportInterfaceByName(ctx, store.ImportInterfaceByNameParams{OrganizationID: m.OrgID, DeviceID: dev.ID, Name: name})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -447,12 +455,9 @@ func (s *Server) SetDeviceMgmtIp(ctx context.Context, req apigen.SetDeviceMgmtIp
 		if !known {
 			out.Warnings = append(out.Warnings, fmt.Sprintf("Chưa có subnet IPAM chứa %s: lưu %s, nhớ sửa lại mask", addr.Addr(), addr))
 		}
-		holders, err := q.IPHolders(ctx, store.IPHoldersParams{OrganizationID: m.OrgID, Vrf: "", Ip: addr.Addr(), DeviceID: dev.ID, ClusterID: dev.ClusterID})
-		if err != nil {
-			return fmt.Errorf("ip holders: %w", err)
-		}
-		if len(holders) > 0 {
-			out.Warnings = append(out.Warnings, fmt.Sprintf("IP %s đang được dùng ở %s", addr.Addr(), strings.Join(holders, ", ")))
+		if bad, err = addressTaken(ctx, q, m, addrClaim{host: addr.Addr(), role: "primary", device: dev.ID, cluster: dev.ClusterID,
+			lifecycle: dev.Lifecycle}); err != nil || bad != "" {
+			return orRollback(err)
 		}
 		// The management interface, else the usual one for the kind of device (found by name or created).
 		iface := dev.MgmtInterfaceID

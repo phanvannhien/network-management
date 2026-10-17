@@ -356,6 +356,7 @@ export const vi = {
     ipRoles: {
       primary: 'Chính',
       secondary: 'Phụ',
+      vip: 'VIP (VRRP/HSRP)',
       nat: 'NAT',
       public: 'Public',
     },
@@ -629,6 +630,7 @@ export const vi = {
     ipRoles: {
       primary: 'IP chính của interface. IP chính của interface quản trị là IP quản trị thiết bị.',
       secondary: 'IP phụ trên cùng interface (vd IP thứ hai của cùng VLAN).',
+      vip: 'IP gateway ảo dùng chung của 2 router/core dự phòng (VRRP/HSRP). Khai trên cả hai thiết bị, cùng vai trò VIP — chỉ khi đó IP mới được phép trùng.',
       nat: 'IP thiết bị được nhìn thấy sau NAT, không cấu hình trên thiết bị.',
       public: 'IP public để truy cập thiết bị từ Internet (thường NAT về thiết bị).',
     },

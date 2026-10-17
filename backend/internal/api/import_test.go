@@ -147,9 +147,12 @@ func TestSetDeviceMgmtIP(t *testing.T) {
 	if _, dev := fx.A.Do("GET", devicePath(org, modem), nil); dev["mgmtIp"] != "192.168.1.2/24" {
 		t.Errorf("device mgmt ip: %v", dev["mgmtIp"])
 	}
-	// A switch gets it on Vlan1; the same address as the modem is a warning, not a refusal.
-	status, got = fx.A.Do("PUT", devicePath(org, sw)+"/mgmt-ip", map[string]any{"address": "192.168.1.2"})
-	if status != http.StatusOK || got["interfaceName"] != "Vlan1" || len(got["warnings"].([]any)) != 1 {
+	// The modem's address is refused for the switch (ADR-038); a free one goes on Vlan1.
+	if status, got = fx.A.Do("PUT", devicePath(org, sw)+"/mgmt-ip", map[string]any{"address": "192.168.1.2"}); status != http.StatusBadRequest {
+		t.Errorf("switch with the modem's address: %d %v", status, got)
+	}
+	status, got = fx.A.Do("PUT", devicePath(org, sw)+"/mgmt-ip", map[string]any{"address": "192.168.1.3"})
+	if status != http.StatusOK || got["interfaceName"] != "Vlan1" {
 		t.Errorf("switch: %d %v", status, got)
 	}
 	if status, _ := fx.A.Do("PUT", path(org), map[string]any{"address": "nope"}); status != http.StatusBadRequest {

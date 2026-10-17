@@ -13,6 +13,9 @@ import (
 type Querier interface {
 	AddMembership(ctx context.Context, arg AddMembershipParams) (Membership, error)
 	AddMembershipWithPermissions(ctx context.Context, arg AddMembershipWithPermissionsParams) (Membership, error)
+	// Every holder of a host address in a VRF: interface / NAT addresses of live devices, cluster shared IPs (VRF ''),
+	// endpoint group members (VRF of their range's subnet).
+	AddressHolders(ctx context.Context, arg AddressHoldersParams) ([]AddressHoldersRow, error)
 	// System admin (not tenant-scoped by design: managing the list of organizations).
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
 	// System admin: user management (global by design).
@@ -165,9 +168,8 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
 	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
-	// Other holders of an address in a VRF (devices, cluster VIPs, group members), members of the device's own cluster
-	// left out (ADR-027): shown as a warning when a management IP is set.
-	IPHolders(ctx context.Context, arg IPHoldersParams) ([]string, error)
+	// The VRF of an endpoint group's members: that of its range's subnet, '' without one.
+	GroupVrf(ctx context.Context, arg GroupVrfParams) (string, error)
 	ImportClusterByName(ctx context.Context, arg ImportClusterByNameParams) (ImportClusterByNameRow, error)
 	ImportDeviceHasIP(ctx context.Context, arg ImportDeviceHasIPParams) (int64, error)
 	// Device import (P1-21): lookups that place each spreadsheet row. Every query takes organization_id.
@@ -242,6 +244,10 @@ type Querier interface {
 	LockHostname(ctx context.Context, lockKey string) error
 	// Serializes link writes touching one interface (one physical link per physical port).
 	LockInterfaceLinks(ctx context.Context, lockKey string) error
+	// Uniqueness checked on write (ADR-038): serial numbers and addresses. The check takes a transaction-scoped advisory
+	// lock on the value first, so two concurrent writes of the same value cannot both pass.
+	// key: organization id, kind and value, built by the caller.
+	LockValue(ctx context.Context, key string) error
 	// Interfaces and clusters holding the address (any VRF).
 	LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error)
 	// Subnets containing the address (any VRF), most specific first.
@@ -283,6 +289,8 @@ type Querier interface {
 	// Interfaces and endpoint group members by MAC, compared as bare hex (any of aa:bb:cc…, aabb.cc…, aa-bb-cc…).
 	// For a group member: hostname = the member's name, interface_name = the group's name.
 	SearchMACs(ctx context.Context, arg SearchMACsParams) ([]SearchMACsRow, error)
+	// Live, not retired devices with this serial (trimmed, case-insensitive).
+	SerialHolders(ctx context.Context, arg SerialHoldersParams) ([]SerialHoldersRow, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error

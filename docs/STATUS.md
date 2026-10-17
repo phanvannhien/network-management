@@ -5,6 +5,38 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Chặn trùng S/N / IP, vai trò IP VIP (ADR-038); chốt các câu hỏi P1-24/25
+- Người dùng chốt:
+  1. Mục tiêu FPS chỉ cần đạt ở mức zoom làm việc (đang 60 FPS); không cần khi thu nhỏ thấy toàn bộ. Đã ghi vào SRS §14.
+  2. Ngưỡng subnet đầy 90%: giữ nguyên.
+  3. Danh sách loại thiết bị không bị đòi đủ thông tin: giữ nguyên. Quan trọng là switch / router / firewall / core.
+  4. Chặn trùng S/N và trùng IP. Phần VIP để mình tự quyết.
+- Đã làm (ADR-038):
+  - **Trùng S/N bị từ chối** khi tạo thiết bị, khi đổi S/N, hoặc khi đưa thiết bị thanh lý trở lại dùng.
+    Không tính "N/A", "-", "TBD"…; thiết bị đã thanh lý không chặn.
+  - **Trùng IP trong cùng VRF bị từ chối** (HTTP 409, nêu rõ IP đang ở thiết bị / cổng nào). Áp dụng ở mọi đường ghi:
+    API IP / cụm / thành viên nhóm, đặt IP quản trị, nhập Excel, nhập .ntb.json. Các trường hợp được phép:
+    - cùng thiết bị hoặc cùng cụm;
+    - NAT / public;
+    - **cả hai bản đều là VIP**;
+    - thiết bị dự kiến / dự phòng / RMA / đã thanh lý (vẫn cảnh báo);
+    - IPv6 link-local.
+  - Có khóa theo giá trị trong giao dịch, nên hai người ghi cùng lúc không cùng lọt.
+    Khi nhập file, dòng trùng IP vẫn tạo thiết bị nhưng không gắn IP và có cảnh báo; trùng S/N thì dòng đó báo lỗi.
+  - **Vai trò IP mới "VIP (VRRP/HSRP)"**: IP gateway ảo dùng chung của 2 router/core dự phòng.
+    Thêm vào migration 000023, OpenAPI, schema .ntb.json, ô chọn vai trò IP (có giải thích), glossary (app và `docs/GLOSSARY.md`).
+    Kiểm tra trên sơ đồ và dashboard không báo trùng khi hai bản đều là VIP.
+  - Bỏ query `IPHolders` (trước dùng để cảnh báo) vì nay đã thay bằng chặn.
+- Test / cách kiểm tra:
+  - `uniqueness_test.go` (TestSerialAndAddressUniqueness): mọi trường hợp chặn và được phép ở trên, kể cả cụm, nhóm đầu cuối và VRF khác.
+  - Các test cũ cố tình tạo trùng nay ghi thẳng dữ liệu cũ vào DB.
+  - Thử qua API trên môi trường riêng: trùng IP quản trị → 409 kèm tên thiết bị và cổng; VIP trên hai switch → được; trùng S/N → báo lỗi kèm thiết bị đang giữ S/N.
+  - `make check` pass.
+- Còn dở / lỗi đã biết: dữ liệu trùng có từ trước không tự sửa; dashboard và kiểm tra sơ đồ vẫn báo ra để người dùng sửa.
+- Câu hỏi cho người dùng: không có.
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: P1-26 Gate MVP.
+
 ## 2026-10-17 — Tối ưu query trên dữ liệu lớn (tiếp P1-25)
 - Đã làm (đo trên DB riêng: ~10.000 thiết bị, ~300.000 cổng, ~19.000 dây, 6 tổ chức):
   - **Sửa lỗi importer .ntb.json:** file không ghi `duplex`/`mode`/`media` (các trường này không bắt buộc trong schema) thì toàn bộ cổng bị bỏ qua,

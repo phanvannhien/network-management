@@ -27,15 +27,23 @@ func TestDashboard(t *testing.T) {
 		return idOf(t, mustCreate(t, fx.A, devicesPath(org), body))
 	}
 	sw1 := dev(hcm, map[string]any{"hostname": "SW1", "type": "l2_switch", "serialNumber": "FOC1", "partNumber": "C1300", "model": "C1300", "warrantyEnd": soon})
-	sw2 := dev(hcm, map[string]any{"hostname": "SW2", "type": "l2_switch", "serialNumber": "foc1 ", "model": "C1300"})
+	sw2 := dev(hcm, map[string]any{"hostname": "SW2", "type": "l2_switch", "model": "C1300"})
 	dev(hcm, map[string]any{"hostname": "SW3", "type": "l2_switch", "lifecycle": "planned"})
 	fw := dev(bd, map[string]any{"hostname": "FW1", "type": "firewall", "serialNumber": "FGT9", "partNumber": "FG-60F", "model": "60F", "eosDate": past})
 	dev(bd, map[string]any{"hostname": "OLD", "type": "router", "lifecycle": "retired", "serialNumber": "FOC1"})
-	// Same address on two active devices; a /30 with both its hosts used.
-	for _, d := range []string{sw1, sw2} {
-		v := idOf(t, mustCreate(t, fx.A, devicePath(org, d)+"/interfaces", map[string]any{"name": "Vlan1", "kind": "svi"}))
-		mustCreate(t, fx.A, devicePath(org, d)+"/ips", map[string]any{"interfaceId": v, "address": "10.0.0.5/24", "role": "primary"})
+	// Same serial and same address on two active devices: refused by the API now (ADR-038), so old data written
+	// straight to the database.
+	legacy := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := fx.Pool.Exec(context.Background(), sql, args...); err != nil {
+			t.Fatalf("legacy data: %v", err)
+		}
 	}
+	legacy(`UPDATE devices SET serial_number = 'foc1 ' WHERE id = $1`, sw2)
+	v1 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw1)+"/interfaces", map[string]any{"name": "Vlan1", "kind": "svi"}))
+	mustCreate(t, fx.A, devicePath(org, sw1)+"/ips", map[string]any{"interfaceId": v1, "address": "10.0.0.5/24", "role": "primary"})
+	v2 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw2)+"/interfaces", map[string]any{"name": "Vlan1", "kind": "svi"}))
+	legacy(`INSERT INTO ip_addresses (organization_id, device_id, interface_id, address, role) VALUES ($1, $2, $3, '10.0.0.5/24', 'primary')`, org, sw2, v2)
 	fwIf := idOf(t, mustCreate(t, fx.A, devicePath(org, fw)+"/interfaces", map[string]any{"name": "wan1", "kind": "physical"}))
 	mustCreate(t, fx.A, devicePath(org, fw)+"/ips", map[string]any{"interfaceId": fwIf, "address": "100.64.0.1/29", "role": "primary"})
 	fwIf2 := idOf(t, mustCreate(t, fx.A, devicePath(org, fw)+"/interfaces", map[string]any{"name": "wan2", "kind": "physical"}))
@@ -52,10 +60,8 @@ func TestDashboard(t *testing.T) {
 	p1 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw1)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical"}))
 	p2 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw2)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical"}))
 	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw1, p1), "b": devEnd(sw2, p2), "kind": "ethernet"})
-	if _, err := fx.Pool.Exec(context.Background(), `INSERT INTO links (organization_id, a_kind, a_id, a_interface_id, b_kind, b_id, kind)
-		VALUES ($1, 'device', $2, $3, 'device', $4, 'ethernet')`, org, sw1, p1, fw); err != nil {
-		t.Fatalf("second cable: %v", err)
-	}
+	legacy(`INSERT INTO links (organization_id, a_kind, a_id, a_interface_id, b_kind, b_id, kind)
+		VALUES ($1, 'device', $2, $3, 'device', $4, 'ethernet')`, org, sw1, p1, fw)
 	// B's inventory never shows in A's figures; A's dashboard path is closed to B.
 	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
 	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HCM01", "name": "B", "categoryId": unitB}))

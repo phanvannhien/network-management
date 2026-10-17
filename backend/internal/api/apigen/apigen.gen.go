@@ -935,6 +935,7 @@ const (
 	IpRolePrimary   IpRole = "primary"
 	IpRolePublic    IpRole = "public"
 	IpRoleSecondary IpRole = "secondary"
+	IpRoleVip       IpRole = "vip"
 )
 
 // Valid indicates whether the value is a known member of the IpRole enum.
@@ -947,6 +948,8 @@ func (e IpRole) Valid() bool {
 	case IpRolePublic:
 		return true
 	case IpRoleSecondary:
+		return true
+	case IpRoleVip:
 		return true
 	default:
 		return false
@@ -2757,9 +2760,11 @@ type IpAddress struct {
 	// InterfaceId null only for NAT/public addresses kept on the device
 	InterfaceId   *openapi_types.UUID `json:"interfaceId"`
 	InterfaceName string              `json:"interfaceName"`
-	Role          IpRole              `json:"role"`
-	Version       int32               `json:"version"`
-	Vrf           string              `json:"vrf"`
+
+	// Role primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+	Role    IpRole `json:"role"`
+	Version int32  `json:"version"`
+	Vrf     string `json:"vrf"`
 }
 
 // IpAddressInput defines model for IpAddressInput.
@@ -2770,8 +2775,10 @@ type IpAddressInput struct {
 
 	// InterfaceId null only for NAT/public addresses kept on the device
 	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
-	Role        IpRole              `json:"role"`
-	Vrf         *string             `json:"vrf,omitempty"`
+
+	// Role primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+	Role IpRole  `json:"role"`
+	Vrf  *string `json:"vrf,omitempty"`
 }
 
 // IpAddressList defines model for IpAddressList.
@@ -2787,9 +2794,11 @@ type IpAddressUpdate struct {
 
 	// InterfaceId null only for NAT/public addresses kept on the device
 	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
-	Role        IpRole              `json:"role"`
-	Version     int32               `json:"version"`
-	Vrf         *string             `json:"vrf,omitempty"`
+
+	// Role primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+	Role    IpRole  `json:"role"`
+	Version int32   `json:"version"`
+	Vrf     *string `json:"vrf,omitempty"`
 }
 
 // IpAssignment An address in use: on a device interface, the management IP of a device cluster (clusterId set, VRF empty), or an endpoint group member (endpointGroupId set, VRF of the group's subnet).
@@ -2803,8 +2812,10 @@ type IpAssignment struct {
 	// Hostname device hostname, the cluster hostname (its name when no hostname is set), or the endpoint member name (interfaceName then holds the group name)
 	Hostname      string `json:"hostname"`
 	InterfaceName string `json:"interfaceName"`
-	Role          IpRole `json:"role"`
-	Vrf           string `json:"vrf"`
+
+	// Role primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
+	Role IpRole `json:"role"`
+	Vrf  string `json:"vrf"`
 }
 
 // IpLookup defines model for IpLookup.
@@ -2847,7 +2858,7 @@ type IpRangeUpdate struct {
 	Version int32       `json:"version"`
 }
 
-// IpRole defines model for IpRole.
+// IpRole primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
 type IpRole string
 
 // Link defines model for Link.

@@ -437,3 +437,27 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Dải IP của nhóm chỉ gắn khi đã có dải y hệt trong IPAM của tổ chức đích (không tự tạo subnet/dải) — có cảnh báo để gắn lại.
 - **Lý do:** dữ liệu chuyển đi đầy đủ mà không lộ bí mật; nhập an toàn với tenant (không id nào từ file được dùng để ghi đè).
 - **Đánh đổi:** location/rack của thiết bị không đi theo file; subnet/dải IP không tự tạo khi nhập.
+
+### ADR-038 — Chặn trùng S/N và trùng IP khi ghi; vai trò IP "VIP" cho VRRP/HSRP
+- **Bối cảnh:** ADR-034 / P1-20 chỉ cảnh báo khi trùng IP hoặc trùng serial. Người dùng chốt 2026-10-17: phải chặn cả hai.
+  Nhưng có những bản trùng IP là đúng thiết kế, nên không thể chặn máy móc.
+- **Quyết định:**
+  - **S/N:** API từ chối nếu một thiết bị khác còn trong kho (chưa xóa, chưa thanh lý) có cùng S/N. So sánh bỏ khoảng trắng, không phân biệt hoa/thường.
+    Không tính giá trị giữ chỗ (`-`, N/A, none, unknown, TBD, 0). Kiểm tra khi tạo, khi đổi S/N, hoặc khi đưa thiết bị thanh lý trở lại dùng.
+  - **IP:** API từ chối nếu địa chỉ (host) đã có chủ khác trong cùng VRF. "Chủ" là interface hoặc IP NAT của thiết bị, IP chung của cụm,
+    hoặc thành viên nhóm đầu cuối. Các trường hợp được phép:
+    - cùng thiết bị, hoặc cùng cụm (cụm và các thành viên là một chủ, ADR-027);
+    - một bản có vai trò NAT/public (nhiều máy dùng chung một IP WAN là bình thường);
+    - **cả hai bản đều có vai trò `vip`**: IP gateway ảo của nhóm VRRP/HSRP, khai trên mỗi router của nhóm;
+    - thiết bị ở trạng thái dự kiến / dự phòng / RMA (máy thay thế chuẩn bị sẵn cùng cấu hình) hoặc đã thanh lý. Trường hợp này vẫn hiện cảnh báo;
+    - IPv6 link-local.
+  - Chỉ kiểm tra khi địa chỉ, VRF hoặc vai trò thay đổi, để sửa mô tả của một vụ trùng cũ vẫn được.
+    Mỗi lần kiểm tra khóa giá trị đó (advisory lock theo giao dịch), nên hai lần ghi đồng thời không cùng lọt.
+  - Áp dụng ở mọi đường ghi: API thiết bị/IP/cụm/thành viên nhóm, đặt IP quản trị, nhập Excel và nhập .ntb.json.
+    Khi nhập, dòng bị trùng IP vẫn tạo thiết bị nhưng không gắn IP và có cảnh báo; trùng S/N thì dòng đó báo lỗi.
+  - Thêm vai trò IP `vip` (migration 000023, OpenAPI, schema .ntb.json). Kiểm tra trên sơ đồ và dashboard không còn báo trùng khi hai bản đều là VIP.
+- **Lý do:** dữ liệu kho dùng để đối chiếu với thực tế, nên trùng S/N hay trùng IP gần như luôn là nhập sai.
+  Các ngoại lệ ở trên là những trường hợp kỹ sư mạng làm hằng ngày, cần được khai đúng thay vì bị chặn.
+- **Đánh đổi:** chuyển một thành viên nhóm thành thiết bị không kiểm tra lại IP (địa chỉ chỉ đổi chủ). Dữ liệu trùng có từ trước vẫn còn
+  và được dashboard / kiểm tra sơ đồ báo ra để sửa.
+

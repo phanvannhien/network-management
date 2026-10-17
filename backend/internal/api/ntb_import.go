@@ -602,6 +602,16 @@ func (im *ntbImporter) importIPs(device pgtype.UUID, d ntbDevice, ips []ntbIP) e
 			im.warn("IP %s của %s: %s — bỏ qua", ip.Address, d.Hostname, msg)
 			continue
 		}
+		claim := addrClaim{vrf: fields.vrf, host: fields.addr.Addr(), role: fields.role, device: device, lifecycle: firstNonEmpty(d.Lifecycle, "active")}
+		if d.ClusterRef != nil {
+			claim.cluster = im.clusters[*d.ClusterRef]
+		}
+		if taken, err := addressTaken(im.ctx, im.q, im.m, claim); err != nil {
+			return err
+		} else if taken != "" {
+			im.warn("%s — không gán cho %s", taken, d.Hostname)
+			continue
+		}
 		ok, err := im.savepoint(func(q store.Querier) error {
 			ifaceID := pgtype.UUID{}
 			if fields.iface != nil {
