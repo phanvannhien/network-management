@@ -15,6 +15,9 @@ import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router'
+import { edgeLabel } from '../overview/labels'
+import { useSiteGraph } from '../overview/siteGraph'
 import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { useDoc, useDocStoreApi } from './context'
@@ -46,6 +49,8 @@ function startViewport(diagramId: string, saved: Viewport | null): Viewport | nu
   } catch {
     // ignore broken entries
   }
+  // A diagram written with the default viewport (generated: overview, template, import) opens fitted instead.
+  if (saved && saved.x === 0 && saved.y === 0 && saved.zoom === 1) return null
   return saved
 }
 
@@ -68,6 +73,7 @@ export function Canvas({
   onMenu,
   hand,
   focusing = false,
+  onNodeOpen,
 }: {
   diagramId: string
   canEdit: boolean
@@ -88,6 +94,8 @@ export function Canvas({
   hand: boolean
   /** Opened to show one object (?focus=): the page zooms to it, so no "fit the whole drawing" first. */
   focusing?: boolean
+  /** Double click on a node: a site opens its detail diagram (P2-21). */
+  onNodeOpen?: (nodeId: string) => void
 }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -142,10 +150,42 @@ export function Canvas({
     ] as Node[])
   }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning])
   const edgeSelection = useDoc((s) => s.edgeSelection)
+  // Overview (P2-21): links between two sites drawn on the view, derived from the inventory, read-only.
+  const { orgId = '' } = useParams()
+  const hasSites = useDoc((s) => s.doc?.view.nodes.some((n) => n.refKind === 'site') ?? false)
+  const siteGraph = useSiteGraph(orgId, hasSites)
+  const siteEdges = useMemo(() => {
+    if (!doc || !hasSites || !siteGraph.data) return []
+    const nodeOf = new Map<string, string>()
+    for (const n of doc.view.nodes) if (n.refKind === 'site') nodeOf.set(n.refId, n.id)
+    return siteGraph.data.edges.flatMap((e): Edge[] => {
+      const a = nodeOf.get(e.a)
+      const b = nodeOf.get(e.b)
+      return a && b
+        ? [
+            {
+              id: `site:${e.a}:${e.b}`,
+              type: 'site',
+              source: a,
+              target: b,
+              selectable: false,
+              deletable: false,
+              focusable: false,
+              data: { label: edgeLabel(e, t), style: e.style, links: e.links },
+            },
+          ]
+        : []
+    })
+  }, [doc, hasSites, siteGraph.data, t])
   const edges = useMemo(
     () =>
-      doc ? reuseUnchanged(edgeCache, toFlowEdges(doc, new Set(edgeSelection)) as Edge[]) : [],
-    [doc, edgeSelection, edgeCache],
+      doc
+        ? reuseUnchanged(edgeCache, [
+            ...(toFlowEdges(doc, new Set(edgeSelection)) as Edge[]),
+            ...siteEdges,
+          ])
+        : [],
+    [doc, edgeSelection, edgeCache, siteEdges],
   )
 
   /** Frame drag: the devices inside it when the drag began move with it (Alt: the frame alone). */
@@ -320,6 +360,7 @@ export function Canvas({
       }}
       onEdgeContextMenu={(e, edge) => {
         e.preventDefault()
+        if (edge.type === 'site') return
         store.getState().setEdgeSelection([edge.id])
         store.getState().setSelection([])
         onMenu({ kind: 'edge', id: edge.id }, e.clientX, e.clientY)
@@ -424,7 +465,8 @@ export function Canvas({
       onNodeClick={(_e, node) => {
         if (wiring && !isOverlayId(node.id)) onNodePick(node.id)
       }}
-      onEdgeDoubleClick={(_e, edge) => onEditCable(edge.id)}
+      onEdgeDoubleClick={(_e, edge) => edge.type !== 'site' && onEditCable(edge.id)}
+      onNodeDoubleClick={(_e, node) => !isOverlayId(node.id) && onNodeOpen?.(node.id)}
       elementsSelectable
       // Hand tool or Space held: the left button moves the view (also over devices); otherwise it draws a selection box
       // and the middle button pans.

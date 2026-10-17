@@ -38,6 +38,7 @@ export function useDiagrams(orgId: string) {
 export function useDiagram(orgId: string, diagramId: string) {
   return useQuery({
     queryKey: keys.one(orgId, diagramId),
+    enabled: orgId !== '' && diagramId !== '',
     retry: false,
     // The editor owns the document once loaded; refetching would overwrite unsaved work.
     staleTime: Infinity,
@@ -92,15 +93,20 @@ export function useDiagramMutations(orgId: string) {
       if (r.data) return r.data
       fail(r.error, r.response.status, i18n.t('errors.save'))
     },
-    onSuccess: () =>
-      Promise.all([
+    onSuccess: (result, input) => {
+      // The saved document replaces the cached one: coming back to this diagram (an overview after a detail diagram,
+      // P2-21) must not load the copy from before the save.
+      if (result) qc.setQueryData(keys.one(orgId, input.diagramId), result.detail)
+      return Promise.all([
         invalidateList(),
+        qc.invalidateQueries({ queryKey: ['orgs', orgId, 'site-graph'] }),
         // Saves may create / delete devices and links.
         qc.invalidateQueries({ queryKey: ['orgs', orgId, 'devices'] }),
         qc.invalidateQueries({ queryKey: ['orgs', orgId, 'links'] }),
         // …and endpoint groups (ADR-036): the panel takes the group's version from there.
         qc.invalidateQueries({ queryKey: ['orgs', orgId, 'endpoint-groups'] }),
-      ]),
+      ])
+    },
   })
   return { create, remove, save }
 }

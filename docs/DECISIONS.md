@@ -497,3 +497,34 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Đánh đổi:** model cố định theo bộ hãng (đổi model thì sửa từng thiết bị sau); chưa tính công suất PoE; stack core vẽ bằng dây trên cổng
   SFP vì danh mục chưa có cổng stack chuyên dụng; cặp HA nối thẳng modem (có ghi lưu ý).
 
+### ADR-040 — Sơ đồ tổng quan: node site sống theo kho, cạnh giữa site tự suy ra, đi sâu bằng double-click
+- **Bối cảnh:** P2-21 làm phần drill-down của ADR-028 (người dùng chọn làm 2026-10-18). Một agent đóng vai kỹ sư mạng góp ý thiết kế:
+  sơ đồ tổng quan vẽ tay sẽ nhanh chóng lỗi thời, nên phải lấy dữ liệu sống từ kho.
+- **Quyết định:**
+  - Sơ đồ tổng quan (layer `overview`) chỉ lưu **vị trí** của các node `site`.
+    - Thẻ site hiển thị: mã + tên + loại site, các đường WAN tới nhà mạng, gateway (`FortiGate 60F ×2 HA`), số thiết bị/nhóm, viền nét đứt khi chủ yếu là thiết bị dự kiến.
+    - Thẻ được tính lại mỗi lần mở qua `GET /site-graph`.
+  - **Cạnh site ↔ site được suy ra, không lưu:**
+    - Gộp mọi link giữa thiết bị của hai site khác nhau (bỏ provider cloud): một cạnh cho mỗi cặp, mỗi link đếm một lần.
+    - Nhãn là dịch vụ chiếm đa số + băng thông, thêm "+N" cho các link còn lại. Server trả mã dịch vụ, giao diện dịch theo ngôn ngữ.
+    - Nét liền = kênh riêng / MPLS / cáp; nét đứt = VPN; nét chấm = không dây / 4G. Cạnh chỉ để xem: không chọn, không sửa, không xóa.
+  - Không vẽ đám mây Internet riêng cho từng site; đường ISP hiện thành chip trên thẻ site.
+  - **Tự sinh tổng quan** (Toàn tổ chức hoặc một danh mục):
+    - Site trung tâm được gợi ý theo thứ tự: nhiều site nối tới nhất → IDC → tên "trụ sở/HQ"; người dùng sửa được, chọn được nhiều.
+    - Site trung tâm đặt ở trên, các site khác xếp lưới trong khung theo danh mục.
+    - "Thêm site còn thiếu" chỉ thêm site mới (trong các danh mục đang vẽ), giữ nguyên vị trí cũ, một bước hoàn tác.
+  - **Đi sâu:** double-click node site.
+    - Site có 1 sơ đồ chi tiết → mở luôn và zoom vào khung của site.
+    - Có nhiều sơ đồ → chọn trong danh sách.
+    - Chưa có sơ đồ → "Tạo trống" hoặc "Sinh từ kho" (thiết bị của site xếp theo tầng trong khung, dây tự hiện).
+    
+    Sơ đồ chi tiết mở với `?from=<tổng quan>` để breadcrumb quay lại được. Node trỏ tới sơ đồ khác cũng mở được bằng double-click.
+  - Sơ đồ được tạo với viewport mặc định (0,0,1) sẽ mở ở chế độ vừa màn hình.
+- **Lý do:** sơ đồ tổng quan vẽ tay sẽ lỗi thời; lấy từ kho thì luôn đúng. Gộp cạnh theo cặp site tránh vẽ trùng; chip ISP
+  thay cho hàng chục đám mây.
+- **Để sau:**
+  - các site nối qua một đám mây MPLS / Metro chung (sẽ vẽ một node mây, các site treo vào; hiện chưa ra cạnh);
+  - lưu phạm vi danh mục của sơ đồ tổng quan ("thêm site còn thiếu" đang suy phạm vi từ các site đã vẽ);
+  - gộp danh mục thành một node khi có trên 50 site; bật/tắt đám mây Internet; cờ đường chính/dự phòng; SD-WAN overlay;
+  ẩn cạnh giữa các chi nhánh trong mô hình full mesh; số vấn đề trên thẻ site; màu trạng thái thật (Phase 3).
+

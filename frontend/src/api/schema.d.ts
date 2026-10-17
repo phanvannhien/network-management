@@ -807,6 +807,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/site-graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory */
+        get: operations["getSiteGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/search": {
         parameters: {
             query?: never;
@@ -3080,6 +3100,60 @@ export interface components {
             devices: number;
             cables: number;
             sites: number;
+        };
+        SiteGraph: {
+            sites: components["schemas"]["SiteCard"][];
+            edges: components["schemas"]["SiteEdge"][];
+        };
+        SiteCard: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            localCode: string;
+            name: string;
+            kind: components["schemas"]["SiteKind"];
+            /** Format: uuid */
+            categoryId?: string;
+            categoryPath: string;
+            /** @description devices not retired (provider clouds left out) */
+            devices: number;
+            planned: number;
+            groups: number;
+            /** @description e.g. "FortiGate 60F ×2 HA"; empty when the site has none */
+            gateway: string;
+            /** @description ISP lines of the site (identical lines merged with a count) */
+            wan: components["schemas"]["SiteWan"][];
+            /** @description detail diagrams placing devices of the site, most devices first */
+            diagrams: components["schemas"]["SearchDiagram"][];
+            /** @description sites this one has links with */
+            peers: number;
+        };
+        SiteWan: {
+            /** @description the link provider, else the ISP cloud name */
+            provider: string;
+            service: components["schemas"]["SiteLinkService"];
+            bandwidth: string;
+            count: number;
+        };
+        /**
+         * @description what a link carries (translated by the client)
+         * @enum {string}
+         */
+        SiteLinkService: "internet_broadband" | "internet_dedicated" | "mpls" | "leased_line" | "metro" | "mobile" | "vpn" | "wireless" | "dsl" | "fiber" | "ethernet" | "other";
+        SiteEdge: {
+            /** Format: uuid */
+            a: string;
+            /** Format: uuid */
+            b: string;
+            links: number;
+            service: components["schemas"]["SiteLinkService"];
+            /** @description as typed on the links (e.g. "VPN/IPsec"), shown for VPN edges */
+            medium: string;
+            bandwidth: string;
+            /** @description links of another service between the two sites */
+            more: number;
+            /** @enum {string} */
+            style: "dedicated" | "vpn" | "wireless" | "other";
         };
         SearchResult: {
             devices: components["schemas"]["SearchDeviceHit"][];
@@ -5573,6 +5647,34 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getSiteGraph: {
+        parameters: {
+            query?: {
+                categoryId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteGraph"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     globalSearch: {

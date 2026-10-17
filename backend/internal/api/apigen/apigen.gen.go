@@ -1301,6 +1301,30 @@ func (e SearchDeviceHitMatched) Valid() bool {
 	}
 }
 
+// Defines values for SiteEdgeStyle.
+const (
+	SiteEdgeStyleDedicated SiteEdgeStyle = "dedicated"
+	SiteEdgeStyleOther     SiteEdgeStyle = "other"
+	SiteEdgeStyleVpn       SiteEdgeStyle = "vpn"
+	SiteEdgeStyleWireless  SiteEdgeStyle = "wireless"
+)
+
+// Valid indicates whether the value is a known member of the SiteEdgeStyle enum.
+func (e SiteEdgeStyle) Valid() bool {
+	switch e {
+	case SiteEdgeStyleDedicated:
+		return true
+	case SiteEdgeStyleOther:
+		return true
+	case SiteEdgeStyleVpn:
+		return true
+	case SiteEdgeStyleWireless:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SiteKind.
 const (
 	SiteKindDatacenter SiteKind = "datacenter"
@@ -1325,6 +1349,54 @@ func (e SiteKind) Valid() bool {
 	case SiteKindStore:
 		return true
 	case SiteKindWarehouse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SiteLinkService.
+const (
+	SiteLinkServiceDsl               SiteLinkService = "dsl"
+	SiteLinkServiceEthernet          SiteLinkService = "ethernet"
+	SiteLinkServiceFiber             SiteLinkService = "fiber"
+	SiteLinkServiceInternetBroadband SiteLinkService = "internet_broadband"
+	SiteLinkServiceInternetDedicated SiteLinkService = "internet_dedicated"
+	SiteLinkServiceLeasedLine        SiteLinkService = "leased_line"
+	SiteLinkServiceMetro             SiteLinkService = "metro"
+	SiteLinkServiceMobile            SiteLinkService = "mobile"
+	SiteLinkServiceMpls              SiteLinkService = "mpls"
+	SiteLinkServiceOther             SiteLinkService = "other"
+	SiteLinkServiceVpn               SiteLinkService = "vpn"
+	SiteLinkServiceWireless          SiteLinkService = "wireless"
+)
+
+// Valid indicates whether the value is a known member of the SiteLinkService enum.
+func (e SiteLinkService) Valid() bool {
+	switch e {
+	case SiteLinkServiceDsl:
+		return true
+	case SiteLinkServiceEthernet:
+		return true
+	case SiteLinkServiceFiber:
+		return true
+	case SiteLinkServiceInternetBroadband:
+		return true
+	case SiteLinkServiceInternetDedicated:
+		return true
+	case SiteLinkServiceLeasedLine:
+		return true
+	case SiteLinkServiceMetro:
+		return true
+	case SiteLinkServiceMobile:
+		return true
+	case SiteLinkServiceMpls:
+		return true
+	case SiteLinkServiceOther:
+		return true
+	case SiteLinkServiceVpn:
+		return true
+	case SiteLinkServiceWireless:
 		return true
 	default:
 		return false
@@ -3545,6 +3617,34 @@ type Site struct {
 	Version       int32     `json:"version"`
 }
 
+// SiteCard defines model for SiteCard.
+type SiteCard struct {
+	CategoryId   *openapi_types.UUID `json:"categoryId,omitempty"`
+	CategoryPath string              `json:"categoryPath"`
+	Code         string              `json:"code"`
+
+	// Devices devices not retired (provider clouds left out)
+	Devices int `json:"devices"`
+
+	// Diagrams detail diagrams placing devices of the site, most devices first
+	Diagrams []SearchDiagram `json:"diagrams"`
+
+	// Gateway e.g. "FortiGate 60F ×2 HA"; empty when the site has none
+	Gateway   string             `json:"gateway"`
+	Groups    int                `json:"groups"`
+	Id        openapi_types.UUID `json:"id"`
+	Kind      SiteKind           `json:"kind"`
+	LocalCode string             `json:"localCode"`
+	Name      string             `json:"name"`
+
+	// Peers sites this one has links with
+	Peers   int `json:"peers"`
+	Planned int `json:"planned"`
+
+	// Wan ISP lines of the site (identical lines merged with a count)
+	Wan []SiteWan `json:"wan"`
+}
+
 // SiteCodeChanges defines model for SiteCodeChanges.
 type SiteCodeChanges struct {
 	Changes []struct {
@@ -3558,6 +3658,33 @@ type SiteCodeChanges struct {
 // SiteCodeSuggestion defines model for SiteCodeSuggestion.
 type SiteCodeSuggestion struct {
 	Code string `json:"code"`
+}
+
+// SiteEdge defines model for SiteEdge.
+type SiteEdge struct {
+	A         openapi_types.UUID `json:"a"`
+	B         openapi_types.UUID `json:"b"`
+	Bandwidth string             `json:"bandwidth"`
+	Links     int                `json:"links"`
+
+	// Medium as typed on the links (e.g. "VPN/IPsec"), shown for VPN edges
+	Medium string `json:"medium"`
+
+	// More links of another service between the two sites
+	More int `json:"more"`
+
+	// Service what a link carries (translated by the client)
+	Service SiteLinkService `json:"service"`
+	Style   SiteEdgeStyle   `json:"style"`
+}
+
+// SiteEdgeStyle defines model for SiteEdge.Style.
+type SiteEdgeStyle string
+
+// SiteGraph defines model for SiteGraph.
+type SiteGraph struct {
+	Edges []SiteEdge `json:"edges"`
+	Sites []SiteCard `json:"sites"`
 }
 
 // SiteInput defines model for SiteInput.
@@ -3584,6 +3711,9 @@ type SiteInput struct {
 // SiteKind defines model for SiteKind.
 type SiteKind string
 
+// SiteLinkService what a link carries (translated by the client)
+type SiteLinkService string
+
 // SiteList defines model for SiteList.
 type SiteList struct {
 	Sites []Site `json:"sites"`
@@ -3609,6 +3739,18 @@ type SiteUpdate struct {
 	// Timezone IANA time zone (default Asia/Ho_Chi_Minh)
 	Timezone *string `json:"timezone,omitempty"`
 	Version  int32   `json:"version"`
+}
+
+// SiteWan defines model for SiteWan.
+type SiteWan struct {
+	Bandwidth string `json:"bandwidth"`
+	Count     int    `json:"count"`
+
+	// Provider the link provider, else the ISP cloud name
+	Provider string `json:"provider"`
+
+	// Service what a link carries (translated by the client)
+	Service SiteLinkService `json:"service"`
 }
 
 // Subnet defines model for Subnet.
@@ -4469,6 +4611,11 @@ type GlobalSearchParams struct {
 	Q string `form:"q" json:"q"`
 }
 
+// GetSiteGraphParams defines parameters for GetSiteGraph.
+type GetSiteGraphParams struct {
+	CategoryId *openapi_types.UUID `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+}
+
 // ListSitesParams defines parameters for ListSites.
 type ListSitesParams struct {
 	// CategoryId Only sites of this category and the categories below it
@@ -5072,6 +5219,9 @@ type ServerInterface interface {
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams)
+	// GetSiteGraph Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
+	// (GET /orgs/{orgId}/site-graph)
+	GetSiteGraph(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetSiteGraphParams)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
@@ -5753,6 +5903,12 @@ func (_ Unimplemented) PreviewNtbImport(w http.ResponseWriter, r *http.Request, 
 // GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 // (GET /orgs/{orgId}/search)
 func (_ Unimplemented) GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetSiteGraph Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
+// (GET /orgs/{orgId}/site-graph)
+func (_ Unimplemented) GetSiteGraph(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetSiteGraphParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -11118,6 +11274,48 @@ func (siw *ServerInterfaceWrapper) GlobalSearch(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetSiteGraph operation middleware
+func (siw *ServerInterfaceWrapper) GetSiteGraph(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSiteGraphParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSiteGraph(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSites operation middleware
 func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
 
@@ -13005,6 +13203,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/design-templates/apply", wrapper.ApplyDesignTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/site-graph", wrapper.GetSiteGraph)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/search", wrapper.GlobalSearch)
@@ -20533,6 +20734,71 @@ func (response GlobalSearch404JSONResponse) VisitGlobalSearchResponse(w http.Res
 	return err
 }
 
+type GetSiteGraphRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetSiteGraphParams
+}
+
+type GetSiteGraphResponseObject interface {
+	VisitGetSiteGraphResponse(w http.ResponseWriter) error
+}
+
+type GetSiteGraph200JSONResponse SiteGraph
+
+func (response GetSiteGraph200JSONResponse) VisitGetSiteGraphResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSiteGraph401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetSiteGraph401JSONResponse) VisitGetSiteGraphResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSiteGraph403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetSiteGraph403JSONResponse) VisitGetSiteGraphResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSiteGraph404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSiteGraph404JSONResponse) VisitGetSiteGraphResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSitesRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListSitesParams
@@ -23308,6 +23574,9 @@ type StrictServerInterface interface {
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error)
+	// GetSiteGraph Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
+	// (GET /orgs/{orgId}/site-graph)
+	GetSiteGraph(ctx context.Context, request GetSiteGraphRequestObject) (GetSiteGraphResponseObject, error)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
@@ -26427,6 +26696,33 @@ func (sh *strictHandler) GlobalSearch(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GlobalSearchResponseObject); ok {
 		if err := validResponse.VisitGlobalSearchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSiteGraph operation middleware
+func (sh *strictHandler) GetSiteGraph(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetSiteGraphParams) {
+	var request GetSiteGraphRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSiteGraph(ctx, request.(GetSiteGraphRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSiteGraph")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSiteGraphResponseObject); ok {
+		if err := validResponse.VisitGetSiteGraphResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

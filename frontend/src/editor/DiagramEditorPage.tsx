@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useStore } from 'zustand'
 import { NotFoundPage } from '@/app/NotFoundPage'
@@ -25,7 +25,13 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
-import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
+import {
+  ConflictError,
+  fetchDiagram,
+  useDiagram,
+  useDiagramMutations,
+  useDiagrams,
+} from './doc/api'
 import { createDevice, createGroup, newId } from './doc/commands'
 import { expandTemplatePorts } from './library/ports'
 import { useTemplateChoices } from '@/modules/inventory/TemplatePicker'
@@ -53,6 +59,8 @@ import { PanelRail } from './workspace/PanelRail'
 import { ExportImageDialog } from './workspace/ExportImageDialog'
 import { FrameDrawLayer } from './workspace/FrameDrawLayer'
 import { ProblemsPanel } from './checks/ProblemsPanel'
+import { SiteDrillDialog } from './overview/SiteDrillDialog'
+import { useSiteGraph, type SiteCard } from './overview/siteGraph'
 import { countProblems } from './checks/types'
 import { useChecks } from './checks/useChecks'
 import { fitOptions } from './workspace/flow'
@@ -82,8 +90,15 @@ export function DiagramEditorPage() {
   const { save } = useDiagramMutations(orgId)
   const [offer, setOffer] = useState<Draft | null>(null)
   const loadedFor = useRef<string | null>(null)
+  // Opened from an overview (P2-21): the overview stays in the breadcrumb to go back up.
+  const [search] = useSearchParams()
+  const from = search.get('from') ?? ''
+  // The name from the diagram list (a full view of the overview would stay cached and go stale).
+  const list = useDiagrams(orgId)
+  const parent = from && from !== diagramId ? list.data?.find((d) => d.id === from) : undefined
   useBreadcrumbs([
     { label: t('nav.diagrams'), to: `/o/${orgId}/diagrams` },
+    ...(parent ? [{ label: parent.name, to: `/o/${orgId}/diagrams/${from}` }] : []),
     { label: meta?.name ?? '…' },
   ])
 
@@ -102,6 +117,13 @@ export function DiagramEditorPage() {
     let timer: ReturnType<typeof setTimeout> | undefined
     let pending: Draft | null = null
     const unsub = store.subscribe((s, prev) => {
+      // Saved: a draft still waiting to be written is obsolete (leaving right after Ctrl+S must not write it and
+      // offer it back on return).
+      if (s.status === 'clean' && prev.status !== 'clean') {
+        clearTimeout(timer)
+        pending = null
+        return
+      }
       if (s.doc === prev.doc || s.status === 'clean' || !s.doc || !s.meta) return
       clearTimeout(timer)
       const draft: Draft = {
@@ -342,11 +364,39 @@ function Workspace({
     (st) => st.panZoom !== null && st.nodes.some((n) => n.measured?.width),
   )
   useEffect(() => {
-    if (!focusRef || !nodesReady) return
+    // Still showing the previous diagram (moving from an overview to a detail diagram): wait for the new one.
+    if (!focusRef || !nodesReady || meta.id !== diagramId) return
     // A cluster is drawn through its members: its first member on the diagram.
     const node =
       doc.view.nodes.find((n) => n.refId === focusRef) ??
       doc.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef)
+    // A site (drilling down from an overview, P2-21): its frame, zoomed to fill the view.
+    const frame = node
+      ? undefined
+      : doc.view.annotations.find((a) => a.kind === 'zone' && a.siteId === focusRef)
+    if (frame) {
+      // Fit the frame in what the side panels leave visible, centred there.
+      const left = libraryOpen ? 312 : 32
+      const right = panelOpen ? 352 : 32
+      const w = frame.width ?? 640
+      const h = frame.height ?? 400
+      const zoom = Math.max(0.2, Math.min(1.2, (width - left - right) / w, (height - 104) / h))
+      const dx = (left - right) / 2 / zoom
+      void flow.setCenter(frame.x + w / 2 - dx, frame.y + h / 2 - 20 / zoom, {
+        zoom,
+        duration: ZOOM_MS,
+      })
+    }
+    // Neither a node nor a frame: the site's devices on the diagram, else the whole drawing.
+    if (!node && !frame) {
+      const here = doc.view.nodes.filter((n) => doc.devices[n.refId]?.siteId === focusRef)
+      if (here.length > 0)
+        void flow.fitView({
+          ...fitOptions(libraryOpen, panelOpen),
+          nodes: here.map((n) => ({ id: n.id })),
+        })
+      else fit()
+    }
     if (node) {
       const s = store.getState()
       s.setEdgeSelection([])
@@ -374,7 +424,28 @@ function Workspace({
       },
       { replace: true },
     )
-  }, [focusRef, nodesReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [focusRef, nodesReady, meta.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Double click (P2-21): a site opens its detail diagram (one: straight away; several or none: a dialog); a diagram
+  // node opens that diagram. The overview stays in the URL for the breadcrumb.
+  const siteGraph = useSiteGraph(
+    orgId,
+    doc.view.nodes.some((n) => n.refKind === 'site'),
+  )
+  const navigate = useNavigate()
+  const [drill, setDrill] = useState<SiteCard | null>(null)
+  const openNode = (nodeId: string) => {
+    const n = doc.view.nodes.find((x) => x.id === nodeId)
+    if (!n) return
+    if (n.refKind === 'diagram') void navigate(`/o/${orgId}/diagrams/${n.refId}?from=${diagramId}`)
+    if (n.refKind !== 'site') return
+    const card = siteGraph.data?.sites.find((x) => x.id === n.refId)
+    if (!card) return
+    if (card.diagrams.length === 1)
+      void navigate(
+        `/o/${orgId}/diagrams/${card.diagrams[0]!.id}?from=${diagramId}&focus=${card.id}`,
+      )
+    else setDrill(card)
+  }
   /** Top-left for a node centred on `at`, on the grid when snapping. */
   const place = (at: { x: number; y: number }) => {
     const step = prefs.snap ? prefs.grid : 1
@@ -694,6 +765,7 @@ function Workspace({
     <div ref={root} className="contents">
       <Canvas
         focusing={openedFocused}
+        onNodeOpen={openNode}
         diagramId={diagramId}
         canEdit={canEdit}
         prefs={prefs}
@@ -835,6 +907,14 @@ function Workspace({
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      {drill && (
+        <SiteDrillDialog
+          orgId={orgId}
+          site={drill}
+          from={diagramId}
+          onClose={() => setDrill(null)}
+        />
+      )}
       {exporting && (
         <ExportImageDialog
           orgId={orgId}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { FieldHelp } from '@/components/FieldHelp'
 import { FormField } from '@/components/FormField'
 import { NativeSelect } from '@/components/NativeSelect'
+import { Link, useParams } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -32,10 +33,14 @@ import {
   setLabelColor,
   setLabelTemplate,
   setPortStyle,
+  addSiteNodes,
   updateAnnotation,
   updateDevice,
   updateLink,
 } from '../doc/commands'
+import { wanLabel } from '../overview/labels'
+import { SiteDrillDialog } from '../overview/SiteDrillDialog'
+import { placeMissing, useSiteGraph } from '../overview/siteGraph'
 import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId, toFlowEdges } from './flow'
@@ -94,6 +99,9 @@ export function PropertiesPanel({
     } else if (node?.refKind === 'endpoint_group' && doc.groups[node.refId]) {
       title = t('panel.group')
       body = <GroupPanel orgId={orgId} groupId={node.refId} nodeId={node.id} canEdit={canEdit} />
+    } else if (node?.refKind === 'site') {
+      title = t('overview.siteTitle')
+      body = <SitePanel key={node.refId} orgId={orgId} siteId={node.refId} />
     }
   } else if (selection.length > 1) {
     title = t('panel.many', { count: selection.length })
@@ -206,6 +214,116 @@ function LabelColorPicker({ nodeIds, current }: { nodeIds: string[]; current: st
   )
 }
 
+/**
+ * A site on an overview (P2-21): its live card and the way down — its detail diagrams, or creating one. The keyboard
+ * way to what a double click does on the canvas.
+ */
+function SitePanel({ orgId, siteId }: { orgId: string; siteId: string }) {
+  const { t } = useTranslation()
+  const { diagramId = '' } = useParams()
+  const graph = useSiteGraph(orgId)
+  const [creating, setCreating] = useState(false)
+  const card = graph.data?.sites.find((s) => s.id === siteId)
+  if (!card) return <p className="text-muted-foreground">{t('overview.siteGone')}</p>
+  return (
+    <div className="space-y-2">
+      <dl className="space-y-1">
+        <Row label={t('devices.site')} value={`${card.code} · ${card.name}`} />
+        {card.categoryPath && <Row label={t('overview.category')} value={card.categoryPath} />}
+        {card.gateway && <Row label={t('overview.gateway')} value={card.gateway} />}
+        <Row
+          label={t('overview.devicesLabel')}
+          value={t('overview.counts', { devices: card.devices, groups: card.groups })}
+        />
+        {card.wan.map((w, i) => (
+          <Row key={i} label={i === 0 ? t('overview.wan') : ''} value={wanLabel(w, t)} />
+        ))}
+      </dl>
+      <section aria-label={t('overview.detailDiagrams')} className="space-y-1">
+        <h3 className="text-sm font-medium">{t('overview.detailDiagrams')}</h3>
+        {card.diagrams.map((d) => (
+          <Link
+            key={d.id}
+            to={`/o/${orgId}/diagrams/${d.id}?from=${diagramId}&focus=${card.id}`}
+            className="block truncate text-sm text-primary hover:underline"
+          >
+            {d.name}
+          </Link>
+        ))}
+        <Button size="sm" variant="outline" onClick={() => setCreating(true)}>
+          {card.diagrams.length > 0 ? t('overview.anotherDetail') : t('overview.openDetail')}
+        </Button>
+      </section>
+      <Link
+        to={`/o/${orgId}/sites/${card.id}`}
+        className="block text-xs text-primary hover:underline"
+      >
+        {t('overview.siteRecord')}
+      </Link>
+      {creating && (
+        <SiteDrillDialog
+          orgId={orgId}
+          site={card}
+          from={diagramId}
+          onClose={() => setCreating(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Overview (P2-21): the sites of the inventory not drawn yet — those in the categories the overview already shows — are
+ * added under what is drawn, positions kept, one undo step. Double click on a site opens its detail diagram.
+ */
+function OverviewSync({ canEdit }: { canEdit: boolean }) {
+  const { t } = useTranslation()
+  const { orgId = '' } = useParams()
+  const store = useDocStoreApi()
+  const doc = useDoc((s) => s.doc)!
+  const layer = useDoc((s) => s.meta?.layer)
+  const drawn = doc.view.nodes.filter((n) => n.refKind === 'site')
+  const isOverview = layer === 'overview' || drawn.length > 0
+  const graph = useSiteGraph(orgId, isOverview)
+  if (!isOverview) return null
+  const on = new Set(drawn.map((n) => n.refId))
+  const cards = graph.data?.sites ?? []
+  const scope = new Set(cards.filter((c) => on.has(c.id)).map((c) => c.categoryId ?? ''))
+  const missing = cards.filter(
+    (c) => !on.has(c.id) && (scope.size === 0 || scope.has(c.categoryId ?? '')),
+  )
+  return (
+    <section
+      aria-label={t('overview.panelTitle')}
+      className="space-y-1 rounded-md border border-border p-2"
+    >
+      <h3 className="text-sm font-medium">{t('overview.panelTitle')}</h3>
+      <p className="text-xs text-muted-foreground">{t('overview.panelGuide')}</p>
+      {missing.length > 0 ? (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!canEdit}
+          onClick={() =>
+            store.getState().dispatch(
+              addSiteNodes(
+                placeMissing(
+                  doc.view,
+                  missing.map((c) => c.id),
+                ),
+              ),
+            )
+          }
+        >
+          {t('overview.addMissing', { count: missing.length })}
+        </Button>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t('overview.upToDate')}</p>
+      )}
+    </section>
+  )
+}
+
 function DiagramPanel({ canEdit }: { canEdit: boolean }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -218,6 +336,7 @@ function DiagramPanel({ canEdit }: { canEdit: boolean }) {
         <Row label={t('panel.devices')} value={String(doc.view.nodes.length)} />
         <Row label={t('panel.cables')} value={String(doc.view.edges.length)} />
       </dl>
+      <OverviewSync canEdit={canEdit} />
       <FormField label={t('panel.labelTemplate')} guide={t('panel.labelTemplateGuide')}>
         {(p) => (
           <NativeSelect

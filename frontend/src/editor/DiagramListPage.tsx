@@ -28,6 +28,7 @@ import { atLeast, useOrgAccess } from '@/modules/sites/access'
 import { DIAGRAM_LAYERS, useDiagramMutations, useDiagrams, type DiagramLayer } from './doc/api'
 import type { DiagramMeta } from './doc/types'
 import { DesignTemplateDialog } from './DesignTemplateDialog'
+import { OverviewDialog } from './overview/OverviewDialog'
 import { NtbImportDialog } from './NtbImportDialog'
 
 function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
@@ -113,6 +114,7 @@ export function DiagramListPage() {
   const { remove } = useDiagramMutations(orgId)
   const [importing, setImporting] = useState(false)
   const [designing, setDesigning] = useState(false)
+  const [overview, setOverview] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<DiagramMeta | null>(null)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
@@ -205,6 +207,9 @@ export function DiagramListPage() {
         actions={
           access.canAddSites && (
             <>
+              <Button variant="outline" onClick={() => setOverview(true)}>
+                <Network aria-hidden /> {t('overview.open')}
+              </Button>
               <Button variant="outline" onClick={() => setDesigning(true)}>
                 <LayoutTemplate aria-hidden /> {t('design.open')}
               </Button>
@@ -264,6 +269,7 @@ export function DiagramListPage() {
       {creating && <CreateDiagramDialog orgId={orgId} onClose={() => setCreating(false)} />}
       {importing && <NtbImportDialog orgId={orgId} onClose={() => setImporting(false)} />}
       {designing && <DesignTemplateDialog orgId={orgId} onClose={() => setDesigning(false)} />}
+      {overview && <OverviewDialog orgId={orgId} onClose={() => setOverview(false)} />}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}

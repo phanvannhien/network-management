@@ -1415,6 +1415,33 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/site-graph:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getSiteGraph
+      summary: Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteGraph'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/search:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -6117,6 +6144,75 @@ components:
         devices: {type: integer}
         cables: {type: integer}
         sites: {type: integer}
+
+    SiteGraph:
+      type: object
+      required: [sites, edges]
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/SiteCard'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/SiteEdge'
+
+    SiteCard:
+      type: object
+      required: [id, code, localCode, name, kind, categoryPath, devices, planned, groups, gateway, wan, diagrams, peers]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        localCode: {type: string}
+        name: {type: string}
+        kind: {$ref: '#/components/schemas/SiteKind'}
+        categoryId: {type: string, format: uuid}
+        categoryPath: {type: string}
+        devices: {type: integer, description: 'devices not retired (provider clouds left out)'}
+        planned: {type: integer}
+        groups: {type: integer}
+        gateway: {type: string, description: 'e.g. "FortiGate 60F ×2 HA"; empty when the site has none'}
+        wan:
+          type: array
+          description: ISP lines of the site (identical lines merged with a count)
+          items:
+            $ref: '#/components/schemas/SiteWan'
+        diagrams:
+          type: array
+          description: detail diagrams placing devices of the site, most devices first
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+        peers: {type: integer, description: 'sites this one has links with'}
+
+    SiteWan:
+      type: object
+      required: [provider, service, bandwidth, count]
+      properties:
+        provider: {type: string, description: 'the link provider, else the ISP cloud name'}
+        service: {$ref: '#/components/schemas/SiteLinkService'}
+        bandwidth: {type: string}
+        count: {type: integer}
+
+    SiteLinkService:
+      type: string
+      description: what a link carries (translated by the client)
+      enum: [internet_broadband, internet_dedicated, mpls, leased_line, metro, mobile, vpn, wireless, dsl, fiber, ethernet, other]
+
+    SiteEdge:
+      type: object
+      required: [a, b, links, service, medium, bandwidth, more, style]
+      properties:
+        a: {type: string, format: uuid}
+        b: {type: string, format: uuid}
+        links: {type: integer}
+        service: {$ref: '#/components/schemas/SiteLinkService'}
+        medium: {type: string, description: 'as typed on the links (e.g. "VPN/IPsec"), shown for VPN edges'}
+        bandwidth: {type: string}
+        more: {type: integer, description: 'links of another service between the two sites'}
+        style:
+          type: string
+          enum: [dedicated, vpn, wireless, other]
 
     SearchResult:
       type: object

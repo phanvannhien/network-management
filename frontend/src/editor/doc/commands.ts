@@ -71,6 +71,19 @@ export function addNode(
   }
 }
 
+/** Place several sites on an overview at once (P2-21 "add missing sites"): one undo step. */
+export function addSiteNodes(sites: { id: string; x: number; y: number }[]): DocCommand {
+  return {
+    label: 'addSiteNodes',
+    apply(d) {
+      const have = new Set(d.view.nodes.filter((n) => n.refKind === 'site').map((n) => n.refId))
+      for (const s of sites)
+        if (!have.has(s.id))
+          d.view.nodes.push({ id: newId(), refKind: 'site', refId: s.id, x: s.x, y: s.y })
+    },
+  }
+}
+
 /** Move nodes to absolute positions; a drag sends many of these with one mergeKey. */
 export function moveNodes(
   moves: { id: string; x: number; y: number }[],

@@ -298,6 +298,17 @@ type Querier interface {
 	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
+	// Detail diagrams of each site: diagrams (not overviews) that place at least one device of the site.
+	SiteGraphDiagrams(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphDiagramsRow, error)
+	// Firewalls / routers / VPN gateways of each site (the "edge" of the site), with their cluster.
+	SiteGraphGateways(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphGatewaysRow, error)
+	// Links between two devices (no provider cloud) with the site of each end; the API keeps those across sites.
+	SiteGraphLinks(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphLinksRow, error)
+	// Site graph (P2-21, ADR-040): what an overview diagram shows of each site and between sites, derived live from the
+	// inventory. Every query takes organization_id and the category filter (NULL = whole organization, else its subtree).
+	SiteGraphSites(ctx context.Context, arg SiteGraphSitesParams) ([]SiteGraphSitesRow, error)
+	// The site's lines to an ISP: links between a device of the site and a provider cloud.
+	SiteGraphWan(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphWanRow, error)
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) (int64, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)

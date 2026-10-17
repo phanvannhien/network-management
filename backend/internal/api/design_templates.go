@@ -402,7 +402,8 @@ func (d *designer) buildSite(s *designSite, withRemoteVPN bool) {
 		x := s.x + 60 + float32(l)*2*nodeGapX
 		isp := d.dev(s, "internet", fmt.Sprintf("INTERNET%d", l+1), "", "provider_cloud", "", 0, x, rowY(0))
 		ont := d.dev(s, "ont", fmt.Sprintf("ONT%d", l+1), "", "ont", "", 0, x+nodeGapX, rowY(0))
-		b.link(isp, "", ont, "PON", "fiber", ntbLink{Service: "internet_broadband", Medium: "FTTH"})
+		provider := fmt.Sprintf("Nhà mạng %d", l+1)
+		b.link(isp, "", ont, "PON", "fiber", ntbLink{Service: "internet_broadband", Medium: "FTTH", Provider: provider})
 		for m, fw := range fws {
 			b.link(ont, fmt.Sprintf("LAN%d", m+1), fw, gw.wan[l], "ethernet", ntbLink{Medium: "Cat6"})
 		}

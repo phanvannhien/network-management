@@ -518,6 +518,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'overview-diagram',
+    'org',
+    ['Sơ đồ tổng quan / chi tiết', 'Overview / detail diagram'],
+    [
+      'Tổng quan: mỗi site là một khối, chỉ thấy đường nối giữa các site (VPN, kênh thuê riêng) — số liệu luôn lấy từ kho. Chi tiết: bên trong một site — firewall, switch, AP, dây từng cổng. Double-click khối site trên tổng quan để mở sơ đồ chi tiết.',
+      'Overview: each site is one block, only the links between sites (VPN, leased lines) — figures always from the inventory. Detail: inside one site — firewall, switches, APs, every cable. Double click a site block on the overview to open its detail diagram.',
+    ],
+    [
+      'Tổng quan 20 cửa hàng nối VPN về trụ sở; chi tiết cửa hàng Quận 1.',
+      'An overview of 20 stores on VPN to the head office; the detail of the District 1 store.',
+    ],
+  ),
+  e(
     'vpn',
     'ip',
     ['VPN site-to-site / VPN client', 'Site-to-site VPN / client VPN'],

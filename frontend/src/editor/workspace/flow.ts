@@ -20,7 +20,7 @@ export interface RefData extends Record<string, unknown> {
 export const NODE_TYPES_BY_REF = {
   device: 'device',
   endpoint_group: 'group',
-  site: 'ref',
+  site: 'site',
   diagram: 'ref',
 } as const
 

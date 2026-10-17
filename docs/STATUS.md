@@ -5,6 +5,63 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-21 Sơ đồ nhiều cấp (ADR-040)
+- Người dùng chọn làm P2-21 và muốn có kỹ sư mạng tham gia. Một agent đóng vai kỹ sư mạng góp ý thiết kế từ đầu; một agent khác rà code sau khi làm xong.
+- Đã làm:
+  - **Nút "Sơ đồ tổng quan"** ở danh sách sơ đồ:
+    - chọn phạm vi (toàn tổ chức hoặc một danh mục);
+    - site trung tâm được gợi ý (nhiều site nối tới nhất → IDC → tên trụ sở), sửa được, chọn được nhiều;
+    - tùy chọn gom site vào khung theo danh mục.
+  - **Node site sống theo kho** (sơ đồ chỉ lưu vị trí):
+    - mã, tên, biểu tượng loại site;
+    - chip đường WAN (nhà mạng · dịch vụ · băng thông, gộp trùng thành ×N);
+    - gateway (`FortiGate 60F ×2 HA`), số thiết bị/nhóm;
+    - viền nét đứt khi chủ yếu là thiết bị dự kiến.
+  - **Cạnh site ↔ site tự suy ra** từ dây trong kho:
+    - mỗi cặp site một cạnh, mỗi link đếm một lần, không tính provider cloud;
+    - nhãn là dịch vụ chính, thêm "+N";
+    - nét liền / đứt / chấm theo kênh riêng / VPN / không dây;
+    - chỉ để xem, không lưu.
+  - **Đi sâu:**
+    - double-click node site: có 1 sơ đồ thì mở luôn và zoom vào khung của site; có nhiều thì chọn; chưa có thì "Tạo trống" hoặc "Sinh từ kho";
+    - chọn node site thì panel có danh sách sơ đồ chi tiết và nút tạo, dùng được bằng bàn phím;
+    - breadcrumb `Sơ đồ › Tổng quan › Chi tiết` để quay lại;
+    - node trỏ tới sơ đồ khác cũng mở được bằng double-click.
+  - **"Thêm site còn thiếu"** trong panel: thêm site mới, giữ nguyên vị trí đã chỉnh, một bước hoàn tác.
+  - **API** `GET /site-graph` (5 query sqlc, đều lọc theo tổ chức và danh mục).
+  - Sơ đồ mẫu (P2-23) nay ghi "Nhà mạng 1/2" lên dây WAN, để chip trên tổng quan có nghĩa.
+  - Agent rà code đã chỉ ra, và đã sửa:
+    - quay lại tổng quan sau khi vào chi tiết thì hiện bố cục cũ và lưu bị xung đột (bộ nhớ đệm không cập nhật khi lưu);
+    - nhãn tiếng Việt cứng ở backend;
+    - đi sâu chỉ dùng được bằng chuột;
+    - không vừa màn hình khi không tìm thấy khung site;
+    - tạo sơ đồ chi tiết lần hai bị trùng tên;
+    - lỗi giữa chừng để lại sơ đồ rỗng;
+    - tải toàn bộ nhóm đầu cuối để lọc trên trình duyệt;
+    - chip WAN trùng;
+    - lựa chọn site trung tâm bị reset;
+    - số nhiều tiếng Anh;
+    - query sơ đồ chi tiết không dùng được index;
+    - test danh mục của tổ chức khác.
+  - Lỗi tự tìm khi chạy thử trên trình duyệt:
+    - lệnh zoom chạy trên sơ đồ cũ khi chuyển trang;
+    - zoom chưa trừ phần bị hai panel che;
+    - sơ đồ mới tạo không mở ở chế độ vừa màn hình;
+    - **lưu ngay sau khi kéo rồi rời trang thì bản nháp cũ vẫn được ghi và lần sau hiện banner "khôi phục bản nháp" sai** (lỗi có từ trước).
+- Test / cách kiểm tra:
+  - `sitegraph_test.go`: thẻ site, cạnh VPN, lọc danh mục, danh mục lạ hoặc của tổ chức khác trả 404, kiểm tra chéo tổ chức.
+  - Test hàm thuần cho gợi ý site trung tâm, xếp vị trí, thêm site còn thiếu; App.test cho hộp thoại tổng quan.
+  - Trên trình duyệt: tổng quan 32 site / 13 cạnh; double-click CN01 mở đúng khung CN01; quay lại bằng breadcrumb, kéo rồi lưu thì không còn xung đột.
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Site nối qua một đám mây MPLS chung chưa ra cạnh.
+  - Phạm vi danh mục của sơ đồ tổng quan chưa được lưu.
+  - Chưa có số vấn đề trên thẻ site; chưa ẩn cạnh giữa các chi nhánh trong mô hình full mesh.
+  - Đã ghi các mục này vào ADR-040 "Để sau".
+- Câu hỏi cho người dùng: khách nào của bên mày dùng MPLS hoặc Metro Ethernet nhiều không? Nếu có thì nên làm node "đám mây MPLS" sớm.
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: P2-08 (nhiều trang, lớp L1/L2/L3) — phần sơ đồ còn lại; hoặc quay lại P2-04 / P2-01.
+
 ## 2026-10-17 — P2-23 Sơ đồ mẫu (ADR-039)
 - Người dùng chốt: làm phần sơ đồ trước. Tính năng mới là "tạo sơ đồ từ mẫu"; thiết bị sinh ra là thiết bị Dự kiến trong kho;
   "HA" nghĩa là dự phòng; chọn bộ hãng khi tạo.

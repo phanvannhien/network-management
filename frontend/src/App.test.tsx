@@ -3121,3 +3121,92 @@ describe('design templates (P2-23)', () => {
     )
   })
 })
+
+describe('overview diagrams (P2-21)', () => {
+  const GRAPH = {
+    sites: [
+      {
+        id: 'hq',
+        code: 'ORG-HQ',
+        localCode: 'HQ',
+        name: 'Trụ sở',
+        kind: 'office',
+        categoryPath: '',
+        devices: 10,
+        planned: 0,
+        groups: 2,
+        gateway: 'FortiGate 100F ×2 HA',
+        wan: ['VNPT · Internet 300M'],
+        diagrams: [],
+        peers: 2,
+      },
+      {
+        id: 'cn1',
+        code: 'ORG-CN01',
+        localCode: 'CN01',
+        name: 'Chi nhánh 01',
+        kind: 'office',
+        categoryPath: '',
+        devices: 5,
+        planned: 5,
+        groups: 1,
+        gateway: 'FortiGate 60F',
+        wan: [],
+        diagrams: [],
+        peers: 1,
+      },
+      {
+        id: 'cn2',
+        code: 'ORG-CN02',
+        localCode: 'CN02',
+        name: 'Chi nhánh 02',
+        kind: 'office',
+        categoryPath: '',
+        devices: 5,
+        planned: 0,
+        groups: 1,
+        gateway: 'FortiGate 60F',
+        wan: [],
+        diagrams: [],
+        peers: 1,
+      },
+    ],
+    edges: [],
+  }
+  it('suggests the hub and creates an overview diagram of site nodes', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/diagrams`]: () => json({ diagrams: [] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [] }),
+      [`GET /api/orgs/${ORG_ID}/site-graph`]: () => json(GRAPH),
+      [`POST /api/orgs/${ORG_ID}/diagrams`]: () =>
+        json(
+          {
+            diagram: {
+              id: 'ov1',
+              name: 'Tổng quan — Toàn tổ chức',
+              layer: 'overview',
+              description: '',
+              nodeCount: 0,
+              updatedAt: '2026-10-18T00:00:00Z',
+              access: 'admin',
+              version: 1,
+            },
+          },
+          201,
+        ),
+      [`POST /api/orgs/${ORG_ID}/diagrams/ov1/save`]: () => json({ version: 2 }),
+    })
+    renderAt(`/o/${ORG_ID}/diagrams`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Sơ đồ tổng quan' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Sơ đồ tổng quan từ kho' })
+    // The head office (most linked) is pre-ticked as hub.
+    await waitFor(() => expect(within(dialog).getAllByRole('checkbox')[0]).toBeChecked())
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo sơ đồ (3 site)' }))
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith('/diagrams/ov1/save'))).toBe(true))
+    const save = calls.find((c) => c.url.endsWith('/diagrams/ov1/save'))!
+    const body = (await save.clone().json()) as { view: { nodes: { refKind: string }[] } }
+    expect(body.view.nodes).toHaveLength(3)
+    expect(body.view.nodes.every((n) => n.refKind === 'site')).toBe(true)
+  })
+})

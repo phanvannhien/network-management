@@ -110,7 +110,7 @@ Phase hiện tại: **Phase 0**
 - [ ] **P2-12 Model library theo hãng**.
 - [ ] **P2-13 Vận hành**: script backup/khôi phục, hướng dẫn giữ master key, tài liệu cài đặt/nâng cấp.
 - [ ] **P2-14 Gate Enterprise**: review bảo mật kho mật khẩu & phân quyền; kiểm thử xâm nhập cơ bản.
-- [ ] **P2-21 Sơ đồ nhiều cấp**: sơ đồ tổng quan tổ chức/đơn vị, node site double-click mở sơ đồ chi tiết, tự sinh bố cục hình sao từ dữ liệu.
+- [x] **P2-21 Sơ đồ nhiều cấp**: sơ đồ tổng quan tổ chức/đơn vị, node site double-click mở sơ đồ chi tiết, tự sinh bố cục hình sao từ dữ liệu.
 - [x] **P2-23 Sơ đồ mẫu** (người dùng thêm 2026-10-17, ADR-039): tạo sơ đồ từ mẫu văn phòng nhỏ / vừa / trụ sở + chi nhánh, tùy chọn HA, VPN, IP Phone, camera, Wi-Fi khách, bộ hãng; sinh thiết bị Dự kiến (model thật), nhóm đầu cuối, dây đúng cổng, VLAN/subnet/dải IP; xem trước trước khi tạo.
 - [ ] **P2-22 Ngày End-of-Life trong model library**: model library lưu End-of-Sale/End-of-Support; tự điền cho thiết bị; báo cáo thiết bị hết hỗ trợ.
 
