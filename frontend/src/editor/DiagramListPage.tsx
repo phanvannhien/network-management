@@ -1,4 +1,4 @@
-import { FileUp, Network, Plus, Trash2 } from 'lucide-react'
+import { FileUp, LayoutTemplate, Network, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -27,6 +27,7 @@ import { formatDate } from '@/lib/format'
 import { atLeast, useOrgAccess } from '@/modules/sites/access'
 import { DIAGRAM_LAYERS, useDiagramMutations, useDiagrams, type DiagramLayer } from './doc/api'
 import type { DiagramMeta } from './doc/types'
+import { DesignTemplateDialog } from './DesignTemplateDialog'
 import { NtbImportDialog } from './NtbImportDialog'
 
 function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
@@ -111,6 +112,7 @@ export function DiagramListPage() {
   const access = useOrgAccess(orgId)
   const { remove } = useDiagramMutations(orgId)
   const [importing, setImporting] = useState(false)
+  const [designing, setDesigning] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<DiagramMeta | null>(null)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
@@ -203,6 +205,9 @@ export function DiagramListPage() {
         actions={
           access.canAddSites && (
             <>
+              <Button variant="outline" onClick={() => setDesigning(true)}>
+                <LayoutTemplate aria-hidden /> {t('design.open')}
+              </Button>
               <Button variant="outline" onClick={() => setImporting(true)}>
                 <FileUp aria-hidden /> {t('ntbImport.open')}
               </Button>
@@ -258,6 +263,7 @@ export function DiagramListPage() {
       />
       {creating && <CreateDiagramDialog orgId={orgId} onClose={() => setCreating(false)} />}
       {importing && <NtbImportDialog orgId={orgId} onClose={() => setImporting(false)} />}
+      {designing && <DesignTemplateDialog orgId={orgId} onClose={() => setDesigning(false)} />}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}

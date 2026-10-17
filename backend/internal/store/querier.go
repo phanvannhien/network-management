@@ -170,6 +170,8 @@ type Querier interface {
 	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
 	// The VRF of an endpoint group's members: that of its range's subnet, '' without one.
 	GroupVrf(ctx context.Context, arg GroupVrfParams) (string, error)
+	// A live device whose hostname starts with this prefix ("VP-"): design templates then use the full site code.
+	HostnamePrefixTaken(ctx context.Context, arg HostnamePrefixTakenParams) (bool, error)
 	ImportClusterByName(ctx context.Context, arg ImportClusterByNameParams) (ImportClusterByNameRow, error)
 	ImportDeviceHasIP(ctx context.Context, arg ImportDeviceHasIPParams) (int64, error)
 	// Device import (P1-21): lookups that place each spreadsheet row. Every query takes organization_id.

@@ -47,7 +47,7 @@ func TestValidationContext(t *testing.T) {
 	otherIf := idOf(t, mustCreate(t, fx.A, devicePath(org, other)+"/interfaces", map[string]any{"name": "Vlan1", "kind": "physical"}))
 	legacy(`INSERT INTO ip_addresses (organization_id, device_id, interface_id, address, role) VALUES ($1, $2, $3, '10.0.0.5/24', 'primary')`,
 		org, other, otherIf) // conflict for SW01
-	ip(old, "Vlan1", "10.0.0.1/24", "primary")   // retired: never a conflict
+	ip(old, "Vlan1", "10.0.0.1/24", "primary") // retired: never a conflict
 	mustCreate(t, fx.A, devicePath(org, sw)+"/ips", map[string]any{"address": "203.0.113.9/32", "role": "public"})
 	mustCreate(t, fx.A, devicePath(org, other)+"/ips", map[string]any{"address": "203.0.113.9/32", "role": "public"}) // NAT/public repeat: warning only
 	// A cable from SW01 to a device that is not on the diagram is still returned.

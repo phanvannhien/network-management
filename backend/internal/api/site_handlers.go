@@ -253,6 +253,36 @@ func (s *Server) SuggestSiteCode(ctx context.Context, req apigen.SuggestSiteCode
 	return apigen.SuggestSiteCode409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: "Đã dùng hết 99 số cho địa điểm này"}}, nil
 }
 
+// writeNewSite creates a checked site inside the caller's transaction; a refusal (code taken…) is reported in out with
+// errRollback: bad for an invalid code, conf for a duplicate.
+func writeNewSite(ctx context.Context, q store.Querier, m tenant.Membership, f siteFields, out *writeOutcome) (store.GetSiteRow, error) {
+	code, msg, err := siteCode(ctx, q, m, f)
+	if err != nil || msg != "" {
+		out.bad = msg
+		return store.GetSiteRow{}, orRollback(err)
+	}
+	created, err := q.CreateSite(ctx, store.CreateSiteParams{
+		OrganizationID: m.OrgID, Code: code, LocalCode: f.local, Name: f.name, Address: f.address, Timezone: f.timezone,
+		ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
+		Kind: f.kind, CategoryID: f.category, Isp: f.isp,
+	})
+	if isUniqueViolation(err) {
+		out.conf = fmt.Sprintf("Mã site %s đã tồn tại trong tổ chức", code)
+		return store.GetSiteRow{}, errRollback
+	}
+	if err != nil {
+		return store.GetSiteRow{}, fmt.Errorf("create site: %w", err)
+	}
+	site, _, err := loadSite(ctx, q, m, uuid.UUID(created.ID.Bytes))
+	if err != nil {
+		return site, err
+	}
+	return site, audit.Write(ctx, q, audit.Entry{
+		OrganizationID: m.OrgID, Actor: m.UserID, Action: "site.create", ObjectType: "site", ObjectID: uuidStr(site.ID),
+		After: snapSite(site), Meta: infoFrom(ctx).meta,
+	})
+}
+
 func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObject) (apigen.CreateSiteResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
@@ -273,32 +303,13 @@ func (s *Server) CreateSite(ctx context.Context, req apigen.CreateSiteRequestObj
 		site      store.GetSiteRow
 		duplicate string
 	)
+	var out writeOutcome
 	err = s.withTx(ctx, func(q store.Querier) error {
-		code, msg, err := siteCode(ctx, q, m, f)
-		if err != nil || msg != "" {
-			bad = msg
-			return orRollback(err)
-		}
-		created, err := q.CreateSite(ctx, store.CreateSiteParams{
-			OrganizationID: m.OrgID, Code: code, LocalCode: f.local, Name: f.name, Address: f.address, Timezone: f.timezone,
-			ContactName: f.contactName, ContactPhone: f.contactPhone, ContactEmail: f.contactEmail, Notes: f.notes,
-			Kind: f.kind, CategoryID: f.category, Isp: f.isp,
-		})
-		if isUniqueViolation(err) {
-			duplicate = fmt.Sprintf("Mã site %s đã tồn tại trong tổ chức", code)
-			return errRollback
-		}
-		if err != nil {
-			return fmt.Errorf("create site: %w", err)
-		}
-		if site, _, err = loadSite(ctx, q, m, uuid.UUID(created.ID.Bytes)); err != nil {
-			return err
-		}
-		return audit.Write(ctx, q, audit.Entry{
-			OrganizationID: m.OrgID, Actor: m.UserID, Action: "site.create", ObjectType: "site", ObjectID: uuidStr(site.ID),
-			After: snapSite(site), Meta: infoFrom(ctx).meta,
-		})
+		var err error
+		site, err = writeNewSite(ctx, q, m, f, &out)
+		return err
 	})
+	bad, duplicate = out.bad, out.conf
 	switch {
 	case err != nil:
 		return nil, err

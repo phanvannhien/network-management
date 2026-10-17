@@ -230,6 +230,51 @@ func (e DashboardProblemSeverity) Valid() bool {
 	}
 }
 
+// Defines values for DesignRequestScenario.
+const (
+	Branches DesignRequestScenario = "branches"
+	Medium   DesignRequestScenario = "medium"
+	Small    DesignRequestScenario = "small"
+)
+
+// Valid indicates whether the value is a known member of the DesignRequestScenario enum.
+func (e DesignRequestScenario) Valid() bool {
+	switch e {
+	case Branches:
+		return true
+	case Medium:
+		return true
+	case Small:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DesignRequestVendor.
+const (
+	FortinetAruba DesignRequestVendor = "fortinet_aruba"
+	FortinetCisco DesignRequestVendor = "fortinet_cisco"
+	TplinkOmada   DesignRequestVendor = "tplink_omada"
+	Ubiquiti      DesignRequestVendor = "ubiquiti"
+)
+
+// Valid indicates whether the value is a known member of the DesignRequestVendor enum.
+func (e DesignRequestVendor) Valid() bool {
+	switch e {
+	case FortinetAruba:
+		return true
+	case FortinetCisco:
+		return true
+	case TplinkOmada:
+		return true
+	case Ubiquiti:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeviceImportMatchBy.
 const (
 	DeviceImportMatchByHostname DeviceImportMatchBy = "hostname"
@@ -1889,6 +1934,95 @@ type DashboardTotals struct {
 type DashboardTypeCount struct {
 	Count int        `json:"count"`
 	Type  DeviceType `json:"type"`
+}
+
+// DesignPreview defines model for DesignPreview.
+type DesignPreview struct {
+	Devices []struct {
+		Hostname string `json:"hostname"`
+		Model    string `json:"model"`
+
+		// Role firewall, core, access, ap, ont, internet
+		Role   string `json:"role"`
+		Site   string `json:"site"`
+		Vendor string `json:"vendor"`
+	} `json:"devices"`
+	Groups []struct {
+		Count int `json:"count"`
+
+		// Kind The device type of the group's members (used when a member becomes a device)
+		Kind EndpointKind `json:"kind"`
+		Name string       `json:"name"`
+		Site string       `json:"site"`
+	} `json:"groups"`
+
+	// Notes advice for the engineer (DHCP relay, ISP modem with an HA pair…), not problems
+	Notes   []string `json:"notes"`
+	Subnets []struct {
+		Cidr string `json:"cidr"`
+
+		// Dhcp DHCP / static range, empty when none
+		Dhcp    string `json:"dhcp"`
+		Gateway string `json:"gateway"`
+		Name    string `json:"name"`
+		Site    string `json:"site"`
+
+		// Vlan 0 = no VLAN (transit, VPN pool)
+		Vlan int `json:"vlan"`
+	} `json:"subnets"`
+	Totals struct {
+		Cables  int `json:"cables"`
+		Devices int `json:"devices"`
+		Sites   int `json:"sites"`
+	} `json:"totals"`
+	Warnings []string `json:"warnings"`
+}
+
+// DesignRequest defines model for DesignRequest.
+type DesignRequest struct {
+	BranchUsers *int  `json:"branchUsers,omitempty"`
+	Branches    *int  `json:"branches,omitempty"`
+	Cameras     *bool `json:"cameras,omitempty"`
+
+	// CategoryId category of the new sites (none = straight under the organization)
+	CategoryId  *openapi_types.UUID `json:"categoryId,omitempty"`
+	DiagramName *string             `json:"diagramName,omitempty"`
+
+	// ExistingSiteId small / medium only — draw into this site instead of creating one
+	ExistingSiteId *openapi_types.UUID `json:"existingSiteId,omitempty"`
+	GuestWifi      *bool               `json:"guestWifi,omitempty"`
+
+	// Ha firewall HA pair, a second Internet line, core stack (Fortinet profiles only)
+	Ha     *bool `json:"ha,omitempty"`
+	Phones *bool `json:"phones,omitempty"`
+
+	// RemoteVpn VPN for staff working from outside (client VPN pool)
+	RemoteVpn *bool `json:"remoteVpn,omitempty"`
+
+	// Scenario small office (up to ~50 users), medium office (up to ~100, L3 core), head office + branches
+	Scenario DesignRequestScenario `json:"scenario"`
+
+	// SiteNames names of the new sites, head office first; empty = defaults
+	SiteNames *[]string `json:"siteNames,omitempty"`
+
+	// Users users of the office (of the head office for branches)
+	Users  int                 `json:"users"`
+	Vendor DesignRequestVendor `json:"vendor"`
+}
+
+// DesignRequestScenario small office (up to ~50 users), medium office (up to ~100, L3 core), head office + branches
+type DesignRequestScenario string
+
+// DesignRequestVendor defines model for DesignRequest.Vendor.
+type DesignRequestVendor string
+
+// DesignResult defines model for DesignResult.
+type DesignResult struct {
+	Cables    int                `json:"cables"`
+	Devices   int                `json:"devices"`
+	DiagramId openapi_types.UUID `json:"diagramId"`
+	Sites     int                `json:"sites"`
+	Warnings  []string           `json:"warnings"`
 }
 
 // Device defines model for Device.
@@ -4058,6 +4192,16 @@ type GetDashboardParams struct {
 	CategoryId *openapi_types.UUID `form:"categoryId,omitempty" json:"categoryId,omitempty"`
 }
 
+// ApplyDesignTemplateParams defines parameters for ApplyDesignTemplate.
+type ApplyDesignTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// PreviewDesignTemplateParams defines parameters for PreviewDesignTemplate.
+type PreviewDesignTemplateParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ImportDevicesParams defines parameters for ImportDevices.
 type ImportDevicesParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4494,6 +4638,12 @@ type CreateCustomFieldJSONRequestBody = CustomFieldInput
 // UpdateCustomFieldJSONRequestBody defines body for UpdateCustomField for application/json ContentType.
 type UpdateCustomFieldJSONRequestBody = CustomFieldUpdate
 
+// ApplyDesignTemplateJSONRequestBody defines body for ApplyDesignTemplate for application/json ContentType.
+type ApplyDesignTemplateJSONRequestBody = DesignRequest
+
+// PreviewDesignTemplateJSONRequestBody defines body for PreviewDesignTemplate for application/json ContentType.
+type PreviewDesignTemplateJSONRequestBody = DesignRequest
+
 // ImportDevicesJSONRequestBody defines body for ImportDevices for application/json ContentType.
 type ImportDevicesJSONRequestBody = DeviceImport
 
@@ -4745,6 +4895,12 @@ type ServerInterface interface {
 	// GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
 	// (GET /orgs/{orgId}/dashboard)
 	GetDashboard(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetDashboardParams)
+	// ApplyDesignTemplate Design template — create the sites, VLANs, subnets, planned devices, groups, cables and the diagram in one go
+	// (POST /orgs/{orgId}/design-templates/apply)
+	ApplyDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params ApplyDesignTemplateParams)
+	// PreviewDesignTemplate Design template (P2-23, ADR-039) — what would be created (devices, groups, VLAN / IP plan), nothing written
+	// (POST /orgs/{orgId}/design-templates/preview)
+	PreviewDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewDesignTemplateParams)
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -5243,6 +5399,18 @@ func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request,
 // GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
 // (GET /orgs/{orgId}/dashboard)
 func (_ Unimplemented) GetDashboard(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetDashboardParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApplyDesignTemplate Design template — create the sites, VLANs, subnets, planned devices, groups, cables and the diagram in one go
+// (POST /orgs/{orgId}/design-templates/apply)
+func (_ Unimplemented) ApplyDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params ApplyDesignTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PreviewDesignTemplate Design template (P2-23, ADR-039) — what would be created (devices, groups, VLAN / IP plan), nothing written
+// (POST /orgs/{orgId}/design-templates/preview)
+func (_ Unimplemented) PreviewDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewDesignTemplateParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7613,6 +7781,114 @@ func (siw *ServerInterfaceWrapper) GetDashboard(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDashboard(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApplyDesignTemplate operation middleware
+func (siw *ServerInterfaceWrapper) ApplyDesignTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ApplyDesignTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApplyDesignTemplate(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewDesignTemplate operation middleware
+func (siw *ServerInterfaceWrapper) PreviewDesignTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewDesignTemplateParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewDesignTemplate(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12725,6 +13001,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/orgs/{orgId}/dashboard", wrapper.GetDashboard)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/design-templates/preview", wrapper.PreviewDesignTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/design-templates/apply", wrapper.ApplyDesignTemplate)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/search", wrapper.GlobalSearch)
 	})
 	r.Group(func(r chi.Router) {
@@ -15550,6 +15832,180 @@ func (response GetDashboard403JSONResponse) VisitGetDashboardResponse(w http.Res
 type GetDashboard404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response GetDashboard404JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplateRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ApplyDesignTemplateParams
+	Body   *ApplyDesignTemplateJSONRequestBody
+}
+
+type ApplyDesignTemplateResponseObject interface {
+	VisitApplyDesignTemplateResponse(w http.ResponseWriter) error
+}
+
+type ApplyDesignTemplate201JSONResponse DesignResult
+
+func (response ApplyDesignTemplate201JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ApplyDesignTemplate400JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ApplyDesignTemplate401JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ApplyDesignTemplate403JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ApplyDesignTemplate404JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyDesignTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ApplyDesignTemplate409JSONResponse) VisitApplyDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewDesignTemplateRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params PreviewDesignTemplateParams
+	Body   *PreviewDesignTemplateJSONRequestBody
+}
+
+type PreviewDesignTemplateResponseObject interface {
+	VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error
+}
+
+type PreviewDesignTemplate200JSONResponse DesignPreview
+
+func (response PreviewDesignTemplate200JSONResponse) VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewDesignTemplate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response PreviewDesignTemplate400JSONResponse) VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewDesignTemplate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response PreviewDesignTemplate401JSONResponse) VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewDesignTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response PreviewDesignTemplate403JSONResponse) VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewDesignTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response PreviewDesignTemplate404JSONResponse) VisitPreviewDesignTemplateResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -22675,6 +23131,12 @@ type StrictServerInterface interface {
 	// GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
 	// (GET /orgs/{orgId}/dashboard)
 	GetDashboard(ctx context.Context, request GetDashboardRequestObject) (GetDashboardResponseObject, error)
+	// ApplyDesignTemplate Design template — create the sites, VLANs, subnets, planned devices, groups, cables and the diagram in one go
+	// (POST /orgs/{orgId}/design-templates/apply)
+	ApplyDesignTemplate(ctx context.Context, request ApplyDesignTemplateRequestObject) (ApplyDesignTemplateResponseObject, error)
+	// PreviewDesignTemplate Design template (P2-23, ADR-039) — what would be created (devices, groups, VLAN / IP plan), nothing written
+	// (POST /orgs/{orgId}/design-templates/preview)
+	PreviewDesignTemplate(ctx context.Context, request PreviewDesignTemplateRequestObject) (PreviewDesignTemplateResponseObject, error)
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(ctx context.Context, request ListDeviceCatalogRequestObject) (ListDeviceCatalogResponseObject, error)
@@ -24119,6 +24581,74 @@ func (sh *strictHandler) GetDashboard(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetDashboardResponseObject); ok {
 		if err := validResponse.VisitGetDashboardResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApplyDesignTemplate operation middleware
+func (sh *strictHandler) ApplyDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params ApplyDesignTemplateParams) {
+	var request ApplyDesignTemplateRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body ApplyDesignTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApplyDesignTemplate(ctx, request.(ApplyDesignTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApplyDesignTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApplyDesignTemplateResponseObject); ok {
+		if err := validResponse.VisitApplyDesignTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewDesignTemplate operation middleware
+func (sh *strictHandler) PreviewDesignTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewDesignTemplateParams) {
+	var request PreviewDesignTemplateRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body PreviewDesignTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewDesignTemplate(ctx, request.(PreviewDesignTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewDesignTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewDesignTemplateResponseObject); ok {
+		if err := validResponse.VisitPreviewDesignTemplateResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

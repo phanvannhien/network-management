@@ -197,12 +197,11 @@ func (s *Server) ListVlans(ctx context.Context, req apigen.ListVlansRequestObjec
 }
 
 // saveVlan creates (id nil) or updates a VLAN; codes as writeOutcome.
-func (s *Server) saveVlan(ctx context.Context, m tenant.Membership, f vlanFields, id *uuid.UUID, version int32) (store.GetVlanRow, writeOutcome, error) {
-	var (
-		out   writeOutcome
-		saved store.GetVlanRow
-	)
-	err := s.withTx(ctx, func(q store.Querier) error {
+// writeVlan creates (id nil) or updates a VLAN inside the caller's transaction; a refusal is reported in out with
+// errRollback.
+func writeVlan(ctx context.Context, q store.Querier, m tenant.Membership, f vlanFields, id *uuid.UUID, version int32, out *writeOutcome) (store.GetVlanRow, error) {
+	var saved store.GetVlanRow
+	err := func() error {
 		var before store.GetVlanRow
 		if id != nil {
 			var ok bool
@@ -273,6 +272,19 @@ func (s *Server) saveVlan(ctx context.Context, m tenant.Membership, f vlanFields
 			entry.Action, entry.Before = "vlan.update", vlanSnapshot{before.SiteCode, before.Vid, before.Name, before.Color}
 		}
 		return audit.Write(ctx, q, entry)
+	}()
+	return saved, err
+}
+
+func (s *Server) saveVlan(ctx context.Context, m tenant.Membership, f vlanFields, id *uuid.UUID, version int32) (store.GetVlanRow, writeOutcome, error) {
+	var (
+		out   writeOutcome
+		saved store.GetVlanRow
+	)
+	err := s.withTx(ctx, func(q store.Querier) error {
+		var err error
+		saved, err = writeVlan(ctx, q, m, f, id, version, &out)
+		return err
 	})
 	return saved, out, err
 }
@@ -583,12 +595,11 @@ func (s *Server) GetSubnet(ctx context.Context, req apigen.GetSubnetRequestObjec
 	return apigen.GetSubnet200JSONResponse(out), nil
 }
 
-func (s *Server) saveSubnet(ctx context.Context, m tenant.Membership, f subnetFields, id *uuid.UUID, version int32) (apigen.SubnetDetail, writeOutcome, error) {
-	var (
-		out    writeOutcome
-		detail apigen.SubnetDetail
-	)
-	err := s.withTx(ctx, func(q store.Querier) error {
+// writeSubnet creates (id nil) or updates a subnet inside the caller's transaction; a refusal is reported in out with
+// errRollback.
+func writeSubnet(ctx context.Context, q store.Querier, m tenant.Membership, f subnetFields, id *uuid.UUID, version int32, out *writeOutcome) (store.GetSubnetRow, error) {
+	var after store.GetSubnetRow
+	err := func() error {
 		var before store.GetSubnetRow
 		if id != nil {
 			var ok bool
@@ -661,10 +672,12 @@ func (s *Server) saveSubnet(ctx context.Context, m tenant.Membership, f subnetFi
 		if err != nil {
 			return fmt.Errorf("save subnet: %w", err)
 		}
-		after, ok, err := loadSubnet(ctx, q, m, uuid.UUID(sid.Bytes))
-		if err != nil || !ok {
+		var ok bool
+		var err2 error
+		after, ok, err2 = loadSubnet(ctx, q, m, uuid.UUID(sid.Bytes))
+		if err2 != nil || !ok {
 			out.code = 403
-			return orRollback(err)
+			return orRollback(err2)
 		}
 		entry := audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "subnet.create", ObjectType: "subnet", ObjectID: uuidStr(sid),
 			After: snapSubnet(after), Meta: infoFrom(ctx).meta}
@@ -672,6 +685,21 @@ func (s *Server) saveSubnet(ctx context.Context, m tenant.Membership, f subnetFi
 			entry.Action, entry.Before = "subnet.update", snapSubnet(before)
 		}
 		if err := audit.Write(ctx, q, entry); err != nil {
+			return err
+		}
+		return nil
+	}()
+	return after, err
+}
+
+func (s *Server) saveSubnet(ctx context.Context, m tenant.Membership, f subnetFields, id *uuid.UUID, version int32) (apigen.SubnetDetail, writeOutcome, error) {
+	var (
+		out    writeOutcome
+		detail apigen.SubnetDetail
+	)
+	err := s.withTx(ctx, func(q store.Querier) error {
+		after, err := writeSubnet(ctx, q, m, f, id, version, &out)
+		if err != nil {
 			return err
 		}
 		detail, err = s.subnetDetail(ctx, q, m, after)
@@ -910,6 +938,33 @@ func (s *Server) rangeUsage(ctx context.Context, m tenant.Membership, sn store.G
 	return toRange(rg, ips), nil
 }
 
+// writeRange adds a range to a subnet inside the caller's transaction; a refusal is reported in out with errRollback.
+func writeRange(ctx context.Context, q store.Querier, m tenant.Membership, subnet uuid.UUID, start, end string, kind apigen.IpRangeKind,
+	purpose *string, out *writeOutcome) (store.IpRange, store.GetSubnetRow, error) {
+	sn, code, err := rangeWrite(ctx, q, m, subnet)
+	if err != nil || code != 0 {
+		out.code = code
+		return store.IpRange{}, sn, orRollback(err)
+	}
+	f, msg := validateRange(sn, start, end, kind, purpose)
+	if msg != "" {
+		out.bad = msg
+		return store.IpRange{}, sn, errRollback
+	}
+	if other, err := overlapping(ctx, q, m, sn, pgtype.UUID{}, f.start, f.end); err != nil {
+		return store.IpRange{}, sn, err
+	} else if other != nil {
+		out.conf = fmt.Sprintf("Trùng với dải %s–%s", other.StartIp, other.EndIp)
+		return store.IpRange{}, sn, errRollback
+	}
+	created, err := q.CreateRange(ctx, store.CreateRangeParams{OrganizationID: m.OrgID, SubnetID: sn.ID, StartIp: f.start, EndIp: f.end, Kind: f.kind, Purpose: f.purpose})
+	if err != nil {
+		return created, sn, fmt.Errorf("create range: %w", err)
+	}
+	return created, sn, audit.Write(ctx, q, audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "ip_range.create", ObjectType: "subnet",
+		ObjectID: uuidStr(sn.ID), After: rangeSnapshot{sn.Cidr.String(), f.start.String(), f.end.String(), f.kind, f.purpose}, Meta: infoFrom(ctx).meta})
+}
+
 func (s *Server) CreateIpRange(ctx context.Context, req apigen.CreateIpRangeRequestObject) (apigen.CreateIpRangeResponseObject, error) {
 	m, err := tenant.Require(ctx, req.OrgId)
 	if err != nil {
@@ -925,28 +980,9 @@ func (s *Server) CreateIpRange(ctx context.Context, req apigen.CreateIpRangeRequ
 		sn      store.GetSubnetRow
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
-		var code int
 		var err error
-		if sn, code, err = rangeWrite(ctx, q, m, req.SubnetId); err != nil || code != 0 {
-			out.code = code
-			return orRollback(err)
-		}
-		f, msg := validateRange(sn, b.StartIp, b.EndIp, b.Kind, b.Purpose)
-		if msg != "" {
-			out.bad = msg
-			return errRollback
-		}
-		if other, err := overlapping(ctx, q, m, sn, pgtype.UUID{}, f.start, f.end); err != nil {
-			return err
-		} else if other != nil {
-			out.conf = fmt.Sprintf("Trùng với dải %s–%s", other.StartIp, other.EndIp)
-			return errRollback
-		}
-		if created, err = q.CreateRange(ctx, store.CreateRangeParams{OrganizationID: m.OrgID, SubnetID: sn.ID, StartIp: f.start, EndIp: f.end, Kind: f.kind, Purpose: f.purpose}); err != nil {
-			return fmt.Errorf("create range: %w", err)
-		}
-		return audit.Write(ctx, q, audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "ip_range.create", ObjectType: "subnet",
-			ObjectID: uuidStr(sn.ID), After: rangeSnapshot{sn.Cidr.String(), f.start.String(), f.end.String(), f.kind, f.purpose}, Meta: infoFrom(ctx).meta})
+		created, sn, err = writeRange(ctx, q, m, req.SubnetId, b.StartIp, b.EndIp, b.Kind, b.Purpose, &out)
+		return err
 	})
 	switch {
 	case out.code == 404:

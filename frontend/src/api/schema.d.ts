@@ -763,6 +763,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/design-templates/preview": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Design template (P2-23, ADR-039) — what would be created (devices, groups, VLAN / IP plan), nothing written */
+        post: operations["previewDesignTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/design-templates/apply": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Design template — create the sites, VLANs, subnets, planned devices, groups, cables and the diagram in one go */
+        post: operations["applyDesignTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/search": {
         parameters: {
             query?: never;
@@ -2961,6 +3005,81 @@ export interface components {
             deviceId?: string;
             /** Format: uuid */
             subnetId?: string;
+        };
+        DesignRequest: {
+            /**
+             * @description small office (up to ~50 users), medium office (up to ~100, L3 core), head office + branches
+             * @enum {string}
+             */
+            scenario: "small" | "medium" | "branches";
+            /** @enum {string} */
+            vendor: "fortinet_cisco" | "fortinet_aruba" | "tplink_omada" | "ubiquiti";
+            /** @description users of the office (of the head office for branches) */
+            users: number;
+            branches?: number;
+            branchUsers?: number;
+            /** @description firewall HA pair, a second Internet line, core stack (Fortinet profiles only) */
+            ha?: boolean;
+            /** @description VPN for staff working from outside (client VPN pool) */
+            remoteVpn?: boolean;
+            phones?: boolean;
+            cameras?: boolean;
+            guestWifi?: boolean;
+            /**
+             * Format: uuid
+             * @description category of the new sites (none = straight under the organization)
+             */
+            categoryId?: string;
+            /** @description names of the new sites, head office first; empty = defaults */
+            siteNames?: string[];
+            /**
+             * Format: uuid
+             * @description small / medium only — draw into this site instead of creating one
+             */
+            existingSiteId?: string;
+            diagramName?: string;
+        };
+        DesignPreview: {
+            /** @description advice for the engineer (DHCP relay, ISP modem with an HA pair…), not problems */
+            notes: string[];
+            devices: {
+                site: string;
+                /** @description firewall, core, access, ap, ont, internet */
+                role: string;
+                hostname: string;
+                model: string;
+                vendor: string;
+            }[];
+            groups: {
+                site: string;
+                name: string;
+                kind: components["schemas"]["EndpointKind"];
+                count: number;
+            }[];
+            subnets: {
+                site: string;
+                /** @description 0 = no VLAN (transit, VPN pool) */
+                vlan: number;
+                name: string;
+                cidr: string;
+                gateway: string;
+                /** @description DHCP / static range, empty when none */
+                dhcp: string;
+            }[];
+            warnings: string[];
+            totals: {
+                devices: number;
+                cables: number;
+                sites: number;
+            };
+        };
+        DesignResult: {
+            warnings: string[];
+            /** Format: uuid */
+            diagramId: string;
+            devices: number;
+            cables: number;
+            sites: number;
         };
         SearchResult: {
             devices: components["schemas"]["SearchDeviceHit"][];
@@ -5387,6 +5506,73 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    previewDesignTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    applyDesignTemplate: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     globalSearch: {

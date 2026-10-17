@@ -209,34 +209,43 @@ func (s *Server) ImportNtb(ctx context.Context, req apigen.ImportNtbRequestObjec
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
+	result, msg, err := importNtbTx(ctx, tx, m, *b, f, sites, name)
+	if err != nil {
+		return nil, err
+	}
+	if msg != "" {
+		return bad(msg)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit import: %w", err)
+	}
+	return apigen.ImportNtb200JSONResponse(result), nil
+}
+
+// importNtbTx writes a checked .ntb.json inside the caller's transaction (sites already mapped): clusters, devices,
+// groups, links, then the diagram and an import.ntb audit entry. msg is a refusal to show (the caller rolls back).
+func importNtbTx(ctx context.Context, tx pgx.Tx, m tenant.Membership, b apigen.NtbImport, f ntbFile, sites map[string]pgtype.UUID,
+	name string) (apigen.NtbImportResult, string, error) {
 	im := &ntbImporter{ctx: ctx, tx: tx, q: store.New(tx), m: m, sites: sites,
 		devices: map[string]pgtype.UUID{}, ifaces: map[string]pgtype.UUID{}, groups: map[string]pgtype.UUID{},
 		clusters: map[string]pgtype.UUID{}, links: map[string]pgtype.UUID{}}
 	im.result.Warnings = []string{}
 	steps := []func(apigen.NtbImport, ntbFile) (string, error){im.importClusters, im.importDevices, im.importGroups, im.importLinks}
 	for _, step := range steps {
-		msg, err := step(*b, f)
-		if err != nil {
-			return nil, err
-		}
-		if msg != "" {
-			return bad(msg)
+		msg, err := step(b, f)
+		if err != nil || msg != "" {
+			return im.result, msg, err
 		}
 	}
 	diagramID, err := im.importDiagram(name, f)
 	if err != nil {
-		return nil, err
+		return im.result, "", err
 	}
 	im.result.DiagramId = uuid.UUID(diagramID.Bytes)
-	if err := audit.Write(ctx, im.q, audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "import.ntb", ObjectType: "diagram",
+	err = audit.Write(ctx, im.q, audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "import.ntb", ObjectType: "diagram",
 		ObjectID: uuidStr(diagramID), After: map[string]any{"name": name, "created": im.result.Created, "reused": im.result.Reused,
-			"warnings": len(im.result.Warnings)}, Meta: infoFrom(ctx).meta}); err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("commit import: %w", err)
-	}
-	return apigen.ImportNtb200JSONResponse(im.result), nil
+			"warnings": len(im.result.Warnings)}, Meta: infoFrom(ctx).meta})
+	return im.result, "", err
 }
 
 // usedSiteRefs: the sites the file's objects sit in (clusters, devices, groups, frames).

@@ -3059,3 +3059,65 @@ describe('dashboard (P1-24)', () => {
     expect(calls.some((c) => c.url.endsWith('/dashboard'))).toBe(true)
   })
 })
+
+describe('design templates (P2-23)', () => {
+  it('walks scenario → options → preview, then creates and opens the diagram', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/diagrams`]: () => json({ diagrams: [] }),
+      [`GET /api/orgs/${ORG_ID}/sites`]: () => json({ sites: [] }),
+      [`GET /api/orgs/${ORG_ID}/categories`]: () => json({ categories: [] }),
+      [`POST /api/orgs/${ORG_ID}/design-templates/preview`]: () =>
+        json({
+          devices: [
+            {
+              site: 'Văn phòng',
+              role: 'firewall',
+              hostname: 'VP-FW01',
+              model: 'FortiGate 60F',
+              vendor: 'Fortinet',
+            },
+          ],
+          groups: [{ site: 'Văn phòng', name: 'Máy tính nhân viên', kind: 'pc', count: 30 }],
+          subnets: [
+            {
+              site: 'Văn phòng',
+              vlan: 20,
+              name: 'Nhân viên',
+              cidr: '10.20.20.0/24',
+              gateway: '10.20.20.1',
+              dhcp: '',
+            },
+          ],
+          warnings: [],
+          notes: ['Lưu ý thử'],
+          totals: { devices: 1, cables: 12, sites: 1 },
+        }),
+      [`POST /api/orgs/${ORG_ID}/design-templates/apply`]: () =>
+        json({ diagramId: 'dg-new', devices: 1, cables: 12, sites: 1, warnings: [] }, 201),
+    })
+    renderAt(`/o/${ORG_ID}/diagrams`)
+    fireEvent.click(await screen.findByRole('button', { name: /Tạo từ mẫu/ }))
+    const dialog = await screen.findByRole('dialog', { name: /^Tạo sơ đồ từ mẫu/ })
+    fireEvent.click(within(dialog).getByRole('button', { name: /Văn phòng nhỏ/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tiếp' }))
+    // HA is offered for Fortinet stacks only.
+    fireEvent.change(within(dialog).getByLabelText('Bộ hãng thiết bị'), {
+      target: { value: 'ubiquiti' },
+    })
+    expect(within(dialog).getByLabelText('Dự phòng (HA)')).toBeDisabled()
+    fireEvent.change(within(dialog).getByLabelText('Bộ hãng thiết bị'), {
+      target: { value: 'fortinet_cisco' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Xem trước' }))
+    expect(
+      await within(dialog).findByText(/Sẽ tạo 1 thiết bị, 12 dây ở 1 site/),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByText('Lưu ý thử')).toBeInTheDocument()
+    expect(within(dialog).getByText('10.20.20.0/24')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tạo sơ đồ' }))
+    await waitFor(() =>
+      expect(calls.some((c) => c.url.endsWith('/design-templates/apply'))).toBe(true),
+    )
+  })
+})

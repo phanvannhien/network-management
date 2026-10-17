@@ -5,6 +5,61 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P2-23 Sơ đồ mẫu (ADR-039)
+- Người dùng chốt: làm phần sơ đồ trước. Tính năng mới là "tạo sơ đồ từ mẫu"; thiết bị sinh ra là thiết bị Dự kiến trong kho;
+  "HA" nghĩa là dự phòng; chọn bộ hãng khi tạo.
+- Đã làm:
+  - **Nút "Tạo từ mẫu"** ở danh sách sơ đồ, hộp thoại 3 bước:
+    1. Chọn kịch bản: văn phòng nhỏ (≤ 60 user) / văn phòng vừa (core + access) / trụ sở + 1–20 chi nhánh.
+    2. Tùy chọn: số user, số chi nhánh và số user mỗi chi nhánh, HA, VPN cho nhân viên ở xa, IP Phone, camera, Wi-Fi khách,
+       bộ hãng (Fortinet + Cisco / Fortinet + Aruba / TP-Link Omada / Ubiquiti UniFi), vẽ vào site có sẵn hoặc tạo site mới (chọn danh mục).
+    3. Xem trước: thiết bị theo model và số lượng (BOQ nháp), nhóm đầu cuối, quy hoạch VLAN/IP, lưu ý triển khai.
+       Chưa ghi gì cho tới khi bấm "Tạo sơ đồ".
+  - **Kết quả:**
+    - thiết bị Dự kiến đúng model trong danh mục, đủ cổng, dây đúng cổng; cặp HA / core stack là cụm thật;
+    - nhóm đầu cuối (PC, IP Phone, camera, máy in, server, nhân viên VPN), mỗi cổng switch một dây;
+    - VLAN, subnet, dải IP trong IPAM;
+    - sơ đồ xếp theo tầng, mỗi site một khung.
+  - **Backend:**
+    - `POST /design-templates/preview|apply`, cần quyền sửa;
+    - mọi thứ chạy trong một giao dịch qua đường nhập .ntb.json, nên mọi luật và audit đều áp dụng; xem trước chạy y vậy rồi rollback;
+    - tách phần lõi ghi site / VLAN / subnet / dải IP / nhập .ntb ra hàm nhận giao dịch từ ngoài;
+    - bộ dựng file .ntb chuyển ra `ntb_builder.go`, dùng chung với lệnh seed.
+  - Agent review (góc kỹ sư mạng) đã chỉ ra, và đã sửa:
+    - dây firewall ↔ core cắm vào cổng quản trị Gi0/0 của Cisco;
+    - khi thiếu cổng thì bỏ bớt thiết bị đầu cuối mà không báo;
+    - dải DHCP quá nhỏ;
+    - Wi-Fi khách định tuyến trên core (khách vào được mạng trong);
+    - VLAN treo trên `internal1` trong khi switch cắm rải nhiều cổng;
+    - thiếu controller Omada;
+    - core Cisco quá mạnh so với nhu cầu (đổi sang C9200L);
+    - UniFi / TP-Link nên định tuyến trên gateway;
+    - HA chỉ có một dây heartbeat;
+    - hostname quá dài;
+    - subnet nối firewall–core phải là /30;
+    - hai lần tạo đồng thời có thể lấy trùng khối IP;
+    - lúc tạo xong không trả cảnh báo.
+    
+    Thêm lỗi tự tìm khi chạy thử trên trình duyệt: tên sơ đồ mặc định bị trùng thì báo lỗi 500.
+- Test / cách kiểm tra:
+  - `design_test.go`: 10 tổ hợp kịch bản × bộ hãng × tùy chọn. Mỗi tổ hợp: xem trước không cảnh báo và không ghi gì; tạo ra đúng số dây
+    như lúc xem trước. Sau đó dashboard 0 lỗi / 0 cảnh báo, không dây nào cắm cổng quản trị.
+    Có thêm: tên trùng, các trường hợp bị từ chối, tổ chức khác không gọi được, viewer bị chặn.
+  - App.test: luồng của hộp thoại.
+  - Trên trình duyệt: văn phòng vừa có HA (15 thiết bị, 123 dây, 0,45 s); trụ sở + 3 chi nhánh có HA (43 thiết bị, 279 dây, ~1 s).
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Model cố định theo bộ hãng; chưa tính công suất PoE.
+  - Stack core vẽ bằng dây trên cổng SFP (danh mục chưa có cổng stack chuyên dụng).
+  - Cặp HA nối thẳng modem (có ghi trong mục Lưu ý).
+  - Vẽ vào site có sẵn: VLAN 10/20… trùng số thì dùng lại VLAN đó nhưng subnet ở khối IP mới.
+- Câu hỏi cho người dùng:
+  - Có muốn thêm kịch bản nào nữa không, vd nhà máy có mạng OT riêng, chuỗi cửa hàng dùng SD-WAN, hoặc IDC / phòng server lớn?
+  - Có muốn chọn model cụ thể ngay trong hộp thoại không, thay vì cố định theo bộ hãng?
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: các task sơ đồ tiếp theo, P2-21 (sơ đồ nhiều cấp: tổng quan → double-click site mở sơ đồ chi tiết) hoặc
+  P2-08 (nhiều trang, lớp L1/L2/L3).
+
 ## 2026-10-17 — P1-26 Gate MVP (checklist SRS §16)
 - Kết quả từng mục (kiểm tra trên môi trường riêng và trên bản build production):
   | # | Mục | Kết quả |

@@ -461,3 +461,39 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Đánh đổi:** chuyển một thành viên nhóm thành thiết bị không kiểm tra lại IP (địa chỉ chỉ đổi chủ). Dữ liệu trùng có từ trước vẫn còn
   và được dashboard / kiểm tra sơ đồ báo ra để sửa.
 
+### ADR-039 — Sơ đồ mẫu: thiết kế sinh sẵn thành thiết bị "Dự kiến" trong kho, qua đường nhập .ntb.json
+- **Bối cảnh:** người dùng muốn bắt đầu từ mẫu thiết kế chuẩn (2026-10-17): văn phòng ≤ 50 user, ≤ 100 user, có tùy chọn HA, firewall VPN,
+  và mẫu nhiều chi nhánh (mỗi chi nhánh ~50 user). Người dùng chốt: thiết bị là thiết bị "dự kiến" thật trong kho;
+  "HA" nghĩa là dự phòng (không phải HAProxy); model chọn theo bộ hãng.
+- **Quyết định:**
+  - Ba kịch bản:
+    - văn phòng nhỏ (≤ 60 user): gateway định tuyến VLAN, SW01 nhận trunk, các switch khác treo vào SW01;
+    - văn phòng vừa (core + access, phòng server);
+    - trụ sở + 1–20 chi nhánh: chi nhánh là văn phòng nhỏ, có VPN site-to-site về firewall trụ sở.
+  - Tùy chọn: HA (cặp firewall, đường Internet thứ hai, core stack — chỉ bộ Fortinet), VPN cho nhân viên ở xa, IP Phone, camera, Wi-Fi khách.
+  - Bốn bộ hãng: Fortinet + Cisco, Fortinet + Aruba, TP-Link Omada (thêm controller OC200), Ubiquiti UniFi.
+    - Fortinet định tuyến VLAN trên core; riêng Wi-Fi khách định tuyến trên firewall để khách không vào được mạng trong.
+    - TP-Link / UniFi định tuyến trên gateway (router-on-a-stick), core chỉ gom switch.
+  - Quy mô:
+    - 1 AP / 25 user; camera user/6; máy in user/25;
+    - switch dùng 80% số cổng; PC cắm qua cổng PC của IP Phone;
+    - không dùng cổng quản trị riêng (Gi0/0, mgmt) để nối dây.
+  - Quy hoạch IP:
+    - mỗi site một khối 10.x.0.0/16 chưa dùng (khóa theo tổ chức khi chọn);
+    - VLAN 10/20/30/40/50/60, mỗi VLAN một /24 (/23 khi trên 180 user), gateway .1;
+    - DHCP .50–.250, máy in IP tĩnh .11–.40;
+    - nối firewall–core /30; VPN site-to-site /30 trong 10.<trụ sở>.254.0/24; dải VPN client .100–.199.
+  - Cách ghi: một giao dịch duy nhất.
+    1. Tạo site (mã trùng thì thử mã kế tiếp).
+    2. Tạo VLAN, subnet, dải IP qua các hàm ghi sẵn có của IPAM.
+    3. Dựng file .ntb.json bằng bộ dựng của P1-25 và nhập bằng đường nhập .ntb (ADR-037), để mọi luật (chặn trùng IP / S/N, một cổng một dây, audit) đều áp dụng.
+    4. Ghi một dòng audit `design_template.apply`.
+    
+    Xem trước chạy y như vậy rồi rollback, nên kết quả xem trước luôn khớp với lúc tạo thật.
+  - Hostname ngắn theo mã site (VP-FW01); nếu đã có thiết bị dùng tiền tố đó thì dùng mã site đầy đủ. Tên sơ đồ mặc định tự thêm số khi trùng.
+  - Lời khuyên triển khai (DHCP relay khi core định tuyến; modem nhà mạng với cặp HA; cần NVR cho camera) nằm ở mục "Lưu ý", không phải cảnh báo.
+- **Lý do:** thiết kế và kho là một. Khi lắp đặt chỉ cần điền S/N và chuyển sang Đang dùng, không phải nhập lại. Dùng chung đường nhập
+  đã kiểm chứng nên không có đường ghi dữ liệu thứ hai cần bảo trì.
+- **Đánh đổi:** model cố định theo bộ hãng (đổi model thì sửa từng thiết bị sau); chưa tính công suất PoE; stack core vẽ bằng dây trên cổng
+  SFP vì danh mục chưa có cổng stack chuyên dụng; cặp HA nối thẳng modem (có ghi lưu ý).
+

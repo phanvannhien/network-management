@@ -1355,6 +1355,66 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/design-templates/preview:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CsrfToken'
+    post:
+      operationId: previewDesignTemplate
+      summary: Design template (P2-23, ADR-039) — what would be created (devices, groups, VLAN / IP plan), nothing written
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/design-templates/apply:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CsrfToken'
+    post:
+      operationId: applyDesignTemplate
+      summary: Design template — create the sites, VLANs, subnets, planned devices, groups, cables and the diagram in one go
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/search:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5938,6 +5998,125 @@ components:
           type: integer
         deviceId: {type: string, format: uuid}
         subnetId: {type: string, format: uuid}
+
+    DesignRequest:
+      type: object
+      required: [scenario, vendor, users]
+      properties:
+        scenario:
+          type: string
+          enum: [small, medium, branches]
+          description: small office (up to ~50 users), medium office (up to ~100, L3 core), head office + branches
+        vendor:
+          type: string
+          enum: [fortinet_cisco, fortinet_aruba, tplink_omada, ubiquiti]
+        users:
+          type: integer
+          minimum: 5
+          maximum: 250
+          description: users of the office (of the head office for branches)
+        branches:
+          type: integer
+          minimum: 1
+          maximum: 20
+        branchUsers:
+          type: integer
+          minimum: 5
+          maximum: 60
+        ha:
+          type: boolean
+          description: firewall HA pair, a second Internet line, core stack (Fortinet profiles only)
+        remoteVpn:
+          type: boolean
+          description: VPN for staff working from outside (client VPN pool)
+        phones:
+          type: boolean
+        cameras:
+          type: boolean
+        guestWifi:
+          type: boolean
+        categoryId:
+          type: string
+          format: uuid
+          description: category of the new sites (none = straight under the organization)
+        siteNames:
+          type: array
+          maxItems: 21
+          description: names of the new sites, head office first; empty = defaults
+          items:
+            type: string
+            maxLength: 120
+        existingSiteId:
+          type: string
+          format: uuid
+          description: small / medium only — draw into this site instead of creating one
+        diagramName:
+          type: string
+          maxLength: 120
+
+    DesignPreview:
+      type: object
+      required: [devices, groups, subnets, warnings, notes, totals]
+      properties:
+        notes:
+          type: array
+          description: advice for the engineer (DHCP relay, ISP modem with an HA pair…), not problems
+          items: {type: string}
+        devices:
+          type: array
+          items:
+            type: object
+            required: [site, role, hostname, model, vendor]
+            properties:
+              site: {type: string}
+              role: {type: string, description: 'firewall, core, access, ap, ont, internet'}
+              hostname: {type: string}
+              model: {type: string}
+              vendor: {type: string}
+        groups:
+          type: array
+          items:
+            type: object
+            required: [site, name, kind, count]
+            properties:
+              site: {type: string}
+              name: {type: string}
+              kind: {$ref: '#/components/schemas/EndpointKind'}
+              count: {type: integer}
+        subnets:
+          type: array
+          items:
+            type: object
+            required: [site, vlan, name, cidr, gateway, dhcp]
+            properties:
+              site: {type: string}
+              vlan: {type: integer, description: '0 = no VLAN (transit, VPN pool)'}
+              name: {type: string}
+              cidr: {type: string}
+              gateway: {type: string}
+              dhcp: {type: string, description: 'DHCP / static range, empty when none'}
+        warnings:
+          type: array
+          items: {type: string}
+        totals:
+          type: object
+          required: [devices, cables, sites]
+          properties:
+            devices: {type: integer}
+            cables: {type: integer}
+            sites: {type: integer}
+
+    DesignResult:
+      type: object
+      required: [diagramId, devices, cables, sites, warnings]
+      properties:
+        warnings:
+          type: array
+          items: {type: string}
+        diagramId: {type: string, format: uuid}
+        devices: {type: integer}
+        cables: {type: integer}
+        sites: {type: integer}
 
     SearchResult:
       type: object

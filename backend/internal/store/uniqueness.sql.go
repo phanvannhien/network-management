@@ -103,6 +103,24 @@ func (q *Queries) GroupVrf(ctx context.Context, arg GroupVrfParams) (string, err
 	return column_1, err
 }
 
+const hostnamePrefixTaken = `-- name: HostnamePrefixTaken :one
+SELECT EXISTS (SELECT 1 FROM devices WHERE organization_id = $1 AND deleted_at IS NULL
+                 AND lower(hostname) LIKE lower($2::text) || '%')::boolean
+`
+
+type HostnamePrefixTakenParams struct {
+	OrganizationID pgtype.UUID
+	Prefix         string
+}
+
+// A live device whose hostname starts with this prefix ("VP-"): design templates then use the full site code.
+func (q *Queries) HostnamePrefixTaken(ctx context.Context, arg HostnamePrefixTakenParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hostnamePrefixTaken, arg.OrganizationID, arg.Prefix)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const lockValue = `-- name: LockValue :exec
 
 SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))

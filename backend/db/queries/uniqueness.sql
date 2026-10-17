@@ -41,3 +41,8 @@ FROM endpoint_groups g
 LEFT JOIN ip_ranges r ON r.id = g.ip_range_id
 LEFT JOIN subnets sn ON sn.id = r.subnet_id
 WHERE g.id = @id AND g.organization_id = @organization_id;
+
+-- name: HostnamePrefixTaken :one
+-- A live device whose hostname starts with this prefix ("VP-"): design templates then use the full site code.
+SELECT EXISTS (SELECT 1 FROM devices WHERE organization_id = @organization_id AND deleted_at IS NULL
+                 AND lower(hostname) LIKE lower(@prefix::text) || '%')::boolean;

@@ -518,6 +518,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'vpn',
+    'ip',
+    ['VPN site-to-site / VPN client', 'Site-to-site VPN / client VPN'],
+    [
+      'Đường hầm mã hóa qua Internet. Site-to-site: hai firewall (chi nhánh ↔ trụ sở) nối cố định với nhau, máy hai bên thấy nhau như cùng một mạng. Client (remote access): nhân viên cài phần mềm VPN trên laptop để vào mạng công ty khi ở ngoài.',
+      'An encrypted tunnel over the Internet. Site-to-site: two firewalls (branch ↔ head office) stay connected, hosts on both sides reach each other as one network. Client (remote access): staff run a VPN app on their laptop to reach the office network from outside.',
+    ],
+    [
+      'Chi nhánh Đà Nẵng ↔ trụ sở HCM qua IPsec; nhân viên đi công tác dùng FortiClient.',
+      'Da Nang branch ↔ HCM head office over IPsec; travelling staff use FortiClient.',
+    ],
+  ),
+  e(
     'vrrp',
     'ip',
     ['VIP / VRRP / HSRP (gateway dự phòng)', 'VIP / VRRP / HSRP (gateway redundancy)'],
