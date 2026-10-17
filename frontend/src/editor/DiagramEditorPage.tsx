@@ -306,6 +306,8 @@ function Workspace({
   const problems = useStore(store, (s) => s.problems)
   const problemCounts = useMemo(() => countProblems(problems), [problems])
   const [problemsOpen, setProblemsOpen] = useState(false)
+  /** Hand tool: the left button pans the view (Space + drag does it any time). */
+  const [hand, setHand] = useState(false)
   const [menu, setMenu] = useState<{
     x: number
     y: number
@@ -426,6 +428,9 @@ function Workspace({
         case 'connect':
           if (!canEdit) return
           wiring.toggle()
+          break
+        case 'hand':
+          setHand((h) => !h)
           break
         case 'remove':
           edit.remove()
@@ -604,6 +609,7 @@ function Workspace({
         wiring={wiring.mode !== null}
         onNodePick={wiring.pick}
         onEditCable={wiring.editCable}
+        hand={hand}
         onMenu={(target, x, y) => {
           const box = root.current?.parentElement?.getBoundingClientRect()
           setMenu({ ...target, x: x - (box?.left ?? 0), y: y - (box?.top ?? 0) })
@@ -634,6 +640,8 @@ function Workspace({
         onAddArrow={annotate.arrow}
         connecting={wiring.mode !== null}
         onConnect={() => wiring.toggle()}
+        hand={hand}
+        onHand={() => setHand((h) => !h)}
         problems={problemCounts}
         problemsOpen={problemsOpen}
         onProblems={() => setProblemsOpen((o) => !o)}

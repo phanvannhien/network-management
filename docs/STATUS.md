@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Editor: công cụ Bàn tay, Space + kéo
+- Đã làm: nút **Bàn tay** trên toolbar (phím **H**): bật thì kéo chuột trái ở bất kỳ đâu — kể cả trên thiết bị/khung — để di chuyển
+  màn vẽ, không thiết bị nào bị kéo theo. **Giữ Space + kéo chuột trái** luôn di chuyển màn vẽ (không cần bật bàn tay); con trỏ đổi
+  thành bàn tay; Space không còn "bấm" nhầm nút đang focus hay cuộn trang (trừ khi đang gõ trong ô nhập / hộp thoại). Chuột giữa vẫn
+  kéo được như cũ. SRS §6 cập nhật.
+- Test / cách kiểm tra: `make check` pass (vitest: phím H). Chromium: Space + kéo đổi viewport khi nút Lưu đang focus (không lưu);
+  bật bàn tay, kéo bắt đầu trên VPN_CJIDC → viewport đổi, thiết bị đứng yên, sơ đồ vẫn "Đã lưu".
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor theo góp ý, hoặc P1-22 Export.
+
 ## 2026-10-17 — Editor: thu nhỏ panel Thư viện / Thuộc tính
 - Đã làm: mỗi panel có nút **thu nhỏ** (cạnh nút đóng) → panel gọn thành dải dọc ở mép màn vẽ ("Thư viện" bên trái, "Thuộc tính" bên
   phải), bấm dải để mở lại. Nút trên toolbar và phím B: panel đang thu nhỏ thì mở rộng, còn lại bật/tắt như cũ. Trạng thái nhớ theo

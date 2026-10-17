@@ -891,6 +891,7 @@ export const vi = {
     empty: 'Sơ đồ trống.',
   },
   editorCanvas: {
+    hand: 'Bàn tay — kéo để di chuyển màn vẽ (H; hoặc giữ Space + kéo)',
     canvas: 'Màn vẽ sơ đồ',
     toolbar: 'Thanh công cụ sơ đồ',
     back: 'Về danh sách sơ đồ',
@@ -943,6 +944,7 @@ export const vi = {
       quickAdd: 'Thêm nhanh thiết bị',
       library: 'Ẩn/hiện thư viện',
       connect: 'Nối dây (bấm 2 thiết bị)',
+      hand: 'Bật/tắt bàn tay: kéo chuột trái để di chuyển màn vẽ',
       search: 'Tìm kiếm toàn cục',
       help: 'Bảng phím tắt này',
     },

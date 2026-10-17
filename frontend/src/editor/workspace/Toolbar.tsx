@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   CircleCheck,
   Cable,
+  Hand,
   Keyboard,
   LibraryBig,
   Lightbulb,
@@ -115,6 +116,9 @@ export interface ToolbarProps {
   onQuickAdd: () => void
   connecting: boolean
   onConnect: () => void
+  /** Hand tool: dragging anywhere moves the view (Space + drag does it any time). */
+  hand: boolean
+  onHand: () => void
   onAddFrame: () => void
   onAddText: () => void
   onAddArrow: () => void
@@ -167,6 +171,14 @@ export function Toolbar(p: ToolbarProps) {
         disabled={!p.canRedo}
       >
         <Redo2 aria-hidden />
+      </ToolButton>
+      <ToolButton
+        label={t('editorCanvas.hand')}
+        shortcut="hand"
+        onClick={p.onHand}
+        pressed={p.hand}
+      >
+        <Hand aria-hidden />
       </ToolButton>
       {p.canEdit && (
         <>

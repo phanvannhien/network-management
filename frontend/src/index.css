@@ -391,3 +391,13 @@
 .react-flow__attribution a {
   color: var(--text-muted);
 }
+
+/* Hand tool / Space held: the canvas shows it can be grabbed (also over devices, which do not move then). */
+.react-flow.ntb-panning .react-flow__pane,
+.react-flow.ntb-panning .react-flow__node {
+  cursor: grab;
+}
+.react-flow.ntb-panning .react-flow__pane.dragging,
+.react-flow.ntb-panning:active .react-flow__node {
+  cursor: grabbing;
+}

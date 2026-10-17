@@ -132,7 +132,7 @@ bảo hành riêng. Trên sơ đồ hiển thị gộp (badge HA / Stack ×N) ho
 ## §6. Sơ đồ (editor)
 
 ### 6.1 Canvas
-- Zoom 10–400%, pan (Space + kéo, chuột giữa), Fit to screen, minimap; grid snap 10/20/40 px, smart guides, Align & Distribute.
+- Zoom 10–400%, pan (Space + kéo chuột trái, chuột giữa, công cụ Bàn tay — phím H), Fit to screen, minimap; grid snap 10/20/40 px, smart guides, Align & Distribute.
 - Chọn: click, Shift + click, rubber-band, Ctrl+A; duplicate, lock, sửa hàng loạt; copy/paste giữ link nội bộ, tự đổi hostname trùng.
 - Undo/redo ≥ 100 bước (gộp thao tác kéo). Auto-layout phân tầng. Tìm thiết bị trên sơ đồ (Ctrl+F).
 - Layer: Physical / Logical L2 / Logical L3 (P2). Nhiều trang + off-page connector (P2).

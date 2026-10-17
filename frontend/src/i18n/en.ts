@@ -897,6 +897,7 @@ export const en: Strings = {
     empty: 'The diagram is empty.',
   },
   editorCanvas: {
+    hand: 'Hand — drag to move the view (H; or hold Space + drag)',
     canvas: 'Diagram canvas',
     toolbar: 'Diagram toolbar',
     back: 'Back to diagrams',
@@ -949,6 +950,7 @@ export const en: Strings = {
       quickAdd: 'Quick add a device',
       library: 'Show / hide the library',
       connect: 'Draw a cable (click two devices)',
+      hand: 'Hand tool on/off: left drag moves the view',
       search: 'Global search',
       help: 'This shortcut sheet',
     },

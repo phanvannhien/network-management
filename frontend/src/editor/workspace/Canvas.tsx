@@ -11,7 +11,8 @@ import {
   type Viewport,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
@@ -63,6 +64,7 @@ export function Canvas({
   onNodePick,
   onEditCable,
   onMenu,
+  hand,
 }: {
   diagramId: string
   canEdit: boolean
@@ -79,6 +81,8 @@ export function Canvas({
   onEditCable: (edgeId: string) => void
   /** Right click on a node, a cable or the background (screen coordinates). */
   onMenu: (target: { kind: 'node' | 'edge' | 'pane'; id?: string }, x: number, y: number) => void
+  /** Hand tool on (toolbar / H). */
+  hand: boolean
 }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -93,6 +97,8 @@ export function Canvas({
   const fitPlan = useRef<Map<string, string[]> | null>(null)
   const [dataCache] = useState(() => new Map<string, RefData>())
   const dragKey = useRef<string | null>(null)
+  const spaceHeld = useSpaceHeld()
+  const panning = hand || spaceHeld
   /** One undo step per resize gesture (NodeResizer reports `resizing: false` when it ends). */
   const resizeKey = useRef<{ id: string; key: string } | null>(null)
   const wireFrom = useRef<string | null>(null)
@@ -114,19 +120,20 @@ export function Canvas({
           : n.data
       dataCache.set(n.id, data)
       live.add(n.id)
-      return { ...n, data, draggable: canEdit && n.draggable, measured: measured[n.id] }
+      // Hand tool / Space: nothing moves under the pointer, the view does.
+      return { ...n, data, draggable: canEdit && !panning && n.draggable, measured: measured[n.id] }
     })
     // Only nodes still on the view are kept.
     for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
     // Same zIndex: later is on top — cluster boxes above frames, both under devices and cables.
-    const anns = toAnnotationNodes(doc, selected, canEdit)
+    const anns = toAnnotationNodes(doc, selected, canEdit && !panning)
     return [
       ...anns.filter((n) => n.type === 'frame'),
       ...toClusterNodes(clusterBoxes(doc, measured)),
       ...anns.filter((n) => n.type !== 'frame'),
       ...out,
     ] as Node[]
-  }, [doc, selection, measured, canEdit, dataCache])
+  }, [doc, selection, measured, canEdit, dataCache, panning])
   const edgeSelection = useDoc((s) => s.edgeSelection)
   const edges = useMemo(
     () => (doc ? toFlowEdges(doc, new Set(edgeSelection)) : []),
@@ -378,10 +385,10 @@ export function Canvas({
       maxZoom={MAX_ZOOM}
       snapToGrid={prefs.snap}
       snapGrid={[prefs.grid, prefs.grid]}
-      nodesDraggable={canEdit}
+      nodesDraggable={canEdit && !panning}
       nodesConnectable={canEdit}
       connectionMode={ConnectionMode.Loose}
-      className={wiring ? 'ntb-connecting' : undefined}
+      className={cn(wiring && 'ntb-connecting', panning && 'ntb-panning')}
       onConnectStart={(_e, p) => {
         wireFrom.current = p.nodeId ?? null
       }}
@@ -401,9 +408,11 @@ export function Canvas({
       }}
       onEdgeDoubleClick={(_e, edge) => onEditCable(edge.id)}
       elementsSelectable
-      selectionOnDrag
+      // Hand tool or Space held: the left button moves the view (also over devices); otherwise it draws a selection box
+      // and the middle button pans.
+      selectionOnDrag={!panning}
       selectionMode={SelectionMode.Partial}
-      panOnDrag={[1]}
+      panOnDrag={panning ? true : [1]}
       panOnScroll
       zoomOnPinch
       panActivationKeyCode="Space"
@@ -418,4 +427,38 @@ export function Canvas({
       {prefs.minimap && <MiniMap pannable zoomable position="bottom-right" />}
     </ReactFlow>
   )
+}
+
+/**
+ * Space held down outside text fields: the view pans with the left button. The key's default (scrolling the page,
+ * pressing a focused toolbar button) is suppressed while it is held over the editor.
+ */
+function useSpaceHeld(): boolean {
+  const [held, setHeld] = useState(false)
+  useEffect(() => {
+    const typing = (t: EventTarget | null) =>
+      t instanceof HTMLElement &&
+      (t.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) ||
+        t.closest('[role="dialog"]') !== null)
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || typing(e.target)) return
+      e.preventDefault()
+      if (!e.repeat) setHeld(true)
+    }
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return
+      setHeld(false)
+    }
+    const reset = () => setHeld(false)
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    window.addEventListener('blur', reset)
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+      window.removeEventListener('blur', reset)
+    }
+  }, [])
+  return held
 }
