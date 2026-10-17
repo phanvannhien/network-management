@@ -373,7 +373,7 @@ export function Canvas({
       }}
       defaultViewport={initialViewport ?? undefined}
       fitView={!initialViewport}
-      fitViewOptions={fitOptions(libraryOpen, prefs.panel)}
+      fitViewOptions={fitOptions(libraryOpen, prefs.panel && !prefs.panelMin)}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       snapToGrid={prefs.snap}

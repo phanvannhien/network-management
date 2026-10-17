@@ -8,6 +8,8 @@ import {
   ExternalLink,
   Lock,
   LockOpen,
+  LibraryBig,
+  PanelRight,
   Trash2,
   X,
 } from 'lucide-react'
@@ -45,12 +47,13 @@ import { useEditActions } from './workspace/useEditActions'
 import { CableDialog } from './workspace/CableDialog'
 import { PropertiesPanel } from './workspace/PropertiesPanel'
 import { useWiring } from './workspace/useWiring'
+import { PanelRail } from './workspace/PanelRail'
 import { ProblemsPanel } from './checks/ProblemsPanel'
 import { countProblems } from './checks/types'
 import { useChecks } from './checks/useChecks'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
-import { useEditorPrefs } from './workspace/prefs'
+import { togglePanel, useEditorPrefs } from './workspace/prefs'
 import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
@@ -281,7 +284,9 @@ function Workspace({
     () => new Set(Object.values(doc.devices).map((d) => d.hostname)),
     [doc.devices],
   )
-  const libraryOpen = canEdit && prefs.library
+  // "Open" = taking room on the canvas; a folded panel is a slim rail at the edge.
+  const libraryOpen = canEdit && prefs.library && !prefs.libraryMin
+  const panelOpen = prefs.panel && !prefs.panelMin
   const choices = useTemplateChoices(orgId, canEdit)
   const edit = useEditActions({ orgId, store, canEdit, grid: prefs.grid })
   const annotate = useAnnotate({
@@ -308,8 +313,7 @@ function Workspace({
     id?: string
   } | null>(null)
 
-  const fit = () =>
-    void flow.fitView({ ...fitOptions(libraryOpen, prefs.panel), duration: ZOOM_MS })
+  const fit = () => void flow.fitView({ ...fitOptions(libraryOpen, panelOpen), duration: ZOOM_MS })
   /** Top-left for a node centred on `at`, on the grid when snapping. */
   const place = (at: { x: number; y: number }) => {
     const step = prefs.snap ? prefs.grid : 1
@@ -453,7 +457,7 @@ function Workspace({
           break
         case 'library':
           if (!canEdit) return
-          setPrefs({ library: !prefs.library })
+          setPrefs(togglePanel(prefs, 'library'))
           break
         case 'help':
           setHelp(true)
@@ -638,7 +642,7 @@ function Workspace({
         <ProblemsPanel
           loading={checks.loading}
           error={checks.error}
-          fitPadding={fitOptions(libraryOpen, prefs.panel)}
+          fitPadding={fitOptions(libraryOpen, panelOpen)}
           onClose={() => setProblemsOpen(false)}
         />
       )}
@@ -657,14 +661,34 @@ function Workspace({
           onView={onView}
           onPick={(item) => pick(item)}
           onClose={() => setPrefs({ library: false })}
+          onMinimize={() => setPrefs({ libraryMin: true })}
         />
       )}
-      {prefs.panel && (
+      {canEdit && prefs.library && prefs.libraryMin && (
+        <PanelRail
+          side="left"
+          label={t('library.expand')}
+          icon={<LibraryBig aria-hidden />}
+          badge={t('library.title')}
+          onExpand={() => setPrefs({ libraryMin: false })}
+        />
+      )}
+      {panelOpen && (
         <PropertiesPanel
           orgId={orgId}
           canEdit={canEdit}
           onEditCable={wiring.editCable}
           onClose={() => setPrefs({ panel: false })}
+          onMinimize={() => setPrefs({ panelMin: true })}
+        />
+      )}
+      {prefs.panel && prefs.panelMin && (
+        <PanelRail
+          side="right"
+          label={t('panel.expand')}
+          icon={<PanelRight aria-hidden />}
+          badge={t('panel.title')}
+          onExpand={() => setPrefs({ panelMin: false })}
         />
       )}
       {doc.view.nodes.length === 0 && (

@@ -1088,6 +1088,8 @@ export const en: Strings = {
   },
   panel: {
     title: 'Properties',
+    minimize: 'Fold the property panel (to a rail on the right)',
+    expand: 'Unfold the property panel',
     close: 'Close the property panel',
     diagram: 'Diagram',
     device: 'Device',
@@ -1137,6 +1139,8 @@ export const en: Strings = {
   },
   library: {
     title: 'Library',
+    minimize: 'Fold the library (to a rail on the left)',
+    expand: 'Unfold the library',
     close: 'Close the library',
     search: 'Search type, model, hostname…',
     tabNew: 'New',

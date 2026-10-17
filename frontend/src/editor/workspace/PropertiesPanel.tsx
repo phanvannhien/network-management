@@ -1,4 +1,4 @@
-import { ExternalLink, Pencil, X } from 'lucide-react'
+import { ExternalLink, Pencil, PanelRightClose, X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FieldHelp } from '@/components/FieldHelp'
@@ -52,11 +52,14 @@ export function PropertiesPanel({
   canEdit,
   onEditCable,
   onClose,
+  onMinimize,
 }: {
   orgId: string
   canEdit: boolean
   onEditCable: (edgeId: string) => void
   onClose: () => void
+  /** Fold to a rail at the canvas edge. */
+  onMinimize: () => void
 }) {
   const { t } = useTranslation()
   const selection = useDoc((s) => s.selection)
@@ -114,6 +117,16 @@ export function PropertiesPanel({
     >
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <h2 className="flex-1 truncate font-semibold">{title}</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t('panel.minimize')}
+          title={t('panel.minimize')}
+          onClick={onMinimize}
+        >
+          <PanelRightClose aria-hidden />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

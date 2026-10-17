@@ -1,4 +1,4 @@
-import { LayoutTemplate, PackageSearch, X } from 'lucide-react'
+import { LayoutTemplate, PackageSearch, PanelLeftClose, X } from 'lucide-react'
 import { useDeferredValue, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -19,12 +19,15 @@ export function LibraryPanel({
   onView,
   onPick,
   onClose,
+  onMinimize,
 }: {
   orgId: string
   /** Inventory ids already drawn. */
   onView: ReadonlySet<string>
   onPick: (item: LibraryItem) => void
   onClose: () => void
+  /** Fold to a rail at the canvas edge. */
+  onMinimize: () => void
 }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<'new' | 'inventory'>('new')
@@ -36,6 +39,16 @@ export function LibraryPanel({
     >
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <h2 className="flex-1 font-semibold">{t('library.title')}</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t('library.minimize')}
+          title={t('library.minimize')}
+          onClick={onMinimize}
+        >
+          <PanelLeftClose aria-hidden />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

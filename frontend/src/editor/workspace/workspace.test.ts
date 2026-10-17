@@ -194,3 +194,25 @@ describe('P1-14 review fixes', () => {
     expect(defaultSiteFor(mixed, 'last')).toBe('last')
   })
 })
+
+describe('folding side panels', () => {
+  it('a folded panel unfolds from the toolbar; otherwise the button opens / closes it', async () => {
+    const { togglePanel } = await import('./prefs')
+    const base = {
+      snap: true,
+      grid: 20 as const,
+      minimap: true,
+      tips: true,
+      library: true,
+      panel: true,
+      libraryMin: false,
+      panelMin: false,
+    }
+    expect(togglePanel({ ...base, libraryMin: true }, 'library')).toEqual({ libraryMin: false })
+    expect(togglePanel(base, 'library')).toEqual({ library: false, libraryMin: false })
+    expect(togglePanel({ ...base, panel: false, panelMin: true }, 'panel')).toEqual({
+      panel: true,
+      panelMin: false,
+    })
+  })
+})

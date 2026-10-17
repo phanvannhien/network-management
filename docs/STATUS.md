@@ -5,6 +5,17 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Editor: thu nhỏ panel Thư viện / Thuộc tính
+- Đã làm: mỗi panel có nút **thu nhỏ** (cạnh nút đóng) → panel gọn thành dải dọc ở mép màn vẽ ("Thư viện" bên trái, "Thuộc tính" bên
+  phải), bấm dải để mở lại. Nút trên toolbar và phím B: panel đang thu nhỏ thì mở rộng, còn lại bật/tắt như cũ. Trạng thái nhớ theo
+  trình duyệt (prefs `libraryMin`/`panelMin`); "vừa màn hình" tính theo panel đang mở rộng.
+- Test / cách kiểm tra: `make check` pass (vitest: quy tắc nút toolbar với panel thu nhỏ). Chromium: thu nhỏ cả hai, mở lại thư viện,
+  tải lại trang vẫn giữ trạng thái.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor theo góp ý, hoặc P1-22 Export.
+
 ## 2026-10-17 — P1-21b sửa: template hệ thống dùng trực tiếp, tự nhận theo model (ADR-035 sửa)
 - Đã làm (theo phản hồi: "đã tạo template nhưng không thấy", người dùng chỉ cần gõ đúng model là có thông số):
   - Template trong thư viện = **template hệ thống**, dùng trực tiếp, không chép vào tổ chức. Thiết bị tạo từ đó lưu `catalog_id`

@@ -1082,6 +1082,8 @@ export const vi = {
   },
   panel: {
     title: 'Thuộc tính',
+    minimize: 'Thu nhỏ panel thuộc tính (thành dải bên phải)',
+    expand: 'Mở rộng panel thuộc tính',
     close: 'Đóng panel thuộc tính',
     diagram: 'Sơ đồ',
     device: 'Thiết bị',
@@ -1130,6 +1132,8 @@ export const vi = {
   },
   library: {
     title: 'Thư viện',
+    minimize: 'Thu nhỏ thư viện (thành dải bên trái)',
+    expand: 'Mở rộng thư viện',
     close: 'Đóng thư viện',
     search: 'Tìm loại, model, hostname…',
     tabNew: 'Thêm mới',

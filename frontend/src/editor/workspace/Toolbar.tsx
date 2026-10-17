@@ -30,7 +30,7 @@ import { SeverityIcon } from '../checks/SeverityIcon'
 import type { Severity } from '../checks/types'
 import type { SaveStatus } from '../doc/store'
 import { GRID_SIZES, type GridSize } from './flow'
-import type { EditorPrefs } from './prefs'
+import { togglePanel, type EditorPrefs } from './prefs'
 import { keysLabel, shortcutOf, type ShortcutId } from './shortcuts'
 
 /** Tooltip "Name (keys)" on every toolbar button (DESIGN.md §4a). */
@@ -173,8 +173,8 @@ export function Toolbar(p: ToolbarProps) {
           <ToolButton
             label={t('library.title')}
             shortcut="library"
-            onClick={() => p.onPrefs({ library: !p.prefs.library })}
-            pressed={p.prefs.library}
+            onClick={() => p.onPrefs(togglePanel(p.prefs, 'library'))}
+            pressed={p.prefs.library && !p.prefs.libraryMin}
           >
             <LibraryBig aria-hidden />
           </ToolButton>
@@ -247,8 +247,8 @@ export function Toolbar(p: ToolbarProps) {
       </Tip>
       <ToolButton
         label={t('panel.title')}
-        onClick={() => p.onPrefs({ panel: !p.prefs.panel })}
-        pressed={p.prefs.panel}
+        onClick={() => p.onPrefs(togglePanel(p.prefs, 'panel'))}
+        pressed={p.prefs.panel && !p.prefs.panelMin}
       >
         <PanelRight aria-hidden />
       </ToolButton>

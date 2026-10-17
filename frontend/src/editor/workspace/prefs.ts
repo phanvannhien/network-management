@@ -11,6 +11,9 @@ export interface EditorPrefs {
   library: boolean
   /** Property panel on the right (P1-18). */
   panel: boolean
+  /** Library / property panel folded to a slim rail at the canvas edge (still open, one click to unfold). */
+  libraryMin: boolean
+  panelMin: boolean
 }
 
 const KEY = 'ntb-editor-prefs-v1'
@@ -21,6 +24,8 @@ const DEFAULTS: EditorPrefs = {
   tips: true,
   library: true,
   panel: true,
+  libraryMin: false,
+  panelMin: false,
 }
 
 export function readPrefs(): EditorPrefs {
@@ -33,6 +38,8 @@ export function readPrefs(): EditorPrefs {
       tips: typeof raw.tips === 'boolean' ? raw.tips : DEFAULTS.tips,
       library: typeof raw.library === 'boolean' ? raw.library : DEFAULTS.library,
       panel: typeof raw.panel === 'boolean' ? raw.panel : DEFAULTS.panel,
+      libraryMin: raw.libraryMin === true,
+      panelMin: raw.panelMin === true,
     }
   } catch {
     return DEFAULTS
@@ -50,4 +57,13 @@ export function useEditorPrefs() {
   }, [prefs])
   const update = (patch: Partial<EditorPrefs>) => setPrefs((p) => ({ ...p, ...patch }))
   return [prefs, update] as const
+}
+
+/**
+ * Toolbar button / shortcut for a side panel: a folded panel unfolds, otherwise the panel opens or closes.
+ */
+export function togglePanel(prefs: EditorPrefs, which: 'library' | 'panel'): Partial<EditorPrefs> {
+  const min = which === 'library' ? 'libraryMin' : 'panelMin'
+  if (prefs[which] && prefs[min]) return { [min]: false }
+  return { [which]: !prefs[which], [min]: false }
 }
