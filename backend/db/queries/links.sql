@@ -35,25 +35,29 @@ ORDER BY COALESCE(ad.hostname, ag.name), COALESCE(ai.name, ''), l.created_at;
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
 
 -- name: CountPhysicalLinksOnInterface :one
+-- Cables that occupy a port (ADR-033): radio, cellular and logical links share their interface.
 SELECT count(*) FROM links
-WHERE organization_id = @organization_id AND kind <> 'logical' AND id IS DISTINCT FROM sqlc.narg('self_id')::uuid
+WHERE organization_id = @organization_id AND kind NOT IN ('logical', 'wireless', 'cellular')
+  AND id IS DISTINCT FROM sqlc.narg('self_id')::uuid
   AND (a_interface_id = @interface_id OR b_interface_id = @interface_id);
 
 -- name: GetLinkEndInterface :one
-SELECT i.id, i.name, i.kind, i.device_id FROM interfaces i
+SELECT i.id, i.name, i.kind, i.media, i.device_id FROM interfaces i
 WHERE i.id = @id AND i.organization_id = @organization_id;
 
 -- name: CreateLink :one
 INSERT INTO links (organization_id, a_kind, a_id, a_interface_id, b_kind, b_id, b_interface_id, kind, medium, speed,
-                   length_m, cable_id, status, provider, circuit_id, bandwidth, notes)
+                   length_m, cable_id, status, fiber_mode, connector, service, provider, circuit_id, bandwidth, notes)
 VALUES (@organization_id, @a_kind, @a_id, sqlc.narg('a_interface_id'), @b_kind, @b_id, sqlc.narg('b_interface_id'), @kind,
-        @medium, @speed, sqlc.narg('length_m'), @cable_id, @status, @provider, @circuit_id, @bandwidth, @notes)
+        @medium, @speed, sqlc.narg('length_m'), @cable_id, @status, @fiber_mode, @connector, @service, @provider,
+        @circuit_id, @bandwidth, @notes)
 RETURNING id;
 
 -- name: UpdateLink :execrows
 UPDATE links SET a_kind = @a_kind, a_id = @a_id, a_interface_id = sqlc.narg('a_interface_id'), b_kind = @b_kind,
   b_id = @b_id, b_interface_id = sqlc.narg('b_interface_id'), kind = @kind, medium = @medium, speed = @speed,
-  length_m = sqlc.narg('length_m'), cable_id = @cable_id, status = @status, provider = @provider,
+  length_m = sqlc.narg('length_m'), cable_id = @cable_id, status = @status, fiber_mode = @fiber_mode,
+  connector = @connector, service = @service, provider = @provider,
   circuit_id = @circuit_id, bandwidth = @bandwidth, notes = @notes, version = version + 1
 WHERE id = @id AND organization_id = @organization_id AND version = @version;
 

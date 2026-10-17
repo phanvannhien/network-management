@@ -198,6 +198,7 @@ func (e DeviceRole) Valid() bool {
 const (
 	DeviceTypeAccessControl      DeviceType = "access_control"
 	DeviceTypeAccessPoint        DeviceType = "access_point"
+	DeviceTypeConsoleServer      DeviceType = "console_server"
 	DeviceTypeFirewall           DeviceType = "firewall"
 	DeviceTypeIdsIps             DeviceType = "ids_ips"
 	DeviceTypeIot                DeviceType = "iot"
@@ -212,6 +213,7 @@ const (
 	DeviceTypeNac                DeviceType = "nac"
 	DeviceTypeNas                DeviceType = "nas"
 	DeviceTypeNvr                DeviceType = "nvr"
+	DeviceTypeOlt                DeviceType = "olt"
 	DeviceTypeOnt                DeviceType = "ont"
 	DeviceTypeOther              DeviceType = "other"
 	DeviceTypePatchPanel         DeviceType = "patch_panel"
@@ -220,6 +222,7 @@ const (
 	DeviceTypePdu                DeviceType = "pdu"
 	DeviceTypePoeSwitch          DeviceType = "poe_switch"
 	DeviceTypePrinter            DeviceType = "printer"
+	DeviceTypeProviderCloud      DeviceType = "provider_cloud"
 	DeviceTypeProxy              DeviceType = "proxy"
 	DeviceTypeRouter             DeviceType = "router"
 	DeviceTypeSdwanEdge          DeviceType = "sdwan_edge"
@@ -229,6 +232,7 @@ const (
 	DeviceTypeVm                 DeviceType = "vm"
 	DeviceTypeVpnGateway         DeviceType = "vpn_gateway"
 	DeviceTypeWaf                DeviceType = "waf"
+	DeviceTypeWirelessBridge     DeviceType = "wireless_bridge"
 	DeviceTypeWirelessController DeviceType = "wireless_controller"
 )
 
@@ -238,6 +242,8 @@ func (e DeviceType) Valid() bool {
 	case DeviceTypeAccessControl:
 		return true
 	case DeviceTypeAccessPoint:
+		return true
+	case DeviceTypeConsoleServer:
 		return true
 	case DeviceTypeFirewall:
 		return true
@@ -267,6 +273,8 @@ func (e DeviceType) Valid() bool {
 		return true
 	case DeviceTypeNvr:
 		return true
+	case DeviceTypeOlt:
+		return true
 	case DeviceTypeOnt:
 		return true
 	case DeviceTypeOther:
@@ -282,6 +290,8 @@ func (e DeviceType) Valid() bool {
 	case DeviceTypePoeSwitch:
 		return true
 	case DeviceTypePrinter:
+		return true
+	case DeviceTypeProviderCloud:
 		return true
 	case DeviceTypeProxy:
 		return true
@@ -300,6 +310,8 @@ func (e DeviceType) Valid() bool {
 	case DeviceTypeVpnGateway:
 		return true
 	case DeviceTypeWaf:
+		return true
+	case DeviceTypeWirelessBridge:
 		return true
 	case DeviceTypeWirelessController:
 		return true
@@ -595,23 +607,30 @@ func (e InterfaceKind) Valid() bool {
 
 // Defines values for InterfaceMedia.
 const (
-	InterfaceMediaConsole InterfaceMedia = "Console"
-	InterfaceMediaEmpty   InterfaceMedia = ""
-	InterfaceMediaQSFP    InterfaceMedia = "QSFP"
-	InterfaceMediaRJ45    InterfaceMedia = "RJ45"
-	InterfaceMediaRadio   InterfaceMedia = "Radio"
-	InterfaceMediaSFP     InterfaceMedia = "SFP"
-	InterfaceMediaSFP1    InterfaceMedia = "SFP+"
-	InterfaceMediaSFP28   InterfaceMedia = "SFP28"
-	InterfaceMediaSerial  InterfaceMedia = "Serial"
+	InterfaceMediaCellular InterfaceMedia = "Cellular"
+	InterfaceMediaConsole  InterfaceMedia = "Console"
+	InterfaceMediaEmpty    InterfaceMedia = ""
+	InterfaceMediaPON      InterfaceMedia = "PON"
+	InterfaceMediaQSFP     InterfaceMedia = "QSFP"
+	InterfaceMediaRJ45     InterfaceMedia = "RJ45"
+	InterfaceMediaRadio    InterfaceMedia = "Radio"
+	InterfaceMediaSFP      InterfaceMedia = "SFP"
+	InterfaceMediaSFP1     InterfaceMedia = "SFP+"
+	InterfaceMediaSFP28    InterfaceMedia = "SFP28"
+	InterfaceMediaSerial   InterfaceMedia = "Serial"
+	InterfaceMediaXDSL     InterfaceMedia = "xDSL"
 )
 
 // Valid indicates whether the value is a known member of the InterfaceMedia enum.
 func (e InterfaceMedia) Valid() bool {
 	switch e {
+	case InterfaceMediaCellular:
+		return true
 	case InterfaceMediaConsole:
 		return true
 	case InterfaceMediaEmpty:
+		return true
+	case InterfaceMediaPON:
 		return true
 	case InterfaceMediaQSFP:
 		return true
@@ -626,6 +645,8 @@ func (e InterfaceMedia) Valid() bool {
 	case InterfaceMediaSFP28:
 		return true
 	case InterfaceMediaSerial:
+		return true
+	case InterfaceMediaXDSL:
 		return true
 	default:
 		return false
@@ -725,6 +746,33 @@ func (e IpRole) Valid() bool {
 	}
 }
 
+// Defines values for LinkConnector.
+const (
+	LinkConnectorEmpty LinkConnector = ""
+	LinkConnectorLC    LinkConnector = "LC"
+	LinkConnectorMPO   LinkConnector = "MPO"
+	LinkConnectorSC    LinkConnector = "SC"
+	LinkConnectorST    LinkConnector = "ST"
+)
+
+// Valid indicates whether the value is a known member of the LinkConnector enum.
+func (e LinkConnector) Valid() bool {
+	switch e {
+	case LinkConnectorEmpty:
+		return true
+	case LinkConnectorLC:
+		return true
+	case LinkConnectorMPO:
+		return true
+	case LinkConnectorSC:
+		return true
+	case LinkConnectorST:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkEndKind.
 const (
 	LinkEndKindDevice        LinkEndKind = "device"
@@ -743,20 +791,49 @@ func (e LinkEndKind) Valid() bool {
 	}
 }
 
+// Defines values for LinkFiberMode.
+const (
+	LinkFiberModeEmpty LinkFiberMode = ""
+	LinkFiberModeMm    LinkFiberMode = "mm"
+	LinkFiberModeSm    LinkFiberMode = "sm"
+)
+
+// Valid indicates whether the value is a known member of the LinkFiberMode enum.
+func (e LinkFiberMode) Valid() bool {
+	switch e {
+	case LinkFiberModeEmpty:
+		return true
+	case LinkFiberModeMm:
+		return true
+	case LinkFiberModeSm:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkKind.
 const (
+	LinkKindCellular LinkKind = "cellular"
 	LinkKindConsole  LinkKind = "console"
+	LinkKindDsl      LinkKind = "dsl"
 	LinkKindEthernet LinkKind = "ethernet"
 	LinkKindFiber    LinkKind = "fiber"
 	LinkKindLogical  LinkKind = "logical"
+	LinkKindPower    LinkKind = "power"
 	LinkKindSerial   LinkKind = "serial"
+	LinkKindStack    LinkKind = "stack"
 	LinkKindWireless LinkKind = "wireless"
 )
 
 // Valid indicates whether the value is a known member of the LinkKind enum.
 func (e LinkKind) Valid() bool {
 	switch e {
+	case LinkKindCellular:
+		return true
 	case LinkKindConsole:
+		return true
+	case LinkKindDsl:
 		return true
 	case LinkKindEthernet:
 		return true
@@ -764,9 +841,49 @@ func (e LinkKind) Valid() bool {
 		return true
 	case LinkKindLogical:
 		return true
+	case LinkKindPower:
+		return true
 	case LinkKindSerial:
 		return true
+	case LinkKindStack:
+		return true
 	case LinkKindWireless:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkService.
+const (
+	LinkServiceEmpty             LinkService = ""
+	LinkServiceInternetBroadband LinkService = "internet_broadband"
+	LinkServiceInternetDedicated LinkService = "internet_dedicated"
+	LinkServiceLeasedLine        LinkService = "leased_line"
+	LinkServiceMetro             LinkService = "metro"
+	LinkServiceMobile            LinkService = "mobile"
+	LinkServiceMpls              LinkService = "mpls"
+	LinkServiceOther             LinkService = "other"
+)
+
+// Valid indicates whether the value is a known member of the LinkService enum.
+func (e LinkService) Valid() bool {
+	switch e {
+	case LinkServiceEmpty:
+		return true
+	case LinkServiceInternetBroadband:
+		return true
+	case LinkServiceInternetDedicated:
+		return true
+	case LinkServiceLeasedLine:
+		return true
+	case LinkServiceMetro:
+		return true
+	case LinkServiceMobile:
+		return true
+	case LinkServiceMpls:
+		return true
+	case LinkServiceOther:
 		return true
 	default:
 		return false
@@ -1952,7 +2069,9 @@ type Interface struct {
 	LagName string              `json:"lagName"`
 
 	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
-	Mac        *string        `json:"mac"`
+	Mac *string `json:"mac"`
+
+	// Media PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
 	Media      InterfaceMedia `json:"media"`
 	Mode       InterfaceMode  `json:"mode"`
 	Name       string         `json:"name"`
@@ -1986,7 +2105,9 @@ type InterfaceInput struct {
 	LagId *openapi_types.UUID `json:"lagId,omitempty"`
 
 	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
-	Mac        *string         `json:"mac,omitempty"`
+	Mac *string `json:"mac,omitempty"`
+
+	// Media PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
 	Media      *InterfaceMedia `json:"media,omitempty"`
 	Mode       *InterfaceMode  `json:"mode,omitempty"`
 	Name       string          `json:"name"`
@@ -2011,7 +2132,7 @@ type InterfaceList struct {
 	Interfaces []Interface `json:"interfaces"`
 }
 
-// InterfaceMedia defines model for InterfaceMedia.
+// InterfaceMedia PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
 type InterfaceMedia string
 
 // InterfaceMode defines model for InterfaceMode.
@@ -2032,7 +2153,9 @@ type InterfaceUpdate struct {
 	LagId *openapi_types.UUID `json:"lagId,omitempty"`
 
 	// Mac MAC address, any common form (aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…); returned as aa:bb:cc:dd:ee:ff
-	Mac        *string         `json:"mac,omitempty"`
+	Mac *string `json:"mac,omitempty"`
+
+	// Media PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
 	Media      *InterfaceMedia `json:"media,omitempty"`
 	Mode       *InterfaceMode  `json:"mode,omitempty"`
 	Name       string          `json:"name"`
@@ -2163,25 +2286,37 @@ type Link struct {
 	A LinkEnd `json:"a"`
 
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
-	Access    AccessLevel        `json:"access"`
-	B         LinkEnd            `json:"b"`
-	Bandwidth string             `json:"bandwidth"`
-	CableId   string             `json:"cableId"`
-	CircuitId string             `json:"circuitId"`
+	Access    AccessLevel `json:"access"`
+	B         LinkEnd     `json:"b"`
+	Bandwidth string      `json:"bandwidth"`
+	CableId   string      `json:"cableId"`
+	CircuitId string      `json:"circuitId"`
+
+	// Connector fiber connector (fiber links only)
+	Connector LinkConnector `json:"connector"`
+
+	// FiberMode single-mode / multi-mode (fiber links only)
+	FiberMode LinkFiberMode      `json:"fiberMode"`
 	Id        openapi_types.UUID `json:"id"`
 
-	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	// Kind ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
 	Kind     LinkKind `json:"kind"`
 	LengthM  *float32 `json:"lengthM"`
 	Medium   string   `json:"medium"`
 	Notes    string   `json:"notes"`
 	Provider string   `json:"provider"`
-	Speed    string   `json:"speed"`
+
+	// Service WAN service carried by the link (ADR-033): internet_broadband (FTTH / xDSL, shared), internet_dedicated (dedicated Internet with static IP and SLA), mpls (MPLS VPN), leased_line (point-to-point leased circuit), metro (Metro Ethernet), mobile (4G/5G SIM), other
+	Service LinkService `json:"service"`
+	Speed   string      `json:"speed"`
 
 	// Status design status (live state comes from monitoring in Phase 3)
 	Status  LinkStatus `json:"status"`
 	Version int32      `json:"version"`
 }
+
+// LinkConnector fiber connector (fiber links only)
+type LinkConnector string
 
 // LinkEnd defines model for LinkEnd.
 type LinkEnd struct {
@@ -2213,6 +2348,9 @@ type LinkEndInput struct {
 // LinkEndKind defines model for LinkEndKind.
 type LinkEndKind string
 
+// LinkFiberMode single-mode / multi-mode (fiber links only)
+type LinkFiberMode string
+
 // LinkInput defines model for LinkInput.
 type LinkInput struct {
 	A         LinkEndInput `json:"a"`
@@ -2221,31 +2359,43 @@ type LinkInput struct {
 	CableId   *string      `json:"cableId,omitempty"`
 	CircuitId *string      `json:"circuitId,omitempty"`
 
-	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	// Connector fiber connector (fiber links only)
+	Connector *LinkConnector `json:"connector,omitempty"`
+
+	// FiberMode single-mode / multi-mode (fiber links only)
+	FiberMode *LinkFiberMode `json:"fiberMode,omitempty"`
+
+	// Kind ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
 	Kind LinkKind `json:"kind"`
 
 	// LengthM cable length in metres
 	LengthM *float32 `json:"lengthM,omitempty"`
 
-	// Medium variant, e.g. Cat6, OM4, DAC, VPN/IPsec
+	// Medium variant, e.g. Cat6, DAC, OM4, VPN/IPsec
 	Medium *string `json:"medium,omitempty"`
 	Notes  *string `json:"notes,omitempty"`
 
 	// Provider WAN provider (vendors module in Phase 2)
 	Provider *string `json:"provider,omitempty"`
-	Speed    *string `json:"speed,omitempty"`
+
+	// Service WAN service carried by the link (ADR-033): internet_broadband (FTTH / xDSL, shared), internet_dedicated (dedicated Internet with static IP and SLA), mpls (MPLS VPN), leased_line (point-to-point leased circuit), metro (Metro Ethernet), mobile (4G/5G SIM), other
+	Service *LinkService `json:"service,omitempty"`
+	Speed   *string      `json:"speed,omitempty"`
 
 	// Status design status (live state comes from monitoring in Phase 3)
 	Status *LinkStatus `json:"status,omitempty"`
 }
 
-// LinkKind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+// LinkKind ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
 type LinkKind string
 
 // LinkList defines model for LinkList.
 type LinkList struct {
 	Links []Link `json:"links"`
 }
+
+// LinkService WAN service carried by the link (ADR-033): internet_broadband (FTTH / xDSL, shared), internet_dedicated (dedicated Internet with static IP and SLA), mpls (MPLS VPN), leased_line (point-to-point leased circuit), metro (Metro Ethernet), mobile (4G/5G SIM), other
+type LinkService string
 
 // LinkStatus design status (live state comes from monitoring in Phase 3)
 type LinkStatus string
@@ -2258,19 +2408,28 @@ type LinkUpdate struct {
 	CableId   *string      `json:"cableId,omitempty"`
 	CircuitId *string      `json:"circuitId,omitempty"`
 
-	// Kind ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+	// Connector fiber connector (fiber links only)
+	Connector *LinkConnector `json:"connector,omitempty"`
+
+	// FiberMode single-mode / multi-mode (fiber links only)
+	FiberMode *LinkFiberMode `json:"fiberMode,omitempty"`
+
+	// Kind ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
 	Kind LinkKind `json:"kind"`
 
 	// LengthM cable length in metres
 	LengthM *float32 `json:"lengthM,omitempty"`
 
-	// Medium variant, e.g. Cat6, OM4, DAC, VPN/IPsec
+	// Medium variant, e.g. Cat6, DAC, OM4, VPN/IPsec
 	Medium *string `json:"medium,omitempty"`
 	Notes  *string `json:"notes,omitempty"`
 
 	// Provider WAN provider (vendors module in Phase 2)
 	Provider *string `json:"provider,omitempty"`
-	Speed    *string `json:"speed,omitempty"`
+
+	// Service WAN service carried by the link (ADR-033): internet_broadband (FTTH / xDSL, shared), internet_dedicated (dedicated Internet with static IP and SLA), mpls (MPLS VPN), leased_line (point-to-point leased circuit), metro (Metro Ethernet), mobile (4G/5G SIM), other
+	Service *LinkService `json:"service,omitempty"`
+	Speed   *string      `json:"speed,omitempty"`
 
 	// Status design status (live state comes from monitoring in Phase 3)
 	Status  *LinkStatus `json:"status,omitempty"`
@@ -2440,7 +2599,9 @@ type Permission string
 
 // PortGroup Ports named by pattern with {n} replaced by start … start+count-1 and {m} by the stack member number (1 outside a cluster), e.g. Gi{m}/0/{n}
 type PortGroup struct {
-	Count   int32           `json:"count"`
+	Count int32 `json:"count"`
+
+	// Media PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
 	Media   *InterfaceMedia `json:"media,omitempty"`
 	Pattern string          `json:"pattern"`
 	Poe     *bool           `json:"poe,omitempty"`

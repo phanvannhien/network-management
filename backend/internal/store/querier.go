@@ -33,6 +33,7 @@ type Querier interface {
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
 	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	// Cables that occupy a port (ADR-033): radio, cellular and logical links share their interface.
 	CountPhysicalLinksOnInterface(ctx context.Context, arg CountPhysicalLinksOnInterfaceParams) (int64, error)
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)

@@ -13,7 +13,8 @@ import (
 
 const countPhysicalLinksOnInterface = `-- name: CountPhysicalLinksOnInterface :one
 SELECT count(*) FROM links
-WHERE organization_id = $1 AND kind <> 'logical' AND id IS DISTINCT FROM $2::uuid
+WHERE organization_id = $1 AND kind NOT IN ('logical', 'wireless', 'cellular')
+  AND id IS DISTINCT FROM $2::uuid
   AND (a_interface_id = $3 OR b_interface_id = $3)
 `
 
@@ -23,6 +24,7 @@ type CountPhysicalLinksOnInterfaceParams struct {
 	InterfaceID    pgtype.UUID
 }
 
+// Cables that occupy a port (ADR-033): radio, cellular and logical links share their interface.
 func (q *Queries) CountPhysicalLinksOnInterface(ctx context.Context, arg CountPhysicalLinksOnInterfaceParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countPhysicalLinksOnInterface, arg.OrganizationID, arg.SelfID, arg.InterfaceID)
 	var count int64
@@ -32,9 +34,10 @@ func (q *Queries) CountPhysicalLinksOnInterface(ctx context.Context, arg CountPh
 
 const createLink = `-- name: CreateLink :one
 INSERT INTO links (organization_id, a_kind, a_id, a_interface_id, b_kind, b_id, b_interface_id, kind, medium, speed,
-                   length_m, cable_id, status, provider, circuit_id, bandwidth, notes)
+                   length_m, cable_id, status, fiber_mode, connector, service, provider, circuit_id, bandwidth, notes)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-        $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        $9, $10, $11, $12, $13, $14, $15, $16, $17,
+        $18, $19, $20)
 RETURNING id
 `
 
@@ -52,6 +55,9 @@ type CreateLinkParams struct {
 	LengthM        pgtype.Numeric
 	CableID        string
 	Status         string
+	FiberMode      string
+	Connector      string
+	Service        string
 	Provider       string
 	CircuitID      string
 	Bandwidth      string
@@ -73,6 +79,9 @@ func (q *Queries) CreateLink(ctx context.Context, arg CreateLinkParams) (pgtype.
 		arg.LengthM,
 		arg.CableID,
 		arg.Status,
+		arg.FiberMode,
+		arg.Connector,
+		arg.Service,
 		arg.Provider,
 		arg.CircuitID,
 		arg.Bandwidth,
@@ -134,7 +143,7 @@ func (q *Queries) DeleteLinksOfEnd(ctx context.Context, arg DeleteLinksOfEndPara
 }
 
 const getLinkEndInterface = `-- name: GetLinkEndInterface :one
-SELECT i.id, i.name, i.kind, i.device_id FROM interfaces i
+SELECT i.id, i.name, i.kind, i.media, i.device_id FROM interfaces i
 WHERE i.id = $1 AND i.organization_id = $2
 `
 
@@ -147,6 +156,7 @@ type GetLinkEndInterfaceRow struct {
 	ID       pgtype.UUID
 	Name     string
 	Kind     string
+	Media    string
 	DeviceID pgtype.UUID
 }
 
@@ -157,6 +167,7 @@ func (q *Queries) GetLinkEndInterface(ctx context.Context, arg GetLinkEndInterfa
 		&i.ID,
 		&i.Name,
 		&i.Kind,
+		&i.Media,
 		&i.DeviceID,
 	)
 	return i, err
@@ -211,7 +222,7 @@ func (q *Queries) ListLinkIDsAmong(ctx context.Context, arg ListLinkIDsAmongPara
 
 const listLinks = `-- name: ListLinks :many
 
-SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version,
+SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version, l.fiber_mode, l.connector, l.service,
   COALESCE(ad.hostname, ag.name, '')::text AS a_name, COALESCE(ad.type, ag.kind, '')::text AS a_type,
   COALESCE(ad.site_id, ag.site_id) AS a_site_id,
   COALESCE(asite.code::text, '')::text AS a_site_code,
@@ -270,6 +281,9 @@ type ListLinksRow struct {
 	CreatedAt       pgtype.Timestamptz
 	UpdatedAt       pgtype.Timestamptz
 	Version         int32
+	FiberMode       string
+	Connector       string
+	Service         string
 	AName           string
 	AType           string
 	ASiteID         pgtype.UUID
@@ -325,6 +339,9 @@ func (q *Queries) ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLin
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Version,
+			&i.FiberMode,
+			&i.Connector,
+			&i.Service,
 			&i.AName,
 			&i.AType,
 			&i.ASiteID,
@@ -363,9 +380,10 @@ func (q *Queries) LockInterfaceLinks(ctx context.Context, lockKey string) error 
 const updateLink = `-- name: UpdateLink :execrows
 UPDATE links SET a_kind = $1, a_id = $2, a_interface_id = $3, b_kind = $4,
   b_id = $5, b_interface_id = $6, kind = $7, medium = $8, speed = $9,
-  length_m = $10, cable_id = $11, status = $12, provider = $13,
-  circuit_id = $14, bandwidth = $15, notes = $16, version = version + 1
-WHERE id = $17 AND organization_id = $18 AND version = $19
+  length_m = $10, cable_id = $11, status = $12, fiber_mode = $13,
+  connector = $14, service = $15, provider = $16,
+  circuit_id = $17, bandwidth = $18, notes = $19, version = version + 1
+WHERE id = $20 AND organization_id = $21 AND version = $22
 `
 
 type UpdateLinkParams struct {
@@ -381,6 +399,9 @@ type UpdateLinkParams struct {
 	LengthM        pgtype.Numeric
 	CableID        string
 	Status         string
+	FiberMode      string
+	Connector      string
+	Service        string
 	Provider       string
 	CircuitID      string
 	Bandwidth      string
@@ -404,6 +425,9 @@ func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (int64, 
 		arg.LengthM,
 		arg.CableID,
 		arg.Status,
+		arg.FiberMode,
+		arg.Connector,
+		arg.Service,
 		arg.Provider,
 		arg.CircuitID,
 		arg.Bandwidth,

@@ -33,6 +33,13 @@ import {
   LINK_MEDIA,
   LINK_STATUSES,
   portFits,
+  sharesPort,
+  CONNECTORS,
+  FIBER_MODES,
+  LINK_SERVICES,
+  type LinkConnector,
+  type LinkFiberMode,
+  type LinkService,
   useLinkMutations,
   useLinks,
   type Link,
@@ -62,7 +69,7 @@ function orient(l: Link, owner: LinkOwner) {
 function takenPorts(links: Link[] | undefined, deviceId: string, self?: string): Set<string> {
   const out = new Set<string>()
   for (const l of links ?? []) {
-    if (l.kind === 'logical' || l.id === self) continue
+    if (sharesPort(l.kind) || l.id === self) continue
     for (const e of [l.a, l.b])
       if (e.kind === 'device' && e.id === deviceId && e.interfaceId) out.add(e.interfaceId)
   }
@@ -100,9 +107,9 @@ function PortSelect({
     >
       <option value="">{t('links.noPort')}</option>
       {(ports.data ?? [])
-        .filter((i) => portFits(kind, i.kind) || i.id === value)
+        .filter((i) => portFits(kind, i.kind, i.media) || i.id === value)
         .map((i) => {
-          const busy = kind !== 'logical' && taken.has(i.id)
+          const busy = !sharesPort(kind, i.media) && taken.has(i.id)
           return (
             <option key={i.id} value={i.id} disabled={busy && i.id !== value}>
               {i.name}
@@ -140,6 +147,9 @@ function LinkDialog({
     lengthM: link?.lengthM != null ? String(link.lengthM) : '',
     cableId: link?.cableId ?? '',
     status: (link?.status ?? 'up') as LinkStatus,
+    fiberMode: (link?.fiberMode ?? '') as LinkFiberMode,
+    connector: (link?.connector ?? '') as LinkConnector,
+    service: (link?.service ?? '') as LinkService,
     provider: link?.provider ?? '',
     circuitId: link?.circuitId ?? '',
     bandwidth: link?.bandwidth ?? '',
@@ -201,6 +211,9 @@ function LinkDialog({
                   lengthM: f.lengthM === '' ? null : Number(f.lengthM),
                   cableId: f.cableId.trim(),
                   status: f.status,
+                  fiberMode: f.kind === 'fiber' ? f.fiberMode : '',
+                  connector: f.kind === 'fiber' ? f.connector : '',
+                  service: f.service,
                   provider: f.provider.trim(),
                   circuitId: f.circuitId.trim(),
                   bandwidth: f.bandwidth.trim(),
@@ -392,6 +405,48 @@ function LinkDialog({
                 />
               )}
             </FormField>
+            {f.kind === 'fiber' && (
+              <>
+                <FormField
+                  label={t('links.fiberMode')}
+                  guide={t('guides.fiberMode')}
+                  help="fiber-mode"
+                >
+                  {(p) => (
+                    <NativeSelect
+                      {...p}
+                      value={f.fiberMode}
+                      onChange={(e) => setF({ ...f, fiberMode: e.target.value as LinkFiberMode })}
+                    >
+                      {FIBER_MODES.map((m) => (
+                        <option key={m} value={m}>
+                          {t(`links.fiberModes.${m || 'unknown'}`)}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  )}
+                </FormField>
+                <FormField
+                  label={t('links.connector')}
+                  guide={t('guides.connector')}
+                  help="fiber-mode"
+                >
+                  {(p) => (
+                    <NativeSelect
+                      {...p}
+                      value={f.connector}
+                      onChange={(e) => setF({ ...f, connector: e.target.value as LinkConnector })}
+                    >
+                      {CONNECTORS.map((c) => (
+                        <option key={c} value={c}>
+                          {c || t('links.fiberModes.unknown')}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  )}
+                </FormField>
+              </>
+            )}
             <FormField label={t('links.length')}>
               {(p) => (
                 <Input
@@ -407,11 +462,31 @@ function LinkDialog({
           </div>
           <details
             className="rounded-md border border-border p-3"
-            open={Boolean(f.provider || f.circuitId)}
+            open={Boolean(f.provider || f.circuitId || f.service)}
           >
             <summary className="cursor-pointer font-medium">{t('links.wan')}</summary>
             <p className="mt-1 text-muted-foreground">{t('guides.linkWan')}</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
+              <FormField
+                label={t('links.service')}
+                guide={t('guides.linkService')}
+                help="wan-service"
+                className="col-span-3"
+              >
+                {(p) => (
+                  <NativeSelect
+                    {...p}
+                    value={f.service}
+                    onChange={(e) => setF({ ...f, service: e.target.value as LinkService })}
+                  >
+                    {LINK_SERVICES.map((v) => (
+                      <option key={v} value={v}>
+                        {t(`links.services.${v || 'none'}`)}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                )}
+              </FormField>
               <FormField label={t('links.provider')}>
                 {(p) => (
                   <Input

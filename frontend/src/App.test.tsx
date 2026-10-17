@@ -1583,6 +1583,9 @@ describe('device inventory (P1-08)', () => {
       cableId: 'BD-C001',
       status: 'planned',
       provider: '',
+      fiberMode: '',
+      connector: '',
+      service: '',
       circuitId: '',
       bandwidth: '',
       notes: '',
@@ -2340,7 +2343,7 @@ describe('diagrams (P1-13)', () => {
     expect(await screen.findByText(/Đã lưu/, { selector: 'p' })).toBeInTheDocument()
   })
 
-  it('a new device from a template gets the shared site and a suggested hostname, saved as a pending create', async () => {
+  it('a new device from a template gets the shared site; the hostname is typed or taken from the suggestion', async () => {
     const calls = fakeApi(
       routes({
         [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
@@ -2360,10 +2363,16 @@ describe('diagrams (P1-13)', () => {
     // The diagram shows devices of one site only: that site is offered.
     await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
     expect(within(dialog).getByLabelText(/^Template thiết bị|^Template/)).toHaveValue('tpl-1')
+    // ADR-033: the user names the device; the site-path suggestion sits under the field.
     const host = within(dialog).getByLabelText(/^Hostname/)
-    await waitFor(() => expect(host).toHaveValue('AGRI-BD01-FW01'))
+    expect(host).toHaveValue('')
+    expect(within(dialog).getByRole('button', { name: 'Đặt lên sơ đồ' })).toBeDisabled()
+    fireEvent.click(
+      await within(dialog).findByRole('button', { name: 'Dùng gợi ý AGRI-BD01-FW01' }),
+    )
+    expect(host).toHaveValue('AGRI-BD01-FW01')
     fireEvent.change(host, { target: { value: 'Tường lửa 2' } })
-    expect(within(dialog).getByText(/Chỉ dùng chữ A–Z không dấu/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/chỉ dùng chữ A–Z không dấu/)).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Đặt lên sơ đồ' })).toBeDisabled()
     fireEvent.change(host, { target: { value: 'AGRI-BD01-FW02' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Đặt lên sơ đồ' }))

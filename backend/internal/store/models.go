@@ -255,6 +255,9 @@ type Link struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+	FiberMode      string
+	Connector      string
+	Service        string
 }
 
 type Location struct {

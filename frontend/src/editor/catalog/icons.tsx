@@ -31,10 +31,11 @@ const waves = (x: number) => (
 )
 
 const ICON_PATHS: Partial<Record<DeviceType, JSX.Element>> = {
+  // The classic router symbol: a round body with arrows in and out, so it never looks like a switch.
   router: (
-    <g>
-      {box}
-      {arrows}
+    <g {...sw}>
+      <ellipse cx="12" cy="12" rx="9" ry="6" />
+      <path d="M8 10.5h3M9.5 9 11 10.5 9.5 12M16 13.5h-3M14.5 12 13 13.5l1.5 1.5" />
     </g>
   ),
   l3_switch: (
@@ -268,6 +269,57 @@ const ICON_PATHS: Partial<Record<DeviceType, JSX.Element>> = {
   ),
 }
 
+/** Device types of the API (ADR-033) drawn with their own or a shared shape. */
+const API_ICONS: Record<string, JSX.Element | undefined> = {
+  nvr: ICON_PATHS.nvr_dvr,
+  ont: ICON_PATHS.ont_olt,
+  olt: (
+    <g {...sw}>
+      <rect x="3" y="4" width="10" height="16" rx="1.5" />
+      <path d="M6 8h4M6 12h4M6 16h4M13 12h3M16 12l4-5M16 12h4M16 12l4 5" />
+    </g>
+  ),
+  ups: ICON_PATHS.ups_pdu,
+  pdu: (
+    <g {...sw}>
+      <rect x="3" y="9" width="18" height="6" rx="1.5" />
+      <path d="M6.5 11v2M9 11v2M11.5 11v2M14 11v2M17.5 12h1" />
+    </g>
+  ),
+  provider_cloud: ICON_PATHS.cloud,
+  wireless_bridge: (
+    <g {...sw}>
+      <path d="M4 18V9M20 18V9M4 9a3 3 0 0 1 3 3M20 9a3 3 0 0 0-3 3" />
+      <path d="M8.5 9.5a5 5 0 0 1 7 0M10.2 11.3a2.5 2.5 0 0 1 3.6 0" />
+    </g>
+  ),
+  console_server: (
+    <g {...sw}>
+      <rect x="3" y="6" width="18" height="12" rx="1.5" />
+      <path d="M7 10l2.5 2L7 14M11.5 14H15" />
+    </g>
+  ),
+  pbx: (
+    <g {...sw}>
+      <rect x="4" y="5" width="16" height="14" rx="1.5" />
+      <path d="M8 9h8M8 12.5h.01M12 12.5h.01M16 12.5h.01M8 15.5h.01M12 15.5h.01M16 15.5h.01" />
+    </g>
+  ),
+  access_control: (
+    <g {...sw}>
+      <rect x="6" y="3" width="12" height="18" rx="1.5" />
+      <circle cx="12" cy="10" r="2.5" />
+      <path d="M12 12.5V16M9 18h6" />
+    </g>
+  ),
+  video_conference: (
+    <g {...sw}>
+      <rect x="3" y="6" width="13" height="10" rx="1.5" />
+      <path d="M16 9.5l5-2.5v8l-5-2.5M7 19h5" />
+    </g>
+  ),
+}
+
 const GENERIC_ICON = (
   <g>
     {box}
@@ -275,12 +327,13 @@ const GENERIC_ICON = (
   </g>
 )
 
+/** Line-art icon for a device type (API types, plus the editor prototype's own catalog ids). */
 export function DeviceIcon({
   typeId,
   size = 24,
   className,
 }: {
-  typeId: DeviceType
+  typeId: DeviceType | string
   size?: number
   className?: string
 }) {
@@ -293,7 +346,7 @@ export function DeviceIcon({
       aria-hidden="true"
       role="img"
     >
-      {ICON_PATHS[typeId] ?? GENERIC_ICON}
+      {API_ICONS[typeId] ?? ICON_PATHS[typeId as DeviceType] ?? GENERIC_ICON}
     </svg>
   )
 }

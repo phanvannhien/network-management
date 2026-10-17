@@ -369,6 +369,10 @@ export const en: Strings = {
     mac: 'MAC',
     vlanTag: 'VLAN tag (802.1Q)',
     types: {
+      olt: 'OLT (PON head)',
+      provider_cloud: 'Internet / carrier',
+      wireless_bridge: 'Wireless bridge',
+      console_server: 'Console server',
       router: 'Router',
       l3_switch: 'L3 switch',
       l2_switch: 'L2 switch',
@@ -414,6 +418,12 @@ export const en: Strings = {
       power: 'Power & other',
     },
     typeInfo: {
+      olt: 'Feeds many ONTs through PON ports and passive splitters (in-house GPON/POL)',
+      provider_cloud:
+        'The Internet or a carrier MPLS cloud — the far end of a WAN line, not an asset',
+      wireless_bridge: 'Links two buildings by radio instead of cable, e.g. Ubiquiti, Mikrotik',
+      console_server:
+        'Collects the console ports of many devices for access when the network is down',
       router: 'Joins networks and reaches the Internet, e.g. a branch edge router',
       modem: "Turns the carrier's copper/coax line into a LAN",
       ont: 'Carrier box at the end of the fibre (GPON) into the office',
@@ -497,12 +507,18 @@ export const en: Strings = {
     diagramLayer:
       'Physical: cables and ports. L2: VLANs, trunks. L3: IPs, subnets, routing. Overview: sites connected together.',
     linkPort:
-      'Only fitting ports are listed: cables → physical ports; logical → tunnel/LAG. Cabled ports are greyed out.',
-    linkMedium: 'The exact cable, e.g. Cat6, OM4 (multimode), SM (single-mode), DAC, VPN/IPsec.',
+      'Only ports the cable fits are listed: copper → RJ45/SFP, fibre → SFP/PON, logical → tunnel or WAN port. Cabled ports are greyed out; cable a LAG through its member ports.',
+    linkMedium: 'The exact cable, e.g. Cat6, DAC, OM4, OS2 (single-mode fibre), VPN/IPsec.',
     linkStatus:
       'Design status: Planned = not cabled yet. Live Up/Down comes with monitoring (Phase 3).',
     cableId: 'The code on the cable label, to find the right cable in the rack, e.g. BD-C001.',
     linkWan: 'For provider lines (Internet, MPLS, leased lines), handy when reporting an outage.',
+    fiberMode:
+      'Single-mode (yellow, long runs) and multi-mode (orange/aqua, in-building) cannot be mixed.',
+    connector:
+      'Fibre plug type: LC (small, most SFPs), SC (square, patch panels / ONTs), MPO (multi-fibre).',
+    linkService:
+      'The kind of carrier service; dedicated Internet has static IPs and an SLA, unlike ordinary FTTH.',
     endpointGroup:
       'An endpoint group = many similar devices (cameras, PCs, IP phones…) managed as one item, drawn as one icon with a "used/total" badge.',
     endpointKind:
@@ -558,14 +574,22 @@ export const en: Strings = {
   },
   hints: {
     linkKinds: {
-      ethernet: 'A copper cable between two RJ45 ports (Cat5e/Cat6), up to ~100 m.',
+      ethernet:
+        'Copper: Cat5e/Cat6 between two RJ45 ports (up to ~100 m), or DAC — copper twinax with SFP ends for short runs in a rack.',
       fiber:
-        'A fiber cable between SFP/SFP+/QSFP ports; longer and faster than copper. DAC = copper cable with SFP ends, for short runs in a rack.',
-      wireless: 'A radio connection (AP, wireless bridge between buildings).',
+        'Fibre between SFP/SFP+/QSFP ports, longer than copper; AOC = fibre with fixed ends. An OLT PON port feeds many ONTs.',
+      wireless:
+        'A radio connection: an AP and its Wi-Fi clients, a bridge between buildings. One radio serves many links.',
+      stack:
+        'Cables between members of a cluster: switch stacking, firewall HA heartbeat. A vPC peer-link is Ethernet/Fibre.',
+      power:
+        'Power from a UPS/PDU to a device (two cords for two PSUs). Only the UPS/PDU outlet may be named.',
+      dsl: "The carrier's DSL or coax line into a modem.",
+      cellular: 'A 4G/5G (SIM) or satellite line, usually the backup Internet. Takes no port.',
+      console: 'A console cable to configure the device directly (OOB management).',
       serial: 'Legacy serial port (V.35, RS-232), mostly on older routers/modems.',
       logical:
-        'A connection that takes no physical port: VPN/IPsec, GRE, MPLS between sites (pick the tunnel interface), or a LAG (port-channel).',
-      console: 'A console cable to configure the device directly (OOB management).',
+        'Not a cable: VPN/IPsec, GRE (pick the tunnel interface, or the WAN port the VPN is bound to). Draw a LAG as its member cables.',
     },
     rangeKinds: {
       dhcp: 'A DHCP server hands out these addresses to clients — do not assign by hand; "next free IP" skips this range.',
@@ -767,12 +791,30 @@ export const en: Strings = {
       'Declare cables (port → port) or logical connections (VPN, GRE…) to draw diagrams and catch mistakes.',
     kind: 'Connection type',
     kinds: {
-      ethernet: 'Ethernet (copper)',
-      fiber: 'Fiber',
+      ethernet: 'Ethernet (copper, incl. DAC)',
+      fiber: 'Fibre',
       wireless: 'Wireless',
-      serial: 'Serial',
-      logical: 'Logical (VPN, GRE, LAG…)',
+      stack: 'Stack / HA heartbeat',
+      power: 'Power cord',
+      dsl: 'DSL / coax',
+      cellular: '4G/5G',
       console: 'Console',
+      serial: 'Serial',
+      logical: 'Logical (VPN, GRE…)',
+    },
+    fiberMode: 'Fibre type',
+    fiberModes: { unknown: 'Unknown', sm: 'Single-mode (SM)', mm: 'Multi-mode (MM)' },
+    connector: 'Connector',
+    service: 'WAN service',
+    services: {
+      none: 'Not a WAN line',
+      internet_broadband: 'Broadband Internet (FTTH / xDSL)',
+      internet_dedicated: 'Dedicated Internet (static IP, SLA)',
+      mpls: 'MPLS VPN',
+      leased_line: 'Leased line',
+      metro: 'Metro Ethernet',
+      mobile: '4G/5G (SIM)',
+      other: 'Other',
     },
     endKinds: { device: 'Device', endpoint_group: 'Endpoint group' },
     nearPort: 'Port of this device',
@@ -927,15 +969,17 @@ export const en: Strings = {
     noTemplate: 'No template',
     chooseSite: 'Choose a site…',
     siteGuide: 'Where the device really is; a diagram may hold devices of several sites.',
-    hostnameHint: 'Letters, digits and "-" (max 63); suggested from the site code and type.',
+    hostnameHint: 'Starts with a letter or digit; then letters, digits, "-", ".", "_" (max 63).',
     hostnameProblems: {
-      chars: 'Use only unaccented letters A–Z, digits and "-".',
-      dash: 'Must not start or end with "-".',
+      chars: 'Start with a letter/digit; use only unaccented letters, digits, "-", ".", "_".',
       length: 'At most 63 characters.',
     },
     hostnameNetbios:
       'Longer than 15 characters: Windows cuts server/PC names — shorten it if this is a Windows machine.',
-    suggestAgain: 'Suggest the hostname again',
+    hostnameDns:
+      'Contains "_", "." or a trailing "-": some DNS / monitoring systems reject it — prefer letters, digits and "-".',
+    suggestion: 'Suggested from the site code:',
+    useSuggestion: 'Use the suggestion {{name}}',
     place: 'Place on the diagram',
   },
   categories: {

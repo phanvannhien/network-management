@@ -318,3 +318,41 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** mọi loại khách (công ty nội bộ, khách của MSP, khách nhiều tầng) dùng được cùng một mô hình; một khái niệm (danh mục)
   thay cho ba (đối tác, đơn vị, site dùng chung); phân quyền đơn giản.
 - **Đánh đổi:** không còn giới hạn "người IT nhà máy chỉ thấy nhà máy" — nếu cần thì tách thành tổ chức riêng.
+
+### ADR-033 — Loại thiết bị và loại dây theo thực tế mạng; hostname tự đặt; xóa khỏi kho phải xác nhận
+- **Bối cảnh:** rà soát nghiệp vụ khi làm P1-15 (agent kỹ sư mạng) thấy mô hình dây lệch thực tế (DAC xếp vào quang, LAG xếp vào
+  logical, MPLS là kiểu nét) và thiếu loại thiết bị/dây hay gặp. Người dùng chốt 2026-10-17.
+- **Quyết định — loại thiết bị** (thêm 4): `provider_cloud` (đám mây Internet / MPLS của nhà mạng — đầu bên kia đường WAN; không
+  phải tài sản: luôn `managed=false`, **không** kiểm tra trùng hostname, không chọn cổng ở đầu này), `wireless_bridge` (cầu
+  Wi-Fi điểm–điểm giữa các tòa nhà/nhà xưởng), `console_server` (quản trị ngoài băng), `olt` (gom nhiều ONT qua cổng PON).
+  `poe_switch` giữ lại cho dễ chọn. Mỗi loại có icon riêng (router không còn trùng hình switch). Media cổng thêm `PON`, `xDSL`,
+  `Cellular`.
+- **Quyết định — loại dây** (`links.kind`), rà soát nghiệp vụ lần 2 (agent kỹ sư mạng) tinh chỉnh luật cổng:
+
+  | kind | Gồm | Đầu là nhóm đầu cuối | Cổng hợp lệ (media khai báo) | Một dây/cổng |
+  | --- | --- | --- | --- | --- |
+  | `ethernet` | Cat5e/6/6A, **DAC** (đồng twinax đầu SFP) | được | RJ45, họ SFP | có |
+  | `fiber` | OM3/4/5, OS2, **AOC**; `fiberMode` sm/mm, `connector` LC/SC/MPO/ST | được | họ SFP, PON | có, trừ cổng PON |
+  | `wireless` | Wi-Fi, cầu P2P/P2MP | được | Radio | **không** (một radio nhiều kết nối) |
+  | `stack` | cáp stack, HA heartbeat | không | RJ45, họ SFP | có; hai đầu đã thuộc cụm thì phải cùng cụm |
+  | `power` | UPS/PDU → thiết bị | không | chỉ ổ cắm ở đầu UPS/PDU; đầu thiết bị không chọn cổng | có |
+  | `dsl` | DSL, coax | không | xDSL, RJ45 | có |
+  | `cellular` | 4G/5G, vệ tinh | không | Cellular | **không** |
+  | `console`, `serial` | như cũ | không | Console/Serial, RJ45 | có |
+  | `logical` | VPN/IPsec, GRE | được (như trước) | interface ảo hoặc **cổng vật lý** mà VPN gắn vào (FortiGate wan1); **không LAG** | không |
+
+  - Mọi loại: interface `lag` không nối dây trực tiếp — **LAG** = các dây vật lý giữa cổng thành viên. Media trống = chưa biết,
+    luôn chấp nhận; chỉ báo lỗi 400 khi chắc chắn không cắm được. SM–MM lệch, đầu nối lệch, tốc độ lệch, QSFP→SFP breakout,
+    DAC > 7 m, đồng > 100 m, serial/console vào RJ45/SFP… là **cảnh báo** của validation (P1-20).
+  - **Dịch vụ WAN** (`service`): `internet_broadband` (FTTH/xDSL dùng chung), `internet_dedicated` (Internet trực tiếp, IP tĩnh,
+    SLA), `mpls`, `leased_line` (kênh thuê riêng), `metro` (Metro Ethernet), `mobile` (4G/5G), `other` — cạnh nhà cung cấp,
+    circuit ID, băng thông; MPLS không còn là kiểu nét.
+  - Chuyển dữ liệu (migration 000021): `fiber` + medium `DAC` → `ethernet`; medium SM/MM/OMx → `fiberMode`; `logical` + medium
+    `MPLS` → `service = mpls`; dây logical cũ nối interface LAG giữ nguyên nhưng sửa lại phải theo luật mới.
+- **Quyết định — hostname:** người dùng **tự đặt** (ô để trống); dưới ô có **gợi ý theo đường dẫn mã site**
+  (`<mã site bỏ mã tổ chức>-<loại><số>`, vd `AGRI-BD01-FW01`), bấm để dùng. Kiểm tra theo luật kho (chữ/số đầu, rồi chữ, số,
+  `.`, `_`, `-`); `_`/`.` và tên Windows > 15 ký tự chỉ cảnh báo. Không làm cài đặt quy ước riêng cho tổ chức.
+- **Quyết định — xóa khỏi kho** (Shift+Delete hoặc menu) luôn có **hộp xác nhận** liệt kê thiết bị và dây bị xóa theo; Delete chỉ
+  gỡ khỏi sơ đồ.
+- **Lý do:** sơ đồ phản ánh đúng cách kỹ sư lắp mạng (bắt lỗi cắm DAC vào cổng RJ45, SM–MM lệch, thiếu dây nguồn khi mất điện).
+- **Đánh đổi:** thêm cột và luật kiểm tra; dây LAG cũ phải vẽ lại thành dây vật lý của từng cổng thành viên.

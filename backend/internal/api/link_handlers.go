@@ -64,7 +64,8 @@ func toLink(r store.ListLinksRow, level int) apigen.Link {
 		A:    end(r.AKind, r.AID, r.ASiteID, r.AName, r.AType, r.ASiteCode, r.AInterfaceID, r.AInterfaceName, r.AInterfaceKind, r.AInterfaceMedia),
 		B:    end(r.BKind, r.BID, r.BSiteID, r.BName, r.BType, r.BSiteCode, r.BInterfaceID, r.BInterfaceName, r.BInterfaceKind, r.BInterfaceMedia),
 		Kind: apigen.LinkKind(r.Kind), Medium: r.Medium, Speed: r.Speed, LengthM: numericPtr(r.LengthM), CableId: r.CableID,
-		Status: apigen.LinkStatus(r.Status), Provider: r.Provider, CircuitId: r.CircuitID, Bandwidth: r.Bandwidth, Notes: r.Notes,
+		Status: apigen.LinkStatus(r.Status), FiberMode: apigen.LinkFiberMode(r.FiberMode),
+		Connector: apigen.LinkConnector(r.Connector), Service: apigen.LinkService(r.Service), Provider: r.Provider, CircuitId: r.CircuitID, Bandwidth: r.Bandwidth, Notes: r.Notes,
 		Access: levelName(level), Version: r.Version,
 	}
 }
@@ -124,11 +125,14 @@ func (s *Server) ListLinks(ctx context.Context, req apigen.ListLinksRequestObjec
 // --- writes ---
 
 type linkEnd struct {
-	kind      string
-	id, iface pgtype.UUID
-	label     string // HOST or HOST:port, for messages and audit
-	ifaceKind string
-	level     int
+	kind       string
+	id, iface  pgtype.UUID
+	label      string // HOST or HOST:port, for messages and audit
+	ifaceKind  string
+	ifaceMedia string
+	devType    string      // device ends only
+	cluster    pgtype.UUID // device ends only
+	level      int
 }
 
 // resolveEnd checks an end exists for the caller and its interface belongs to it.
@@ -146,7 +150,7 @@ func resolveEnd(ctx context.Context, q store.Querier, m tenant.Membership, in ap
 		if e.level, err = deviceLevel(ctx, q, m, d); err != nil {
 			return e, "", err
 		}
-		e.label = d.Hostname
+		e.label, e.devType, e.cluster = d.Hostname, d.Type, d.ClusterID
 	case apigen.LinkEndKindEndpointGroup:
 		g, ok, err := loadGroup(ctx, q, m, in.Id)
 		if err != nil {
@@ -173,13 +177,14 @@ func resolveEnd(ctx context.Context, q store.Querier, m tenant.Membership, in ap
 		if err != nil {
 			return e, "", fmt.Errorf("load interface: %w", err)
 		}
-		e.iface, e.ifaceKind, e.label = i.ID, i.Kind, e.label+" "+i.Name
+		e.iface, e.ifaceKind, e.ifaceMedia, e.label = i.ID, i.Kind, i.Media, e.label+" "+i.Name
 	}
 	return e, "", nil
 }
 
 type linkFields struct {
 	kind, medium, speed, cable, status, provider, circuit, bandwidth, notes string
+	fiberMode, connector, service                                           string
 	length                                                                  pgtype.Numeric
 }
 
@@ -189,6 +194,19 @@ func validateLink(b apigen.LinkInput) (linkFields, string) {
 		circuit: strings.TrimSpace(str(b.CircuitId)), bandwidth: strings.TrimSpace(str(b.Bandwidth)), notes: str(b.Notes)}
 	if b.Status != nil {
 		f.status = string(*b.Status)
+	}
+	if b.FiberMode != nil {
+		f.fiberMode = string(*b.FiberMode)
+	}
+	if b.Connector != nil {
+		f.connector = string(*b.Connector)
+	}
+	if b.Service != nil {
+		f.service = string(*b.Service)
+	}
+	// Fibre mode and connector only describe fibre (ADR-033); switching a link to another kind clears them.
+	if b.Kind != apigen.LinkKindFiber {
+		f.fiberMode, f.connector = "", ""
 	}
 	if b.LengthM != nil {
 		if *b.LengthM <= 0 || *b.LengthM > 9999999 {
@@ -203,6 +221,10 @@ func validateLink(b apigen.LinkInput) (linkFields, string) {
 		return f, "Loại link không hợp lệ"
 	case !apigen.LinkStatus(f.status).Valid():
 		return f, "Trạng thái link không hợp lệ"
+	case !apigen.LinkFiberMode(f.fiberMode).Valid() || !apigen.LinkConnector(f.connector).Valid():
+		return f, "Loại quang (SM/MM) hoặc đầu nối không hợp lệ"
+	case !apigen.LinkService(f.service).Valid():
+		return f, "Dịch vụ WAN không hợp lệ"
 	case tooLong(f.medium, 40) || tooLong(f.speed, 20) || tooLong(f.cable, 64) || tooLong(f.provider, 100) ||
 		tooLong(f.circuit, 100) || tooLong(f.bandwidth, 40) || tooLong(f.notes, 2000):
 		return f, "Một trường vượt quá độ dài cho phép"
@@ -218,38 +240,109 @@ type linkSnapshot struct {
 	Medium string `json:"medium,omitempty"`
 	Speed  string `json:"speed,omitempty"`
 	Cable  string `json:"cableId,omitempty"`
+	Mode   string `json:"fiberMode,omitempty"`
+	Conn   string `json:"connector,omitempty"`
+	Svc    string `json:"service,omitempty"`
 }
 
 func snapLinkRow(r store.ListLinksRow) linkSnapshot {
 	label := func(name, iface string) string { return strings.TrimSpace(name + " " + iface) }
-	return linkSnapshot{label(r.AName, r.AInterfaceName), label(r.BName, r.BInterfaceName), r.Kind, r.Status, r.Medium, r.Speed, r.CableID}
+	return linkSnapshot{label(r.AName, r.AInterfaceName), label(r.BName, r.BInterfaceName), r.Kind, r.Status, r.Medium, r.Speed, r.CableID,
+		r.FiberMode, r.Connector, r.Service}
 }
+
+// linkRule: what each link kind may connect (ADR-033). Media is checked only when the port has one, and only where
+// the cable physically cannot fit; doubtful pairs are warnings of the validation engine (P1-20).
+type linkRule struct {
+	groups    bool            // an endpoint group may be one end
+	exclusive bool            // the cable occupies the port: one per port
+	media     map[string]bool // allowed port media besides ''
+}
+
+var (
+	sfpFamily = []string{"SFP", "SFP+", "SFP28", "QSFP"}
+	linkRules = map[string]linkRule{
+		"ethernet": {groups: true, exclusive: true, media: set(append([]string{"RJ45"}, sfpFamily...)...)},
+		"fiber":    {groups: true, exclusive: true, media: set(append([]string{"PON"}, sfpFamily...)...)},
+		"wireless": {groups: true, media: set("Radio")},
+		"serial":   {exclusive: true, media: set("Serial", "RJ45")},
+		"console":  {exclusive: true, media: set("Console", "RJ45")},
+		"power":    {exclusive: true, media: set()},
+		"stack":    {exclusive: true, media: set(append([]string{"RJ45"}, sfpFamily...)...)},
+		"dsl":      {exclusive: true, media: set("xDSL", "RJ45")},
+		"cellular": {media: set("Cellular")},
+		"logical":  {},
+	}
+	linkKindNames = map[string]string{
+		"ethernet": "Ethernet (đồng)", "fiber": "quang", "wireless": "không dây", "serial": "serial", "console": "console",
+		"power": "nguồn", "stack": "stack/HA", "dsl": "DSL/coax", "cellular": "4G/5G", "logical": "logical",
+	}
+)
+
+func set(xs ...string) map[string]bool {
+	out := make(map[string]bool, len(xs))
+	for _, x := range xs {
+		out[x] = true
+	}
+	return out
+}
+
+func isPowerSource(devType string) bool { return devType == "ups" || devType == "pdu" }
 
 // checkLinkEnds applies the connection rules; returns a 400 message, 403 code or 409 message.
 func checkLinkEnds(ctx context.Context, q store.Querier, m tenant.Membership, kind string, a, b linkEnd, self pgtype.UUID) (string, int, string, error) {
+	rule := linkRules[kind]
+	name := linkKindNames[kind]
 	if a.kind == "endpoint_group" && b.kind == "endpoint_group" {
 		return "Một đầu link phải là thiết bị (nhóm đầu cuối nối vào switch, AP…)", 0, "", nil
 	}
+	if !rule.groups && (a.kind == "endpoint_group" || b.kind == "endpoint_group") {
+		return fmt.Sprintf("Dây %s chỉ nối giữa hai thiết bị, không nối nhóm thiết bị đầu cuối", name), 0, "", nil
+	}
 	if a.kind == b.kind && a.id == b.id && (!a.iface.Valid || !b.iface.Valid || a.iface == b.iface) {
 		return "Link phải nối hai cổng khác nhau (hoặc hai thiết bị khác nhau)", 0, "", nil
+	}
+	switch kind {
+	case "power":
+		if !isPowerSource(a.devType) && !isPowerSource(b.devType) {
+			return "Dây nguồn phải có một đầu là UPS hoặc PDU", 0, "", nil
+		}
+	case "stack":
+		if a.cluster.Valid && b.cluster.Valid && a.cluster != b.cluster {
+			return "Dây stack/HA nối hai thiết bị của cùng một cụm — hai thiết bị này thuộc hai cụm khác nhau", 0, "", nil
+		}
 	}
 	for _, e := range []linkEnd{a, b} {
 		if !e.iface.Valid {
 			continue
 		}
-		if kind == "logical" && e.ifaceKind == "physical" {
-			return fmt.Sprintf("Link logical (VPN, GRE, LAG) dùng interface ảo như tunnel hoặc LAG — %s là cổng vật lý", e.label), 0, "", nil
+		if e.devType == "provider_cloud" {
+			return fmt.Sprintf("%s là mạng của nhà cung cấp — không chọn cổng ở đầu này", e.label), 0, "", nil
 		}
-		if kind != "logical" && e.ifaceKind != "physical" {
-			return fmt.Sprintf("%s là interface ảo — link vật lý chỉ nối vào cổng vật lý (VPN/GRE/LAG chọn loại Logical)", e.label), 0, "", nil
+		// A power cord goes into the device's PSU, which is not modelled; only the UPS / PDU outlet may be named.
+		if kind == "power" && !isPowerSource(e.devType) {
+			return fmt.Sprintf("Dây nguồn: chỉ chọn ổ cắm ở đầu UPS/PDU, để trống cổng ở %s", e.label), 0, "", nil
+		}
+		if e.ifaceKind == "lag" {
+			return fmt.Sprintf("%s là LAG (cổng gộp) — vẽ từng dây vật lý vào các cổng thành viên", e.label), 0, "", nil
+		}
+		if kind == "logical" {
+			continue // tunnel, loopback, SVI, sub-interface, or the physical WAN port a VPN is bound to
+		}
+		if e.ifaceKind != "physical" {
+			return fmt.Sprintf("%s là interface ảo — dây %s chỉ nối vào cổng vật lý (VPN/GRE chọn loại Logical)", e.label, name), 0, "", nil
+		}
+		if e.ifaceMedia != "" && !rule.media[e.ifaceMedia] {
+			return fmt.Sprintf("Dây %s không cắm được vào cổng %s (%s)", name, e.label, e.ifaceMedia), 0, "", nil
 		}
 	}
 	if max(a.level, b.level) < tenant.LevelEdit {
 		return "", 403, "", nil
 	}
-	if kind != "logical" {
+	if rule.exclusive {
 		for _, e := range []linkEnd{a, b} {
-			if !e.iface.Valid {
+			// A PON port feeds many ONTs through a passive splitter.
+			if !e.iface.Valid || e.ifaceMedia == "PON" {
 				continue
 			}
 			if err := q.LockInterfaceLinks(ctx, m.OrgID.String()+"/iface/"+uuidStr(e.iface)); err != nil {
@@ -260,7 +353,7 @@ func checkLinkEnds(ctx context.Context, q store.Querier, m tenant.Membership, ki
 				return "", 0, "", fmt.Errorf("count port links: %w", err)
 			}
 			if n > 0 {
-				return "", 0, fmt.Sprintf("Cổng %s đã có link — một cổng vật lý chỉ cắm được một dây", e.label), nil
+				return "", 0, fmt.Sprintf("Cổng %s đã có dây — một cổng vật lý chỉ cắm được một dây", e.label), nil
 			}
 		}
 	}
@@ -328,7 +421,8 @@ func writeLink(ctx context.Context, q store.Querier, m tenant.Membership, b apig
 		if id == nil {
 			lid, err = q.CreateLink(ctx, store.CreateLinkParams{OrganizationID: m.OrgID, AKind: a.kind, AID: a.id, AInterfaceID: a.iface,
 				BKind: bb.kind, BID: bb.id, BInterfaceID: bb.iface, Kind: f.kind, Medium: f.medium, Speed: f.speed, LengthM: f.length,
-				CableID: f.cable, Status: f.status, Provider: f.provider, CircuitID: f.circuit, Bandwidth: f.bandwidth, Notes: f.notes})
+				CableID: f.cable, Status: f.status, FiberMode: f.fiberMode, Connector: f.connector, Service: f.service,
+				Provider: f.provider, CircuitID: f.circuit, Bandwidth: f.bandwidth, Notes: f.notes})
 			if err != nil {
 				return fmt.Errorf("create link: %w", err)
 			}
@@ -336,7 +430,8 @@ func writeLink(ctx context.Context, q store.Querier, m tenant.Membership, b apig
 			lid = before.ID
 			n, err := q.UpdateLink(ctx, store.UpdateLinkParams{ID: before.ID, OrganizationID: m.OrgID, Version: version, AKind: a.kind,
 				AID: a.id, AInterfaceID: a.iface, BKind: bb.kind, BID: bb.id, BInterfaceID: bb.iface, Kind: f.kind, Medium: f.medium,
-				Speed: f.speed, LengthM: f.length, CableID: f.cable, Status: f.status, Provider: f.provider, CircuitID: f.circuit,
+				Speed: f.speed, LengthM: f.length, CableID: f.cable, Status: f.status, FiberMode: f.fiberMode,
+				Connector: f.connector, Service: f.service, Provider: f.provider, CircuitID: f.circuit,
 				Bandwidth: f.bandwidth, Notes: f.notes})
 			if err != nil {
 				return fmt.Errorf("update link: %w", err)
@@ -399,7 +494,8 @@ func (s *Server) UpdateLink(ctx context.Context, req apigen.UpdateLinkRequestObj
 		return apigen.UpdateLink404JSONResponse{NotFoundJSONResponse: notFoundBody(msgLinkNotFound)}, nil
 	}
 	in := apigen.LinkInput{A: b.A, B: b.B, Kind: b.Kind, Medium: b.Medium, Speed: b.Speed, LengthM: b.LengthM, CableId: b.CableId,
-		Status: b.Status, Provider: b.Provider, CircuitId: b.CircuitId, Bandwidth: b.Bandwidth, Notes: b.Notes}
+		Status: b.Status, FiberMode: b.FiberMode, Connector: b.Connector, Service: b.Service,
+		Provider: b.Provider, CircuitId: b.CircuitId, Bandwidth: b.Bandwidth, Notes: b.Notes}
 	id := req.LinkId
 	l, out, err := s.saveLink(ctx, m, in, &id, b.Version)
 	switch {

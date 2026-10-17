@@ -1,4 +1,3 @@
-import { RefreshCw } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FormField } from '@/components/FormField'
@@ -14,7 +13,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { DEVICE_TYPE_GROUPS, useDeviceList, useTemplates } from '@/modules/inventory/devices'
 import { useSites } from '@/modules/sites/sites'
-import { hostnameProblem, hostnameStem, hostnameWarning, suggestHostname } from './hostname'
+import {
+  hostnameDnsWarning,
+  hostnameProblem,
+  hostnameStem,
+  hostnameWarning,
+  suggestHostname,
+} from './hostname'
 import type { DeviceType } from './items'
 
 export interface NewDeviceInput {
@@ -53,7 +58,7 @@ export function NewDeviceDialog({
   const [type, setType] = useState<DeviceType>(initialType)
   const [templateId, setTemplateId] = useState(initialTemplate ?? '')
   const [siteId, setSiteId] = useState(defaultSiteId ?? '')
-  const [hostname, setHostname] = useState<string | null>(null)
+  const [hostname, setHostname] = useState('')
   const site = sites.data?.find((s) => s.id === siteId) ?? null
   // Numbers already used in the inventory for this site and prefix (e.g. "AGRI-BD01-FW").
   const stem = useDeferredValue(site ? hostnameStem(site, type) : '')
@@ -62,15 +67,21 @@ export function NewDeviceDialog({
     { q: stem, facets: {}, categoryId: null, sort: null, pageIndex: 0, pageSize: 200 },
     stem !== '',
   )
-  // Until the user types a hostname, it follows the site and the type.
+  // The user names the device; the suggestion follows the site path and the type (ADR-033).
   const suggested = useMemo(() => {
     if (!site) return ''
     const taken = [...takenHostnames, ...(used.data?.devices ?? []).map((d) => d.hostname)]
     return suggestHostname(site, type, taken)
   }, [site, type, takenHostnames, used.data])
-  const value = hostname ?? suggested
+  const value = hostname
   const problem = value === '' ? null : hostnameProblem(value)
-  const warning = problem ? null : hostnameWarning(value, type)
+  const warning = problem
+    ? null
+    : hostnameWarning(value, type)
+      ? 'netbios'
+      : value && hostnameDnsWarning(value)
+        ? 'dns'
+        : null
   const forType = (templates.data ?? []).filter((x) => x.type === type)
   const canSave = siteId !== '' && value.trim() !== '' && problem === null
 
@@ -153,11 +164,28 @@ export function NewDeviceDialog({
           <FormField
             label={t('devices.hostname')}
             hint={
-              warning ? (
-                <span className="text-status-warning">{t('library.hostnameNetbios')}</span>
-              ) : (
-                t('library.hostnameHint')
-              )
+              <>
+                {warning && (
+                  <span className="block text-status-warning">
+                    {t(warning === 'netbios' ? 'library.hostnameNetbios' : 'library.hostnameDns')}
+                  </span>
+                )}
+                {suggested && suggested !== value.trim() ? (
+                  <span className="block">
+                    {t('library.suggestion')}{' '}
+                    <button
+                      type="button"
+                      className="font-mono font-medium text-primary underline-offset-2 hover:underline"
+                      aria-label={t('library.useSuggestion', { name: suggested })}
+                      onClick={() => setHostname(suggested)}
+                    >
+                      {suggested}
+                    </button>
+                  </span>
+                ) : (
+                  !suggested && t('library.hostnameHint')
+                )}
+              </>
             }
             guide={t('guides.hostname')}
             help="hostname"
@@ -165,28 +193,15 @@ export function NewDeviceDialog({
             required
           >
             {(p) => (
-              <div className="flex gap-2">
-                <Input
-                  {...p}
-                  required
-                  autoFocus
-                  maxLength={63}
-                  value={value}
-                  onChange={(e) => setHostname(e.target.value)}
-                  className="font-mono"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label={t('library.suggestAgain')}
-                  title={t('library.suggestAgain')}
-                  disabled={!site}
-                  onClick={() => setHostname(null)}
-                >
-                  <RefreshCw aria-hidden />
-                </Button>
-              </div>
+              <Input
+                {...p}
+                required
+                autoFocus
+                maxLength={63}
+                value={value}
+                onChange={(e) => setHostname(e.target.value)}
+                className="font-mono"
+              />
             )}
           </FormField>
           <DialogFooter>

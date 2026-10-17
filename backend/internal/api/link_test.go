@@ -71,6 +71,7 @@ func TestLinkRules(t *testing.T) {
 		return idOf(t, mustCreate(t, fx.A, devicePath(org, dev)+"/interfaces", map[string]any{"name": name, "kind": kind}))
 	}
 	g1, g2, svi := port(sw, "Gi1/0/1", "physical"), port(sw, "Gi1/0/2", "physical"), port(sw, "Vlan10", "svi")
+	po1 := port(sw, "Po1", "lag")
 	fwPort, fwTun, hqTun := port(fw, "port1", "physical"), port(fw, "VPN-HN", "tunnel"), port(hq, "VPN-BD", "tunnel")
 	grp := idOf(t, mustCreate(t, fx.A, groupsPath(org), map[string]any{"kind": "ip_camera", "name": "CAM", "siteId": bd}))
 	grp2 := idOf(t, mustCreate(t, fx.A, groupsPath(org), map[string]any{"kind": "pc", "name": "PC", "siteId": bd}))
@@ -80,7 +81,8 @@ func TestLinkRules(t *testing.T) {
 		want int
 	}{
 		"physical link on an SVI":     {map[string]any{"a": devEnd(sw, svi), "b": devEnd(fw, fwPort), "kind": "ethernet"}, http.StatusBadRequest},
-		"VPN on a physical port":      {map[string]any{"a": devEnd(fw, fwPort), "b": devEnd(hq, hqTun), "kind": "logical"}, http.StatusBadRequest},
+		"VPN on a LAG":                {map[string]any{"a": devEnd(sw, po1), "b": devEnd(hq, hqTun), "kind": "logical"}, http.StatusBadRequest},
+		"cable on a LAG":              {map[string]any{"a": devEnd(sw, po1), "b": devEnd(fw, ""), "kind": "ethernet"}, http.StatusBadRequest},
 		"port of another device":      {map[string]any{"a": devEnd(fw, g1), "b": devEnd(sw, g2), "kind": "ethernet"}, http.StatusBadRequest},
 		"same port twice":             {map[string]any{"a": devEnd(sw, g1), "b": devEnd(sw, g1), "kind": "ethernet"}, http.StatusBadRequest},
 		"device to itself, no ports":  {map[string]any{"a": devEnd(sw, ""), "b": devEnd(sw, ""), "kind": "ethernet"}, http.StatusBadRequest},
@@ -170,5 +172,73 @@ func TestLinkPermissions(t *testing.T) {
 	}
 	if status, _ := w.viewer.Do("POST", linksPath(org), map[string]any{"a": devEnd(sw, ""), "b": devEnd(fw, ""), "kind": "ethernet"}); status != http.StatusForbidden {
 		t.Errorf("viewer creates a link: %d, want 403", status)
+	}
+}
+
+// ADR-033: per-kind rules — port media, ports that are not exclusive, power and stack ends, provider clouds.
+func TestLinkKindRules(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD"}))
+	dev := func(host, typ string, extra map[string]any) string {
+		body := map[string]any{"hostname": host, "type": typ, "siteId": bd}
+		for k, v := range extra {
+			body[k] = v
+		}
+		return idOf(t, mustCreate(t, fx.A, devicesPath(org), body))
+	}
+	port := func(d, name, kind, media string) string {
+		return idOf(t, mustCreate(t, fx.A, devicePath(org, d)+"/interfaces", map[string]any{"name": name, "kind": kind, "media": media}))
+	}
+	sw, fw, ap, ups, olt := dev("SW01", "l2_switch", nil), dev("FW01", "firewall", nil), dev("AP01", "access_point", nil),
+		dev("UPS01", "ups", nil), dev("OLT01", "olt", nil)
+	ont1, ont2, modem := dev("ONT01", "ont", nil), dev("ONT02", "ont", nil), dev("MDM01", "modem", nil)
+	inet := dev("Internet", "provider_cloud", map[string]any{"managed": true})
+	// Two clouds may share a name, and a cloud is never managed.
+	inet2 := mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "Internet", "type": "provider_cloud", "siteId": bd})
+	if inet2["managed"] != false {
+		t.Errorf("provider cloud managed: %v", inet2["managed"])
+	}
+	rj, sfp, radio, pon := port(sw, "Gi1/0/1", "physical", "RJ45"), port(sw, "Te1/1/1", "physical", "SFP+"),
+		port(ap, "radio0", "physical", "Radio"), port(olt, "pon0/1", "physical", "PON")
+	outlet, fwWan := port(ups, "outlet1", "physical", ""), port(fw, "wan1", "physical", "RJ45")
+	inetPort := port(inet, "x", "physical", "")
+	c1 := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "ST1", "hostname": "ST1", "siteId": bd}))
+	c2 := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "stack", "name": "ST2", "hostname": "ST2", "siteId": bd}))
+	m1, m2 := dev("M1", "l2_switch", map[string]any{"clusterId": c1}), dev("M2", "l2_switch", map[string]any{"clusterId": c2})
+	for name, c := range map[string]struct {
+		body map[string]any
+		want int
+	}{
+		"fibre into an RJ45 port":        {map[string]any{"a": devEnd(sw, rj), "b": devEnd(fw, ""), "kind": "fiber"}, http.StatusBadRequest},
+		"DAC (copper) into SFP+ (ok)":    {map[string]any{"a": devEnd(sw, sfp), "b": devEnd(fw, ""), "kind": "ethernet", "medium": "DAC"}, http.StatusCreated},
+		"wireless on RJ45":               {map[string]any{"a": devEnd(sw, rj), "b": devEnd(ap, ""), "kind": "wireless"}, http.StatusBadRequest},
+		"power without UPS/PDU":          {map[string]any{"a": devEnd(sw, ""), "b": devEnd(fw, ""), "kind": "power"}, http.StatusBadRequest},
+		"power on the device's port":     {map[string]any{"a": devEnd(ups, ""), "b": devEnd(fw, fwWan), "kind": "power"}, http.StatusBadRequest},
+		"power from a UPS outlet (ok)":   {map[string]any{"a": devEnd(ups, outlet), "b": devEnd(fw, ""), "kind": "power"}, http.StatusCreated},
+		"power to a group":               {map[string]any{"a": devEnd(ups, ""), "b": map[string]any{"kind": "endpoint_group", "id": uuid.NewString()}, "kind": "power"}, http.StatusBadRequest},
+		"stack across two clusters":      {map[string]any{"a": devEnd(m1, ""), "b": devEnd(m2, ""), "kind": "stack"}, http.StatusBadRequest},
+		"port on a provider cloud":       {map[string]any{"a": devEnd(modem, ""), "b": devEnd(inet, inetPort), "kind": "dsl"}, http.StatusBadRequest},
+		"DSL modem to the Internet (ok)": {map[string]any{"a": devEnd(modem, ""), "b": devEnd(inet, ""), "kind": "dsl", "service": "internet_broadband"}, http.StatusCreated},
+		"VPN on the WAN port (ok)":       {map[string]any{"a": devEnd(fw, fwWan), "b": devEnd(inet, ""), "kind": "logical"}, http.StatusCreated},
+		"bad service":                    {map[string]any{"a": devEnd(fw, ""), "b": devEnd(sw, ""), "kind": "ethernet", "service": "p2p"}, http.StatusBadRequest},
+	} {
+		if status, body := fx.A.Do("POST", linksPath(org), c.body); status != c.want {
+			t.Errorf("%s: %d %v, want %d", name, status, body, c.want)
+		}
+	}
+	// A radio serves many clients and a PON port many ONTs; a copper port takes one cable.
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(ap, radio), "b": devEnd(fw, ""), "kind": "wireless"})
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(ap, radio), "b": devEnd(sw, ""), "kind": "wireless"})
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(olt, pon), "b": devEnd(ont1, ""), "kind": "fiber", "fiberMode": "sm", "connector": "SC"})
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(olt, pon), "b": devEnd(ont2, ""), "kind": "fiber"})
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw, rj), "b": devEnd(fw, ""), "kind": "ethernet"})
+	if status, _ := fx.A.Do("POST", linksPath(org), map[string]any{"a": devEnd(sw, rj), "b": devEnd(ap, ""), "kind": "ethernet"}); status != http.StatusConflict {
+		t.Errorf("second cable on RJ45: %d, want 409", status)
+	}
+	// Fibre mode / connector are kept for fibre and cleared for other kinds.
+	l := mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(fw, ""), "b": devEnd(ont1, ""), "kind": "ethernet", "fiberMode": "mm", "connector": "LC"})
+	if l["fiberMode"] != "" || l["connector"] != "" {
+		t.Errorf("copper link kept fibre fields: %v", l)
 	}
 }

@@ -10,7 +10,6 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { DEVICE_TYPE_GROUPS, useDeviceList, useTemplates } from '@/modules/inventory/devices'
-import type { DeviceType as LegacyDeviceType } from '@/types/ntb'
 import { DeviceIcon } from '../catalog/icons'
 import type { LibraryItem } from './items'
 import { matches } from './search'
@@ -58,7 +57,7 @@ export function QuickAdd({
     onPick(item)
   }
   const icon = (ty: string) => (
-    <DeviceIcon typeId={ty as LegacyDeviceType} size={18} className="text-muted-foreground" />
+    <DeviceIcon typeId={ty} size={18} className="text-muted-foreground" />
   )
 
   return (

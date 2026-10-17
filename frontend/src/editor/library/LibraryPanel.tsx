@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DEVICE_TYPE_GROUPS, useDeviceList, useTemplates } from '@/modules/inventory/devices'
-import type { DeviceType as LegacyDeviceType } from '@/types/ntb'
 import { DeviceIcon } from '../catalog/icons'
 import { encodeItem, LIBRARY_MIME, type DeviceType, type LibraryItem } from './items'
 import { matches } from './search'
@@ -125,9 +124,7 @@ function Entry({
   )
 }
 
-const icon = (type: DeviceType, size = 20) => (
-  <DeviceIcon typeId={type as LegacyDeviceType} size={size} />
-)
+const icon = (type: DeviceType, size = 20) => <DeviceIcon typeId={type} size={size} />
 
 function NewDevices({
   orgId,

@@ -1880,7 +1880,7 @@ export interface components {
             users: components["schemas"]["AdminUser"][];
         };
         /** @enum {string} */
-        DeviceType: "router" | "l3_switch" | "l2_switch" | "poe_switch" | "firewall" | "load_balancer" | "wireless_controller" | "access_point" | "vpn_gateway" | "ids_ips" | "waf" | "nac" | "proxy" | "media_converter" | "patch_panel" | "modem" | "ont" | "sdwan_edge" | "server" | "vm" | "nas" | "pc" | "laptop" | "printer" | "ip_camera" | "nvr" | "ip_phone" | "pbx" | "access_control" | "video_conference" | "iot" | "ups" | "pdu" | "other";
+        DeviceType: "router" | "l3_switch" | "l2_switch" | "poe_switch" | "firewall" | "load_balancer" | "wireless_controller" | "access_point" | "vpn_gateway" | "ids_ips" | "waf" | "nac" | "proxy" | "media_converter" | "patch_panel" | "modem" | "ont" | "olt" | "provider_cloud" | "wireless_bridge" | "console_server" | "sdwan_edge" | "server" | "vm" | "nas" | "pc" | "laptop" | "printer" | "ip_camera" | "nvr" | "ip_phone" | "pbx" | "access_control" | "video_conference" | "iot" | "ups" | "pdu" | "other";
         /** @enum {string} */
         DeviceRole: "none" | "core" | "distribution" | "access" | "edge" | "dmz" | "oob";
         /** @enum {string} */
@@ -2124,8 +2124,11 @@ export interface components {
         };
         /** @enum {string} */
         InterfaceKind: "physical" | "svi" | "loopback" | "tunnel" | "subinterface" | "lag";
-        /** @enum {string} */
-        InterfaceMedia: "" | "RJ45" | "SFP" | "SFP+" | "SFP28" | "QSFP" | "Serial" | "Radio" | "Console";
+        /**
+         * @description PON = GPON/XGS-PON port (one port feeds many ONTs via a splitter); xDSL = RJ11 / coax line port
+         * @enum {string}
+         */
+        InterfaceMedia: "" | "RJ45" | "SFP" | "SFP+" | "SFP28" | "QSFP" | "PON" | "xDSL" | "Serial" | "Radio" | "Console" | "Cellular";
         /** @enum {string} */
         InterfaceMode: "" | "access" | "trunk" | "routed" | "hybrid";
         /** @enum {string} */
@@ -2635,10 +2638,25 @@ export interface components {
         /** @enum {string} */
         LinkEndKind: "device" | "endpoint_group";
         /**
-         * @description ethernet (RJ45), fiber (SFP family), wireless (radio), serial, console — all occupy a physical port; logical (VPN/IPsec, GRE, MPLS, LAG) uses virtual interfaces (tunnel, LAG…) or no port
+         * @description ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
          * @enum {string}
          */
-        LinkKind: "ethernet" | "fiber" | "wireless" | "serial" | "logical" | "console";
+        LinkKind: "ethernet" | "fiber" | "wireless" | "serial" | "console" | "power" | "stack" | "dsl" | "cellular" | "logical";
+        /**
+         * @description single-mode / multi-mode (fiber links only)
+         * @enum {string}
+         */
+        LinkFiberMode: "" | "sm" | "mm";
+        /**
+         * @description fiber connector (fiber links only)
+         * @enum {string}
+         */
+        LinkConnector: "" | "LC" | "SC" | "MPO" | "ST";
+        /**
+         * @description WAN service carried by the link (ADR-033): internet_broadband (FTTH / xDSL, shared), internet_dedicated (dedicated Internet with static IP and SLA), mpls (MPLS VPN), leased_line (point-to-point leased circuit), metro (Metro Ethernet), mobile (4G/5G SIM), other
+         * @enum {string}
+         */
+        LinkService: "" | "internet_broadband" | "internet_dedicated" | "mpls" | "leased_line" | "metro" | "mobile" | "other";
         /**
          * @description design status (live state comes from monitoring in Phase 3)
          * @enum {string}
@@ -2675,13 +2693,16 @@ export interface components {
             a: components["schemas"]["LinkEndInput"];
             b: components["schemas"]["LinkEndInput"];
             kind: components["schemas"]["LinkKind"];
-            /** @description variant, e.g. Cat6, OM4, DAC, VPN/IPsec */
+            /** @description variant, e.g. Cat6, DAC, OM4, VPN/IPsec */
             medium?: string;
             speed?: string;
             /** @description cable length in metres */
             lengthM?: number | null;
             cableId?: string;
             status?: components["schemas"]["LinkStatus"];
+            fiberMode?: components["schemas"]["LinkFiberMode"];
+            connector?: components["schemas"]["LinkConnector"];
+            service?: components["schemas"]["LinkService"];
             /** @description WAN provider (vendors module in Phase 2) */
             provider?: string;
             circuitId?: string;
@@ -2703,6 +2724,9 @@ export interface components {
             lengthM: number | null;
             cableId: string;
             status: components["schemas"]["LinkStatus"];
+            fiberMode: components["schemas"]["LinkFiberMode"];
+            connector: components["schemas"]["LinkConnector"];
+            service: components["schemas"]["LinkService"];
             provider: string;
             circuitId: string;
             bandwidth: string;

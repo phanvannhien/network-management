@@ -365,6 +365,10 @@ export const vi = {
     mac: 'MAC',
     vlanTag: 'VLAN tag (802.1Q)',
     types: {
+      olt: 'OLT (đầu PON)',
+      provider_cloud: 'Internet / nhà mạng',
+      wireless_bridge: 'Cầu không dây',
+      console_server: 'Console server',
       router: 'Router',
       l3_switch: 'Switch L3',
       l2_switch: 'Switch L2',
@@ -410,6 +414,11 @@ export const vi = {
       power: 'Nguồn điện & khác',
     },
     typeInfo: {
+      olt: 'Gom nhiều ONT qua cổng PON và bộ chia quang (mạng GPON/POL nội bộ)',
+      provider_cloud:
+        'Đám mây Internet, MPLS của nhà mạng — đầu bên kia của đường WAN, không phải tài sản',
+      wireless_bridge: 'Nối hai tòa nhà/nhà xưởng bằng sóng thay cho cáp, vd Ubiquiti, Mikrotik',
+      console_server: 'Gom cổng console của nhiều thiết bị để vào cấu hình khi mạng chính hỏng',
       router: 'Nối các mạng với nhau và ra Internet, vd router biên của chi nhánh',
       modem: 'Đổi tín hiệu cáp đồng/cáp truyền hình của nhà mạng thành mạng LAN',
       ont: 'Thiết bị nhà mạng ở đầu cáp quang (GPON) tới văn phòng',
@@ -494,13 +503,19 @@ export const vi = {
     diagramLayer:
       'Vật lý: dây và cổng. L2: VLAN, trunk. L3: IP, subnet, định tuyến. Tổng quan: các site nối với nhau.',
     linkPort:
-      'Chỉ hiện cổng hợp loại: dây vật lý → cổng vật lý; logical → tunnel/LAG. Cổng đã có dây bị làm mờ.',
-    linkMedium: 'Loại cáp cụ thể, vd Cat6, OM4 (quang đa mode), SM (đơn mode), DAC, VPN/IPsec.',
+      'Chỉ hiện cổng cắm được: dây đồng → RJ45/SFP, quang → SFP/PON, logical → tunnel hoặc cổng WAN. Cổng đã có dây bị làm mờ; LAG thì nối từng cổng thành viên.',
+    linkMedium: 'Loại cáp cụ thể, vd Cat6, DAC, OM4, OS2 (quang single-mode), VPN/IPsec.',
     linkStatus:
       'Trạng thái thiết kế: Dự kiến = chưa kéo dây. Trạng thái thật (Up/Down) có khi bật giám sát (Phase 3).',
     cableId: 'Mã in trên nhãn cáp, giúp tìm đúng dây ở tủ rack, vd BD-C001.',
     linkWan:
       'Dùng cho đường truyền nhà mạng (Internet, MPLS, kênh riêng) để tra nhanh khi báo sự cố.',
+    fiberMode:
+      'Single-mode (vàng, đi xa) và multi-mode (cam/xanh ngọc, trong tòa nhà) không cắm lẫn được với nhau.',
+    connector:
+      'Kiểu đầu cáp quang: LC (nhỏ, hay gặp nhất ở SFP), SC (vuông, hay ở ODF/ONT), MPO (nhiều sợi).',
+    linkService:
+      'Loại dịch vụ của đường truyền nhà mạng; Internet trực tiếp có IP tĩnh và cam kết chất lượng, khác Internet FTTH thường.',
     endpointGroup:
       'Nhóm đầu cuối = nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) quản lý như một mục, vẽ thành một biểu tượng có số "đã dùng/tổng" trên sơ đồ.',
     endpointKind:
@@ -553,14 +568,23 @@ export const vi = {
   },
   hints: {
     linkKinds: {
-      ethernet: 'Dây mạng đồng nối 2 cổng RJ45 (Cat5e/Cat6), tối đa ~100 m.',
+      ethernet:
+        'Dây đồng: Cat5e/Cat6 giữa hai cổng RJ45 (tối đa ~100 m), hoặc DAC — cáp đồng gắn sẵn đầu SFP, nối gần trong rack.',
       fiber:
-        'Dây quang nối 2 cổng SFP/SFP+/QSFP; đi xa hơn và nhanh hơn dây đồng. DAC = cáp đồng gắn sẵn đầu SFP, dùng nối gần trong rack.',
-      wireless: 'Kết nối qua sóng (AP, bridge không dây giữa 2 tòa nhà).',
+        'Dây quang giữa hai cổng SFP/SFP+/QSFP, đi xa hơn dây đồng; AOC = cáp quang gắn sẵn đầu. Cổng PON của OLT nối được nhiều ONT.',
+      wireless:
+        'Kết nối qua sóng: AP với máy dùng Wi-Fi, cầu không dây giữa hai tòa nhà. Một anten phục vụ nhiều kết nối.',
+      stack:
+        'Dây nối các thành viên của một cụm: cáp stack của switch, dây heartbeat giữa hai firewall HA. Dây peer-link vPC chọn Ethernet/Quang.',
+      power:
+        'Dây nguồn từ UPS/PDU tới thiết bị (thiết bị 2 nguồn thì vẽ 2 dây). Chỉ chọn ổ cắm ở đầu UPS/PDU.',
+      dsl: 'Đường DSL hoặc cáp truyền hình (coax) của nhà mạng vào modem.',
+      cellular:
+        'Đường 4G/5G (SIM) hoặc vệ tinh, thường làm đường dự phòng Internet. Không chiếm cổng.',
+      console: 'Dây console để cấu hình thiết bị trực tiếp (mạng quản trị OOB).',
       serial: 'Cổng serial kiểu cũ (V.35, RS-232), thường ở router/modem đời cũ.',
       logical:
-        'Kết nối không chiếm cổng vật lý: VPN/IPsec, GRE, MPLS giữa các site (chọn interface tunnel), hoặc LAG (Port-channel).',
-      console: 'Dây console để cấu hình thiết bị trực tiếp (mạng quản trị OOB).',
+        'Kết nối không phải dây: VPN/IPsec, GRE (chọn interface tunnel, hoặc cổng WAN mà VPN gắn vào). LAG thì vẽ từng dây thành viên.',
     },
     rangeKinds: {
       dhcp: 'Máy chủ DHCP tự cấp IP trong dải này cho máy trạm — không gán tay; "IP trống kế tiếp" bỏ qua dải này.',
@@ -761,12 +785,30 @@ export const vi = {
       'Khai báo dây nối (cổng → cổng) hoặc kết nối logical (VPN, GRE…) để vẽ sơ đồ và kiểm tra lỗi.',
     kind: 'Loại kết nối',
     kinds: {
-      ethernet: 'Ethernet (dây đồng)',
+      ethernet: 'Ethernet (đồng, gồm DAC)',
       fiber: 'Quang (fiber)',
       wireless: 'Không dây',
-      serial: 'Serial',
-      logical: 'Logical (VPN, GRE, LAG…)',
+      stack: 'Stack / HA heartbeat',
+      power: 'Dây nguồn',
+      dsl: 'DSL / cáp truyền hình',
+      cellular: '4G/5G',
       console: 'Console',
+      serial: 'Serial',
+      logical: 'Logical (VPN, GRE…)',
+    },
+    fiberMode: 'Loại quang',
+    fiberModes: { unknown: 'Chưa rõ', sm: 'Single-mode (SM)', mm: 'Multi-mode (MM)' },
+    connector: 'Đầu nối',
+    service: 'Dịch vụ WAN',
+    services: {
+      none: 'Không phải đường WAN',
+      internet_broadband: 'Internet cáp quang/ADSL (FTTH)',
+      internet_dedicated: 'Internet trực tiếp (IP tĩnh, có SLA)',
+      mpls: 'MPLS VPN',
+      leased_line: 'Kênh thuê riêng',
+      metro: 'Metro Ethernet (MetroNet)',
+      mobile: '4G/5G (SIM)',
+      other: 'Khác',
     },
     endKinds: { device: 'Thiết bị', endpoint_group: 'Nhóm đầu cuối' },
     nearPort: 'Cổng của thiết bị này',
@@ -921,15 +963,17 @@ export const vi = {
     noTemplate: 'Không dùng template',
     chooseSite: 'Chọn site…',
     siteGuide: 'Nơi thiết bị đặt thật; sơ đồ có thể chứa thiết bị của nhiều site.',
-    hostnameHint: 'Chữ không dấu, số và "-" (tối đa 63); gợi ý theo mã site + loại.',
+    hostnameHint: 'Bắt đầu bằng chữ hoặc số; chỉ chữ không dấu, số, "-", ".", "_" (tối đa 63).',
     hostnameProblems: {
-      chars: 'Chỉ dùng chữ A–Z không dấu, số và dấu "-".',
-      dash: 'Không bắt đầu hoặc kết thúc bằng "-".',
+      chars: 'Bắt đầu bằng chữ/số; chỉ dùng chữ A–Z không dấu, số, "-", ".", "_".',
       length: 'Tối đa 63 ký tự.',
     },
     hostnameNetbios:
       'Dài hơn 15 ký tự: Windows sẽ cắt tên máy chủ/PC — nên rút gọn nếu đây là máy Windows.',
-    suggestAgain: 'Gợi ý lại hostname',
+    hostnameDns:
+      'Có "_", "." hoặc "-" ở cuối: một số hệ thống DNS/giám sát không nhận — nên chỉ dùng chữ, số và "-".',
+    suggestion: 'Gợi ý theo mã site:',
+    useSuggestion: 'Dùng gợi ý {{name}}',
     place: 'Đặt lên sơ đồ',
   },
   categories: {

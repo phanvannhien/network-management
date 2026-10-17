@@ -59,11 +59,16 @@ Phase hiện tại: **Phase 0**
   nhật; i18n, hướng dẫn, glossary ("Danh mục" thay "Đối tác/Đơn vị", bỏ "site dùng chung"). Done khi: không còn trường đơn vị ở
   giao diện/API; test cũ viết lại theo mô hình mới pass.
 
+- [x] **P1-31 Mô hình dây & loại thiết bị theo thực tế (ADR-033, chốt 2026-10-17)**: loại dây ethernet (gồm DAC) / fiber (SM-MM,
+  đầu nối, PON) / wireless / stack / power / dsl / cellular / console / serial / logical với luật cổng theo từng loại; dịch vụ WAN;
+  loại thiết bị provider_cloud, olt, wireless_bridge, console_server; hostname tự đặt + gợi ý theo mã site.
+  Done khi: API từ chối dây không cắm được, cho nhiều dây trên radio/PON; dữ liệu cũ chuyển (DAC, MPLS); `make check` pass.
+
 ### Editor sơ đồ
 - [x] **P1-13 Diagram API & store**: bảng diagrams (view JSONB), lưu có optimistic lock (409 khi xung đột); store editor (Zustand + Immer), commands, undo/redo ≥ 100; lưu = một request gồm thay đổi view + thay đổi dữ liệu kho trong một transaction; nháp chưa gửi giữ ở IndexedDB; diagram có scope organization | business_unit | site *(bỏ phạm vi ở P1-29, ADR-032)*.
 - [x] **P1-14 Canvas & toolbar nổi**: React Flow, zoom/pan/grid/minimap/fit, thanh công cụ nổi trên, menu trái thu gọn khi vào màn vẽ. Tooltip tên + phím tắt cho mọi nút; gợi ý thao tác lần đầu mở editor, tắt được (DESIGN.md §4a).
 - [x] **P1-15 Thư viện & thêm nhanh**: panel thư viện nổi (tab template / tab "trong kho chưa vẽ"), tìm kiếm, phím `/` thêm nhanh, kéo thả. Mỗi loại thiết bị / template có mô tả 1 dòng; panel thuộc tính dùng hint/guide/help (DESIGN.md §4a).
-- [ ] **P1-16 Thao tác chọn & sửa**: multi-select, copy/paste giữ link, duplicate, lock, phím tắt SRS §6.4; Delete chỉ gỡ khỏi sơ đồ, Shift+Delete xóa khỏi kho (xác nhận).
+- [ ] **P1-16 Thao tác chọn & sửa**: multi-select, copy/paste giữ link, duplicate, lock, phím tắt SRS §6.4; Delete chỉ gỡ khỏi sơ đồ, Shift+Delete hoặc menu → xóa khỏi kho, **luôn có hộp xác nhận** liệt kê thiết bị và dây bị xóa theo (ADR-033).
 - [ ] **P1-17 Nối dây**: port → port hoặc device → device; popup chọn cổng; kiểu nét theo loại; link song song; gán cổng sau.
 - [ ] **P1-18 Panel thuộc tính & hiển thị**: sửa nhanh device/link/nhóm, mở trang chi tiết; **IPAM ngay trong panel** (chốt 2026-10-16): gán VLAN cho cổng (+ tạo VLAN mới tại chỗ), gán IP cho interface (+ lấy IP trống từ subnet, tạo subnet mới tại chỗ) — lưu vào IPAM chung, menu IPAM giữ để tra cứu nhanh; label template, màu nền label, label cổng, ẩn label khi zoom < 50%, tooltip, viền nét đứt cho managed=false.
 - [ ] **P1-19 Annotation & khung nhóm**: text màu, mũi tên, zone có nền; **khung nhóm gắn site/location** (ADR-032): tên lấy theo

@@ -1,6 +1,7 @@
 import type { DeviceType } from './items'
 
-// Hostname suggestion for devices created on a diagram (P1-15). Pattern: <site code without the organization
+// Hostname suggestion for devices created on a diagram (P1-15, ADR-033: the user types the name; the suggestion is
+// shown under the field). Pattern: <site code without the organization
 // code>-<PREFIX><NN>, e.g. site VPM-AGRI-BD01 + firewall → AGRI-BD01-FW01. Numbers count per site and prefix and
 // continue after the highest one in use (a retired number is not reused: logs and monitoring still know it).
 
@@ -8,6 +9,10 @@ export const HOSTNAME_PREFIX: Record<DeviceType, string> = {
   router: 'RTR',
   modem: 'MDM',
   ont: 'ONT',
+  olt: 'OLT',
+  provider_cloud: 'NET',
+  wireless_bridge: 'WB',
+  console_server: 'CON',
   sdwan_edge: 'SDW',
   vpn_gateway: 'VPN',
   l3_switch: 'CORE',
@@ -57,6 +62,8 @@ export function suggestHostname(
   type: DeviceType,
   taken: Iterable<string>,
 ): string {
+  // A provider cloud is a name on the drawing, not a host of the site.
+  if (type === 'provider_cloud') return 'INTERNET'
   const stem = hostnameStem(site, type)
   const re = new RegExp(`^${stem.replace(/[-]/g, '\\-')}(\\d+)$`, 'i')
   let max = 0
@@ -67,15 +74,20 @@ export function suggestHostname(
   return `${stem}${String(max + 1).padStart(2, '0')}`
 }
 
-export type HostnameProblem = 'chars' | 'dash' | 'length'
+export type HostnameProblem = 'chars' | 'length'
 
-/** DNS label rules (RFC 1123), which every vendor accepts: letters, digits, "-", not at either end, ≤ 63. */
+/** The inventory's rule: starts with a letter or digit, then letters, digits, ".", "_", "-"; at most 63 here. */
 export function hostnameProblem(v: string): HostnameProblem | null {
   const s = v.trim()
-  if (!/^[A-Za-z0-9-]+$/.test(s)) return 'chars'
-  if (s.startsWith('-') || s.endsWith('-')) return 'dash'
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(s)) return 'chars'
   if (s.length > 63) return 'length'
   return null
+}
+
+/** Accepted, but some systems object: "_" and "." break DNS names, a trailing "-" too. */
+export function hostnameDnsWarning(v: string): boolean {
+  const s = v.trim()
+  return /[._]/.test(s) || s.endsWith('-')
 }
 
 /** Windows computer names stop at 15 characters (NetBIOS): longer server / PC names get cut. */

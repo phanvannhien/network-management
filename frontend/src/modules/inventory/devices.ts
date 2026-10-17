@@ -22,7 +22,10 @@ export type DeviceTypeGroup =
  * used by selects, filters and the editor library. Labels: `devices.typeGroups`, one-line help: `devices.typeInfo`.
  */
 export const DEVICE_TYPE_GROUPS: { group: DeviceTypeGroup; types: DeviceType[] }[] = [
-  { group: 'wan', types: ['router', 'modem', 'ont', 'sdwan_edge', 'vpn_gateway'] },
+  {
+    group: 'wan',
+    types: ['provider_cloud', 'router', 'modem', 'ont', 'olt', 'sdwan_edge', 'vpn_gateway'],
+  },
   {
     group: 'lan',
     types: [
@@ -31,6 +34,7 @@ export const DEVICE_TYPE_GROUPS: { group: DeviceTypeGroup; types: DeviceType[] }
       'poe_switch',
       'wireless_controller',
       'access_point',
+      'wireless_bridge',
       'media_converter',
       'patch_panel',
     ],
@@ -39,7 +43,7 @@ export const DEVICE_TYPE_GROUPS: { group: DeviceTypeGroup; types: DeviceType[] }
   { group: 'servers', types: ['server', 'vm', 'nas', 'load_balancer'] },
   { group: 'office', types: ['pc', 'laptop', 'printer', 'ip_phone', 'pbx', 'video_conference'] },
   { group: 'building', types: ['ip_camera', 'nvr', 'access_control', 'iot'] },
-  { group: 'power', types: ['ups', 'pdu', 'other'] },
+  { group: 'power', types: ['ups', 'pdu', 'console_server', 'other'] },
 ]
 export const DEVICE_TYPES: DeviceType[] = DEVICE_TYPE_GROUPS.flatMap((g) => g.types)
 export const DEVICE_ROLES: DeviceRole[] = [
@@ -293,9 +297,12 @@ export const MEDIA: InterfaceMedia[] = [
   'SFP+',
   'SFP28',
   'QSFP',
+  'PON',
+  'xDSL',
   'Serial',
   'Radio',
   'Console',
+  'Cellular',
 ]
 export const MODES: InterfaceMode[] = ['', 'access', 'trunk', 'routed', 'hybrid']
 export const IP_ROLES: IpRole[] = ['primary', 'secondary', 'nat', 'public']

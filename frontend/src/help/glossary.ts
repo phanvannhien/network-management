@@ -264,12 +264,77 @@ export const GLOSSARY: GlossaryEntry[] = [
     'port',
     ['Loại kết nối', 'Connection type'],
     [
-      'Dây vật lý (Ethernet đồng, quang, không dây, serial, console) chiếm một cổng vật lý ở mỗi đầu — mỗi cổng chỉ một dây. Kết nối logical (VPN/IPsec, GRE, MPLS, LAG) không chiếm cổng: đầu mút là interface ảo như tunnel hoặc Port-channel.',
-      'Physical connections (copper Ethernet, fiber, wireless, serial, console) take one physical port at each end — one cable per port. Logical ones (VPN/IPsec, GRE, MPLS, LAG) take no port: their ends are virtual interfaces such as a tunnel or a port-channel.',
+      'Dây thật chiếm cổng vật lý, mỗi cổng một dây: Ethernet đồng (gồm DAC — cáp đồng đầu SFP), quang (gồm AOC), stack/HA, DSL, console, serial, dây nguồn. Không dây và 4G/5G không giới hạn một kết nối mỗi cổng. Logical (VPN/IPsec, GRE) không phải dây: đầu mút là interface tunnel hoặc cổng WAN mà VPN gắn vào. LAG vẽ thành từng dây vật lý giữa các cổng thành viên; MPLS là dịch vụ WAN của đường truyền.',
+      'Real cables take a physical port, one per port: copper Ethernet (incl. DAC — copper with SFP ends), fibre (incl. AOC), stack/HA, DSL, console, serial, power. Wireless and 4G/5G are not limited to one link per port. Logical (VPN/IPsec, GRE) is not a cable: its ends are tunnel interfaces or the WAN port the VPN is bound to. A LAG is drawn as its member cables; MPLS is a WAN service of the line.',
     ],
     [
-      'Switch Gi1/0/48 ↔ firewall port1 bằng Cat6; VPN IPsec giữa tunnel VPN-HN của 2 firewall.',
-      'Switch Gi1/0/48 ↔ firewall port1 over Cat6; an IPsec VPN between the VPN-HN tunnels of two firewalls.',
+      'Switch Gi1/0/48 ↔ firewall port1 bằng Cat6; Te1/1/1 ↔ Te1/1/1 bằng DAC 3 m; VPN IPsec giữa tunnel VPN-HN của 2 firewall.',
+      'Switch Gi1/0/48 ↔ firewall port1 over Cat6; Te1/1/1 ↔ Te1/1/1 over a 3 m DAC; an IPsec VPN between the VPN-HN tunnels of two firewalls.',
+    ],
+  ),
+  e(
+    'fiber-mode',
+    'port',
+    ['Quang single-mode / multi-mode, đầu nối', 'Single-mode / multi-mode fibre, connectors'],
+    [
+      'Single-mode (SM, vỏ vàng, đi xa hàng km) và multi-mode (MM: OM3/OM4 vỏ xanh ngọc, OM5 xanh lá — trong tòa nhà) dùng module SFP khác nhau, cắm lẫn sẽ không lên link. Đầu nối: LC (nhỏ, hay gặp ở SFP), SC (vuông, ở ODF/ONT), MPO (nhiều sợi, cho 40/100G).',
+      'Single-mode (SM, yellow jacket, kilometres) and multi-mode (MM: OM3/OM4 aqua, OM5 lime — inside buildings) need different SFP modules; mixing them gives no link. Connectors: LC (small, most SFPs), SC (square, patch panels / ONTs), MPO (multi-fibre, 40/100G).',
+    ],
+    [
+      'Uplink nhà máy ↔ văn phòng 2 km: SM, LC–LC, module 10G-LR.',
+      'Factory ↔ office uplink, 2 km: SM, LC–LC, 10G-LR modules.',
+    ],
+  ),
+  e(
+    'pon',
+    'port',
+    ['PON, OLT, ONT, bộ chia quang', 'PON, OLT, ONT, splitter'],
+    [
+      'Mạng quang thụ động (GPON/XGS-PON): một cổng PON của OLT qua bộ chia quang (splitter) tới nhiều ONT ở từng phòng/nhà. Nhà mạng dùng cho FTTH; doanh nghiệp dùng mạng POL nội bộ. Cổng PON vì vậy nối được nhiều dây.',
+      'Passive optical network (GPON/XGS-PON): one OLT PON port feeds many ONTs through a passive splitter. Carriers use it for FTTH; companies for in-house POL networks. A PON port therefore takes many links.',
+    ],
+    [
+      'OLT pon0/1 → splitter 1:32 → ONT ở 32 phòng ký túc xá.',
+      'OLT pon0/1 → 1:32 splitter → ONTs in 32 dorm rooms.',
+    ],
+  ),
+  e(
+    'wan-service',
+    'port',
+    ['Dịch vụ WAN', 'WAN service'],
+    [
+      'Loại đường truyền nhà mạng: Internet FTTH (dùng chung, IP động), Internet trực tiếp (IP tĩnh, cam kết SLA), MPLS VPN (mạng riêng nối các chi nhánh), kênh thuê riêng (điểm–điểm), Metro Ethernet, 4G/5G. Ghi kèm nhà mạng, mã circuit, băng thông để báo sự cố nhanh.',
+      'The kind of carrier line: broadband FTTH (shared, dynamic IP), dedicated Internet (static IP, SLA), MPLS VPN (private network between branches), leased line (point to point), Metro Ethernet, 4G/5G. Record carrier, circuit ID and bandwidth to report outages quickly.',
+    ],
+    [
+      'FW01 wan1 → Internet: Internet trực tiếp VNPT, circuit HCM-123, 200 Mbps; wan2 → 4G Viettel dự phòng.',
+      'FW01 wan1 → Internet: dedicated Internet from VNPT, circuit HCM-123, 200 Mbps; wan2 → Viettel 4G backup.',
+    ],
+  ),
+  e(
+    'power-stack-link',
+    'port',
+    ['Dây nguồn, dây stack/HA', 'Power cords, stack / HA cables'],
+    [
+      'Dây nguồn nối UPS/PDU tới thiết bị (thiết bị 2 nguồn có 2 dây) — biết thiết bị nào tắt khi một UPS hỏng. Dây stack/HA nối các thành viên một cụm: cáp stack của switch, dây heartbeat giữa 2 firewall HA.',
+      'Power cords run from a UPS/PDU to a device (two cords for two PSUs) — so you know what goes down when a UPS fails. Stack/HA cables join cluster members: switch stacking cables, the heartbeat between two HA firewalls.',
+    ],
+    [
+      'UPS01 outlet1 → CORE01 PSU1, UPS02 outlet1 → CORE01 PSU2; FW01 ha ↔ FW02 ha.',
+      'UPS01 outlet1 → CORE01 PSU1, UPS02 outlet1 → CORE01 PSU2; FW01 ha ↔ FW02 ha.',
+    ],
+  ),
+  e(
+    'provider-cloud',
+    'device',
+    ['Internet / mạng nhà cung cấp', 'Internet / carrier network'],
+    [
+      'Hình đám mây đại diện Internet hoặc mạng MPLS của nhà mạng — đầu bên kia của đường WAN. Không phải tài sản: luôn "bên ngoài", tên đặt tự do và được trùng (vẽ nhiều đám mây "Internet" trên các sơ đồ).',
+      'A cloud standing for the Internet or a carrier MPLS network — the far end of a WAN line. Not an asset: always external, freely named and may repeat (many "Internet" clouds across diagrams).',
+    ],
+    [
+      'Modem MDM01 → (DSL) → đám mây "Internet VNPT".',
+      'Modem MDM01 → (DSL) → the "Internet VNPT" cloud.',
     ],
   ),
   e(

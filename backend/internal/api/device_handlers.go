@@ -156,6 +156,10 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 	if b.Managed != nil {
 		f.managed = *b.Managed
 	}
+	// The Internet / a carrier network drawn as a cloud is not an asset we manage (ADR-033).
+	if f.typ == "provider_cloud" {
+		f.managed = false
+	}
 	if b.UHeight != nil {
 		f.uHeight, f.uHeightSet = *b.UHeight, true
 	}
@@ -667,17 +671,20 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 			}
 			cluster = c.ID
 		}
-		// Hostnames are unique among live devices except within one cluster (a stack); serialized per hostname.
-		if err := q.LockHostname(ctx, m.OrgID.String()+"/"+strings.ToLower(f.hostname)); err != nil {
-			return fmt.Errorf("lock hostname: %w", err)
-		}
-		if n, err := q.CountHostnameConflicts(ctx, store.CountHostnameConflictsParams{
-			OrganizationID: m.OrgID, Hostname: f.hostname, SelfID: self, ClusterID: cluster,
-		}); err != nil {
-			return fmt.Errorf("check hostname: %w", err)
-		} else if n > 0 {
-			out.conflict = msgDeviceDuplicate
-			return errRollback
+		// Hostnames are unique among live devices except within one cluster (a stack); serialized per hostname. A provider
+		// cloud is a name on the drawing ("Internet", "VNPT MPLS"), drawn as often as needed (ADR-033).
+		if f.typ != "provider_cloud" {
+			if err := q.LockHostname(ctx, m.OrgID.String()+"/"+strings.ToLower(f.hostname)); err != nil {
+				return fmt.Errorf("lock hostname: %w", err)
+			}
+			if n, err := q.CountHostnameConflicts(ctx, store.CountHostnameConflictsParams{
+				OrganizationID: m.OrgID, Hostname: f.hostname, SelfID: self, ClusterID: cluster,
+			}); err != nil {
+				return fmt.Errorf("check hostname: %w", err)
+			} else if n > 0 {
+				out.conflict = msgDeviceDuplicate
+				return errRollback
+			}
 		}
 		// A template fills what the user left empty and later generates the ports (create only, P1-09).
 		var tpl *store.DeviceTemplate

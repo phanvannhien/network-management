@@ -35,10 +35,17 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **LAG / Port-channel / LACP** | Gộp nhiều cổng thành 1 đường: tăng băng thông, đứt 1 dây vẫn chạy | `Po1` = `Te1/1/1` + `Te1/1/2` |
 | **MAC** | Địa chỉ phần cứng duy nhất của cổng | `aa:bb:cc:dd:ee:ff` (Cisco viết `aabb.ccdd.eeff`) |
 | **Admin up / shutdown** | Cổng đang bật hay bị tắt bằng cấu hình | Cổng không dùng nên shutdown |
-| **Kết nối (link) vật lý** | Dây thật nối 2 cổng: Ethernet (đồng, RJ45), quang (SFP), không dây, serial, console. Mỗi cổng vật lý chỉ cắm 1 dây | `BD-SW01 Gi1/0/48` ↔ `BD-FW01 port1`, Cat6 |
-| **Kết nối logical** | Kết nối không chiếm cổng vật lý: VPN/IPsec, GRE, MPLS giữa các site (đầu mút là interface tunnel) hoặc LAG | VPN từ firewall Bình Định về IDC |
+| **Kết nối (link) vật lý** | Dây thật nối 2 cổng: Ethernet đồng (gồm DAC), quang, stack/HA, DSL, console, serial, dây nguồn — mỗi cổng 1 dây. Không dây và 4G/5G thì một cổng phục vụ nhiều kết nối | `BD-SW01 Gi1/0/48` ↔ `BD-FW01 port1`, Cat6 |
+| **Kết nối logical** | Không phải dây: VPN/IPsec, GRE giữa các site (đầu mút là interface tunnel, hoặc cổng WAN mà VPN gắn vào). LAG vẽ thành từng dây thành viên; MPLS là dịch vụ WAN | VPN từ firewall Bình Định về IDC |
 | **Cable ID** | Mã in trên nhãn dây, để tìm đúng dây trong tủ rack | `BD-C001` |
-| **DAC** | Cáp đồng gắn sẵn 2 đầu SFP, nối gần (trong rack) thay cho quang | Switch ↔ server 10G cùng rack |
+| **DAC** | Cáp **đồng** twinax gắn sẵn 2 đầu SFP, nối gần (≤ 7 m, trong rack) thay cho quang — trên hệ thống là loại Ethernet | Switch ↔ server 10G cùng rack |
+| **AOC** | Cáp **quang** gắn sẵn 2 đầu module, dài hơn DAC | Hai rack cạnh nhau, 15 m |
+| **Single-mode / Multi-mode (SM/MM)** | Hai loại sợi quang không cắm lẫn: SM (vỏ vàng, đi xa km), MM OM3/OM4/OM5 (trong tòa nhà) | Uplink 2 km: SM, module LR |
+| **Đầu nối quang LC / SC / MPO** | LC nhỏ (hay ở SFP), SC vuông (ODF, ONT), MPO nhiều sợi (40/100G) | LC–LC |
+| **PON, OLT, bộ chia quang** | Mạng quang thụ động: 1 cổng PON của OLT qua bộ chia tới nhiều ONT — cổng PON nối nhiều dây | OLT pon0/1 → splitter 1:32 |
+| **Dây nguồn** | Từ UPS/PDU tới thiết bị (2 nguồn = 2 dây); biết thiết bị nào tắt khi một UPS hỏng | UPS01 outlet1 → CORE01 |
+| **Dây stack / HA heartbeat** | Nối thành viên một cụm: cáp stack của switch, heartbeat giữa 2 firewall HA | FW01 ha ↔ FW02 ha |
+| **Dịch vụ WAN** | Loại đường nhà mạng: Internet FTTH (dùng chung), Internet trực tiếp (IP tĩnh, SLA), MPLS VPN, kênh thuê riêng, Metro Ethernet, 4G/5G | wan1: Internet trực tiếp VNPT 200 Mbps |
 
 ## 3. VLAN
 
@@ -110,6 +117,10 @@ vPC/VSS cho switch L2/L3; kiểu "Khác" không giới hạn. Thành viên cùng
 | **SD-WAN edge** | Thiết bị WAN thông minh nối nhiều đường truyền |
 | **ONT / Modem** | Thiết bị đầu cuối của nhà mạng (thường "bên ngoài"): ONT nhận cáp quang (GPON), modem nhận cáp đồng/cáp truyền hình. Khác OLT — thiết bị phía nhà mạng gom nhiều ONT |
 | **NVR** | Đầu ghi camera |
+| **Internet / nhà mạng** | Hình đám mây: Internet hoặc mạng MPLS của nhà mạng — đầu bên kia của đường WAN, không phải tài sản (luôn "bên ngoài", được trùng tên) |
+| **OLT** | Gom nhiều ONT qua cổng PON (mạng GPON/POL nội bộ) |
+| **Cầu không dây (wireless bridge)** | Nối 2 tòa nhà/nhà xưởng bằng sóng thay cáp |
+| **Console server** | Gom cổng console nhiều thiết bị, để vào cấu hình khi mạng chính hỏng |
 | **UPS / PDU** | Bộ lưu điện / thanh nguồn trong rack |
 
 **Vai trò (role):** Core (lõi, trung tâm), Distribution (tầng giữa), Access (tầng truy cập, cắm thiết bị đầu cuối), Edge (biên,

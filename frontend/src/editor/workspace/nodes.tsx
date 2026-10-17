@@ -9,7 +9,6 @@ import { Boxes, CircleHelp, Lock } from 'lucide-react'
 import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import type { DeviceType } from '@/types/ntb'
 import { DeviceIcon } from '../catalog/icons'
 import { useDoc } from './context'
 import type { RefData } from './flow'
@@ -90,7 +89,7 @@ function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
       locked={!draggable}
       draft={card.draft === true}
       title={`${card.hostname} · ${type}`}
-      icon={<DeviceIcon typeId={card.type as DeviceType} size={32} />}
+      icon={<DeviceIcon typeId={card.type} size={32} />}
       label={card.hostname}
       detail={type}
     />

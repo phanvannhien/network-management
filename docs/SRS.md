@@ -144,20 +144,31 @@ bảo hành riêng. Trên sơ đồ hiển thị gộp (badge HA / Stack ×N) ho
 
 ### 6.2 Kết nối
 
-| Loại | Biến thể | Kiểu nét | Đầu mút hợp lệ |
-| --- | --- | --- | --- |
-| Ethernet | Cat5e, Cat6, Cat6A | Liền | Cổng RJ45 |
-| Fiber | SM, MM (OM3/OM4), DAC | Liền, dày | SFP, SFP+, SFP28, QSFP |
-| Wireless | Wi-Fi 5/6/7, bridge P2P | Đứt + biểu tượng sóng | Radio |
-| Serial | V.35, RS-232 | Zigzag | Serial |
-| Logical | VPN/IPsec, GRE, MPLS, LAG | Đứt | Interface tunnel / không chiếm cổng vật lý |
-| Console | Console/OOB | Chấm | Console |
+Theo ADR-033. "Một dây/cổng" = cổng đó không cắm thêm dây khác.
 
+| Loại | Biến thể | Kiểu nét | Cổng hợp lệ (media) | Một dây/cổng |
+| --- | --- | --- | --- | --- |
+| Ethernet (đồng) | Cat5e, Cat6, Cat6A, **DAC** | Liền | RJ45, họ SFP | Có |
+| Fiber (quang) | OM3/OM4/OM5, OS2, **AOC**; loại SM/MM; đầu nối LC/SC/MPO/ST | Liền, dày | Họ SFP, PON | Có (trừ cổng PON) |
+| Wireless | Wi-Fi 6/7, bridge P2P / P2MP | Đứt | Radio | Không |
+| Stack / HA | Cáp stack, HA heartbeat (hai đầu là thiết bị; nếu cả hai đã thuộc cụm thì phải cùng cụm) | Đứt ngắn, dày | RJ45, họ SFP | Có |
+| Nguồn | UPS/PDU → thiết bị (một đầu là UPS/PDU; đầu thiết bị không chọn cổng) | Chấm to | Ổ cắm của UPS/PDU | Có |
+| DSL / coax | VDSL2, ADSL2+, cáp truyền hình | Đứt dài | xDSL, RJ45 | Có |
+| 4G/5G | 4G, 5G, vệ tinh | Gạch–chấm | Cellular | Không |
+| Console | Console RJ45, USB | Chấm | Console, RJ45 | Có |
+| Serial | V.35, RS-232 | Gạch–chấm dài | Serial, RJ45 | Có |
+| Logical | VPN/IPsec, GRE | Đứt | Interface ảo (tunnel, loopback, SVI, sub-interface) hoặc cổng WAN mà VPN gắn vào; **không** dùng LAG | Không |
+
+- **LAG** vẽ thành từng dây vật lý giữa các cổng thành viên. **MPLS, kênh thuê riêng, Metro, Internet** là *dịch vụ WAN* của
+  đường truyền (trường `service`), không phải kiểu nét.
+- Chỉ báo lỗi cứng khi cổng đã khai media và dây chắc chắn không cắm được (vd quang vào RJ45). SM–MM lệch, đầu nối lệch, tốc độ
+  lệch, DAC > 7 m, đồng > 100 m, serial vào RJ45… là cảnh báo của validation (§7).
+- Đầu mút là "Internet / nhà mạng" (`provider_cloud`) thì không chọn cổng ở đầu đó.
 - Link nối port → port khi biết cổng; nối thiết bị → thiết bị (chưa gán cổng) cho sơ đồ mức logic, gán cổng sau (ADR-013).
 - Đầu mút có thể là device, endpoint group hoặc segment.
 - Kéo dây: popup chọn cổng trống hợp lệ (cổng đã dùng/sai loại làm mờ); kéo lại đầu dây để đổi cổng.
 - Hình dạng: thẳng, orthogonal, cong; điểm uốn; link song song tự tách.
-- Thuộc tính link: loại cáp, tốc độ, chiều dài, cable ID, trạng thái, vòng đời; với WAN: nhà cung cấp (→ Nhà cung cấp), circuit ID, băng thông, hợp đồng.
+- Thuộc tính link: loại cáp, tốc độ, chiều dài, cable ID, trạng thái, vòng đời; quang: SM/MM, đầu nối; với WAN: dịch vụ, nhà cung cấp (→ Nhà cung cấp), circuit ID, băng thông, hợp đồng.
 - Hiển thị tốc độ (độ dày nét) và trạng thái Up/Down/Planned; màu luôn kèm icon/kiểu nét.
 
 ### 6.3 Hiển thị

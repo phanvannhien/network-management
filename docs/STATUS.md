@@ -5,6 +5,29 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-31 Mô hình dây & loại thiết bị theo thực tế (ADR-033)
+- Đã làm:
+  - Người dùng chốt 4 đề xuất của rà soát P1-15; agent kỹ sư mạng rà lại bản nháp ADR-033 trước khi code, tinh chỉnh luật cổng.
+  - **Loại dây** mới: ethernet (gồm DAC), fiber (SM/MM, đầu nối LC/SC/MPO/ST, cổng PON), wireless, stack/HA, power, dsl,
+    cellular, console, serial, logical. Luật theo từng loại (API): media cổng phải cắm được (vd quang vào RJ45 → lỗi); radio,
+    4G/5G và cổng PON nối được nhiều dây; dây nguồn phải có đầu UPS/PDU và đầu thiết bị không chọn cổng; stack khác cụm → lỗi;
+    logical được gắn cổng WAN vật lý (VPN FortiGate), không dùng LAG; LAG = vẽ từng dây thành viên.
+  - **Dịch vụ WAN** (Internet FTTH / Internet trực tiếp / MPLS / kênh thuê riêng / Metro / 4G-5G / khác) thay cho "MPLS là kiểu nét".
+  - **Loại thiết bị** mới: Internet/nhà mạng (`provider_cloud` — luôn "bên ngoài", được trùng tên, không chọn cổng), OLT, cầu
+    không dây, console server; media cổng PON, xDSL, Cellular. **Icon** riêng cho router (trước trùng switch L2) và các loại
+    NVR, ONT, OLT, UPS, PDU, PBX, kiểm soát ra vào, hội nghị truyền hình, cầu không dây, console server.
+  - **Hostname tự đặt**: ô trống, dưới ô có gợi ý theo đường dẫn mã site (bấm để dùng); kiểm tra đúng luật kho, `_`/`.` và tên
+    Windows dài chỉ cảnh báo.
+  - Migration 000021 (thử up/down/up có dữ liệu): DAC → ethernet, SM/MM từ medium, MPLS → service. Form dây thêm loại quang, đầu
+    nối, dịch vụ WAN; kiểu nét cho 4 loại dây mới; SRS §6.2, ADR-033, GLOSSARY và trang Thuật ngữ cập nhật.
+- Test / cách kiểm tra: `make check` pass (Go: `TestLinkKindRules` — media, nhiều dây trên radio/PON, nguồn, stack khác cụm,
+  provider cloud; vitest 210). Ảnh thư viện với icon mới trên Chromium.
+- Còn dở / lỗi đã biết: `schema/ntb.schema.json` (định dạng xuất/nhập từ prototype Phase 0) còn enum cũ — làm lại khi tới task
+  nhập/xuất. Cảnh báo SM–MM/đầu nối/tốc độ lệch… để P1-20. Dây logical cũ nối interface LAG (nếu có) cần vẽ lại.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-16 Thao tác chọn & sửa (xóa khỏi kho có hộp xác nhận).
+
 ## 2026-10-17 — P1-15 Thư viện & thêm nhanh (+ sửa lỗi P1-14 từ rà soát)
 - Đã làm:
   - **Thư viện nổi** bên trái màn vẽ (phím B, nút trên toolbar): tìm kiếm không dấu; tab "Thêm mới" = template của tổ chức +

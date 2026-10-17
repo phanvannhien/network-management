@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { hostnameProblem, hostnameWarning, siteTag, suggestHostname } from './hostname'
+import {
+  hostnameDnsWarning,
+  hostnameProblem,
+  hostnameWarning,
+  siteTag,
+  suggestHostname,
+} from './hostname'
 import { decodeItem, encodeItem } from './items'
 import { matches } from './search'
 
@@ -21,13 +27,16 @@ describe('hostname suggestion (P1-15)', () => {
       ]),
     ).toBe('AGRI-BD01-SW08')
     expect(suggestHostname(BD, 'l3_switch', ['AGRI-BD01-CORE01'])).toBe('AGRI-BD01-CORE02')
+    expect(suggestHostname(BD, 'provider_cloud', [])).toBe('INTERNET')
   })
 
-  it('checks DNS label rules and warns about long Windows names', () => {
+  it('follows the inventory rule; warns about DNS-unfriendly and long Windows names', () => {
     expect(hostnameProblem('AGRI-BD01-FW01')).toBeNull()
     expect(hostnameProblem('Máy chủ')).toBe('chars')
-    expect(hostnameProblem('FW_01')).toBe('chars')
-    expect(hostnameProblem('-FW01')).toBe('dash')
+    expect(hostnameProblem('-FW01')).toBe('chars')
+    expect(hostnameProblem('FW_01')).toBeNull()
+    expect(hostnameDnsWarning('FW_01')).toBe(true)
+    expect(hostnameDnsWarning('AGRI-BD01-FW01')).toBe(false)
     expect(hostnameProblem('A'.repeat(64))).toBe('length')
     expect(hostnameWarning('AGRI-BD01-SRV01', 'server')).toBeNull()
     expect(hostnameWarning('AGRI-NM-BD01-SRV01', 'server')).toBe('netbios')

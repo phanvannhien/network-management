@@ -686,7 +686,8 @@ func applyChange(ctx context.Context, q store.Querier, m tenant.Membership, c ap
 			}
 			u := c.LinkUpdate
 			in = apigen.LinkInput{A: u.A, B: u.B, Kind: u.Kind, Medium: u.Medium, Speed: u.Speed, LengthM: u.LengthM, CableId: u.CableId,
-				Status: u.Status, Provider: u.Provider, CircuitId: u.CircuitId, Bandwidth: u.Bandwidth, Notes: u.Notes}
+				Status: u.Status, FiberMode: u.FiberMode, Connector: u.Connector, Service: u.Service,
+				Provider: u.Provider, CircuitId: u.CircuitId, Bandwidth: u.Bandwidth, Notes: u.Notes}
 			id, version = &lid, u.Version
 		}
 		in.A.Id, in.B.Id = mapID(in.A.Id), mapID(in.B.Id)
