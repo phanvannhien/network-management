@@ -5,6 +5,56 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-24 Dashboard cơ bản
+- Đã làm:
+  - **API** `GET /orgs/{orgId}/dashboard?categoryId=`: số liệu theo danh mục đang chọn trên thanh trên cùng (cả các danh mục con).
+    Danh mục không thuộc tổ chức trả 404.
+  - **Số liệu chính:**
+    - thiết bị (không tính máy đã thanh lý), đếm theo site, theo vòng đời, theo loại;
+    - số lỗi / cảnh báo;
+    - số mục hết hạn trong 90 ngày tới, và số mục đã quá hạn;
+    - số thiết bị thiếu thông tin;
+    - số subnet đã dùng ≥ 90%.
+  - **Vấn đề trên toàn kho** (kiểm tra trong từng sơ đồ vẫn nằm ở nút Kiểm tra của editor):
+    - Lỗi: trùng IP trong cùng VRF (cùng luật với kiểm tra trên sơ đồ); trùng hostname; trùng S/N; một cổng cắm nhiều dây.
+    - Cảnh báo: subnet ≥ 90%. Dải DHCP / dải giữ chỗ được tính là đã dùng hết. Không xét subnet /30 trở xuống (đường nối điểm-điểm vốn luôn đầy).
+    - Lưu ý: thiết bị đang dùng chưa có dây nối nào; thiết bị có IP nhưng chưa chọn interface quản trị.
+  - **Thiết bị thiếu thông tin:** thiết bị đang dùng chưa có S/N, part number hoặc model, hoặc chưa có vị trí (location).
+    - Vị trí chỉ bị đòi khi site đó đã khai báo location.
+    - Bỏ qua: patch panel, modem/ONT của nhà mạng, PC, điện thoại, IoT, VM.
+  - **Sắp hết hạn:** bảo hành và EOS (ngày hãng ngừng hỗ trợ). Mục sắp tới hiện trước; mục đã quá hạn hiện sau, kèm số ngày đã quá.
+  - **Giao diện** (theo DESIGN.md §7c):
+    - Một hàng 6 ô số liệu, rồi các bảng nhỏ: theo site (có thanh tỉ lệ), vấn đề cần xử lý (nút "Mở"), theo loại, sắp hết hạn, thiếu thông tin.
+    - Có dòng giải thích ở từng khối; có nút tải lại.
+    - Bấm vào site hoặc loại thì mở danh sách thiết bị đã lọc sẵn. Danh sách thiết bị nay hiểu các tham số `?site=`, `?type=`, `?lifecycle=`, `?q=` trên URL.
+    - Khối Tổ chức và Tài khoản chuyển xuống dưới. Nút "Đi nhanh → Sơ đồ" trỏ tới danh sách sơ đồ thật, không còn trỏ prototype.
+  - Agent review song song đã chỉ ra, và đã sửa:
+    - mọi subnet /30 bị báo đầy;
+    - dải DHCP không được tính vào phần đã dùng;
+    - mục EOS từ nhiều năm trước chiếm hết danh sách sắp hết hạn;
+    - lọc theo danh mục làm mất các vụ trùng IP với thiết bị ở danh mục khác;
+    - số "người giữ IP" đếm theo tên thay vì theo chủ thật (một cụm chỉ tính là một);
+    - cổng PON (một cổng nối nhiều ONT qua bộ chia) bị báo là cắm nhiều dây;
+    - tổng số liệu không khớp nhau;
+    - ngày "hôm nay" lệch múi giờ;
+    - danh mục lạ không báo 404.
+- Test / cách kiểm tra:
+  - `dashboard_test.go` (TestDashboard): mọi số liệu ở trên, gồm /29 có dải DHCP được tính đầy, /30 không bị báo, thứ tự danh sách hết hạn,
+    lọc theo danh mục, danh mục lạ hoặc của tổ chức khác trả 404, và kiểm tra chéo tổ chức.
+  - App.test: dashboard hiện vấn đề kèm link "Mở", và link site sang danh sách đã lọc.
+  - Kiểm tra trên trình duyệt với dữ liệu CJ Foodville, thêm một máy in trùng IP với VIP của cụm và một AP đã quá EOS: dashboard hiện đủ;
+    bấm site thì mở danh sách 5 thiết bị của HCM01.
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Trang IPAM (`ListSubnets`) vẫn tính phần đã dùng mà không cộng dải DHCP, nên có thể lệch với dashboard. Nên sửa cùng công thức.
+  - Subnet IPv6 chưa được xét đầy.
+  - Hợp đồng và license hết hạn để Phase 2. Thiết bị down để Phase 3.
+- Câu hỏi cho người dùng:
+  - Ngưỡng "subnet đầy" 90% có hợp không? Một cách khác là "còn ≤ N địa chỉ trống".
+  - Danh sách loại thiết bị được miễn kiểm tra "thiếu thông tin" ở trên có đúng với thực tế không?
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: P1-25 Dữ liệu mẫu & benchmark.
+
 ## 2026-10-17 — P1-23 Tìm kiếm toàn cục
 - Đã làm:
   - **API** `GET /orgs/{orgId}/search?q=` (2–100 ký tự, tối đa 10 kết quả mỗi nhóm), trả về:

@@ -128,7 +128,15 @@ export function DeviceListPage() {
   const tab = params.get('tab') === 'groups' ? 'groups' : 'devices'
   const [creatingGroup, setCreatingGroup] = useState(false)
 
-  const [filter, setFilter] = useState<FilterState>(emptyFilter)
+  // Links from the dashboard / palette pre-filter the list: ?q=, ?site=, ?type=, ?lifecycle=.
+  const [filter, setFilter] = useState<FilterState>(() => {
+    const facets = Object.fromEntries(
+      (['site', 'type', 'lifecycle'] as const)
+        .map((k) => [k, params.getAll(k)] as const)
+        .filter(([, v]) => v.length > 0),
+    )
+    return { ...emptyFilter, q: params.get('q') ?? '', facets }
+  })
   const [sorting, setSorting] = useState<SortingState>([{ id: 'hostname', desc: false }])
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 })
   const [selection, setSelection] = useState<RowSelectionState>({})

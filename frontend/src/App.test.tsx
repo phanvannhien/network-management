@@ -2996,3 +2996,65 @@ describe('diagrams (P1-13)', () => {
     expect(await within(panel).findByLabelText(/^Hostname/)).toBeDisabled()
   })
 })
+
+describe('dashboard (P1-24)', () => {
+  it('shows figures, problems with a link and devices by site', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/dashboard`]: () =>
+        json({
+          generatedAt: '2026-10-17T03:00:00Z',
+          totals: {
+            devices: 12,
+            active: 10,
+            planned: 2,
+            spare: 0,
+            rma: 0,
+            retired: 1,
+            missingInfo: 3,
+            expiring: 1,
+            expired: 0,
+            errors: 1,
+            warnings: 0,
+            subnetsFull: 0,
+          },
+          bySite: [
+            {
+              siteId: 'site-1',
+              code: 'ORG-FV-HCM01',
+              name: 'HCM',
+              total: 12,
+              active: 10,
+              planned: 2,
+              spare: 0,
+              rma: 0,
+              retired: 1,
+            },
+          ],
+          byType: [{ type: 'l2_switch', count: 7 }],
+          problems: [
+            {
+              kind: 'duplicate_ip',
+              severity: 'error',
+              subject: '10.136.4.101',
+              detail: 'PRN-01, VPN_CJIDC',
+              count: 2,
+            },
+          ],
+          missingInfo: [],
+          expiring: [],
+        }),
+    })
+    renderAt(`/o/${ORG_ID}`)
+    expect(await screen.findByText('Trùng IP 10.136.4.101: PRN-01, VPN_CJIDC')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'ORG-FV-HCM01' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/devices?site=site-1`,
+    )
+    expect(screen.getByRole('link', { name: 'Mở' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/devices?q=10.136.4.101`,
+    )
+    expect(calls.some((c) => c.url.endsWith('/dashboard'))).toBe(true)
+  })
+})

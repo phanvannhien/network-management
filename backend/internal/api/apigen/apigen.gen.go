@@ -134,6 +134,102 @@ func (e CustomFieldKind) Valid() bool {
 	}
 }
 
+// Defines values for DashboardExpiryKind.
+const (
+	Eos      DashboardExpiryKind = "eos"
+	Warranty DashboardExpiryKind = "warranty"
+)
+
+// Valid indicates whether the value is a known member of the DashboardExpiryKind enum.
+func (e DashboardExpiryKind) Valid() bool {
+	switch e {
+	case Eos:
+		return true
+	case Warranty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DashboardMissingMissing.
+const (
+	DashboardMissingMissingLocation   DashboardMissingMissing = "location"
+	DashboardMissingMissingModel      DashboardMissingMissing = "model"
+	DashboardMissingMissingPartNumber DashboardMissingMissing = "partNumber"
+	DashboardMissingMissingSerial     DashboardMissingMissing = "serial"
+)
+
+// Valid indicates whether the value is a known member of the DashboardMissingMissing enum.
+func (e DashboardMissingMissing) Valid() bool {
+	switch e {
+	case DashboardMissingMissingLocation:
+		return true
+	case DashboardMissingMissingModel:
+		return true
+	case DashboardMissingMissingPartNumber:
+		return true
+	case DashboardMissingMissingSerial:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DashboardProblemKind.
+const (
+	DuplicateHostname DashboardProblemKind = "duplicate_hostname"
+	DuplicateIp       DashboardProblemKind = "duplicate_ip"
+	DuplicateSerial   DashboardProblemKind = "duplicate_serial"
+	NoLink            DashboardProblemKind = "no_link"
+	NoMgmt            DashboardProblemKind = "no_mgmt"
+	PortMultiLink     DashboardProblemKind = "port_multi_link"
+	SubnetFull        DashboardProblemKind = "subnet_full"
+)
+
+// Valid indicates whether the value is a known member of the DashboardProblemKind enum.
+func (e DashboardProblemKind) Valid() bool {
+	switch e {
+	case DuplicateHostname:
+		return true
+	case DuplicateIp:
+		return true
+	case DuplicateSerial:
+		return true
+	case NoLink:
+		return true
+	case NoMgmt:
+		return true
+	case PortMultiLink:
+		return true
+	case SubnetFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DashboardProblemSeverity.
+const (
+	DashboardProblemSeverityError   DashboardProblemSeverity = "error"
+	DashboardProblemSeverityInfo    DashboardProblemSeverity = "info"
+	DashboardProblemSeverityWarning DashboardProblemSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the DashboardProblemSeverity enum.
+func (e DashboardProblemSeverity) Valid() bool {
+	switch e {
+	case DashboardProblemSeverityError:
+		return true
+	case DashboardProblemSeverityInfo:
+		return true
+	case DashboardProblemSeverityWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeviceImportMatchBy.
 const (
 	DeviceImportMatchByHostname DeviceImportMatchBy = "hostname"
@@ -1683,6 +1779,113 @@ type CustomFieldUpdate struct {
 	Required  *bool     `json:"required,omitempty"`
 	SortOrder *int32    `json:"sortOrder,omitempty"`
 	Version   int32     `json:"version"`
+}
+
+// Dashboard defines model for Dashboard.
+type Dashboard struct {
+	BySite      []DashboardSite      `json:"bySite"`
+	ByType      []DashboardTypeCount `json:"byType"`
+	Expiring    []DashboardExpiry    `json:"expiring"`
+	GeneratedAt time.Time            `json:"generatedAt"`
+
+	// MissingInfo the first 20
+	MissingInfo []DashboardMissing `json:"missingInfo"`
+
+	// Problems worst first; one row per conflict, counts for the info-level ones
+	Problems []DashboardProblem `json:"problems"`
+	Totals   DashboardTotals    `json:"totals"`
+}
+
+// DashboardExpiry defines model for DashboardExpiry.
+type DashboardExpiry struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Days days left (negative = already past)
+	Days     int                 `json:"days"`
+	DeviceId openapi_types.UUID  `json:"deviceId"`
+	Hostname string              `json:"hostname"`
+	Kind     DashboardExpiryKind `json:"kind"`
+	SiteCode string              `json:"siteCode"`
+}
+
+// DashboardExpiryKind defines model for DashboardExpiry.Kind.
+type DashboardExpiryKind string
+
+// DashboardMissing defines model for DashboardMissing.
+type DashboardMissing struct {
+	Hostname string                    `json:"hostname"`
+	Id       openapi_types.UUID        `json:"id"`
+	Missing  []DashboardMissingMissing `json:"missing"`
+	SiteCode string                    `json:"siteCode"`
+}
+
+// DashboardMissingMissing defines model for DashboardMissing.Missing.
+type DashboardMissingMissing string
+
+// DashboardProblem defines model for DashboardProblem.
+type DashboardProblem struct {
+	Count int `json:"count"`
+
+	// Detail holders, devices or usage, ready to show
+	Detail   string                   `json:"detail"`
+	DeviceId *openapi_types.UUID      `json:"deviceId,omitempty"`
+	Kind     DashboardProblemKind     `json:"kind"`
+	Severity DashboardProblemSeverity `json:"severity"`
+
+	// Subject the address / hostname / serial / port / subnet concerned (empty for counts)
+	Subject  string              `json:"subject"`
+	SubnetId *openapi_types.UUID `json:"subnetId,omitempty"`
+}
+
+// DashboardProblemKind defines model for DashboardProblem.Kind.
+type DashboardProblemKind string
+
+// DashboardProblemSeverity defines model for DashboardProblem.Severity.
+type DashboardProblemSeverity string
+
+// DashboardSite defines model for DashboardSite.
+type DashboardSite struct {
+	Active  int                `json:"active"`
+	Code    string             `json:"code"`
+	Name    string             `json:"name"`
+	Planned int                `json:"planned"`
+	Retired int                `json:"retired"`
+	Rma     int                `json:"rma"`
+	SiteId  openapi_types.UUID `json:"siteId"`
+	Spare   int                `json:"spare"`
+	Total   int                `json:"total"`
+}
+
+// DashboardTotals defines model for DashboardTotals.
+type DashboardTotals struct {
+	Active int `json:"active"`
+
+	// Devices devices not retired
+	Devices int `json:"devices"`
+	Errors  int `json:"errors"`
+
+	// Expired warranty / end-of-support dates already past (devices still in use)
+	Expired int `json:"expired"`
+
+	// Expiring warranty / end-of-support dates within the next 90 days
+	Expiring int `json:"expiring"`
+
+	// MissingInfo active devices lacking S/N, part number, model or location
+	MissingInfo int `json:"missingInfo"`
+	Planned     int `json:"planned"`
+	Retired     int `json:"retired"`
+	Rma         int `json:"rma"`
+	Spare       int `json:"spare"`
+
+	// SubnetsFull IPv4 subnets at least 90 % used
+	SubnetsFull int `json:"subnetsFull"`
+	Warnings    int `json:"warnings"`
+}
+
+// DashboardTypeCount defines model for DashboardTypeCount.
+type DashboardTypeCount struct {
+	Count int        `json:"count"`
+	Type  DeviceType `json:"type"`
 }
 
 // Device defines model for Device.
@@ -3838,6 +4041,12 @@ type UpdateCustomFieldParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// GetDashboardParams defines parameters for GetDashboard.
+type GetDashboardParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *openapi_types.UUID `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+}
+
 // ImportDevicesParams defines parameters for ImportDevices.
 type ImportDevicesParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4522,6 +4731,9 @@ type ServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams)
+	// GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
+	// (GET /orgs/{orgId}/dashboard)
+	GetDashboard(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetDashboardParams)
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -5014,6 +5226,12 @@ func (_ Unimplemented) DeleteCustomField(w http.ResponseWriter, r *http.Request,
 // UpdateCustomField Change a custom field (key and kind are fixed)
 // (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
+// (GET /orgs/{orgId}/dashboard)
+func (_ Unimplemented) GetDashboard(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetDashboardParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7342,6 +7560,48 @@ func (siw *ServerInterfaceWrapper) UpdateCustomField(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCustomField(w, r, orgId, fieldId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDashboard operation middleware
+func (siw *ServerInterfaceWrapper) GetDashboard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDashboardParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDashboard(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12451,6 +12711,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/ntb-imports", wrapper.ImportNtb)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/dashboard", wrapper.GetDashboard)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/search", wrapper.GlobalSearch)
 	})
 	r.Group(func(r chi.Router) {
@@ -15204,6 +15467,85 @@ func (response UpdateCustomField409JSONResponse) VisitUpdateCustomFieldResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboardRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetDashboardParams
+}
+
+type GetDashboardResponseObject interface {
+	VisitGetDashboardResponse(w http.ResponseWriter) error
+}
+
+type GetDashboard200JSONResponse Dashboard
+
+func (response GetDashboard200JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboard400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetDashboard400JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboard401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDashboard401JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboard403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetDashboard403JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboard404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDashboard404JSONResponse) VisitGetDashboardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -22319,6 +22661,9 @@ type StrictServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(ctx context.Context, request UpdateCustomFieldRequestObject) (UpdateCustomFieldResponseObject, error)
+	// GetDashboard Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
+	// (GET /orgs/{orgId}/dashboard)
+	GetDashboard(ctx context.Context, request GetDashboardRequestObject) (GetDashboardResponseObject, error)
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(ctx context.Context, request ListDeviceCatalogRequestObject) (ListDeviceCatalogResponseObject, error)
@@ -23736,6 +24081,33 @@ func (sh *strictHandler) UpdateCustomField(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateCustomFieldResponseObject); ok {
 		if err := validResponse.VisitUpdateCustomFieldResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDashboard operation middleware
+func (sh *strictHandler) GetDashboard(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetDashboardParams) {
+	var request GetDashboardRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDashboard(ctx, request.(GetDashboardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDashboard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDashboardResponseObject); ok {
+		if err := validResponse.VisitGetDashboardResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

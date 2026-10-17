@@ -64,6 +64,31 @@ type Querier interface {
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
 	CreateVlan(ctx context.Context, arg CreateVlanParams) (pgtype.UUID, error)
+	// Dashboard (P1-24, SRS §2, DESIGN.md §7c): figures and org-wide problems. Every query takes organization_id and the
+	// topbar category (NULL = whole organization; a category includes its subtree, ADR-032).
+	DashboardBySite(ctx context.Context, arg DashboardBySiteParams) ([]DashboardBySiteRow, error)
+	DashboardByType(ctx context.Context, arg DashboardByTypeParams) ([]DashboardByTypeRow, error)
+	// Info-level counts: active devices without any cable; devices with an address but no management interface chosen.
+	DashboardCounts(ctx context.Context, arg DashboardCountsParams) (DashboardCountsRow, error)
+	// Live hostnames used by more than one device outside one cluster (provider clouds excepted, ADR-027 / ADR-033).
+	DashboardDuplicateHostnames(ctx context.Context, arg DashboardDuplicateHostnamesParams) ([]DashboardDuplicateHostnamesRow, error)
+	// Addresses held by more than one owner in a VRF (same rules as the diagram check DuplicateIps: a cluster and its VIP
+	// are one owner, retired devices and IPv6 link-local do not count). error when two holders are interface addresses of
+	// active devices, else warning. With a category: conflicts touching it (the other copy may be outside).
+	DashboardDuplicateIps(ctx context.Context, arg DashboardDuplicateIpsParams) ([]DashboardDuplicateIpsRow, error)
+	DashboardDuplicateSerials(ctx context.Context, arg DashboardDuplicateSerialsParams) ([]DashboardDuplicateSerialsRow, error)
+	// Warranty / end-of-support dates for devices still in use: those from @today to @until first (soonest first), then
+	// those already past (latest first). total / overdue count every such date, rows are the first 50.
+	DashboardExpiring(ctx context.Context, arg DashboardExpiringParams) ([]DashboardExpiringRow, error)
+	// Active devices lacking S/N, part number, model or location (SRS §7, Info). Location only counts where the site has
+	// locations; provider clouds, passive kit, ISP boxes and end-user devices are not asked. total = all such devices;
+	// rows = the first @lim.
+	DashboardMissingInfo(ctx context.Context, arg DashboardMissingInfoParams) ([]DashboardMissingInfoRow, error)
+	// Physical ports with more than one cable of a kind that occupies the port (link rules; a PON port feeds a splitter).
+	DashboardPortsMultiLink(ctx context.Context, arg DashboardPortsMultiLinkParams) ([]DashboardPortsMultiLinkRow, error)
+	// IPv4 subnets with the addresses taken: documented hosts outside DHCP / reserved pools, plus those pools whole (a
+	// DHCP pool hands its addresses out, they are not free). The API keeps those ≥ 90 % full.
+	DashboardSubnets(ctx context.Context, arg DashboardSubnetsParams) ([]DashboardSubnetsRow, error)
 	DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error)
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)

@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { type AuthSession, type OrganizationView } from '../api/client'
 import { useMfaDisable, useSession } from './auth'
 import { NotFoundPage } from './NotFoundPage'
+import { DashboardPanels } from '@/modules/dashboard/DashboardPanels'
 import { SiteCodeChangesDialog } from '@/modules/sites/CategoryDialogs'
 import { previewOrgCode, type SiteCodeChange } from '@/modules/sites/sites'
 import { ConflictError, NotFoundError, useOrganization, useUpdateOrganization } from './orgs'
@@ -292,8 +293,8 @@ function QuickLink({ to, icon, label }: { to: string; icon: ReactNode; label: st
 }
 
 /**
- * Organization landing page /o/:orgId; the full dashboard (figures, issues, expiring items) comes
- * with P1-24. Health moved to the system area (DESIGN.md §6).
+ * Organization landing page /o/:orgId: the dashboard (P1-24) first, then the organization and account panels.
+ * Health moved to the system area (DESIGN.md §6).
  */
 export function OrgHomePage() {
   const { t } = useTranslation()
@@ -314,14 +315,17 @@ export function OrgHomePage() {
   const base = `/o/${orgId}`
   return (
     <div className="space-y-3 p-4">
-      <PageHeader title={t('nav.dashboard')} description={t('home.comingSoon')} />
+      <PageHeader title={t('nav.dashboard')} description={org.data?.organization.name} />
+      <div className="max-w-6xl">
+        <DashboardPanels orgId={orgId} />
+      </div>
       <div className="grid max-w-6xl grid-cols-1 gap-3 xl:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
           {org.data && <OrganizationPanel orgId={orgId} view={org.data} />}
           <Panel title={t('home.quickLinks')}>
             <div className="grid grid-cols-3 gap-2">
               <QuickLink to={`${base}/devices`} icon={<Server />} label={t('nav.devices')} />
-              <QuickLink to="/editor" icon={<Network />} label={t('nav.diagrams')} />
+              <QuickLink to={`${base}/diagrams`} icon={<Network />} label={t('nav.diagrams')} />
               <QuickLink to={`${base}/members`} icon={<Users />} label={t('nav.members')} />
             </div>
           </Panel>

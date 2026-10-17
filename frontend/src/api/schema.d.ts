@@ -743,6 +743,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates */
+        get: operations["getDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/search": {
         parameters: {
             query?: never;
@@ -2857,6 +2877,87 @@ export interface components {
             /** @description devices / groups / clusters already there and used as they are */
             reused: number;
             warnings: string[];
+        };
+        Dashboard: {
+            /** Format: date-time */
+            generatedAt: string;
+            totals: components["schemas"]["DashboardTotals"];
+            bySite: components["schemas"]["DashboardSite"][];
+            byType: components["schemas"]["DashboardTypeCount"][];
+            /** @description worst first; one row per conflict, counts for the info-level ones */
+            problems: components["schemas"]["DashboardProblem"][];
+            /** @description the first 20 */
+            missingInfo: components["schemas"]["DashboardMissing"][];
+            expiring: components["schemas"]["DashboardExpiry"][];
+        };
+        DashboardTotals: {
+            /** @description devices not retired */
+            devices: number;
+            active: number;
+            planned: number;
+            spare: number;
+            rma: number;
+            retired: number;
+            /** @description active devices lacking S/N, part number, model or location */
+            missingInfo: number;
+            /** @description warranty / end-of-support dates within the next 90 days */
+            expiring: number;
+            /** @description warranty / end-of-support dates already past (devices still in use) */
+            expired: number;
+            errors: number;
+            warnings: number;
+            /** @description IPv4 subnets at least 90 % used */
+            subnetsFull: number;
+        };
+        DashboardSite: {
+            /** Format: uuid */
+            siteId: string;
+            code: string;
+            name: string;
+            total: number;
+            active: number;
+            planned: number;
+            spare: number;
+            rma: number;
+            retired: number;
+        };
+        DashboardTypeCount: {
+            type: components["schemas"]["DeviceType"];
+            count: number;
+        };
+        DashboardMissing: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            siteCode: string;
+            missing: ("serial" | "partNumber" | "model" | "location")[];
+        };
+        DashboardExpiry: {
+            /** Format: uuid */
+            deviceId: string;
+            hostname: string;
+            siteCode: string;
+            /** @enum {string} */
+            kind: "warranty" | "eos";
+            /** Format: date */
+            date: string;
+            /** @description days left (negative = already past) */
+            days: number;
+        };
+        DashboardProblem: {
+            /** @enum {string} */
+            kind: "duplicate_ip" | "duplicate_hostname" | "duplicate_serial" | "port_multi_link" | "subnet_full" | "no_link" | "no_mgmt";
+            /** @enum {string} */
+            severity: "error" | "warning" | "info";
+            /** @description the address / hostname / serial / port / subnet concerned (empty for counts) */
+            subject: string;
+            /** @description holders, devices or usage, ready to show */
+            detail: string;
+            count: number;
+            /** Format: uuid */
+            deviceId?: string;
+            /** Format: uuid */
+            subnetId?: string;
         };
         SearchResult: {
             devices: components["schemas"]["SearchDeviceHit"][];
@@ -5253,6 +5354,36 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getDashboard: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     globalSearch: {

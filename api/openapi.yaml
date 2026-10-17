@@ -1325,6 +1325,36 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/dashboard:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getDashboard
+      summary: Dashboard (P1-24) — devices by site / type / lifecycle, org-wide problems, devices missing information, expiring dates
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          description: topbar category (with its subtree); none = whole organization
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/search:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5788,6 +5818,123 @@ components:
           type: array
           items:
             type: string
+
+    Dashboard:
+      type: object
+      required: [generatedAt, totals, bySite, byType, problems, missingInfo, expiring]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        totals:
+          $ref: '#/components/schemas/DashboardTotals'
+        bySite:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardSite'
+        byType:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardTypeCount'
+        problems:
+          type: array
+          description: worst first; one row per conflict, counts for the info-level ones
+          items:
+            $ref: '#/components/schemas/DashboardProblem'
+        missingInfo:
+          type: array
+          description: the first 20
+          items:
+            $ref: '#/components/schemas/DashboardMissing'
+        expiring:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardExpiry'
+
+    DashboardTotals:
+      type: object
+      required: [devices, active, planned, spare, rma, retired, missingInfo, expiring, expired, errors, warnings, subnetsFull]
+      properties:
+        devices: {type: integer, description: 'devices not retired'}
+        active: {type: integer}
+        planned: {type: integer}
+        spare: {type: integer}
+        rma: {type: integer}
+        retired: {type: integer}
+        missingInfo: {type: integer, description: 'active devices lacking S/N, part number, model or location'}
+        expiring: {type: integer, description: 'warranty / end-of-support dates within the next 90 days'}
+        expired: {type: integer, description: 'warranty / end-of-support dates already past (devices still in use)'}
+        errors: {type: integer}
+        warnings: {type: integer}
+        subnetsFull: {type: integer, description: IPv4 subnets at least 90 % used}
+
+    DashboardSite:
+      type: object
+      required: [siteId, code, name, total, active, planned, spare, rma, retired]
+      properties:
+        siteId: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        total: {type: integer}
+        active: {type: integer}
+        planned: {type: integer}
+        spare: {type: integer}
+        rma: {type: integer}
+        retired: {type: integer}
+
+    DashboardTypeCount:
+      type: object
+      required: [type, count]
+      properties:
+        type: {$ref: '#/components/schemas/DeviceType'}
+        count: {type: integer}
+
+    DashboardMissing:
+      type: object
+      required: [id, hostname, siteCode, missing]
+      properties:
+        id: {type: string, format: uuid}
+        hostname: {type: string}
+        siteCode: {type: string}
+        missing:
+          type: array
+          items:
+            type: string
+            enum: [serial, partNumber, model, location]
+
+    DashboardExpiry:
+      type: object
+      required: [deviceId, hostname, siteCode, kind, date, days]
+      properties:
+        deviceId: {type: string, format: uuid}
+        hostname: {type: string}
+        siteCode: {type: string}
+        kind:
+          type: string
+          enum: [warranty, eos]
+        date: {type: string, format: date}
+        days: {type: integer, description: 'days left (negative = already past)'}
+
+    DashboardProblem:
+      type: object
+      required: [kind, severity, subject, detail, count]
+      properties:
+        kind:
+          type: string
+          enum: [duplicate_ip, duplicate_hostname, duplicate_serial, port_multi_link, subnet_full, no_link, no_mgmt]
+        severity:
+          type: string
+          enum: [error, warning, info]
+        subject:
+          type: string
+          description: the address / hostname / serial / port / subnet concerned (empty for counts)
+        detail:
+          type: string
+          description: holders, devices or usage, ready to show
+        count:
+          type: integer
+        deviceId: {type: string, format: uuid}
+        subnetId: {type: string, format: uuid}
 
     SearchResult:
       type: object
