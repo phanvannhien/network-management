@@ -453,6 +453,26 @@ func checkViewShape(v apigen.DiagramView) string {
 		if !unique(a.Id) || !a.Kind.Valid() || !finite(a.X, a.Y) || (a.Text != nil && len(*a.Text) > 2000) {
 			return "Chú thích trên sơ đồ không hợp lệ"
 		}
+		size := func(p *float32) bool { return p == nil || (finite(*p, 0) && *p >= 0 && *p <= 20000) }
+		switch {
+		case !size(a.Width) || !size(a.Height):
+			return "Kích thước khung/chú thích không hợp lệ"
+		case a.FontSize != nil && (*a.FontSize < 8 || *a.FontSize > 96):
+			return "Cỡ chữ từ 8 đến 96"
+		case a.Color != nil && len(*a.Color) > 20:
+			return "Màu chú thích không hợp lệ"
+		case a.LineStyle != nil && !a.LineStyle.Valid():
+			return "Kiểu nét mũi tên không hợp lệ"
+		case (a.SiteId != nil || a.LocationId != nil) && a.Kind != apigen.DiagramAnnotationKindZone:
+			return "Chỉ khung (zone) mới gắn được site/location"
+		case a.LocationId != nil && a.SiteId == nil:
+			return "Khung gắn location phải gắn cả site"
+		}
+		for _, p := range ptrSlice(a.Points) {
+			if !finite(p.X, p.Y) {
+				return "Điểm của chú thích không hợp lệ"
+			}
+		}
 	}
 	if v.Viewport != nil && (!finite(v.Viewport.X, v.Viewport.Y) || v.Viewport.Zoom < 0.05 || v.Viewport.Zoom > 10) {
 		return "Viewport không hợp lệ"
@@ -549,6 +569,10 @@ func (s *Server) SaveDiagram(ctx context.Context, req apigen.SaveDiagramRequestO
 		}
 		for _, e := range before.Edges {
 			kept[e.LinkId] = true
+		}
+		if msg, err := checkFrameRefs(ctx, q, m, b.View, before); err != nil || msg != "" {
+			out.bad = msg
+			return orRollback(err)
 		}
 		check := newRefChecker(ctx, q, m)
 		view := b.View
@@ -762,4 +786,42 @@ func deviceRefusal(out deviceOutcome, err error) (string, string, int, error) {
 		return "", "", 403, nil
 	}
 	return out.bad, out.conflict, 0, nil
+}
+
+// checkFrameRefs: a frame's site / location must belong to the organization (ADR-032). A binding already stored may
+// stay even if the site was deleted since (the frame then shows it as deleted).
+func checkFrameRefs(ctx context.Context, q store.Querier, m tenant.Membership, v, before apigen.DiagramView) (string, error) {
+	stored := map[string]bool{}
+	key := func(a apigen.DiagramAnnotation) string {
+		k := ""
+		if a.SiteId != nil {
+			k += a.SiteId.String()
+		}
+		if a.LocationId != nil {
+			k += "/" + a.LocationId.String()
+		}
+		return k
+	}
+	for _, a := range before.Annotations {
+		stored[a.Id+"|"+key(a)] = true
+	}
+	for _, a := range v.Annotations {
+		if a.SiteId == nil || stored[a.Id+"|"+key(a)] {
+			continue
+		}
+		if _, err := q.GetSite(ctx, store.GetSiteParams{ID: pgUUID(*a.SiteId), OrganizationID: m.OrgID}); errors.Is(err, pgx.ErrNoRows) {
+			return "Khung gắn một site không tồn tại trong tổ chức", nil
+		} else if err != nil {
+			return "", fmt.Errorf("frame site: %w", err)
+		}
+		if a.LocationId != nil {
+			_, err := q.GetLocation(ctx, store.GetLocationParams{ID: pgUUID(*a.LocationId), OrganizationID: m.OrgID, SiteID: pgUUID(*a.SiteId)})
+			if errors.Is(err, pgx.ErrNoRows) {
+				return "Khung gắn một location không thuộc site của khung", nil
+			} else if err != nil {
+				return "", fmt.Errorf("frame location: %w", err)
+			}
+		}
+	}
+	return "", nil
 }

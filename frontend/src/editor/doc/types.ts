@@ -30,6 +30,9 @@ export interface DeviceCard {
   siteId: string
   /** Cluster (stack / HA pair) of the device: a cable between members suggests "stack". */
   clusterId?: string | null
+  clusterName?: string
+  /** ha_active_passive, stack… (the cluster box label). */
+  clusterKind?: string
   /** Management IP (with prefix), shown under the hostname (SRS §6.3 label {hostname}\n{mgmtIp}). */
   mgmtIp?: string
   model?: string
@@ -97,6 +100,8 @@ export function docFromDetail(d: DiagramDetail): DocState {
       type: x.type,
       siteId: x.siteId,
       clusterId: x.clusterId ?? null,
+      clusterName: x.clusterName,
+      clusterKind: x.clusterKind,
       mgmtIp: x.mgmtIp,
       model: x.model,
       siteCode: x.siteCode,

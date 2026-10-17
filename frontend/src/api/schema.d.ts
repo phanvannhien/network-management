@@ -2865,6 +2865,21 @@ export interface components {
             color?: string;
             fontSize?: number;
             points?: components["schemas"]["DiagramPoint"][];
+            /**
+             * Format: uuid
+             * @description zone only (ADR-032): a frame bound to a site, named after it; a new device dropped inside takes this site
+             */
+            siteId?: string | null;
+            /**
+             * Format: uuid
+             * @description zone only — a frame bound to a location of the site (building / floor / room)
+             */
+            locationId?: string | null;
+            /**
+             * @description arrows
+             * @enum {string}
+             */
+            lineStyle?: "solid" | "dashed";
         };
         DiagramViewport: {
             x: number;

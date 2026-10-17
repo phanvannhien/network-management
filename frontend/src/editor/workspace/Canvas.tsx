@@ -6,16 +6,30 @@ import {
   ConnectionMode,
   SelectionMode,
   useReactFlow,
+  type Node,
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { moveNodes } from '../doc/commands'
+import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { useDoc, useDocStoreApi } from './context'
-import { fitOptions, MAX_ZOOM, MIN_ZOOM, toFlowEdges, toFlowNodes, type RefData } from './flow'
+import {
+  ANN,
+  fitOptions,
+  isAnnotationId,
+  isOverlayId,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  toAnnotationNodes,
+  toClusterNodes,
+  toFlowEdges,
+  toFlowNodes,
+  type RefData,
+} from './flow'
+import { arrowOrigin, clusterBoxes, nodesInFrame } from './frames'
 import { EDGE_TYPES, NODE_TYPES } from './nodeTypes'
 import type { EditorPrefs } from './prefs'
 
@@ -98,13 +112,88 @@ export function Canvas({
     })
     // Only nodes still on the view are kept.
     for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
-    return out
+    // Same zIndex: later is on top — cluster boxes above frames, both under devices and cables.
+    const anns = toAnnotationNodes(doc, selected, canEdit)
+    return [
+      ...anns.filter((n) => n.type === 'frame'),
+      ...toClusterNodes(clusterBoxes(doc, measured)),
+      ...anns.filter((n) => n.type !== 'frame'),
+      ...out,
+    ] as Node[]
   }, [doc, selection, measured, canEdit, dataCache])
   const edgeSelection = useDoc((s) => s.edgeSelection)
   const edges = useMemo(
     () => (doc ? toFlowEdges(doc, new Set(edgeSelection)) : []),
     [doc, edgeSelection],
   )
+
+  /** Frame drag: the devices inside it when the drag began move with it (Alt: the frame alone). */
+  const frameDrag = useRef<{
+    id: string
+    x0: number
+    y0: number
+    carried: { id: string; x: number; y: number }[]
+  } | null>(null)
+
+  const annotationChange = (c: NodeChange) => {
+    if (!('id' in c)) return
+    const s = store.getState()
+    const annId = c.id.slice(ANN.length)
+    const a = s.doc?.view.annotations.find((x) => x.id === annId)
+    if (!a) return
+    const key = dragKey.current ?? undefined
+    if (c.type === 'dimensions' && c.dimensions && c.resizing && a.kind === 'zone') {
+      s.dispatch(
+        updateAnnotation(
+          annId,
+          { width: Math.round(c.dimensions.width), height: Math.round(c.dimensions.height) },
+          `resize:${annId}`,
+        ),
+      )
+      return
+    }
+    if (c.type !== 'position' || !c.position) return
+    const x = Math.round(c.position.x)
+    const y = Math.round(c.position.y)
+    if (a.kind === 'arrow') {
+      // The node box is the arrow's bounding box: move both ends by the same delta.
+      const o = arrowOrigin(a)
+      const dx = x - o.x
+      const dy = y - o.y
+      const end = a.points?.[0] ?? { x: a.x + 120, y: a.y }
+      s.dispatch(
+        updateAnnotation(
+          annId,
+          { x: a.x + dx, y: a.y + dy, points: [{ x: end.x + dx, y: end.y + dy }] },
+          key,
+        ),
+      )
+      return
+    }
+    const f = frameDrag.current
+    if (a.kind === 'zone' && f && f.id === annId) {
+      const dx = x - f.x0
+      const dy = y - f.y0
+      s.dispatch(
+        moveAnnotation(
+          annId,
+          x,
+          y,
+          f.carried.map((n) => ({ id: n.id, x: n.x + dx, y: n.y + dy })),
+          key,
+        ),
+      )
+      return
+    }
+    // Resizing from the top / left moves the frame's origin too.
+    s.dispatch(
+      updateAnnotation(
+        annId,
+        { x, y },
+        c.type === 'position' && a.kind === 'zone' ? `resize:${annId}` : key,
+      ),
+    )
+  }
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -113,6 +202,11 @@ export function Canvas({
       const picked = new Map<string, boolean>()
       const sizes: Record<string, { width: number; height: number }> = {}
       for (const c of changes) {
+        if ('id' in c && isOverlayId(c.id)) {
+          if (canEdit) annotationChange(c)
+          if (c.type === 'select') picked.set(c.id, c.selected)
+          continue
+        }
         if (c.type === 'position' && c.position && canEdit)
           moves.push({ id: c.id, x: Math.round(c.position.x), y: Math.round(c.position.y) })
         else if (c.type === 'select') picked.set(c.id, c.selected)
@@ -189,11 +283,31 @@ export function Canvas({
         e.preventDefault()
         onMenu({ kind: 'pane' }, e.clientX, e.clientY)
       }}
-      onNodeDragStart={() => {
+      onNodeDragStart={(e, node) => {
         dragKey.current = `drag:${crypto.randomUUID()}`
+        const s = store.getState()
+        const a = isAnnotationId(node.id)
+          ? s.doc?.view.annotations.find((x) => ANN + x.id === node.id)
+          : undefined
+        frameDrag.current =
+          a?.kind === 'zone' && s.doc && !e.altKey
+            ? {
+                id: a.id,
+                x0: a.x,
+                y0: a.y,
+                // Selected devices are moved by React Flow already.
+                carried: nodesInFrame(s.doc, a, measured)
+                  .filter((id) => !s.selection.includes(id))
+                  .map((id) => {
+                    const n = s.doc!.view.nodes.find((v) => v.id === id)!
+                    return { id, x: n.x, y: n.y }
+                  }),
+              }
+            : null
       }}
       onNodeDragStop={() => {
         dragKey.current = null
+        frameDrag.current = null
       }}
       onMoveEnd={(_e, vp: Viewport) => {
         store.getState().setViewport(vp)
@@ -238,10 +352,10 @@ export function Canvas({
         if (!pt) return
         const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__node')
         const to = el?.getAttribute('data-id')
-        if (to && to !== from) onWire(from, to)
+        if (to && to !== from && !isOverlayId(to)) onWire(from, to)
       }}
       onNodeClick={(_e, node) => {
-        if (wiring) onNodePick(node.id)
+        if (wiring && !isOverlayId(node.id)) onNodePick(node.id)
       }}
       onEdgeDoubleClick={(_e, edge) => onEditCable(edge.id)}
       elementsSelectable

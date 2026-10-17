@@ -15,6 +15,8 @@ export type ShortcutId =
   | 'paste'
   | 'duplicate'
   | 'lock'
+  | 'group'
+  | 'ungroup'
   | 'selectAll'
   | 'deselect'
   | 'pan'
@@ -47,6 +49,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'paste', keys: ['Ctrl', 'V'], aria: 'Control+V' },
   { id: 'duplicate', keys: ['Ctrl', 'D'], aria: 'Control+D' },
   { id: 'lock', keys: ['Ctrl', 'Shift', 'L'], aria: 'Control+Shift+L' },
+  { id: 'group', keys: ['Ctrl', 'G'], aria: 'Control+G' },
+  { id: 'ungroup', keys: ['Ctrl', 'Shift', 'G'], aria: 'Control+Shift+G' },
   { id: 'selectAll', keys: ['Ctrl', 'A'], aria: 'Control+A' },
   { id: 'deselect', keys: ['Esc'] },
   { id: 'pan', keys: ['Space'] },
@@ -86,6 +90,8 @@ export const CANVAS_ONLY: ReadonlySet<ShortcutId> = new Set([
   'paste',
   'duplicate',
   'lock',
+  'group',
+  'ungroup',
 ])
 
 /** Keys typed into a field belong to the field, not the canvas. */
@@ -115,6 +121,7 @@ export function actionFor(
     if (k === 'd' && !e.shiftKey) return 'duplicate'
     // Ctrl+L alone focuses the browser's address bar.
     if (k === 'l' && e.shiftKey) return 'lock'
+    if (k === 'g') return e.shiftKey ? 'ungroup' : 'group'
     return null
   }
   // Shift+digit gives "!" / ")" on most layouts: match on the physical key.

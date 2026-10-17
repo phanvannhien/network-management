@@ -2860,6 +2860,43 @@ describe('diagrams (P1-13)', () => {
     ).toBeDisabled()
   })
 
+  it('P1-19: Ctrl+G frames the selection, bound to the site the devices share; the frame is saved with the view', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'g', ctrlKey: true })
+    // Named after the site, selected, with its panel.
+    expect(
+      await within(canvas).findByRole('button', { name: /^Khung VPM-AGRI-BD01/ }),
+    ).toBeInTheDocument()
+    const panel = screen.getByRole('complementary', { name: 'Thuộc tính' })
+    expect(within(panel).getByRole('heading', { name: 'Khung' })).toBeInTheDocument()
+    await waitFor(() => expect(within(panel).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
+    fireEvent.change(within(panel).getByLabelText(/^Tiêu đề/), {
+      target: { value: 'Nhà máy Bình Định' },
+    })
+    expect(
+      await within(canvas).findByRole('button', { name: 'Khung Nhà máy Bình Định' }),
+    ).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.view.annotations).toEqual([
+      expect.objectContaining({
+        kind: 'zone',
+        siteId: AGRI_SITE.id,
+        text: 'Nhà máy Bình Định',
+        width: expect.any(Number),
+      }),
+    ])
+  })
+
   it('a viewer opens the diagram read-only', async () => {
     fakeApi(
       routes({

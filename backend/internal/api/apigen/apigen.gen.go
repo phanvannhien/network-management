@@ -347,6 +347,24 @@ func (e DiagramAnnotationKind) Valid() bool {
 	}
 }
 
+// Defines values for DiagramAnnotationLineStyle.
+const (
+	Dashed DiagramAnnotationLineStyle = "dashed"
+	Solid  DiagramAnnotationLineStyle = "solid"
+)
+
+// Valid indicates whether the value is a known member of the DiagramAnnotationLineStyle enum.
+func (e DiagramAnnotationLineStyle) Valid() bool {
+	switch e {
+	case Dashed:
+		return true
+	case Solid:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DiagramChangeOp.
 const (
 	CreateDevice DiagramChangeOp = "createDevice"
@@ -1781,15 +1799,27 @@ type DiagramAnnotation struct {
 	Height   *float32              `json:"height,omitempty"`
 	Id       string                `json:"id"`
 	Kind     DiagramAnnotationKind `json:"kind"`
-	Points   *[]DiagramPoint       `json:"points,omitempty"`
-	Text     *string               `json:"text,omitempty"`
-	Width    *float32              `json:"width,omitempty"`
-	X        float32               `json:"x"`
-	Y        float32               `json:"y"`
+
+	// LineStyle arrows
+	LineStyle *DiagramAnnotationLineStyle `json:"lineStyle,omitempty"`
+
+	// LocationId zone only — a frame bound to a location of the site (building / floor / room)
+	LocationId *openapi_types.UUID `json:"locationId,omitempty"`
+	Points     *[]DiagramPoint     `json:"points,omitempty"`
+
+	// SiteId zone only (ADR-032): a frame bound to a site, named after it; a new device dropped inside takes this site
+	SiteId *openapi_types.UUID `json:"siteId,omitempty"`
+	Text   *string             `json:"text,omitempty"`
+	Width  *float32            `json:"width,omitempty"`
+	X      float32             `json:"x"`
+	Y      float32             `json:"y"`
 }
 
 // DiagramAnnotationKind defines model for DiagramAnnotation.Kind.
 type DiagramAnnotationKind string
+
+// DiagramAnnotationLineStyle arrows
+type DiagramAnnotationLineStyle string
 
 // DiagramChange One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id.
 type DiagramChange struct {

@@ -11,6 +11,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | --- | --- | --- | --- |
 | **Danh mục** | Nhánh chia việc quản lý trong tổ chức (công ty con, khách hàng, chi nhánh, bộ phận…), chia bao nhiêu cấp cũng được; mỗi danh mục có tên tự do và mã viết tắt | Tổ chức CJ → danh mục CJ Feed (`CJFEED`) | Danh mục & Sites → cây bên trái |
 | **Site** | Một địa điểm thật (văn phòng, nhà máy, kho, IDC); gắn vào danh mục bất kỳ hoặc thẳng vào tổ chức | Văn phòng HCM | Danh mục & Sites |
+| **Khung site / location** | Hình chữ nhật trên sơ đồ gom thiết bị của một site hoặc location (tòa, tầng, phòng), tên theo site/location. Thiết bị mới thả vào khung nhận site đó; thiết bị có sẵn khác site → cảnh báo. Cụm HA/stack có khung chấm tự động | Khung "FPT IDC" chứa cặp FortiGate HA | Sơ đồ → Khung (Ctrl+G) |
 | **Mã site đầy đủ** | Ghép tự động: mã tổ chức – mã các danh mục – mã riêng của site. Đổi mã danh mục/tổ chức thì mã các site bên dưới đổi theo, hệ thống liệt kê để xác nhận trước | `CJ-CJFEED-HCM` | Form site, cây danh mục |
 | **Hostname** | Tên của thiết bị trên mạng, do kỹ sư đặt; chỉ chữ không dấu, số, "-", tối đa 63 ký tự (Windows chỉ giữ 15) | `AGRI-BD01-FW01` = mã site bỏ mã tổ chức – loại – số | Thiết bị → Hostname; sơ đồ gợi ý theo quy ước này (không trùng trong tổ chức, trừ thành viên cùng cụm) |
 | **S/N (Serial Number)** | Số seri in trên thiết bị, dùng để bảo hành | `FGT60F0000123` | Thiết bị → S/N |

@@ -329,6 +329,57 @@
   background: color-mix(in srgb, #64748b 22%, var(--surface));
 }
 
+/* Frames (P1-19): translucent fills that keep cables and devices readable in both themes; the title says the site,
+   so colour is never the only cue. Only the title bar takes clicks. */
+.ntb-zone-slate {
+  --zone: #64748b;
+}
+.ntb-zone-blue {
+  --zone: #2563eb;
+}
+.ntb-zone-green {
+  --zone: #16a34a;
+}
+.ntb-zone-amber {
+  --zone: #d97706;
+}
+.ntb-zone-red {
+  --zone: #dc2626;
+}
+.ntb-zone-violet {
+  --zone: #7c3aed;
+}
+.ntb-frame {
+  background: color-mix(in srgb, var(--zone) 7%, transparent);
+  border-color: color-mix(in srgb, var(--zone) 70%, var(--text-muted));
+}
+.ntb-frame-title {
+  background: color-mix(in srgb, var(--zone) 18%, var(--surface));
+  color: var(--text);
+}
+.react-flow__node-frame.selected .ntb-frame,
+.react-flow__node-frame:focus-visible .ntb-frame {
+  border-style: solid;
+}
+.ntb-resize-line {
+  border-color: var(--brand) !important;
+}
+.ntb-resize-handle {
+  width: 9px !important;
+  height: 9px !important;
+  background: var(--surface) !important;
+  border: 2px solid var(--brand) !important;
+  border-radius: 2px;
+}
+/* Cluster boxes (HA pair, stack): derived from the inventory, not interactive. */
+.ntb-cluster {
+  border-color: color-mix(in srgb, var(--brand) 60%, var(--text-muted));
+}
+.ntb-cluster-label {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
 .react-flow__minimap,
 .react-flow__controls {
   border-radius: 6px;

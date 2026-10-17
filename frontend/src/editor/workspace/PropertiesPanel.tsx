@@ -27,10 +27,17 @@ import {
   useLinks,
   type LinkInput,
 } from '@/modules/inventory/links'
-import { useSites } from '@/modules/sites/sites'
-import { setLabelColor, setLabelTemplate, updateDevice, updateLink } from '../doc/commands'
+import { useLocations, useSites } from '@/modules/sites/sites'
+import {
+  setLabelColor,
+  setLabelTemplate,
+  updateAnnotation,
+  updateDevice,
+  updateLink,
+} from '../doc/commands'
 import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
+import { ANN, isAnnotationId } from './flow'
 import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
 import { PortIpam } from './PortIpam'
 import { sortPorts, takenPorts } from './wiring'
@@ -56,7 +63,14 @@ export function PropertiesPanel({
   const doc = useDoc((s) => s.doc)!
   let body: ReactNode
   let title: string = t('panel.diagram')
-  if (selection.length === 1) {
+  const ann =
+    selection.length === 1 && isAnnotationId(selection[0]!)
+      ? doc.view.annotations.find((a) => ANN + a.id === selection[0])
+      : undefined
+  if (ann) {
+    title = t(`frames.kinds.${ann.kind as 'zone'}`)
+    body = <AnnotationPanel key={ann.id} orgId={orgId} annotationId={ann.id} canEdit={canEdit} />
+  } else if (selection.length === 1) {
     const node = doc.view.nodes.find((n) => n.id === selection[0])
     if (node?.refKind === 'device' && doc.devices[node.refId]) {
       title = t('panel.device')
@@ -988,5 +1002,151 @@ function MgmtInterfaceField({
         </NativeSelect>
       )}
     </FormField>
+  )
+}
+
+/** A frame (bound to a site / location), a text or an arrow (P1-19). Each change is an undo step. */
+function AnnotationPanel({
+  orgId,
+  annotationId,
+  canEdit,
+}: {
+  orgId: string
+  annotationId: string
+  canEdit: boolean
+}) {
+  const { t } = useTranslation()
+  const store = useDocStoreApi()
+  const a = useDoc((s) => s.doc?.view.annotations.find((x) => x.id === annotationId))
+  const sites = useSites(orgId, a?.kind === 'zone')
+  const locations = useLocations(orgId, a?.siteId ?? '')
+  if (!a) return null
+  const set = (patch: Parameters<typeof updateAnnotation>[1], merge?: string) =>
+    store.getState().dispatch(updateAnnotation(a.id, patch, merge && `${merge}:${a.id}`))
+  return (
+    <fieldset disabled={!canEdit} className="space-y-3">
+      {a.kind === 'zone' && (
+        <>
+          <p className="text-muted-foreground">{t('frames.zoneHint')}</p>
+          <FormField label={t('frames.site')} help="frame" guide={t('frames.siteGuide')}>
+            {(p) => (
+              <NativeSelect
+                {...p}
+                value={a.siteId ?? ''}
+                onChange={(e) =>
+                  set({ siteId: e.target.value || undefined, locationId: undefined })
+                }
+              >
+                <option value="">{t('frames.noSite')}</option>
+                {(sites.data ?? []).map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.code} · {st.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            )}
+          </FormField>
+          {a.siteId && (locations.data ?? []).length > 0 && (
+            <FormField label={t('frames.location')} help="location">
+              {(p) => (
+                <NativeSelect
+                  {...p}
+                  value={a.locationId ?? ''}
+                  onChange={(e) => set({ locationId: e.target.value || undefined })}
+                >
+                  <option value="">{t('frames.wholeSite')}</option>
+                  {(locations.data ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              )}
+            </FormField>
+          )}
+        </>
+      )}
+      <FormField
+        label={
+          a.kind === 'zone'
+            ? t('frames.title')
+            : a.kind === 'arrow'
+              ? t('frames.arrowLabel')
+              : t('frames.text')
+        }
+        hint={a.kind === 'zone' ? t('frames.titleHint') : undefined}
+      >
+        {(p) =>
+          a.kind === 'text' ? (
+            <textarea
+              {...p}
+              rows={3}
+              maxLength={2000}
+              className="w-full rounded-md border border-input bg-transparent px-2 py-1"
+              value={a.text ?? ''}
+              onChange={(e) => set({ text: e.target.value }, 'text')}
+            />
+          ) : (
+            <Input
+              {...p}
+              maxLength={200}
+              value={a.text ?? ''}
+              onChange={(e) => set({ text: e.target.value || undefined }, 'text')}
+            />
+          )
+        }
+      </FormField>
+      <Section title={t('frames.color')}>
+        <div role="radiogroup" aria-label={t('frames.color')} className="flex flex-wrap gap-1">
+          {(['', ...LABEL_COLORS] as const).map((c) => (
+            <button
+              key={c || 'none'}
+              type="button"
+              role="radio"
+              aria-checked={(a.color ?? '') === c}
+              aria-label={t(`panel.colors.${c || 'none'}`)}
+              title={t(`panel.colors.${c || 'none'}`)}
+              onClick={() => set({ color: c || undefined })}
+              className={cn(
+                'size-6 rounded-sm border border-border-control',
+                c ? `ntb-tag-${c}` : 'bg-card',
+                (a.color ?? '') === c && 'ring-2 ring-primary',
+              )}
+            />
+          ))}
+        </div>
+      </Section>
+      {a.kind === 'text' && (
+        <FormField label={t('frames.size')}>
+          {(p) => (
+            <NativeSelect
+              {...p}
+              value={String(a.fontSize ?? 14)}
+              onChange={(e) => set({ fontSize: Number(e.target.value) })}
+            >
+              {[12, 14, 16, 20, 24, 32].map((n) => (
+                <option key={n} value={n}>
+                  {n}px
+                </option>
+              ))}
+            </NativeSelect>
+          )}
+        </FormField>
+      )}
+      {a.kind === 'arrow' && (
+        <FormField label={t('frames.lineStyle')}>
+          {(p) => (
+            <NativeSelect
+              {...p}
+              value={a.lineStyle ?? 'solid'}
+              onChange={(e) => set({ lineStyle: e.target.value as 'solid' | 'dashed' })}
+            >
+              <option value="solid">{t('frames.solid')}</option>
+              <option value="dashed">{t('frames.dashed')}</option>
+            </NativeSelect>
+          )}
+        </FormField>
+      )}
+    </fieldset>
   )
 }

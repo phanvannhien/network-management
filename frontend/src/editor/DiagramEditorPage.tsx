@@ -33,6 +33,9 @@ import { changesOf } from './doc/types'
 import type { DeviceType, LibraryItem } from './library/items'
 import { LibraryPanel } from './library/LibraryPanel'
 import { defaultSiteFor } from './library/placement'
+import { isAnnotationId } from './workspace/flow'
+import { frameAt } from './workspace/frames'
+import { useAnnotate } from './workspace/useAnnotate'
 import { NewDeviceDialog, type NewDeviceInput } from './library/NewDeviceDialog'
 import { QuickAdd } from './library/QuickAdd'
 import { Canvas } from './workspace/Canvas'
@@ -278,6 +281,18 @@ function Workspace({
   const libraryOpen = canEdit && prefs.library
   const templates = useTemplates(orgId, canEdit)
   const edit = useEditActions({ orgId, store, canEdit, grid: prefs.grid })
+  const annotate = useAnnotate({
+    store,
+    canEdit,
+    centre: () => centre(),
+    sizes: () =>
+      Object.fromEntries(
+        flow
+          .getNodes()
+          .filter((n) => n.measured?.width)
+          .map((n) => [n.id, { width: n.measured!.width!, height: n.measured!.height! }]),
+      ),
+  })
   const wiring = useWiring({ orgId, store, canEdit })
   const [menu, setMenu] = useState<{
     x: number
@@ -318,6 +333,7 @@ function Workspace({
   }
   const create = (input: NewDeviceInput) => {
     if (!creating) return
+    const frame = frameAt(doc, creating.at.x, creating.at.y)
     const { x, y } = place(creating.at)
     // The template's ports exist right away (temp ids), so the new device can be cabled before saving (P1-17).
     const groups = templates.data?.find((tp) => tp.id === input.templateId)?.ports
@@ -328,6 +344,10 @@ function Workspace({
           type: input.type,
           siteId: input.siteId,
           templateId: input.templateId,
+          // Dropped inside a location frame of the same site: the device is in that location (ADR-032).
+          ...(frame?.locationId && frame.siteId === input.siteId
+            ? { locationId: frame.locationId }
+            : {}),
         },
         x,
         y,
@@ -411,6 +431,12 @@ function Workspace({
         case 'lock':
           edit.toggleLock()
           break
+        case 'group':
+          annotate.frame()
+          break
+        case 'ungroup':
+          annotate.ungroup()
+          break
         case 'quickAdd':
           if (!canEdit) return
           setQuick(true)
@@ -470,6 +496,20 @@ function Workspace({
           danger: true,
           disabled: !canEdit,
           onSelect: edit.requestDelete,
+        },
+      ]
+    if (m.id && isAnnotationId(m.id))
+      return [
+        {
+          id: 'delete',
+          label: t('frames.delete'),
+          icon: <Trash2 aria-hidden />,
+          keys: keys('remove'),
+          disabled: !canEdit,
+          onSelect: () => {
+            store.getState().setSelection([m.id!])
+            edit.remove()
+          },
         },
       ]
     const node = doc.view.nodes.find((n) => n.id === m.id)
@@ -575,6 +615,9 @@ function Workspace({
         onFit={fit}
         onHelp={() => setHelp(true)}
         onQuickAdd={() => setQuick(true)}
+        onAddFrame={annotate.frame}
+        onAddText={annotate.text}
+        onAddArrow={annotate.arrow}
         connecting={wiring.mode !== null}
         onConnect={() => wiring.toggle()}
       />
@@ -656,7 +699,9 @@ function Workspace({
           orgId={orgId}
           type={creating.type}
           templateId={creating.templateId}
-          defaultSiteId={defaultSiteFor(doc, lastSite)}
+          defaultSiteId={
+            frameAt(doc, creating.at.x, creating.at.y)?.siteId ?? defaultSiteFor(doc, lastSite)
+          }
           takenHostnames={hostnames}
           onCreate={create}
           onClose={() => setCreating(null)}

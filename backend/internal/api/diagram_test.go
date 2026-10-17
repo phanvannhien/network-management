@@ -226,3 +226,56 @@ func TestDiagramSaveCablesNewDevicePorts(t *testing.T) {
 		t.Errorf("cable on the new switch: %v", l["b"])
 	}
 }
+
+// P1-19 / ADR-032: frames (zone annotations) bound to a site / location of the organization.
+func TestDiagramFrames(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	hcm := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "HCM"}))
+	hn := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN"}))
+	room := idOf(t, mustCreate(t, fx.A, sitesPath(org)+"/"+hcm+"/locations", map[string]any{"kind": "room", "name": "Phòng máy"}))
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "B01", "name": "B"}))
+	dg := idOf(t, mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "Frames", "layer": "physical"})["diagram"].(map[string]any))
+	save := func(version int, ann ...map[string]any) (int, map[string]any) {
+		return fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{
+			"version": version, "view": map[string]any{"nodes": []any{}, "edges": []any{}, "annotations": ann},
+		})
+	}
+	frame := func(site, loc string) map[string]any {
+		a := map[string]any{"id": "f1", "kind": "zone", "x": 0, "y": 0, "width": 400, "height": 300, "siteId": site}
+		if loc != "" {
+			a["locationId"] = loc
+		}
+		return a
+	}
+	for name, c := range map[string]map[string]any{
+		"another org's site":       frame(siteB, ""),
+		"location of another site": frame(hn, room),
+		"location without site":    {"id": "f1", "kind": "zone", "x": 0, "y": 0, "locationId": room},
+		"site on a text":           {"id": "t1", "kind": "text", "x": 0, "y": 0, "siteId": hcm},
+		"font too big":             {"id": "t1", "kind": "text", "x": 0, "y": 0, "text": "x", "fontSize": 300},
+		"negative size":            {"id": "f1", "kind": "zone", "x": 0, "y": 0, "width": -5, "height": 10},
+		"bad arrow style":          {"id": "a1", "kind": "arrow", "x": 0, "y": 0, "lineStyle": "wavy"},
+	} {
+		if status, body := save(1, c); status != http.StatusBadRequest {
+			t.Errorf("%s: %d %v, want 400", name, status, body)
+		}
+	}
+	status, body := save(1, frame(hcm, room),
+		map[string]any{"id": "t1", "kind": "text", "x": 10, "y": 10, "text": "FPT IDC", "color": "blue", "fontSize": 16},
+		map[string]any{"id": "a1", "kind": "arrow", "x": 0, "y": 0, "points": []map[string]any{{"x": 120, "y": 40}}, "lineStyle": "dashed"})
+	if status != http.StatusOK {
+		t.Fatalf("save frames: %d %v", status, body)
+	}
+	anns := body["detail"].(map[string]any)["view"].(map[string]any)["annotations"].([]any)
+	if len(anns) != 3 || anns[0].(map[string]any)["locationId"] != room {
+		t.Errorf("annotations stored as %v", anns)
+	}
+	// A stored binding stays valid after its site is deleted (shown as deleted, not a save error).
+	if status, _ := fx.A.Do("DELETE", sitesPath(org)+"/"+hcm, nil); status != http.StatusNoContent {
+		t.Logf("site delete: %d (site may still be in use)", status)
+	}
+	if status, body := save(2, frame(hcm, room)); status != http.StatusOK {
+		t.Errorf("re-save with the stored binding: %d %v", status, body)
+	}
+}

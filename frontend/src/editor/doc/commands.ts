@@ -304,3 +304,75 @@ export function setLabelColor(nodeIds: string[], color: string): DocCommand {
     },
   }
 }
+
+export type Annotation = DocState['view']['annotations'][number]
+
+/** Text, arrow or frame on the diagram (P1-19). */
+export function addAnnotation(a: Annotation): DocCommand {
+  return {
+    label: 'addAnnotation',
+    apply(d) {
+      if (!d.view.annotations.some((x) => x.id === a.id)) d.view.annotations.push(a)
+    },
+  }
+}
+
+/** Change fields of an annotation; `undefined` in the patch removes the field. */
+export function updateAnnotation(
+  id: string,
+  patch: Partial<Annotation>,
+  mergeKey?: string,
+): DocCommand {
+  return {
+    label: 'updateAnnotation',
+    mergeKey,
+    apply(d) {
+      const a = d.view.annotations.find((x) => x.id === id)
+      if (!a) return
+      for (const [k, v] of Object.entries(patch) as [keyof Annotation, unknown][]) {
+        if (v === undefined) delete a[k]
+        else (a as Record<string, unknown>)[k] = v
+      }
+    },
+  }
+}
+
+/** Remove annotations; a frame goes, the devices inside it stay. */
+export function removeAnnotations(ids: string[]): DocCommand {
+  return {
+    label: 'removeAnnotations',
+    apply(d) {
+      const drop = new Set(ids)
+      if (!d.view.annotations.some((a) => drop.has(a.id))) return
+      d.view.annotations = d.view.annotations.filter((a) => !drop.has(a.id))
+    },
+  }
+}
+
+/** Move an annotation; a frame carries the devices that were inside it when the drag began (one undo step per drag). */
+export function moveAnnotation(
+  id: string,
+  x: number,
+  y: number,
+  carried: { id: string; x: number; y: number }[],
+  mergeKey?: string,
+): DocCommand {
+  return {
+    label: 'moveAnnotation',
+    mergeKey,
+    apply(d) {
+      const a = d.view.annotations.find((v) => v.id === id)
+      if (!a || (a.x === x && a.y === y)) return
+      a.x = x
+      a.y = y
+      const byId = new Map(d.view.nodes.map((n) => [n.id, n]))
+      for (const c of carried) {
+        const n = byId.get(c.id)
+        if (n && !n.locked) {
+          n.x = c.x
+          n.y = c.y
+        }
+      }
+    },
+  }
+}

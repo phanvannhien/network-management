@@ -8,6 +8,7 @@ import {
   compound,
   deleteDevice,
   deleteLink,
+  removeAnnotations,
   removeNodes,
   setLocked,
   type DocCommand,
@@ -16,6 +17,7 @@ import type { DocStoreApi } from '../doc/store'
 import type { DeviceCard } from '../doc/types'
 import { HOSTNAME_PREFIX } from '../library/hostname'
 import { clipboard, copySelection, mustClone, planPaste, type Clip } from './clipboard'
+import { ANN, isAnnotationId } from './flow'
 import type { DeleteTarget } from './DeleteFromInventoryDialog'
 
 type Link = Awaited<ReturnType<typeof fetchLinks>>[number]
@@ -163,7 +165,14 @@ export function useEditActions({
   const remove = () => {
     const nodes = selectedNodes()
     if (!canEdit || saving()) return
+    // Annotations (frames, text, arrows) selected go away; a frame's devices stay.
+    const anns = store
+      .getState()
+      .selection.filter(isAnnotationId)
+      .map((id) => id.slice(ANN.length))
+    if (anns.length > 0) store.getState().dispatch(removeAnnotations(anns))
     if (nodes.length === 0) {
+      if (anns.length > 0) return
       // Cables cannot leave the view while both ends are drawn (ADR-015): Delete on them deletes from the inventory.
       if (store.getState().edgeSelection.length > 0) requestDelete()
       return

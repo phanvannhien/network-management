@@ -5,6 +5,33 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-19 Annotation & khung nhóm theo site/location
+- Đã làm:
+  - **Khung** (annotation `zone`, thêm `siteId` / `locationId` — ADR-032): nút "Khung" trên toolbar hoặc **Ctrl+G** tạo khung quanh
+    các thiết bị đang chọn, tự gắn site chung của chúng (khác site thì báo và để chọn trong panel); Ctrl+Shift+G bỏ khung (thiết bị
+    giữ nguyên). Tiêu đề theo site (mã · tên) và location, đặt tiêu đề riêng được; site đã xóa hiện "Site đã xóa". Kéo **thanh tiêu
+    đề** để di chuyển khung **kèm thiết bị bên trong** (giữ Alt: chỉ khung), một bước hoàn tác; kéo mép để đổi kích thước. Thân khung
+    không chắn chuột (vẫn khoanh chọn, click thiết bị/dây bình thường); khung không làm đầu dây khi nối.
+  - **Thiết bị mới thả vào khung** nhận site (và location nếu khung gắn location cùng site) của khung nhỏ nhất chứa điểm thả.
+  - **Hộp cụm tự động**: cụm có từ 2 thành viên trên sơ đồ được vẽ khung chấm nhãn "HA · CJIDC-HA" / "Stack · …" (suy từ kho, không
+    vẽ tay).
+  - **Chữ** (màu, cỡ chữ) và **mũi tên** (kéo hai đầu, nét liền/đứt, nhãn); panel thuộc tính cho khung/chữ/mũi tên; Delete xóa chú
+    thích đang chọn.
+  - Backend: kiểm tra annotation (kích thước, cỡ chữ 8–96, màu, kiểu nét, chỉ khung mới gắn site, location phải kèm site) và
+    **site/location thuộc tổ chức** khi lưu (binding đã lưu trước vẫn giữ được nếu site bị xóa sau).
+  - **Sửa lỗi P1-18 từ rà soát** (commit riêng): IP gán từ subnet giữ đúng VRF; chỉ đồng bộ version cho thao tác IPAM của chính
+    mình (không đè sửa của người khác); hoàn tác thất bại có báo; ô nhập không bị xóa sau khi lưu cổng; cảnh báo dùng vùng
+    thông báo (không như lỗi); IP ngoài subnet đã chọn được cảnh báo.
+  - Glossary: "Khung site / location".
+- Test / cách kiểm tra: `make check` pass (Go: `TestDiagramFrames` — site tổ chức khác, location khác site, cỡ chữ, kích thước…;
+  vitest 241: thiết bị trong khung, khung nhỏ nhất, kéo khung kèm thiết bị, hộp cụm; App: Ctrl+G → khung gắn site → lưu).
+  Chromium: 3 khung HCM / IDC / HN cho CJ Foodville, kéo khung IDC → cặp FortiGate đi theo, lưu; axe không lỗi.
+- Còn dở / lỗi đã biết: chưa di chuyển/đổi kích thước khung bằng bàn phím; chú giải tự động và bảng IP plan để sau; cảnh báo
+  "thiết bị nằm trong khung khác site" làm ở P1-20.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: SVI gắn VLAN (từ P1-18) vẫn chờ.
+- Task tiếp theo đề xuất: P1-20 Validation.
+
 ## 2026-10-17 — P1-18 bước 2: IPAM trong panel (ADR-034)
 - Đã làm:
   - Người dùng chốt **cách A** → ADR-034: thay đổi IPAM/interface từ panel ghi **thẳng** vào IPAM qua API sẵn có (không qua Ctrl+Z

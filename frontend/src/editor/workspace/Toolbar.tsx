@@ -6,6 +6,9 @@ import {
   LibraryBig,
   Lightbulb,
   Magnet,
+  MoveUpRight,
+  SquareDashed,
+  Type,
   PanelRight,
   Map as MapIcon,
   Maximize,
@@ -109,6 +112,9 @@ export interface ToolbarProps {
   onQuickAdd: () => void
   connecting: boolean
   onConnect: () => void
+  onAddFrame: () => void
+  onAddText: () => void
+  onAddArrow: () => void
 }
 
 /** Floating toolbar over the canvas (P1-14). */
@@ -175,6 +181,15 @@ export function Toolbar(p: ToolbarProps) {
             pressed={p.connecting}
           >
             <Cable aria-hidden />
+          </ToolButton>
+          <ToolButton label={t('frames.addFrame')} shortcut="group" onClick={p.onAddFrame}>
+            <SquareDashed aria-hidden />
+          </ToolButton>
+          <ToolButton label={t('frames.addText')} onClick={p.onAddText}>
+            <Type aria-hidden />
+          </ToolButton>
+          <ToolButton label={t('frames.addArrow')} onClick={p.onAddArrow}>
+            <MoveUpRight aria-hidden />
           </ToolButton>
         </>
       )}

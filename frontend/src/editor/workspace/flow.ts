@@ -1,5 +1,7 @@
 import type { Edge, Node } from '@xyflow/react'
+import type { AnnotationData, ClusterData } from './annotationNodes'
 import type { CableData } from './CableEdge'
+import { arrowOrigin, type ClusterBox } from './frames'
 import type { DiagramNode, DocState } from '../doc/types'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
@@ -130,3 +132,60 @@ export function fitOptions(libraryOpen: boolean, panelOpen = false) {
 
 export const GRID_SIZES = [10, 20, 40] as const
 export type GridSize = (typeof GRID_SIZES)[number]
+
+/** React Flow ids of annotations and cluster boxes, apart from view node ids. */
+export const ANN = 'a:'
+export const CLUSTER = 'c:'
+export const isAnnotationId = (id: string) => id.startsWith(ANN)
+export const isOverlayId = (id: string) => id.startsWith(ANN) || id.startsWith(CLUSTER)
+
+/**
+ * Annotations as React Flow nodes (P1-19): frames under everything (only their title bar is grabbable, so the
+ * selection box never picks them), text and arrows above cables.
+ */
+export function toAnnotationNodes(
+  doc: DocState,
+  selection: ReadonlySet<string>,
+  canEdit: boolean,
+): Node<AnnotationData>[] {
+  return doc.view.annotations
+    .filter((a) => a.kind === 'zone' || a.kind === 'text' || a.kind === 'arrow')
+    .map((a) => {
+      const id = ANN + a.id
+      const base = {
+        id,
+        data: { annotationId: a.id },
+        selected: selection.has(id),
+        draggable: canEdit,
+      }
+      if (a.kind === 'zone')
+        return {
+          ...base,
+          type: 'frame',
+          position: { x: a.x, y: a.y },
+          width: a.width ?? 400,
+          height: a.height ?? 300,
+          zIndex: -1,
+          selectable: false,
+          dragHandle: '.ntb-frame-title',
+        }
+      if (a.kind === 'arrow') return { ...base, type: 'arrow', position: arrowOrigin(a), zIndex: 5 }
+      return { ...base, type: 'text', position: { x: a.x, y: a.y }, zIndex: 5 }
+    })
+}
+
+/** Cluster boxes (derived, not interactive). */
+export function toClusterNodes(boxes: ClusterBox[]): Node<ClusterData>[] {
+  return boxes.map((b) => ({
+    id: CLUSTER + b.clusterId,
+    type: 'cluster',
+    position: { x: b.x, y: b.y },
+    width: b.w,
+    height: b.h,
+    data: { name: b.name, kind: b.kind },
+    selectable: false,
+    draggable: false,
+    focusable: false,
+    zIndex: -1,
+  }))
+}

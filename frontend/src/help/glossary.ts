@@ -660,6 +660,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'frame',
+    'org',
+    ['Khung site / location', 'Site / location frame'],
+    [
+      'Hình chữ nhật trên sơ đồ gom các thiết bị của một site (vd "FPT IDC") hoặc một location (tòa, tầng, phòng). Tên khung lấy theo site/location. Thiết bị mới thả vào khung nhận site/location đó; thiết bị có sẵn mà site thật khác khung sẽ bị cảnh báo, không tự sửa kho. Cụm HA/stack được vẽ khung chấm tự động.',
+      'A rectangle on the diagram grouping the devices of a site (e.g. "FPT IDC") or a location (building, floor, room), named after it. New devices dropped inside get that site/location; an existing device whose real site differs is flagged, the inventory is never changed. HA pairs / stacks get a dotted box automatically.',
+    ],
+    [
+      'Khung "HCMC Site" chứa 4 switch; khung "FPT IDC" chứa cặp FortiGate HA.',
+      'A "HCMC Site" frame with 4 switches; a "FPT IDC" frame with the FortiGate HA pair.',
+    ],
+  ),
+  e(
     'category',
     'org',
     ['Danh mục', 'Category'],

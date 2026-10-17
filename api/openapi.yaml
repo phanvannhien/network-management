@@ -5929,6 +5929,19 @@ components:
           maxItems: 50
           items:
             $ref: '#/components/schemas/DiagramPoint'
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: >-
+            zone only (ADR-032): a frame bound to a site, named after it; a new device dropped inside takes this site
+        locationId:
+          type: [string, 'null']
+          format: uuid
+          description: zone only — a frame bound to a location of the site (building / floor / room)
+        lineStyle:
+          type: string
+          enum: [solid, dashed]
+          description: arrows
 
     DiagramViewport:
       type: object
