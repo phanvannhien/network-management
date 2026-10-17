@@ -1,4 +1,4 @@
-.PHONY: dev-web dev-api dev-env db-up gen sqlc migrate-up migrate-down types test check format
+.PHONY: dev-web dev-api dev-env db-up gen sqlc migrate-up migrate-down types test check format seed-demo seed-bench
 
 # Dev Postgres from deploy/docker-compose.yml (service `db`, host port 5468). Override per shell if needed.
 DATABASE_URL ?= postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable
@@ -39,6 +39,15 @@ sqlc:
 	cd backend && sqlc generate
 
 # Apply / roll back one migration with the golang-migrate CLI (brew install golang-migrate).
+# Sample data (P1-25), owned by an existing system admin: make seed-demo OWNER=admin@example.vn
+seed-demo:
+	cd backend && go run ./cmd/ntb seed demo --owner "$(OWNER)"
+
+# Benchmark inventory: make seed-bench OWNER=admin@example.vn DEVICES=2000
+DEVICES ?= 500
+seed-bench:
+	cd backend && go run ./cmd/ntb seed bench --owner "$(OWNER)" --devices $(DEVICES)
+
 migrate-up:
 	migrate -path backend/db/migrations -database "$(DATABASE_URL)" up
 

@@ -6,6 +6,7 @@ import {
   ConnectionMode,
   SelectionMode,
   useReactFlow,
+  type Edge,
   type Node,
   type NodeChange,
   type Viewport,
@@ -28,6 +29,7 @@ import {
   toClusterNodes,
   toFlowEdges,
   toFlowNodes,
+  reuseUnchanged,
   type RefData,
 } from './flow'
 import { arrowOrigin, clusterBoxes, nodesInFrame, rectAround, siteFrameMembers } from './frames'
@@ -96,6 +98,8 @@ export function Canvas({
   /** Site frames kept around their devices during a device drag: frame id → member node ids. */
   const fitPlan = useRef<Map<string, string[]> | null>(null)
   const [dataCache] = useState(() => new Map<string, RefData>())
+  const [nodeCache] = useState(() => new Map<string, Node>())
+  const [edgeCache] = useState(() => new Map<string, Edge>())
   const dragKey = useRef<string | null>(null)
   const spaceHeld = useSpaceHeld()
   const panning = hand || spaceHeld
@@ -127,17 +131,18 @@ export function Canvas({
     for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
     // Same zIndex: later is on top — cluster boxes above frames, both under devices and cables.
     const anns = toAnnotationNodes(doc, selected, canEdit && !panning)
-    return [
+    return reuseUnchanged(nodeCache, [
       ...anns.filter((n) => n.type === 'frame'),
       ...toClusterNodes(clusterBoxes(doc, measured)),
       ...anns.filter((n) => n.type !== 'frame'),
       ...out,
-    ] as Node[]
-  }, [doc, selection, measured, canEdit, dataCache, panning])
+    ] as Node[])
+  }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning])
   const edgeSelection = useDoc((s) => s.edgeSelection)
   const edges = useMemo(
-    () => (doc ? toFlowEdges(doc, new Set(edgeSelection)) : []),
-    [doc, edgeSelection],
+    () =>
+      doc ? reuseUnchanged(edgeCache, toFlowEdges(doc, new Set(edgeSelection)) as Edge[]) : [],
+    [doc, edgeSelection, edgeCache],
   )
 
   /** Frame drag: the devices inside it when the drag began move with it (Alt: the frame alone). */

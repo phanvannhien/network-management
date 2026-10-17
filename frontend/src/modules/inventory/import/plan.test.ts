@@ -248,6 +248,37 @@ describe('values', () => {
     expect(hcm.siteId).toBe('hoc')
     expect(matchSite('Đà Lạt', 'fv', SITES).kind).toBe('none')
   })
+  it('places: the company own site before a shared one in the same city (P1-25 sample)', () => {
+    const sites = [
+      { id: 'idc', code: 'MAU-IDC', localCode: 'IDC', name: 'IDC HCM', categoryId: null },
+      {
+        id: 'food',
+        code: 'MAU-FOOD-HCM01',
+        localCode: 'HCM01',
+        name: 'Văn phòng HCM',
+        categoryId: 'food',
+      },
+      {
+        id: 'agri',
+        code: 'MAU-AGRI-HCM01',
+        localCode: 'HCM01',
+        name: 'Văn phòng HCM (Agri)',
+        categoryId: 'agri',
+      },
+      {
+        id: 'bd',
+        code: 'MAU-AGRI-BD01',
+        localCode: 'BD01',
+        name: 'Bình Định – nhà máy',
+        categoryId: 'agri',
+      },
+    ]
+    expect(matchSite('Ho Chi Minh', 'agri', sites).siteId).toBe('agri')
+    expect(matchSite('Hochiminh', 'food', sites).siteId).toBe('food')
+    expect(matchSite('IDC Ho Chi Minh', null, sites).siteId).toBe('idc')
+    const bd = matchSite('Binh Dinh Factory', 'agri', sites)
+    expect(bd).toMatchObject({ kind: 'proposal', siteId: 'bd' })
+  })
   it('site codes for new sites', () => {
     expect(suggestSiteCode('Hochiminh', new Set())).toBe('HCM01')
     expect(suggestSiteCode('Ha Noi', new Set(['HN01']))).toBe('HN02')

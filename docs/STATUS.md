@@ -5,6 +5,54 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-25 Dữ liệu mẫu & benchmark
+- Đã làm:
+  - **`make seed-demo OWNER=<email system admin>`** (lệnh `ntb seed demo`): tạo tổ chức "Tập đoàn Mẫu". Dữ liệu đi qua đúng các handler của API
+    (tổ chức → danh mục → site → file .ntb.json), nên tuân mọi luật kiểm tra và có ghi audit.
+    - IDC HCM gắn thẳng vào tổ chức: cặp FortiGate 80F HA (FW-IDC-01/02, VIP 10.136.4.101), Internet FPT.
+    - Mẫu Food: Hà Nội (ISR4331 10.136.41.1, CBS220 10.136.41.2); HCM (4 switch C1300 10.136.162.4–7).
+    - Mẫu Agri: 6 site, mỗi site 1 router (ISR4331/ISR4321/C2921/C2911/C2951, 10.136.61–66.1).
+    - Mọi router chi nhánh có VPN (tunnel /30) về FortiGate.
+    - "Văn phòng mẫu" là danh mục thứ ba: FortiGate 60F, core C9300, 3 switch PoE, nhóm AP / camera / máy in.
+    - Có 2 sơ đồ: tổng quan, và LAN trụ sở. Tên và S/N đều là giá trị giả.
+  - **`make seed-bench OWNER=… DEVICES=500|2000`**: tạo tổ chức có N thiết bị chia thành các site 40 máy (router, 2 core, switch truy cập có 2 đường uplink).
+    Như vậy khoảng 2 dây mỗi thiết bị, tất cả trên một sơ đồ.
+  - Danh mục thiết bị: thêm Cisco 2911 / 2921 / 2951 (ISR G2, đã ngừng bán).
+  - `testdata/import-sample.xlsx` (sinh lại bằng `frontend/scripts/make-import-sample.mjs`): đúng định dạng file khách
+    (dòng tiêu đề "Person in charge"; các cột No, Site = công ty, Location = địa điểm, Category = loại thiết bị, …, User name, Password giả).
+    Tên được cố tình viết lệch: không dấu, viết dính, chữ hoa/thường lẫn lộn, thừa dấu cách, "Factory" thay cho "nhà máy".
+  - `frontend/scripts/bench.mjs`: đo thời gian mở sơ đồ, FPS khi kéo thiết bị, thời gian chọn, lọc bảng thiết bị, và thời gian các API.
+  - **Sửa lỗi phát hiện nhờ benchmark:** mỗi lần kéo, canvas tạo lại toàn bộ node và dây, nên React Flow vẽ lại cả 500 node / 961 dây
+    (trái quy tắc "không re-render toàn canvas"). Nay node / dây không đổi được giữ nguyên đối tượng cũ (`reuseUnchanged`).
+    Sơ đồ 500 thiết bị: mỗi bước kéo giảm từ 62 xuống 38 ms khi nhìn toàn cảnh, và chỉ còn ~16 ms ở mức zoom làm việc.
+  - **Sửa lỗi phát hiện nhờ file mẫu:** khi nhập Excel, địa điểm "Ho Chi Minh" của công ty Mẫu Agri bị khớp nhầm sang "IDC HCM".
+    Nay ưu tiên site trong danh mục của công ty trước, rồi mới xét tên gần giống. "Binh Dinh Factory" nay đề xuất đúng "Bình Định – nhà máy";
+    "HCM" đề xuất site có mã HCM01.
+- Test / cách kiểm tra:
+  - `seed_test.go`: seed demo ra đúng 21 thiết bị, 10 site, dashboard không lỗi / cảnh báo, tìm được VIP và router trên sơ đồ;
+    không cho seed hai lần hoặc seed bằng tài khoản không phải admin; seed bench 100 thiết bị.
+  - Test cho `reuseUnchanged` và cho phần khớp site.
+  - Nhập `import-sample.xlsx` vào "Tập đoàn Mẫu" trên trình duyệt: mọi địa điểm khớp đúng site, kết quả tạo 2, cập nhật 14, lỗi 0.
+  - `make check` pass.
+- **Kết quả benchmark** (bản build production, Chromium headless KHÔNG có GPU, nên trình duyệt thật sẽ nhanh hơn):
+  | | 500 thiết bị / 961 dây | 2.000 thiết bị / 3.850 dây | Mục tiêu SRS §14 |
+  | --- | --- | --- | --- |
+  | Seed (ghi DB) | 1,9 s | 12 s | — |
+  | Mở sơ đồ | 0,86 s | 1,4 s | < 2 s |
+  | Kéo thả, zoom làm việc (~0,9×) | 60 FPS | 60 FPS | ≥ 50 FPS |
+  | Kéo thả, thu nhỏ thấy toàn bộ | 27 FPS | 9 FPS | (≥ 50) |
+  | Click chọn | 50 ms | 53 ms | < 100 ms |
+  | Lọc bảng thiết bị | 126 ms | 138 ms | < 500 ms |
+  | API tìm kiếm / dashboard | 5 / 10 ms | 7 / 17 ms | < 300 ms |
+- Còn dở / lỗi đã biết:
+  - Kéo thả khi thu nhỏ để thấy toàn bộ sơ đồ lớn chưa đạt 50 FPS (đo headless, không GPU). Phần còn chậm nằm ở việc mỗi dây tự theo dõi
+    vị trí hai node, và ở việc trình duyệt vẽ lại. Hướng tối ưu tiếp: gộp phần đọc vị trí của dây, hoặc tạm ẩn nhãn / dây khi kéo ở mức zoom thấp.
+  - Nhập Excel: nếu hai thiết bị trong cùng cụm trùng hostname thì importer báo "nhiều thiết bị khớp". Dữ liệu mẫu đã đặt hostname riêng
+    cho từng thành viên, đúng như FortiGate HA thật.
+- Câu hỏi cho người dùng: con số FPS ở mức thu nhỏ toàn cảnh có cần đạt mục tiêu ngay ở MVP không, hay chỉ cần đạt ở mức zoom làm việc?
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: P1-26 Gate MVP.
+
 ## 2026-10-17 — P1-24 Dashboard cơ bản
 - Đã làm:
   - **API** `GET /orgs/{orgId}/dashboard?categoryId=`: số liệu theo danh mục đang chọn trên thanh trên cùng (cả các danh mục con).

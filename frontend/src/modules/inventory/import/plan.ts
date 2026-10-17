@@ -331,18 +331,28 @@ export function matchSite(
   const keysOf = (s: SiteLike) => [placeKey(s.name), placeKey(s.localCode), placeKey(s.code)]
   const exact = ordered.find((s) => rank(s) < 2 && keysOf(s).includes(key))
   if (exact) return { kind: 'exact', siteId: exact.id, candidates: [exact.id] }
-  const near = ordered.filter((s) =>
-    keysOf(s).some(
-      (k) =>
-        k &&
-        (k.includes(key) || key.includes(k) || distance(k, key) <= Math.min(2, key.length >> 2)),
-    ),
+  // Same core name counts as near too ("Binh Dinh Factory" ↔ "Bình Định – nhà máy"), and so does a local code
+  // without its number ("HCM" ↔ HCM01 — a proposal: HCM02 may exist too). 0 = same core name, 1 = code stem, 2 = other.
+  const core = placeCore(location)
+  const closeness = (x: SiteLike) =>
+    core !== '' && placeCore(x.name) === core
+      ? 0
+      : placeKey(x.localCode).replace(/\d+$/, '') === key
+        ? 1
+        : 2
+  const near = ordered.filter(
+    (s) =>
+      closeness(s) < 2 ||
+      keysOf(s).some(
+        (k) =>
+          k &&
+          (k.includes(key) || key.includes(k) || distance(k, key) <= Math.min(2, key.length >> 2)),
+      ),
   )
   if (near.length > 0) {
-    // Best first: same core name ("Hochiminh" ↔ "Văn phòng Hồ Chí Minh (HQ)", not "FPT IDC HCM"), then the order above.
-    const core = placeCore(location)
-    const score = (x: SiteLike) => (core && placeCore(x.name) === core ? 0 : 1)
-    near.sort((a, b) => score(a) - score(b))
+    // Best first: the row's own category before shared and other sites, then the closest name ("Hochiminh" ↔
+    // "Văn phòng Hồ Chí Minh (HQ)", not "FPT IDC HCM").
+    near.sort((a, b) => rank(a) - rank(b) || closeness(a) - closeness(b))
     return { kind: 'proposal', siteId: near[0]!.id, candidates: near.map((s) => s.id) }
   }
   return { kind: 'none', siteId: null, candidates: [] }

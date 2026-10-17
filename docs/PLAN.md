@@ -85,7 +85,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-22 Export**: PNG (1x–4x) / SVG có legend; Excel danh sách thiết bị; `.ntb.json` export/import theo `schema/ntb.schema.json` (không có bí mật); mỗi lần export ghi audit `export.*` (từ P1-05).
 - [x] **P1-23 Tìm kiếm toàn cục**: hostname, IP, MAC, S/N, part number, site; kết quả mở đúng trang/zoom tới node trên sơ đồ.
 - [x] **P1-24 Dashboard cơ bản**: số thiết bị theo site/loại/trạng thái, top vấn đề validation, thiết bị thiếu thông tin.
-- [ ] **P1-25 Dữ liệu mẫu & benchmark**: seed tổ chức "Tập đoàn Mẫu" (tên giả) có 2 danh mục "Mẫu Food" và "Mẫu Agri"; site "IDC HCM" (datacenter) gắn thẳng vào tổ chức
+- [x] **P1-25 Dữ liệu mẫu & benchmark**: seed tổ chức "Tập đoàn Mẫu" (tên giả) có 2 danh mục "Mẫu Food" và "Mẫu Agri"; site "IDC HCM" (datacenter) gắn thẳng vào tổ chức
   có cặp FortiGate 80F HA chung IP 10.136.4.101; Mẫu Food: site Hà Nội (1 router ISR4331 10.136.41.1, 1 switch CBS220 10.136.41.2),
   site HCM (4 switch C1300 10.136.162.4–7); Mẫu Agri: 6 site (Hưng Yên, Vĩnh Long, Bình Định – nhà máy, Bến Cát, Biên Hòa, HCM) mỗi site 1 router
   (ISR4331/ISR4321/C2921/C2911/C2951, IP 10.136.<x>.1); link VPN từ mọi router chi nhánh về cụm FortiGate. S/N dùng giá trị giả.

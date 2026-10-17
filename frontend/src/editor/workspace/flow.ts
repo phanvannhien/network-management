@@ -115,6 +115,42 @@ export function toFlowEdges(
   return out
 }
 
+/** Same value one level down: primitives by value, objects and arrays by their own (primitive) members. */
+function sameShallow(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  const ka = Object.keys(a)
+  if (ka.length !== Object.keys(b).length) return false
+  return ka.every((k) =>
+    Object.is((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+  )
+}
+
+/** Two flow items equal for React Flow: each field the same, nested objects (position, data, measured) member-wise. */
+export function sameItem(a: object, b: object): boolean {
+  const ka = Object.keys(a)
+  if (ka.length !== Object.keys(b).length) return false
+  return ka.every((k) =>
+    sameShallow((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+  )
+}
+
+/**
+ * Keeps the previous object of every item that did not change (CLAUDE.md: changing one node must not re-render the
+ * canvas). React Flow reuses its internal node when it gets the same object back, so only the moved node and its
+ * cables re-render during a drag instead of every node and cable. `cache` is updated to the returned items.
+ */
+export function reuseUnchanged<T extends { id: string }>(cache: Map<string, T>, next: T[]): T[] {
+  const out = next.map((item) => {
+    const prev = cache.get(item.id)
+    return prev && sameItem(prev, item) ? prev : item
+  })
+  cache.clear()
+  for (const item of out) cache.set(item.id, item)
+  return out
+}
+
 const GAP = 14
 
 export interface Pt {

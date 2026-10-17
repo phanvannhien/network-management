@@ -4060,6 +4060,111 @@
       "notes": "Gi0/0/1 is RJ45/SFP combo (datasheet: 2 RJ45, 1 SFP). NIM/SM module ports and AUX not included."
     },
     {
+      "id": "cisco-c2911",
+      "vendor": "Cisco",
+      "family": "ISR G2 2900",
+      "model": "CISCO2911",
+      "partNumbers": [
+        "CISCO2911/K9",
+        "C2911-VSEC/K9"
+      ],
+      "aliases": [
+        "C2911",
+        "Cisco 2911",
+        "ISR 2911"
+      ],
+      "type": "router",
+      "uHeight": 2,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 0,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/data_sheet_c78_553896.html",
+      "notes": "End of sale. Three onboard GE ports (Gi0/0–0/2); EHWIC/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-c2921",
+      "vendor": "Cisco",
+      "family": "ISR G2 2900",
+      "model": "CISCO2921",
+      "partNumbers": [
+        "CISCO2921/K9",
+        "C2921-VSEC/K9"
+      ],
+      "aliases": [
+        "C2921",
+        "Cisco 2921",
+        "ISR 2921"
+      ],
+      "type": "router",
+      "uHeight": 2,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 0,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/data_sheet_c78_553896.html",
+      "notes": "End of sale. Three onboard GE ports (Gi0/0–0/2, Gi0/2 RJ45/SFP combo); EHWIC/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-c2951",
+      "vendor": "Cisco",
+      "family": "ISR G2 2900",
+      "model": "CISCO2951",
+      "partNumbers": [
+        "CISCO2951/K9",
+        "C2951-VSEC/K9"
+      ],
+      "aliases": [
+        "C2951",
+        "Cisco 2951",
+        "ISR 2951"
+      ],
+      "type": "router",
+      "uHeight": 2,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 0,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/data_sheet_c78_553896.html",
+      "notes": "End of sale. Three onboard GE ports (Gi0/0–0/2, Gi0/2 RJ45/SFP combo); EHWIC/SM module ports and AUX not included."
+    },
+    {
       "id": "cisco-isr4331",
       "vendor": "Cisco",
       "family": "ISR 4000",

@@ -28,7 +28,9 @@ import (
 
 const usage = `usage:
   ntb                                   run the API server
-  ntb admin create --email E [--name N] create a system admin; password is read from stdin`
+  ntb admin create --email E [--name N] create a system admin; password is read from stdin
+  ntb seed demo --owner E               create the sample organization "Tập đoàn Mẫu" owned by system admin E
+  ntb seed bench --owner E --devices N  create an organization with N devices on one diagram (performance checks)`
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -38,6 +40,8 @@ func main() {
 		err = serve(logger)
 	case len(os.Args) >= 3 && os.Args[1] == "admin" && os.Args[2] == "create":
 		err = adminCreate(logger, os.Args[3:], os.Stdin, os.Stderr)
+	case len(os.Args) >= 3 && os.Args[1] == "seed" && (os.Args[2] == "demo" || os.Args[2] == "bench"):
+		err = seed(logger, os.Args[2], os.Args[3:], os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
@@ -176,6 +180,46 @@ func adminCreate(logger *slog.Logger, args []string, stdin *os.File, stderr io.W
 		return err
 	}
 	_, _ = fmt.Fprintf(stderr, "Created system admin %s (%x)\n", user.Email, user.ID.Bytes)
+	return nil
+}
+
+// seed writes the sample organization or a benchmark inventory (P1-25) through the API's own handlers, acting as the
+// given system admin (owner of the new organization; every write is in its audit log).
+func seed(logger *slog.Logger, what string, args []string, stderr io.Writer) error {
+	fs := flag.NewFlagSet("seed "+what, flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	owner := fs.String("owner", "", "email of a system admin, owner of the new organization (required)")
+	devices := fs.Int("devices", 500, "bench: number of devices")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if strings.TrimSpace(*owner) == "" {
+		return errors.New("--owner is required")
+	}
+	cfg := config.Load()
+	ctx := context.Background()
+	pool, err := database.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	svc, err := auth.NewService(pool, nil, logger, auth.DefaultArgon2)
+	if err != nil {
+		return err
+	}
+	srv := api.NewServer(logger, store.New(pool), pool, svc, cfg.Version, cfg.Env)
+	started := time.Now()
+	var res api.SeedResult
+	if what == "demo" {
+		res, err = srv.SeedDemo(ctx, *owner)
+	} else {
+		res, err = srv.SeedBench(ctx, *owner, *devices)
+	}
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(stderr, "Created %s (%s): %d devices, %d links, diagrams %s — %s\n",
+		res.OrgName, res.OrgID, res.Devices, res.Links, strings.Join(res.Diagrams, ", "), time.Since(started).Round(time.Millisecond))
 	return nil
 }
 
