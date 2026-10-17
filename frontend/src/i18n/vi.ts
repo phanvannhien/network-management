@@ -1055,6 +1055,8 @@ export const vi = {
     outside: 'IP không nằm trong subnet {{cidr}} đã chọn.',
   },
   frames: {
+    dragHint:
+      'Kéo để di chuyển cả site (khung + thiết bị bên trong). Shift + bấm để chọn thêm site rồi kéo cả nhóm; giữ Alt khi kéo để chỉ dời khung.',
     kinds: { zone: 'Khung', text: 'Chữ', arrow: 'Mũi tên', ipPlan: 'Bảng IP', legend: 'Chú giải' },
     addFrame: 'Khung (quanh vùng chọn)',
     addText: 'Thêm chữ',

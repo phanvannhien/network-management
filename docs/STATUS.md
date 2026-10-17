@@ -5,6 +5,17 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Editor: kéo cả nhóm site, thanh tiêu đề khung dễ nắm
+- Đã làm: thanh tiêu đề khung có biểu tượng tay nắm + chú thích "Kéo để di chuyển cả site…"; khi thu nhỏ màn vẽ (< 80 %) tiêu đề giữ cỡ
+  đủ lớn để nắm/đọc (tối đa 2,5×, cắt chữ trong bề rộng khung). **Shift + bấm tiêu đề** chọn thêm site; kéo một tiêu đề → mọi khung đã
+  chọn cùng thiết bị bên trong dời theo, một bước hoàn tác (Alt: chỉ dời khung).
+- Test / cách kiểm tra: `make check` pass. Chromium: kéo khung HN bằng tiêu đề (khung + router dời 222 px); Shift chọn HN + HCM, kéo →
+  router HN, switch HCM và khung HCM cùng dời 169 px; Ctrl+Z trả về vị trí cũ.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor, hoặc P1-22 Export.
+
 ## 2026-10-17 — Panel thuộc tính: nhập IP quản trị trực tiếp
 - Đã làm: ô **IP quản trị** trong phần Sửa nhanh của panel thiết bị (gõ IP → Lưu/Enter), ghi thẳng vào kho (ADR-034). Endpoint mới
   `PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip`: đặt IP lên interface quản trị (thay IP chính cùng họ địa chỉ); chưa có interface quản

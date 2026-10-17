@@ -1060,6 +1060,8 @@ export const en: Strings = {
     outside: 'The IP is outside the chosen subnet {{cidr}}.',
   },
   frames: {
+    dragHint:
+      'Drag to move the whole site (frame + devices inside). Shift + click adds more sites to drag together; hold Alt to move the frame alone.',
     kinds: { zone: 'Frame', text: 'Text', arrow: 'Arrow', ipPlan: 'IP plan', legend: 'Legend' },
     addFrame: 'Frame (around the selection)',
     addText: 'Add text',

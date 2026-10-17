@@ -1,4 +1,11 @@
-import { NodeResizer, useReactFlow, type Node, type NodeProps } from '@xyflow/react'
+import {
+  NodeResizer,
+  useReactFlow,
+  useStore as useFlowStore,
+  type Node,
+  type NodeProps,
+} from '@xyflow/react'
+import { GripVertical } from 'lucide-react'
 import { memo, useRef, useState, type PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
@@ -47,6 +54,8 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<AnnNode>) {
   const canEdit = useCanEdit()
   const store = useDocStoreApi()
   const title = useFrameTitle(a?.siteId, a?.locationId, a?.text)
+  const zoom = useFlowStore((st) => st.transform[2])
+  const scale = zoom < 0.8 ? Math.min(2.5, 0.8 / zoom) : 1
   if (!a) return null
   const color = a.color || 'slate'
   return (
@@ -67,11 +76,29 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<AnnNode>) {
       <button
         type="button"
         className="ntb-frame-title flex max-w-full cursor-move items-center gap-1 rounded-tl-sm rounded-br-md px-2 py-1 text-left text-xs font-semibold"
-        style={{ pointerEvents: 'auto' }}
         aria-label={t('frames.aria', { title })}
         aria-pressed={selected}
-        onClick={() => store.getState().setSelection([id])}
+        title={t('frames.dragHint')}
+        style={{
+          pointerEvents: 'auto',
+          // Zoomed out, the title keeps a size that can still be grabbed and read.
+          transform: scale > 1 ? `scale(${scale})` : undefined,
+          maxWidth: scale > 1 ? `${100 / scale}%` : undefined,
+          transformOrigin: 'top left',
+        }}
+        onClick={(e) => {
+          // Shift adds the frame to the selection: several sites are then dragged together.
+          const st = store.getState()
+          if (e.shiftKey)
+            st.setSelection(
+              st.selection.includes(id)
+                ? st.selection.filter((x) => x !== id)
+                : [...st.selection, id],
+            )
+          else st.setSelection([id])
+        }}
       >
+        <GripVertical aria-hidden className="size-3.5 shrink-0 opacity-60" />
         <span className="truncate">{title}</span>
         {a.siteId && (
           <span className="shrink-0 font-normal text-muted-foreground">

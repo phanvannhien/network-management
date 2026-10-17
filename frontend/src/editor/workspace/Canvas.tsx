@@ -343,8 +343,18 @@ export function Canvas({
                 id: a.id,
                 x0: a.x,
                 y0: a.y,
-                // Selected devices are moved by React Flow already.
-                carried: nodesInFrame(s.doc, a, measured)
+                // Every selected frame moves together (React Flow drags the selected frames); their devices follow the
+                // grabbed one's delta. Selected devices are moved by React Flow already.
+                carried: [
+                  ...new Set(
+                    s.doc.view.annotations
+                      .filter(
+                        (x) =>
+                          x.kind === 'zone' && (x.id === a.id || s.selection.includes(ANN + x.id)),
+                      )
+                      .flatMap((x) => nodesInFrame(s.doc!, x, measured)),
+                  ),
+                ]
                   .filter((id) => !s.selection.includes(id))
                   .map((id) => {
                     const n = s.doc!.view.nodes.find((v) => v.id === id)!
