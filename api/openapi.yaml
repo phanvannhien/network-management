@@ -1151,6 +1151,67 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/device-catalog:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listDeviceCatalog
+      summary: The built-in device catalog (ADR-035) — read only, the same for every organization
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceCatalog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/device-templates/from-catalog:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: createTemplateFromCatalog
+      summary: Copy a catalog model into the organization's templates (or return the template it already has for it)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [catalogId]
+              properties:
+                catalogId:
+                  type: string
+                  maxLength: 100
+      responses:
+        '200':
+          description: The organization already had a template for this model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceTemplate'
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceTemplate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/delete-impact:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5348,6 +5409,55 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DeviceTemplate'
+
+    DeviceCatalog:
+      type: object
+      required: [models]
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogModel'
+
+    CatalogModel:
+      type: object
+      required: [id, vendor, family, model, partNumbers, aliases, type, uHeight, ports, portCount, verified, source, notes]
+      properties:
+        id:
+          type: string
+        vendor:
+          type: string
+        family:
+          type: string
+        model:
+          type: string
+        partNumbers:
+          type: array
+          items:
+            type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        uHeight:
+          type: integer
+          format: int32
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortGroup'
+        portCount:
+          type: integer
+          format: int32
+        verified:
+          type: boolean
+          description: port layout checked against the vendor datasheet at source
+        source:
+          type: string
+        notes:
+          type: string
 
     ApplyTemplate:
       type: object

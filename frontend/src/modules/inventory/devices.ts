@@ -617,3 +617,32 @@ export function useClusterMutations(orgId: string) {
   })
   return { save, remove }
 }
+
+export type CatalogModel = components['schemas']['CatalogModel']
+
+/** The built-in device catalog (ADR-035): read only, changes only with a new release. */
+export function useCatalog(orgId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['device-catalog'],
+    enabled: enabled && orgId !== '',
+    staleTime: Infinity,
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/device-catalog', { params: { path: { orgId } } })
+      if (r.data) return r.data.models
+      fail(r.error, r.response.status, i18n.t('errors.templatesLoad'))
+    },
+  })
+}
+
+/** Copy a catalog model into the organization's templates (returns the template it already has, if any). */
+export async function templateFromCatalog(
+  orgId: string,
+  catalogId: string,
+): Promise<DeviceTemplate> {
+  const r = await api.POST('/orgs/{orgId}/device-templates/from-catalog', {
+    params: { ...csrfParam, path: { orgId } },
+    body: { catalogId },
+  })
+  if (r.data) return r.data
+  return fail(r.error, r.response.status, i18n.t('errors.save'))
+}

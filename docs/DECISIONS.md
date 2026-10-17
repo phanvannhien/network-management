@@ -374,3 +374,24 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Lý do:** VLAN/subnet/IP là dữ liệu dùng chung của tổ chức (ADR-014), không thuộc một sơ đồ; "IP trống kế tiếp" chỉ đúng khi IP
   vừa gán đã được ghi; một xung đột IP không được làm hỏng cả lần lưu bố cục.
 - **Đánh đổi:** hai kiểu hoàn tác trên cùng màn hình (Ctrl+Z cho sơ đồ, nút "Hoàn tác" cho IPAM) — panel ghi rõ để người dùng không nhầm.
+
+### ADR-035 — Thư viện thiết bị có sẵn (catalog) đóng gói trong mã nguồn
+- **Bối cảnh:** thiết bị nhập từ Excel hoặc thêm tay mà tổ chức chưa có template thì không có cổng vật lý, không nối dây được
+  (P1-21). Người dùng không chuyên mạng không tự khai được tên cổng đúng theo hãng. Người dùng chốt 2026-10-17.
+- **Quyết định:**
+  - Có **thư viện thiết bị có sẵn**: các dòng phổ biến (đợt đầu: Cisco, Fortinet, TP-Link, Ubiquiti, MikroTik, Aruba, Huawei,
+    Juniper, Sophos, Palo Alto, DrayTek, Ruijie, vài ONT nhà mạng) với loại thiết bị, part number/tên gọi khác, số U và **nhóm cổng
+    đúng tên CLI của hãng** (cùng định dạng template, `{m}` = số thành viên stack).
+  - Lưu là **file JSON trong mã nguồn** (`backend/internal/catalog/data/*.json`), nhúng vào binary, **chỉ đọc**, cập nhật theo phiên
+    bản phần mềm. Không phải dữ liệu của tổ chức nào nên **không có `organization_id`** (giống danh sách loại thiết bị) — không phải
+    ngoại lệ của quy tắc tenant vì không có bảng nào.
+  - Tổ chức **không dùng trực tiếp** mục thư viện: khi cần thì **chép thành template của tổ chức** (sửa được, có audit
+    `template.create`, ghi nguồn "thư viện"). Mọi thứ áp vào thiết bị vẫn là template của tổ chức.
+  - **Nhập Excel:** model chưa có template tổ chức nhưng có trong thư viện → bước Xem trước liệt kê "sẽ tạo template từ thư viện"
+    (bỏ chọn được); khi nhập thì tạo template rồi thiết bị sinh cổng theo đó.
+  - Thêm cổng tại chỗ / trang Template tìm trong thư viện trước khi đoán theo tên model.
+  - Mỗi mục có `verified` + `source` (datasheet hãng); mục chưa đối chiếu hiện "cần kiểm tra".
+- **Lý do:** đúng tên cổng ngay từ đầu (khớp CLI, khớp LLDP/SNMP ở Phase 3), không bắt người dùng tự gõ; dữ liệu tham chiếu không
+  cần sửa theo từng tổ chức nên file trong mã nguồn là đơn giản và kiểm soát được (review qua git).
+- **Đánh đổi:** model mới phải chờ bản phần mềm sau (tạm thời tự tạo template); dữ liệu soạn từ datasheet có thể sai sót — giảm bằng
+  cờ `verified` và việc template chép ra vẫn sửa được.

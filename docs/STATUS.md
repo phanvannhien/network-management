@@ -5,6 +5,35 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-21b Thư viện thiết bị có sẵn (ADR-035)
+- Đã làm:
+  - **Thư viện 359 model** (247 đã đối chiếu datasheet), file JSON trong `backend/internal/catalog/data/`, nhúng vào binary, chỉ đọc:
+    Cisco (Catalyst 1000/1200/1300/9200/9300/2960, CBS, ISR 1100/4000, C8200/8300, Meraki) và Fortinet (FortiGate 40F–600F,
+    FortiSwitch, FortiAP) — 137; TP-Link Omada/JetStream/ER/EAP, Ubiquiti UniFi, MikroTik — 72; Aruba Instant On/CX/2530/2930F,
+    Huawei S/AR/USG, Juniper EX/SRX/Mist — 83; Sophos XGS/XG, Palo Alto PA, DrayTek Vigor, Ruijie/Reyee, ONT Huawei/ZTE/VNPT — 67.
+    Mỗi model: loại, part number/tên khác, số U, nhóm cổng đúng tên CLI (`{m}` cho dòng stack), cờ `verified` + nguồn.
+  - Backend: `GET /orgs/{orgId}/device-catalog`; `POST /orgs/{orgId}/device-templates/from-catalog` chép thành template của tổ chức
+    (audit `template.create`; tổ chức đã có template cùng tên / model / part number thì trả template đó, không nhân bản).
+  - **Nhập Excel**: model chưa có template nhưng có trong thư viện → khung "Tạo template từ thư viện" ở bước Xem trước (bỏ chọn
+    được); nhập xong thiết bị có đủ cổng. Loại "Switch" chung chung được chỉnh theo thư viện (vd switch PoE).
+  - **Thêm cổng tại chỗ** (hộp nối dây / panel): model có trong thư viện → nút "Dùng cổng theo thư viện" trước phần đoán.
+  - **Trang Template**: nút "Thêm từ thư viện" — tìm theo từng từ ("omada sg2210"), lọc theo hãng.
+  - ADR-035; Glossary "Template thiết bị / Thư viện thiết bị".
+- Test / cách kiểm tra: `make check` pass (Go `TestCatalogData`: mọi model là template hợp lệ, cả thành viên stack 2;
+  `TestTemplateFromCatalog`: tạo, gọi lại trả template cũ, model lạ 404, chặn chéo tổ chức; vitest 277). Chromium (môi trường
+  riêng, chưa có template): nhập file 8 dòng → tự tạo 4 template → C1300 có GigabitEthernet1/0/1–28, FortiGate wan1/wan2/internal1–6,
+  ISR4331 Gi0/0/0–2 + Gi0; hộp "Thêm từ thư viện" tìm đúng.
+- Còn dở / lỗi đã biết:
+  - 112 model chưa đối chiếu được (giao diện ghi "chưa đối chiếu datasheet — nên kiểm tra"), đáng chú ý: CBS110/220/250 (tên cổng
+    GE1…), Catalyst 2960-X, Catalyst 1200 (cách đặt tên), Meraki MX, một số router Huawei/DrayTek/Reyee, ONT ZTE.
+  - Huawei và Juniper dùng số slot cố định 0 (`GigabitEthernet0/0/x`, `ge-0/0/x`): trong stack/virtual chassis số slot đổi theo thành
+    viên — sửa template nếu dùng stack.
+  - IP quản trị khi nhập vẫn gắn vào `Vlan1` (switch) / `mgmt` ảo (thiết bị khác), không tự dùng cổng quản trị ngoài băng của template.
+  - Tổ chức CJ trên máy dev đã có template tự tạo "Fortinet FortiGate 80F" (21 cổng) → được dùng lại thay cho bản thư viện (11 cổng).
+- Câu hỏi cho người dùng: như mục P1-21.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-22 Export.
+
 ## 2026-10-17 — P1-21 bổ sung: thêm cổng tại chỗ, khung site ôm thiết bị
 - Đã làm (theo phản hồi sau khi nhập thử trên máy dev):
   - **Thiết bị nhập không có template thì không có cổng**: ISR4331, CBS220, C1300 chưa có template trong tổ chức nên chỉ có

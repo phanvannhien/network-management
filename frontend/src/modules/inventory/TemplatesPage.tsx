@@ -1,4 +1,4 @@
-import { LayoutTemplate, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { LayoutTemplate, LibraryBig, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
@@ -21,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOrgAccess } from '@/modules/sites/access'
+import { CatalogDialog } from './CatalogDialog'
 import {
   DEVICE_TYPE_GROUPS,
   expandPorts,
@@ -385,6 +386,7 @@ export function TemplatesPage() {
   const canEdit = useOrgAccess(orgId).orgEdit
   const [editing, setEditing] = useState<DeviceTemplate | 'new' | null>(null)
   const [deleting, setDeleting] = useState<DeviceTemplate | null>(null)
+  const [picking, setPicking] = useState(false)
   useBreadcrumbs([{ label: t('templates.title') }])
   return (
     <div className="max-w-5xl space-y-3 p-4">
@@ -392,13 +394,19 @@ export function TemplatesPage() {
         title={t('templates.title')}
         actions={
           canEdit && (
-            <Button onClick={() => setEditing('new')}>
-              <Plus aria-hidden /> {t('templates.add')}
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setPicking(true)}>
+                <LibraryBig aria-hidden /> {t('catalog.open')}
+              </Button>
+              <Button onClick={() => setEditing('new')}>
+                <Plus aria-hidden /> {t('templates.add')}
+              </Button>
+            </>
           )
         }
       />
       <p className="text-muted-foreground">{t('templates.subtitle')}</p>
+      {picking && <CatalogDialog orgId={orgId} onClose={() => setPicking(false)} />}
       {templates.isPending ? (
         <Skeleton className="h-24" />
       ) : templates.isError ? (

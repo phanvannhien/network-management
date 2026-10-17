@@ -1,0 +1,2492 @@
+{
+  "models": [
+    {
+      "id": "tp-link-sg2008",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2008",
+      "partNumbers": [
+        "TL-SG2008"
+      ],
+      "aliases": [
+        "TL-SG2008",
+        "Omada SG2008"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Smart switch, CLI via Telnet/SSH only (no console). One port accepts PoE-in (powered by PoE), no PoE out."
+    },
+    {
+      "id": "tp-link-sg2008p",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2008P",
+      "partNumbers": [
+        "TL-SG2008P"
+      ],
+      "aliases": [
+        "TL-SG2008P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 5,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008p/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Ports 1-4 PoE+, 62 W budget. No console port."
+    },
+    {
+      "id": "tp-link-sg2210p",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2210P",
+      "partNumbers": [
+        "TL-SG2210P"
+      ],
+      "aliases": [
+        "TL-SG2210P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2210p/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 8 PoE+ ports, 61 W budget. No console port."
+    },
+    {
+      "id": "tp-link-sg2210mp",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2210MP",
+      "partNumbers": [
+        "TL-SG2210MP"
+      ],
+      "aliases": [
+        "TL-SG2210MP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2210mp/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 8 PoE+ ports, 150 W budget. No console port."
+    },
+    {
+      "id": "tp-link-sg2218",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2218",
+      "partNumbers": [
+        "TL-SG2218"
+      ],
+      "aliases": [
+        "TL-SG2218"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2218/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). No console port."
+    },
+    {
+      "id": "tp-link-sg2428p",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2428P",
+      "partNumbers": [
+        "TL-SG2428P"
+      ],
+      "aliases": [
+        "TL-SG2428P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2428p/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 24 PoE+ ports, 250 W budget. No console port."
+    },
+    {
+      "id": "tp-link-sg2452lp",
+      "vendor": "TP-Link",
+      "family": "Omada SG2000",
+      "model": "SG2452LP",
+      "partNumbers": [
+        "TL-SG2452LP"
+      ],
+      "aliases": [
+        "TL-SG2452LP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 32,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 33,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2452lp/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 32 PoE+ of 48 ports, 230 W budget; assumed PoE on ports 1-32 (vendor page does not number them). No console port."
+    },
+    {
+      "id": "tp-link-sg3210",
+      "vendor": "TP-Link",
+      "family": "Omada SG3000",
+      "model": "SG3210",
+      "partNumbers": [
+        "TL-SG3210"
+      ],
+      "aliases": [
+        "TL-SG3210",
+        "T2500G-10TS"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg3210/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). L2+ managed (static routing). RJ45 + Micro-USB console, listed once."
+    },
+    {
+      "id": "tp-link-sg3428",
+      "vendor": "TP-Link",
+      "family": "Omada SG3000",
+      "model": "SG3428",
+      "partNumbers": [
+        "TL-SG3428"
+      ],
+      "aliases": [
+        "TL-SG3428",
+        "JetStream SG3428"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg3428/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). L2+ managed (static routing). RJ45 + USB-C console, listed once."
+    },
+    {
+      "id": "tp-link-sg3428mp",
+      "vendor": "TP-Link",
+      "family": "Omada SG3000",
+      "model": "SG3428MP",
+      "partNumbers": [
+        "TL-SG3428MP"
+      ],
+      "aliases": [
+        "TL-SG3428MP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg3428mp/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 24 PoE+ ports, 384 W budget. L2+."
+    },
+    {
+      "id": "tp-link-sg3452p",
+      "vendor": "TP-Link",
+      "family": "Omada SG3000",
+      "model": "SG3452P",
+      "partNumbers": [
+        "TL-SG3452P"
+      ],
+      "aliases": [
+        "TL-SG3452P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg3452p/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 48 PoE+ ports, 384 W budget. L2+."
+    },
+    {
+      "id": "tp-link-sx3008f",
+      "vendor": "TP-Link",
+      "family": "Omada SX3000",
+      "model": "SX3008F",
+      "partNumbers": [
+        "TL-SX3008F"
+      ],
+      "aliases": [
+        "TL-SX3008F"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-aggregation/sx3008f/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Aggregation switch, L2+. Community thread confirms 'interface ten-gigabitEthernet 1/0/1'."
+    },
+    {
+      "id": "tp-link-sx3016f",
+      "vendor": "TP-Link",
+      "family": "Omada SX3000",
+      "model": "SX3016F",
+      "partNumbers": [
+        "TL-SX3016F"
+      ],
+      "aliases": [
+        "TL-SX3016F"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-switch-aggregation/sx3016f/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Aggregation switch, L2+."
+    },
+    {
+      "id": "tp-link-sx3206hpp",
+      "vendor": "TP-Link",
+      "family": "Omada SX3000",
+      "model": "SX3206HPP",
+      "partNumbers": [
+        "TL-SX3206HPP"
+      ],
+      "aliases": [
+        "TL-SX3206HPP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "10G",
+          "poe": true
+        },
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 5,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.tp-link.com/us/business-networking/omada-sdn-switch/tl-sx3206hpp/",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 4 x 10G RJ45 PoE++ (802.3bt, 60 W/port, 200 W budget). L2+."
+    },
+    {
+      "id": "tp-link-t2600g-28ts",
+      "vendor": "TP-Link",
+      "family": "JetStream T2600G",
+      "model": "T2600G-28TS",
+      "partNumbers": [
+        "TL-SG3424"
+      ],
+      "aliases": [
+        "TL-SG3424",
+        "JetStream T2600G-28TS"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Legacy JetStream L2+ managed; port layout from memory (24 GbE + 4 SFP + console). Check whether ports 21-24 are combo on your hardware version."
+    },
+    {
+      "id": "tp-link-t2500g-10ts",
+      "vendor": "TP-Link",
+      "family": "JetStream T2500G",
+      "model": "T2500G-10TS",
+      "partNumbers": [],
+      "aliases": [
+        "JetStream T2500G-10TS",
+        "TL-SG3210 (old name)"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Legacy name of TL-SG3210 (now SG3210); part number TL-SG3210 kept on the SG3210 entry."
+    },
+    {
+      "id": "tp-link-t1600g-28ps",
+      "vendor": "TP-Link",
+      "family": "JetStream T1600G",
+      "model": "T1600G-28PS",
+      "partNumbers": [
+        "TL-SG2424P"
+      ],
+      "aliases": [
+        "TL-SG2424P",
+        "JetStream T1600G-28PS"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Legacy JetStream smart PoE+ switch (192 W); 24 PoE+ GbE + 4 SFP from memory; console presence not checked."
+    },
+    {
+      "id": "tp-link-tl-sg1008d",
+      "vendor": "TP-Link",
+      "family": "Unmanaged",
+      "model": "TL-SG1008D",
+      "partNumbers": [
+        "TL-SG1008D"
+      ],
+      "aliases": [
+        "SG1008D"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged desktop switch; no CLI, names follow front-panel numbers."
+    },
+    {
+      "id": "tp-link-tl-sg1016d",
+      "vendor": "TP-Link",
+      "family": "Unmanaged",
+      "model": "TL-SG1016D",
+      "partNumbers": [
+        "TL-SG1016D"
+      ],
+      "aliases": [
+        "SG1016D"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged 13-inch rack/desktop switch; names follow front-panel numbers."
+    },
+    {
+      "id": "tp-link-tl-sg1024d",
+      "vendor": "TP-Link",
+      "family": "Unmanaged",
+      "model": "TL-SG1024D",
+      "partNumbers": [
+        "TL-SG1024D"
+      ],
+      "aliases": [
+        "SG1024D"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged rack/desktop switch; names follow front-panel numbers."
+    },
+    {
+      "id": "tp-link-tl-sg108pe",
+      "vendor": "TP-Link",
+      "family": "Easy Smart",
+      "model": "TL-SG108PE",
+      "partNumbers": [
+        "TL-SG108PE"
+      ],
+      "aliases": [
+        "SG108PE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Easy Smart (web only, names as 'Port n' in web UI). Ports 1-4 PoE (802.3af/at), 64 W budget, from memory."
+    },
+    {
+      "id": "tp-link-tl-sg1210p",
+      "vendor": "TP-Link",
+      "family": "Unmanaged",
+      "model": "TL-SG1210P",
+      "partNumbers": [
+        "TL-SG1210P"
+      ],
+      "aliases": [
+        "SG1210P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 10,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged: 8 PoE+ GbE + 1 GbE uplink + 1 SFP uplink, from memory."
+    },
+    {
+      "id": "tp-link-er605",
+      "vendor": "TP-Link",
+      "family": "Omada ER",
+      "model": "ER605",
+      "partNumbers": [
+        "TL-R605"
+      ],
+      "aliases": [
+        "TL-R605",
+        "Omada ER605"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-router-wired-router/er605/",
+      "notes": "Omada names gateway ports Port 1..N in the controller; front-panel order assumed (check labels). Current page: 1 WAN, 2 WAN/LAN, 2 LAN (v1 hardware: 1 WAN, 3 WAN/LAN, 1 LAN). Port 1 = WAN."
+    },
+    {
+      "id": "tp-link-er7206",
+      "vendor": "TP-Link",
+      "family": "Omada ER",
+      "model": "ER7206",
+      "partNumbers": [
+        "TL-ER7206"
+      ],
+      "aliases": [
+        "TL-ER7206",
+        "Omada ER7206"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 2,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-router-wired-router/er7206/",
+      "notes": "Omada names gateway ports Port 1..N in the controller; front-panel order assumed (check labels). 1 SFP WAN/LAN, 1 GbE WAN, 4 GbE WAN/LAN. SFP assumed Port 1, WAN Port 2."
+    },
+    {
+      "id": "tp-link-er707-m2",
+      "vendor": "TP-Link",
+      "family": "Omada ER",
+      "model": "ER707-M2",
+      "partNumbers": [
+        "ER707-M2"
+      ],
+      "aliases": [
+        "Omada ER707-M2"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 4,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-router-wired-router/er707-m2/",
+      "notes": "Omada names gateway ports Port 1..N in the controller; front-panel order assumed (check labels). 2.5G WAN + 2.5G WAN/LAN + 1G SFP WAN/LAN + 4x 1G WAN/LAN; numbering order is an assumption."
+    },
+    {
+      "id": "tp-link-er8411",
+      "vendor": "TP-Link",
+      "family": "Omada ER",
+      "model": "ER8411",
+      "partNumbers": [
+        "ER8411"
+      ],
+      "aliases": [
+        "Omada ER8411"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 4,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-router-wired-router/er8411/",
+      "notes": "Omada names gateway ports Port 1..N in the controller; front-panel order assumed (check labels). 10G SFP+ WAN + 10G SFP+ WAN/LAN + 1G SFP WAN/LAN + 8x 1G WAN/LAN + RJ45 console; numbering order is an assumption."
+    },
+    {
+      "id": "tp-link-tl-r480t-plus",
+      "vendor": "TP-Link",
+      "family": "SafeStream",
+      "model": "TL-R480T+",
+      "partNumbers": [
+        "TL-R480T+"
+      ],
+      "aliases": [
+        "R480T+",
+        "TL-R480T Plus"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "100M"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Legacy 10/100 load-balance router: 1 WAN, 3 WAN/LAN, 1 LAN (from memory)."
+    },
+    {
+      "id": "tp-link-oc200",
+      "vendor": "TP-Link",
+      "family": "Omada Controller",
+      "model": "OC200",
+      "partNumbers": [
+        "OC200"
+      ],
+      "aliases": [
+        "Omada OC200",
+        "Omada Hardware Controller OC200"
+      ],
+      "type": "other",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "100M"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Omada hardware controller (manages EAPs/switches/gateways; could also be typed wireless_controller). 2x 10/100 ports, one PoE-in, from memory."
+    },
+    {
+      "id": "tp-link-oc300",
+      "vendor": "TP-Link",
+      "family": "Omada Controller",
+      "model": "OC300",
+      "partNumbers": [
+        "OC300"
+      ],
+      "aliases": [
+        "Omada OC300",
+        "Omada Hardware Controller OC300"
+      ],
+      "type": "other",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Omada hardware controller (could also be typed wireless_controller). 2x GbE from memory; check for console port."
+    },
+    {
+      "id": "tp-link-eap225",
+      "vendor": "TP-Link",
+      "family": "Omada EAP",
+      "model": "EAP225",
+      "partNumbers": [
+        "EAP225"
+      ],
+      "aliases": [
+        "Omada EAP225",
+        "EAP225 AC1350"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 5 ceiling AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "tp-link-eap245",
+      "vendor": "TP-Link",
+      "family": "Omada EAP",
+      "model": "EAP245",
+      "partNumbers": [
+        "EAP245"
+      ],
+      "aliases": [
+        "Omada EAP245",
+        "EAP245 AC1750"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-wifi-ceiling-mount/eap245/",
+      "notes": "Wi-Fi 5 AP with 2 GbE ports (ETH1 PoE-in). End of life, replaced by EAP613."
+    },
+    {
+      "id": "tp-link-eap610",
+      "vendor": "TP-Link",
+      "family": "Omada EAP",
+      "model": "EAP610",
+      "partNumbers": [
+        "EAP610"
+      ],
+      "aliases": [
+        "Omada EAP610",
+        "EAP610 AX1800"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "tp-link-eap650",
+      "vendor": "TP-Link",
+      "family": "Omada EAP",
+      "model": "EAP650",
+      "partNumbers": [
+        "EAP650"
+      ],
+      "aliases": [
+        "Omada EAP650",
+        "EAP650 AX3000"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "tp-link-eap670",
+      "vendor": "TP-Link",
+      "family": "Omada EAP",
+      "model": "EAP670",
+      "partNumbers": [
+        "EAP670"
+      ],
+      "aliases": [
+        "Omada EAP670",
+        "EAP670 AX5400"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ETH{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.omadanetworks.com/us/business-networking/omada-wifi-ceiling-mount/eap670/",
+      "notes": "Wi-Fi 6 AP, 1x 2.5G PoE-in (802.3at)."
+    },
+    {
+      "id": "ubiquiti-usw-lite-8-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Lite",
+      "model": "USW-Lite-8-PoE",
+      "partNumbers": [
+        "USW-Lite-8-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Lite 8 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-lite-8-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 4 PoE+ of 8 (52 W); assumed ports 1-4."
+    },
+    {
+      "id": "ubiquiti-usw-lite-16-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Lite",
+      "model": "USW-Lite-16-PoE",
+      "partNumbers": [
+        "USW-Lite-16-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Lite 16 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-lite-16-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 8 PoE+ of 16 (45 W); assumed ports 1-8."
+    },
+    {
+      "id": "ubiquiti-usw-24",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-24",
+      "partNumbers": [
+        "USW-24"
+      ],
+      "aliases": [
+        "UniFi Switch 24",
+        "US-24 Gen2"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-24",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. "
+    },
+    {
+      "id": "ubiquiti-usw-24-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-24-POE",
+      "partNumbers": [
+        "USW-24-POE"
+      ],
+      "aliases": [
+        "USW-24-PoE",
+        "UniFi Switch 24 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 17,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-24-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 16 PoE+ of 24 (95 W); assumed ports 1-16."
+    },
+    {
+      "id": "ubiquiti-usw-48-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-48-POE",
+      "partNumbers": [
+        "USW-48-POE"
+      ],
+      "aliases": [
+        "USW-48-PoE",
+        "UniFi Switch 48 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 32,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 33,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-48-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 32 PoE+ of 48; assumed ports 1-32."
+    },
+    {
+      "id": "ubiquiti-usw-pro-24",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Pro",
+      "model": "USW-Pro-24",
+      "partNumbers": [
+        "USW-Pro-24"
+      ],
+      "aliases": [
+        "UniFi Switch Pro 24"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-pro-24",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Layer 3 (inter-VLAN, static routes)."
+    },
+    {
+      "id": "ubiquiti-usw-pro-24-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Pro",
+      "model": "USW-Pro-24-POE",
+      "partNumbers": [
+        "USW-Pro-24-POE"
+      ],
+      "aliases": [
+        "USW-Pro-24-PoE",
+        "UniFi Switch Pro 24 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-pro-24-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 16 PoE+ and 8 PoE++ (400 W). Layer 3 capable."
+    },
+    {
+      "id": "ubiquiti-usw-pro-48-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Pro",
+      "model": "USW-Pro-48-POE",
+      "partNumbers": [
+        "USW-Pro-48-POE"
+      ],
+      "aliases": [
+        "USW-Pro-48-PoE",
+        "UniFi Switch Pro 48 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-pro-48-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 40 PoE+ and 8 PoE++ (600 W). Layer 3 capable."
+    },
+    {
+      "id": "ubiquiti-usw-enterprise-24-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Enterprise",
+      "model": "USW-Enterprise-24-PoE",
+      "partNumbers": [
+        "USW-Enterprise-24-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Enterprise 24 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 13,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-enterprise-24-poe",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Counts checked (12x 2.5G + 12x 1G, all PoE+, 400 W; 2 SFP+) but which port numbers are 2.5G is NOT confirmed. Layer 3 capable."
+    },
+    {
+      "id": "ubiquiti-usw-aggregation",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-Aggregation",
+      "partNumbers": [
+        "USW-Aggregation"
+      ],
+      "aliases": [
+        "UniFi Switch Aggregation"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-aggregation",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. "
+    },
+    {
+      "id": "ubiquiti-usw-flex-mini",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Flex",
+      "model": "USW-Flex-Mini",
+      "partNumbers": [
+        "USW-Flex-Mini"
+      ],
+      "aliases": [
+        "UniFi Flex Mini"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/switching/usw-flex-mini",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Port 1 accepts PoE-in (or USB-C power); no PoE out."
+    },
+    {
+      "id": "ubiquiti-udm-pro",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Dream Machine",
+      "model": "UDM-Pro",
+      "partNumbers": [
+        "UDM-Pro"
+      ],
+      "aliases": [
+        "UniFi Dream Machine Pro",
+        "UDMP"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 9,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 10,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/udm-pro",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Ports 1-8 LAN, Port 9 GbE WAN, Port 10 SFP+ WAN, Port 11 SFP+ LAN (numbering per UniFi convention)."
+    },
+    {
+      "id": "ubiquiti-udm-se",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Dream Machine",
+      "model": "UDM-SE",
+      "partNumbers": [
+        "UDM-SE"
+      ],
+      "aliases": [
+        "UniFi Dream Machine Special Edition",
+        "UDM Pro SE"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 10,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/udm-se",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Ports 1-8 LAN PoE (6 PoE + 2 PoE+, 180 W), Port 9 2.5G WAN, Port 10 SFP+ WAN, Port 11 SFP+ LAN."
+    },
+    {
+      "id": "ubiquiti-udr",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Dream Router",
+      "model": "UDR",
+      "partNumbers": [
+        "UDR"
+      ],
+      "aliases": [
+        "UniFi Dream Router"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/udr",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Spec page says 1 GbE WAN + '5 (2 PoE)' ports - total port count and which ports give PoE are unclear; modeled as 4 LAN (3-4 PoE) + Port 5 WAN."
+    },
+    {
+      "id": "ubiquiti-uxg-pro",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Next-Gen Gateway",
+      "model": "UXG-Pro",
+      "partNumbers": [
+        "UXG-Pro"
+      ],
+      "aliases": [
+        "UniFi Next-Gen Gateway Pro"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/uxg-pro",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 2 GbE (WAN/LAN) + 2 SFP+ (WAN/LAN) from memory; spec page only confirms 2 SFP+ and default WAN roles."
+    },
+    {
+      "id": "ubiquiti-usg-3p",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Security Gateway",
+      "model": "USG",
+      "partNumbers": [
+        "USG"
+      ],
+      "aliases": [
+        "USG-3P",
+        "UniFi Security Gateway"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "eth{n}",
+          "start": 0,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "EdgeOS names eth0 (WAN1), eth1 (LAN1), eth2 (WAN2/LAN2); RJ45 console. End of life."
+    },
+    {
+      "id": "ubiquiti-ucg-ultra",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Cloud Gateway",
+      "model": "UCG-Ultra",
+      "partNumbers": [
+        "UCG-Ultra"
+      ],
+      "aliases": [
+        "UniFi Cloud Gateway Ultra"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/ucg-ultra",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. Ports 1-4 GbE LAN, Port 5 2.5G WAN."
+    },
+    {
+      "id": "ubiquiti-ucg-max",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Cloud Gateway",
+      "model": "UCG-Max",
+      "partNumbers": [
+        "UCG-Max"
+      ],
+      "aliases": [
+        "UniFi Cloud Gateway Max"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "2.5G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/cloud-gateways/ucg-max",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 5x 2.5G; Port 5 default WAN."
+    },
+    {
+      "id": "ubiquiti-u6-lite",
+      "vendor": "Ubiquiti",
+      "family": "UniFi U6",
+      "model": "U6-Lite",
+      "partNumbers": [
+        "U6-Lite"
+      ],
+      "aliases": [
+        "U6 Lite",
+        "UniFi 6 Lite"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "ubiquiti-u6-pro",
+      "vendor": "Ubiquiti",
+      "family": "UniFi U6",
+      "model": "U6-Pro",
+      "partNumbers": [
+        "U6-Pro"
+      ],
+      "aliases": [
+        "U6 Pro",
+        "UniFi 6 Pro"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "ubiquiti-u6-plus",
+      "vendor": "Ubiquiti",
+      "family": "UniFi U6",
+      "model": "U6+",
+      "partNumbers": [
+        "U6+"
+      ],
+      "aliases": [
+        "U6 Plus",
+        "UniFi 6 Plus"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
+    },
+    {
+      "id": "ubiquiti-u7-pro",
+      "vendor": "Ubiquiti",
+      "family": "UniFi U7",
+      "model": "U7-Pro",
+      "partNumbers": [
+        "U7-Pro"
+      ],
+      "aliases": [
+        "U7 Pro",
+        "UniFi 7 Pro"
+      ],
+      "type": "access_point",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        }
+      ],
+      "verified": true,
+      "source": "https://techspecs.ui.com/unifi/wifi/u7-pro",
+      "notes": "Wi-Fi 7 AP, 1x 2.5G PoE-in."
+    },
+    {
+      "id": "mikrotik-hap-ac2",
+      "vendor": "MikroTik",
+      "family": "hAP",
+      "model": "hAP ac2",
+      "partNumbers": [
+        "RBD52G-5HacD2HnD-TC"
+      ],
+      "aliases": [
+        "hAP ac²",
+        "RBD52G-5HacD2HnD"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/hap_ac2",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). Wireless home/SOHO router; ether1 PoE-in."
+    },
+    {
+      "id": "mikrotik-hap-ax2",
+      "vendor": "MikroTik",
+      "family": "hAP",
+      "model": "hAP ax2",
+      "partNumbers": [
+        "C52iG-5HaxD2HaxD-TC"
+      ],
+      "aliases": [
+        "hAP ax²",
+        "C52iG-5HaxD2HaxD"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/hap_ax2",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). Wireless router; product page lists passive PoE-out on ether1 (16.8 W)."
+    },
+    {
+      "id": "mikrotik-hap-ax3",
+      "vendor": "MikroTik",
+      "family": "hAP",
+      "model": "hAP ax3",
+      "partNumbers": [
+        "C53UiG+5HPaxD2HPaxD"
+      ],
+      "aliases": [
+        "hAP ax³"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/hap_ax3",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether1 = 2.5G (PoE-in); one of the 1G ports has passive PoE-out (port not confirmed, so no poe flag)."
+    },
+    {
+      "id": "mikrotik-rb4011igs-rm",
+      "vendor": "MikroTik",
+      "family": "RB4011",
+      "model": "RB4011iGS+RM",
+      "partNumbers": [
+        "RB4011iGS+RM"
+      ],
+      "aliases": [
+        "RB4011",
+        "RB4011iGS+"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 9,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 10,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/rb4011igs_rm",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether10 passive PoE-out; RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-rb5009ug-s-in",
+      "vendor": "MikroTik",
+      "family": "RB5009",
+      "model": "RB5009UG+S+IN",
+      "partNumbers": [
+        "RB5009UG+S+IN"
+      ],
+      "aliases": [
+        "RB5009",
+        "RB5009UG+S+"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 2,
+          "count": 7,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/rb5009ug_s_in",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether1 2.5G (PoE-in). No serial console listed."
+    },
+    {
+      "id": "mikrotik-rb750gr3",
+      "vendor": "MikroTik",
+      "family": "hEX",
+      "model": "hEX",
+      "partNumbers": [
+        "RB750Gr3"
+      ],
+      "aliases": [
+        "RB750Gr3",
+        "hEX RB750Gr3"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/RB750Gr3",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether1 passive PoE-in."
+    },
+    {
+      "id": "mikrotik-rb760igs",
+      "vendor": "MikroTik",
+      "family": "hEX",
+      "model": "hEX S",
+      "partNumbers": [
+        "RB760iGS"
+      ],
+      "aliases": [
+        "RB760iGS",
+        "hEX S RB760iGS"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 5,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/hex_s",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether5 passive PoE-out."
+    },
+    {
+      "id": "mikrotik-ccr2004-1g-12s-2xs",
+      "vendor": "MikroTik",
+      "family": "CCR2004",
+      "model": "CCR2004-1G-12S+2XS",
+      "partNumbers": [
+        "CCR2004-1G-12S+2XS"
+      ],
+      "aliases": [
+        "CCR2004-1G-12S+"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 12,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "sfp28-{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP28",
+          "speed": "25G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/ccr2004_1g_12s_2xs",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-ccr2004-16g-2s",
+      "vendor": "MikroTik",
+      "family": "CCR2004",
+      "model": "CCR2004-16G-2S+",
+      "partNumbers": [
+        "CCR2004-16G-2S+"
+      ],
+      "aliases": [
+        "CCR2004-16G"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/ccr2004_16g_2splus",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-ccr1036-8g-2s",
+      "vendor": "MikroTik",
+      "family": "CCR1036",
+      "model": "CCR1036-8G-2S+",
+      "partNumbers": [
+        "CCR1036-8G-2S+",
+        "CCR1036-8G-2S+EM"
+      ],
+      "aliases": [
+        "CCR1036-8G"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://mikrotik.com/product/CCR1036-8G-2Splus",
+      "notes": "Counts checked (8 GbE, 2 SFP+, serial console - DB9 on old units, RJ45 on newer). SFP+ interface name sfp-sfpplus1-2 assumed (MTU table only lists the CCR1036-12G-4S row); older RouterOS v6 may show sfpplus1."
+    },
+    {
+      "id": "mikrotik-ccr2116-12g-4s",
+      "vendor": "MikroTik",
+      "family": "CCR2116",
+      "model": "CCR2116-12G-4S+",
+      "partNumbers": [
+        "CCR2116-12G-4S+"
+      ],
+      "aliases": [
+        "CCR2116"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 13,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/ccr2116_12g_4splus",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether13 is the CPU-direct management port (not on the switch chip). RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-crs326-24g-2s-rm",
+      "vendor": "MikroTik",
+      "family": "CRS326",
+      "model": "CRS326-24G-2S+RM",
+      "partNumbers": [
+        "CRS326-24G-2S+RM"
+      ],
+      "aliases": [
+        "CRS326-24G-2S+",
+        "CRS326"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/CRS326-24G-2SplusRM",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). Dual-boot RouterOS/SwOS; names are RouterOS. RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-crs328-24p-4s-rm",
+      "vendor": "MikroTik",
+      "family": "CRS328",
+      "model": "CRS328-24P-4S+RM",
+      "partNumbers": [
+        "CRS328-24P-4S+RM"
+      ],
+      "aliases": [
+        "CRS328-24P-4S+",
+        "CRS328"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/crs328_24p_4s_rm",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). All 24 ports PoE-out (802.3af/at + passive). RouterOS L3 capable."
+    },
+    {
+      "id": "mikrotik-crs354-48g-4s-2q-rm",
+      "vendor": "MikroTik",
+      "family": "CRS354",
+      "model": "CRS354-48G-4S+2Q+RM",
+      "partNumbers": [
+        "CRS354-48G-4S+2Q+RM"
+      ],
+      "aliases": [
+        "CRS354-48G",
+        "CRS354"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 49,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "qsfpplus{n}-1",
+          "start": 1,
+          "count": 2,
+          "media": "QSFP",
+          "speed": "40G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/crs354_48g_4splus2qplusrm",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether49 = 10/100 MGMT port. Each QSFP+ appears as 4 sub-interfaces qsfpplusX-1..X-4 (breakout); only the first lane (qsfpplusX-1) is listed per cage."
+    },
+    {
+      "id": "mikrotik-crs305-1g-4s-in",
+      "vendor": "MikroTik",
+      "family": "CRS305",
+      "model": "CRS305-1G-4S+IN",
+      "partNumbers": [
+        "CRS305-1G-4S+IN"
+      ],
+      "aliases": [
+        "CRS305"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://mikrotik.com/product/crs305_1g_4s_in",
+      "notes": "RouterOS names from MikroTik MTU table (https://help.mikrotik.com/docs/spaces/ROS/pages/21725296/MTU+in+RouterOS). ether1 used for management or traffic (PoE-in). No serial console listed."
+    },
+    {
+      "id": "mikrotik-css610-8g-2s-in",
+      "vendor": "MikroTik",
+      "family": "CSS610",
+      "model": "CSS610-8G-2S+IN",
+      "partNumbers": [
+        "CSS610-8G-2S+IN"
+      ],
+      "aliases": [
+        "CSS610"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://mikrotik.com/product/css610_8g_2s_in",
+      "notes": "Counts checked (8 GbE + 2 SFP+, SwOS Lite only). SwOS port naming (Port1..Port10, SFP+ as 9-10) not confirmed."
+    }
+  ]
+}

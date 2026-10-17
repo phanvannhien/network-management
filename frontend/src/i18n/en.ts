@@ -1748,10 +1748,24 @@ export const en: Strings = {
     label: 'Filter by category',
     all: 'Whole organization',
   },
+  catalog: {
+    open: 'Add from catalog',
+    title: 'Built-in device catalog',
+    guide:
+      '{{count}} common models with the vendor\'s real port count and names. "Add" copies one into the organization\'s templates (editable later); a model you already have a template for reuses it.',
+    search: 'Search model, part number, family…',
+    vendor: 'Vendor',
+    allVendors: 'All vendors',
+    add: 'Add',
+    added: 'Template {{name}} is ready',
+    none: 'No model found.',
+  },
   addPorts: {
     title: '{{name}} has no port to plug a cable into',
     why: 'The device was created without a template (e.g. imported from Excel), so it only has virtual interfaces. Add physical ports here — written to the inventory right away.',
     template: 'Template',
+    catalog: "In the device catalog: {{model}} ({{count}} ports, the vendor's port names).",
+    useCatalog: 'Use the catalog ports',
     pickTemplate: 'Pick a template of this type…',
     portCount: '{{count}} ports',
     apply: 'Apply template',
@@ -1843,6 +1857,11 @@ export const en: Strings = {
     line: 'Row',
     result: 'Result',
     vip: 'cluster shared IP',
+    catalogTitle: 'Create templates from the built-in device catalog',
+    catalogGuide:
+      "These models have no template in the organization but are in the catalog: they are copied into the organization's templates (editable later) so the devices get the vendor's real ports.",
+    catalogUnverified: 'not checked against the datasheet — worth a look',
+    withCatalog: 'ports from the built-in catalog',
     noTemplate: 'no template — no ports',
     noTemplateTitle: 'No template for: {{models}}',
     noTemplateBody:

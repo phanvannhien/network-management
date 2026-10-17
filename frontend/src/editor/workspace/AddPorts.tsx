@@ -4,7 +4,13 @@ import { toast } from 'sonner'
 import { NativeSelect } from '@/components/NativeSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useInterfaceMutations, useTemplates } from '@/modules/inventory/devices'
+import {
+  templateFromCatalog,
+  useCatalog,
+  useInterfaceMutations,
+  useTemplates,
+} from '@/modules/inventory/devices'
+import { matchCatalog } from '@/modules/inventory/import/plan'
 import type { CableEnd } from './CableDialog'
 import { describeGroup, guessPorts, type PortGroup } from './portGuess'
 
@@ -25,6 +31,9 @@ export function AddPorts({
   const { t } = useTranslation()
   const templates = useTemplates(orgId)
   const { apply } = useInterfaceMutations(orgId, device.id)
+  const catalog = useCatalog(orgId)
+  const fromCatalog = matchCatalog(catalog.data ?? [], [model], device.type)
+  const [copying, setCopying] = useState(false)
   const fitting = (templates.data ?? []).filter((x) => x.type === device.type)
   const [templateId, setTemplateId] = useState('')
   const [groups, setGroups] = useState<PortGroup[]>(() => guessPorts(model, device.type))
@@ -36,6 +45,19 @@ export function AddPorts({
         toast.success(t('addPorts.added', { count: added ?? 0, name: device.name })),
       onError: (err) => toast.error(err.message),
     })
+  const copyFromCatalog = async () => {
+    if (!fromCatalog) return
+    setCopying(true)
+    try {
+      const tpl = await templateFromCatalog(orgId, fromCatalog.id)
+      void templates.refetch()
+      run(tpl.id)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      setCopying(false)
+    }
+  }
   const patch = (i: number, p: Partial<PortGroup>) =>
     setGroups((gs) => gs.map((x, j) => (j === i ? { ...x, ...p } : x)))
 
@@ -47,6 +69,28 @@ export function AddPorts({
     >
       <p className="font-medium">{t('addPorts.title', { name: device.name })}</p>
       <p className="text-muted-foreground">{t('addPorts.why')}</p>
+      {fromCatalog && (
+        <div className="space-y-1">
+          <p>
+            {t('addPorts.catalog', {
+              model: `${fromCatalog.vendor} ${fromCatalog.model}`,
+              count: fromCatalog.portCount,
+            })}
+            {!fromCatalog.verified && (
+              <span className="ml-1 text-xs text-status-warning">
+                {t('deviceImport.catalogUnverified')}
+              </span>
+            )}
+          </p>
+          <Button
+            type="button"
+            disabled={copying || apply.isPending}
+            onClick={() => void copyFromCatalog()}
+          >
+            {t('addPorts.useCatalog')}
+          </Button>
+        </div>
+      )}
       {fitting.length > 0 && (
         <div className="flex gap-2">
           <NativeSelect

@@ -8,6 +8,7 @@ import {
   detectHeader,
   fileProblems,
   inferProduct,
+  matchCatalog,
   matchSite,
   placeKey,
   proposeClusters,
@@ -267,5 +268,32 @@ describe('values', () => {
       'IP trùng dòng 1 (không cùng cụm)',
     ])
     expect(problems.has(3)).toBe(false)
+  })
+})
+
+describe('catalog match (ADR-035)', () => {
+  const models = [
+    {
+      id: 'c1300',
+      model: 'C1300-24T-4G',
+      partNumbers: ['C1300-24T-4G'],
+      aliases: [],
+      type: 'l2_switch',
+    },
+    {
+      id: 'fg80f',
+      model: 'FortiGate 80F',
+      partNumbers: ['FG-80F'],
+      aliases: ['FGT-80F'],
+      type: 'firewall',
+    },
+    { id: 'isr', model: 'ISR4331', partNumbers: ['ISR4331/K9'], aliases: [], type: 'router' },
+  ]
+  it('matches model, part number or alias ignoring case and punctuation', () => {
+    expect(matchCatalog(models, ['c1300-24t-4g'])?.id).toBe('c1300')
+    expect(matchCatalog(models, ['fg80f'])?.id).toBe('fg80f')
+    expect(matchCatalog(models, ['', 'FGT 80F'])?.id).toBe('fg80f')
+    expect(matchCatalog(models, ['ISR4331/K9', 'ISR4331'])?.id).toBe('isr')
+    expect(matchCatalog(models, ['C1300-24P-4G'])).toBeUndefined()
   })
 })

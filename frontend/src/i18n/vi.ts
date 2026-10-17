@@ -1735,10 +1735,24 @@ export const vi = {
     label: 'Lọc theo danh mục',
     all: 'Toàn tổ chức',
   },
+  catalog: {
+    open: 'Thêm từ thư viện',
+    title: 'Thư viện thiết bị có sẵn',
+    guide:
+      '{{count}} model phổ biến với đúng số cổng và tên cổng của hãng. Chọn "Thêm" để chép thành template của tổ chức (sửa được sau); model đã có template thì dùng lại template đó.',
+    search: 'Tìm model, part number, dòng sản phẩm…',
+    vendor: 'Hãng',
+    allVendors: 'Mọi hãng',
+    add: 'Thêm',
+    added: 'Đã có template {{name}}',
+    none: 'Không tìm thấy model nào.',
+  },
   addPorts: {
     title: '{{name}} chưa có cổng để cắm dây',
     why: 'Thiết bị được tạo không kèm template (vd nhập từ Excel) nên chỉ có interface ảo. Thêm cổng vật lý ngay tại đây — ghi vào kho luôn.',
     template: 'Template',
+    catalog: 'Có trong thư viện thiết bị: {{model}} ({{count}} cổng, đúng tên cổng của hãng).',
+    useCatalog: 'Dùng cổng theo thư viện',
     pickTemplate: 'Chọn template cùng loại…',
     portCount: '{{count}} cổng',
     apply: 'Áp dụng template',
@@ -1829,6 +1843,11 @@ export const vi = {
     line: 'Dòng',
     result: 'Kết quả',
     vip: 'IP chung của cụm',
+    catalogTitle: 'Tạo template từ thư viện thiết bị có sẵn',
+    catalogGuide:
+      'Các model này chưa có template trong tổ chức nhưng có trong thư viện: hệ thống chép thành template của tổ chức (sửa được sau) để thiết bị có đủ cổng đúng tên của hãng.',
+    catalogUnverified: 'chưa đối chiếu datasheet — nên kiểm tra',
+    withCatalog: 'cổng theo thư viện có sẵn',
     noTemplate: 'chưa có template — sẽ không có cổng',
     noTemplateTitle: 'Chưa có template cho: {{models}}',
     noTemplateBody:

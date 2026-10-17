@@ -1,0 +1,5953 @@
+{
+  "models": [
+    {
+      "id": "cisco-c1000-8t-2g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-8T-2G-L",
+      "partNumbers": [
+        "C1000-8T-2G-L",
+        "C1000-8T-E-2G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-8T-2G",
+        "C1000-8T-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Uplinks Gi1/0/9-10 are RJ45/SFP combo ports."
+    },
+    {
+      "id": "cisco-c1000-8p-2g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-8P-2G-L",
+      "partNumbers": [
+        "C1000-8P-2G-L",
+        "C1000-8P-E-2G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-8P-2G",
+        "C1000-8P-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Uplinks Gi1/0/9-10 are RJ45/SFP combo ports."
+    },
+    {
+      "id": "cisco-c1000-8fp-2g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-8FP-2G-L",
+      "partNumbers": [
+        "C1000-8FP-2G-L",
+        "C1000-8FP-E-2G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-8FP-2G",
+        "C1000-8FP-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Uplinks Gi1/0/9-10 are RJ45/SFP combo ports."
+    },
+    {
+      "id": "cisco-c1000-16t-2g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-16T-2G-L",
+      "partNumbers": [
+        "C1000-16T-2G-L",
+        "C1000-16T-E-2G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-16T-2G",
+        "C1000-16T-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1000-16p-2g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-16P-2G-L",
+      "partNumbers": [
+        "C1000-16P-2G-L",
+        "C1000-16P-E-2G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-16P-2G",
+        "C1000-16P-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1000-24t-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-24T-4G-L",
+      "partNumbers": [
+        "C1000-24T-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-24T-4G",
+        "C1000-24T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-24p-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-24P-4G-L",
+      "partNumbers": [
+        "C1000-24P-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-24P-4G",
+        "C1000-24P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-24fp-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-24FP-4G-L",
+      "partNumbers": [
+        "C1000-24FP-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-24FP-4G",
+        "C1000-24FP-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-48t-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-48T-4G-L",
+      "partNumbers": [
+        "C1000-48T-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-48T-4G",
+        "C1000-48T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-48p-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-48P-4G-L",
+      "partNumbers": [
+        "C1000-48P-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-48P-4G",
+        "C1000-48P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-48fp-4g-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-48FP-4G-L",
+      "partNumbers": [
+        "C1000-48FP-4G-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-48FP-4G",
+        "C1000-48FP-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-24t-4x-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-24T-4X-L",
+      "partNumbers": [
+        "C1000-24T-4X-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-24T-4X",
+        "C1000-24T-4X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "With a 1G SFP inserted the uplink appears as GigabitEthernet1/0/25-28 instead of Te1/0/1-4. Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-24p-4x-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-24P-4X-L",
+      "partNumbers": [
+        "C1000-24P-4X-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-24P-4X",
+        "C1000-24P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "With a 1G SFP inserted the uplink appears as GigabitEthernet1/0/25-28 instead of Te1/0/1-4. Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-48t-4x-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-48T-4X-L",
+      "partNumbers": [
+        "C1000-48T-4X-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-48T-4X",
+        "C1000-48T-4X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "With a 1G SFP inserted the uplink appears as GigabitEthernet1/0/49-52 instead of Te1/0/1-4. Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1000-48p-4x-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 1000",
+      "model": "C1000-48P-4X-L",
+      "partNumbers": [
+        "C1000-48P-4X-L"
+      ],
+      "aliases": [
+        "Catalyst 1000-48P-4X",
+        "C1000-48P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/nb-06-cat1k-ser-switch-ds-cte-en.html",
+      "notes": "With a 1G SFP inserted the uplink appears as GigabitEthernet1/0/49-52 instead of Te1/0/1-4. Stackable (up to 8 members); {m} = stack member."
+    },
+    {
+      "id": "cisco-c1200-8t-e-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-8T-E-2G",
+      "partNumbers": [
+        "C1200-8T-E-2G"
+      ],
+      "aliases": [
+        "Catalyst 1200-8T-E-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'. Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-c1200-8p-e-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-8P-E-2G",
+      "partNumbers": [
+        "C1200-8P-E-2G"
+      ],
+      "aliases": [
+        "Catalyst 1200-8P-E-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'. Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-c1200-16t-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-16T-2G",
+      "partNumbers": [
+        "C1200-16T-2G"
+      ],
+      "aliases": [
+        "Catalyst 1200-16T-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-24t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-24T-4G",
+      "partNumbers": [
+        "C1200-24T-4G"
+      ],
+      "aliases": [
+        "Catalyst 1200-24T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-24p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-24P-4G",
+      "partNumbers": [
+        "C1200-24P-4G"
+      ],
+      "aliases": [
+        "Catalyst 1200-24P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-48t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-48T-4G",
+      "partNumbers": [
+        "C1200-48T-4G"
+      ],
+      "aliases": [
+        "Catalyst 1200-48T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-48p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-48P-4G",
+      "partNumbers": [
+        "C1200-48P-4G"
+      ],
+      "aliases": [
+        "Catalyst 1200-48P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-24t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-24T-4X",
+      "partNumbers": [
+        "C1200-24T-4X"
+      ],
+      "aliases": [
+        "Catalyst 1200-24T-4X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1200-24p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1200",
+      "model": "C1200-24P-4X",
+      "partNumbers": [
+        "C1200-24P-4X"
+      ],
+      "aliases": [
+        "Catalyst 1200-24P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1200-series-switches/nb-06-cat1200-ser-data-sheet-cte-en.html",
+      "notes": "Port counts from datasheet. Interface naming (gi1/0/x, te1/0/x) taken from CLI guide examples, which are shared with Catalyst 1300; older docs also show 'GigabitEthernet 1' style — confirm with 'show interfaces status'."
+    },
+    {
+      "id": "cisco-c1300-8t-e-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-8T-E-2G",
+      "partNumbers": [
+        "C1300-8T-E-2G"
+      ],
+      "aliases": [
+        "Catalyst 1300-8T-E-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-c1300-8p-e-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-8P-E-2G",
+      "partNumbers": [
+        "C1300-8P-E-2G"
+      ],
+      "aliases": [
+        "Catalyst 1300-8P-E-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-c1300-8fp-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-8FP-2G",
+      "partNumbers": [
+        "C1300-8FP-2G"
+      ],
+      "aliases": [
+        "Catalyst 1300-8FP-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-c1300-16t-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-16T-2G",
+      "partNumbers": [
+        "C1300-16T-2G"
+      ],
+      "aliases": [
+        "Catalyst 1300-16T-2G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-16p-2g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-16P-2G",
+      "partNumbers": [
+        "C1300-16P-2G"
+      ],
+      "aliases": [
+        "Catalyst 1300-16P-2G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-24t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-24T-4G",
+      "partNumbers": [
+        "C1300-24T-4G"
+      ],
+      "aliases": [
+        "Catalyst 1300-24T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-24p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-24P-4G",
+      "partNumbers": [
+        "C1300-24P-4G"
+      ],
+      "aliases": [
+        "Catalyst 1300-24P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-24fp-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-24FP-4G",
+      "partNumbers": [
+        "C1300-24FP-4G"
+      ],
+      "aliases": [
+        "Catalyst 1300-24FP-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-48t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-48T-4G",
+      "partNumbers": [
+        "C1300-48T-4G"
+      ],
+      "aliases": [
+        "Catalyst 1300-48T-4G"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-48p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-48P-4G",
+      "partNumbers": [
+        "C1300-48P-4G"
+      ],
+      "aliases": [
+        "Catalyst 1300-48P-4G"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": ""
+    },
+    {
+      "id": "cisco-c1300-16p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-16P-4X",
+      "partNumbers": [
+        "C1300-16P-4X"
+      ],
+      "aliases": [
+        "Catalyst 1300-16P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Stackable (front-panel stacking, up to 8 units); {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-c1300-24t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-24T-4X",
+      "partNumbers": [
+        "C1300-24T-4X"
+      ],
+      "aliases": [
+        "Catalyst 1300-24T-4X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Stackable (front-panel stacking, up to 8 units); {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-c1300-24p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-24P-4X",
+      "partNumbers": [
+        "C1300-24P-4X"
+      ],
+      "aliases": [
+        "Catalyst 1300-24P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Stackable (front-panel stacking, up to 8 units); {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-c1300-48t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-48T-4X",
+      "partNumbers": [
+        "C1300-48T-4X"
+      ],
+      "aliases": [
+        "Catalyst 1300-48T-4X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Stackable (front-panel stacking, up to 8 units); {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-c1300-48p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 1300",
+      "model": "C1300-48P-4X",
+      "partNumbers": [
+        "C1300-48P-4X"
+      ],
+      "aliases": [
+        "Catalyst 1300-48P-4X"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1300-series-switches/nb-06-cat1300-ser-data-sheet-cte-en.html",
+      "notes": "Stackable (front-panel stacking, up to 8 units); {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs110-8t-d",
+      "vendor": "Cisco",
+      "family": "Business 110",
+      "model": "CBS110-8T-D",
+      "partNumbers": [
+        "CBS110-8T-D-EU",
+        "CBS110-8T-D-UK",
+        "CBS110-8T-D-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged switch: no CLI interface names; ports numbered as on the front panel."
+    },
+    {
+      "id": "cisco-cbs110-24t",
+      "vendor": "Cisco",
+      "family": "Business 110",
+      "model": "CBS110-24T",
+      "partNumbers": [
+        "CBS110-24T-EU",
+        "CBS110-24T-UK",
+        "CBS110-24T-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Unmanaged switch; 2 SFP slots are combo with two of the RJ45 ports."
+    },
+    {
+      "id": "cisco-cbs220-24t-4g",
+      "vendor": "Cisco",
+      "family": "Business 220",
+      "model": "CBS220-24T-4G",
+      "partNumbers": [
+        "CBS220-24T-4G",
+        "CBS220-24T-4G-EU",
+        "CBS220-24T-4G-UK"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GE{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GE{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Smart switch managed by web UI only (no CLI, no console port); names as shown in the web UI."
+    },
+    {
+      "id": "cisco-cbs220-24p-4g",
+      "vendor": "Cisco",
+      "family": "Business 220",
+      "model": "CBS220-24P-4G",
+      "partNumbers": [
+        "CBS220-24P-4G",
+        "CBS220-24P-4G-EU",
+        "CBS220-24P-4G-UK"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GE{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GE{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Smart switch managed by web UI only (no CLI, no console port); names as shown in the web UI."
+    },
+    {
+      "id": "cisco-cbs220-48t-4g",
+      "vendor": "Cisco",
+      "family": "Business 220",
+      "model": "CBS220-48T-4G",
+      "partNumbers": [
+        "CBS220-48T-4G",
+        "CBS220-48T-4G-EU",
+        "CBS220-48T-4G-UK"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GE{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GE{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Smart switch managed by web UI only (no CLI, no console port); names as shown in the web UI."
+    },
+    {
+      "id": "cisco-cbs250-8t-e-2g",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-8T-E-2G",
+      "partNumbers": [
+        "CBS250-8T-E-2G",
+        "CBS250-8T-E-2G-EU",
+        "CBS250-8T-E-2G-UK",
+        "CBS250-8T-E-2G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...). Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-cbs250-24t-4g",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-24T-4G",
+      "partNumbers": [
+        "CBS250-24T-4G",
+        "CBS250-24T-4G-EU",
+        "CBS250-24T-4G-UK",
+        "CBS250-24T-4G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...)."
+    },
+    {
+      "id": "cisco-cbs250-24p-4g",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-24P-4G",
+      "partNumbers": [
+        "CBS250-24P-4G",
+        "CBS250-24P-4G-EU",
+        "CBS250-24P-4G-UK",
+        "CBS250-24P-4G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...)."
+    },
+    {
+      "id": "cisco-cbs250-48t-4g",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-48T-4G",
+      "partNumbers": [
+        "CBS250-48T-4G",
+        "CBS250-48T-4G-EU",
+        "CBS250-48T-4G-UK",
+        "CBS250-48T-4G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...)."
+    },
+    {
+      "id": "cisco-cbs250-48p-4g",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-48P-4G",
+      "partNumbers": [
+        "CBS250-48P-4G",
+        "CBS250-48P-4G-EU",
+        "CBS250-48P-4G-UK",
+        "CBS250-48P-4G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...)."
+    },
+    {
+      "id": "cisco-cbs250-24t-4x",
+      "vendor": "Cisco",
+      "family": "Business 250",
+      "model": "CBS250-24T-4X",
+      "partNumbers": [
+        "CBS250-24T-4X",
+        "CBS250-24T-4X-EU",
+        "CBS250-24T-4X-UK",
+        "CBS250-24T-4X-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Non-stackable; CLI uses flat names (gi1, gi2, ...)."
+    },
+    {
+      "id": "cisco-cbs350-8t-e-2g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-8T-E-2G",
+      "partNumbers": [
+        "CBS350-8T-E-2G",
+        "CBS350-8T-E-2G-EU",
+        "CBS350-8T-E-2G-UK",
+        "CBS350-8T-E-2G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-cbs350-8p-e-2g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-8P-E-2G",
+      "partNumbers": [
+        "CBS350-8P-E-2G",
+        "CBS350-8P-E-2G-EU",
+        "CBS350-8P-E-2G-UK",
+        "CBS350-8P-E-2G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 9,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Ports 9-10 are RJ45/SFP combo."
+    },
+    {
+      "id": "cisco-cbs350-16t-2g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-16T-2G",
+      "partNumbers": [
+        "CBS350-16T-2G",
+        "CBS350-16T-2G-EU",
+        "CBS350-16T-2G-UK",
+        "CBS350-16T-2G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x)."
+    },
+    {
+      "id": "cisco-cbs350-24t-4g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-24T-4G",
+      "partNumbers": [
+        "CBS350-24T-4G",
+        "CBS350-24T-4G-EU",
+        "CBS350-24T-4G-UK",
+        "CBS350-24T-4G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-24p-4g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-24P-4G",
+      "partNumbers": [
+        "CBS350-24P-4G",
+        "CBS350-24P-4G-EU",
+        "CBS350-24P-4G-UK",
+        "CBS350-24P-4G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-24fp-4g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-24FP-4G",
+      "partNumbers": [
+        "CBS350-24FP-4G",
+        "CBS350-24FP-4G-EU",
+        "CBS350-24FP-4G-UK",
+        "CBS350-24FP-4G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-48t-4g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-48T-4G",
+      "partNumbers": [
+        "CBS350-48T-4G",
+        "CBS350-48T-4G-EU",
+        "CBS350-48T-4G-UK",
+        "CBS350-48T-4G-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-48p-4g",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-48P-4G",
+      "partNumbers": [
+        "CBS350-48P-4G",
+        "CBS350-48P-4G-EU",
+        "CBS350-48P-4G-UK",
+        "CBS350-48P-4G-NA"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-24t-4x",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-24T-4X",
+      "partNumbers": [
+        "CBS350-24T-4X",
+        "CBS350-24T-4X-EU",
+        "CBS350-24T-4X-UK",
+        "CBS350-24T-4X-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-cbs350-48t-4x",
+      "vendor": "Cisco",
+      "family": "Business 350",
+      "model": "CBS350-48T-4X",
+      "partNumbers": [
+        "CBS350-48T-4X",
+        "CBS350-48T-4X-EU",
+        "CBS350-48T-4X-UK",
+        "CBS350-48T-4X-NA"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/datasheet-c78-744156.html",
+      "notes": "Port counts from datasheet; naming per Cisco Business 350 CLI (gi1/0/x, te1/0/x). Stackable; {m} = stack unit ID."
+    },
+    {
+      "id": "cisco-c9200l-24t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-24T-4G",
+      "partNumbers": [
+        "C9200L-24T-4G-E",
+        "C9200L-24T-4G-A"
+      ],
+      "aliases": [
+        "C9200L-24T-4G",
+        "Catalyst 9200L-24T-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-24p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-24P-4G",
+      "partNumbers": [
+        "C9200L-24P-4G-E",
+        "C9200L-24P-4G-A"
+      ],
+      "aliases": [
+        "C9200L-24P-4G",
+        "Catalyst 9200L-24P-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-48t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-48T-4G",
+      "partNumbers": [
+        "C9200L-48T-4G-E",
+        "C9200L-48T-4G-A"
+      ],
+      "aliases": [
+        "C9200L-48T-4G",
+        "Catalyst 9200L-48T-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-48p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-48P-4G",
+      "partNumbers": [
+        "C9200L-48P-4G-E",
+        "C9200L-48P-4G-A"
+      ],
+      "aliases": [
+        "C9200L-48P-4G",
+        "Catalyst 9200L-48P-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-24t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-24T-4X",
+      "partNumbers": [
+        "C9200L-24T-4X-E",
+        "C9200L-24T-4X-A"
+      ],
+      "aliases": [
+        "C9200L-24T-4X",
+        "Catalyst 9200L-24T-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-24p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-24P-4X",
+      "partNumbers": [
+        "C9200L-24P-4X-E",
+        "C9200L-24P-4X-A"
+      ],
+      "aliases": [
+        "C9200L-24P-4X",
+        "Catalyst 9200L-24P-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-48t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-48T-4X",
+      "partNumbers": [
+        "C9200L-48T-4X-E",
+        "C9200L-48T-4X-A"
+      ],
+      "aliases": [
+        "C9200L-48T-4X",
+        "Catalyst 9200L-48T-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200l-48p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200L",
+      "model": "C9200L-48P-4X",
+      "partNumbers": [
+        "C9200L-48P-4X-E",
+        "C9200L-48P-4X-A"
+      ],
+      "aliases": [
+        "C9200L-48P-4X",
+        "Catalyst 9200L-48P-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-80, up to 8); {m} = stack member. Gi0/0 is the out-of-band management port (Mgmt-vrf)."
+    },
+    {
+      "id": "cisco-c9200-24t",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200",
+      "model": "C9200-24T",
+      "partNumbers": [
+        "C9200-24T-E",
+        "C9200-24T-A"
+      ],
+      "aliases": [
+        "C9200-24T"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9200-NM-4G/-4X/-2Q/-2Y) not included: add uplink ports as Gi{m}/1/x or Te{m}/1/x per installed module. Stackable; {m} = stack member."
+    },
+    {
+      "id": "cisco-c9200-24p",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200",
+      "model": "C9200-24P",
+      "partNumbers": [
+        "C9200-24P-E",
+        "C9200-24P-A"
+      ],
+      "aliases": [
+        "C9200-24P"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9200-NM-4G/-4X/-2Q/-2Y) not included: add uplink ports as Gi{m}/1/x or Te{m}/1/x per installed module. Stackable; {m} = stack member."
+    },
+    {
+      "id": "cisco-c9200-48t",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200",
+      "model": "C9200-48T",
+      "partNumbers": [
+        "C9200-48T-E",
+        "C9200-48T-A"
+      ],
+      "aliases": [
+        "C9200-48T"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9200-NM-4G/-4X/-2Q/-2Y) not included: add uplink ports as Gi{m}/1/x or Te{m}/1/x per installed module. Stackable; {m} = stack member."
+    },
+    {
+      "id": "cisco-c9200-48p",
+      "vendor": "Cisco",
+      "family": "Catalyst 9200",
+      "model": "C9200-48P",
+      "partNumbers": [
+        "C9200-48P-E",
+        "C9200-48P-A"
+      ],
+      "aliases": [
+        "C9200-48P"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-cat9200-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9200-NM-4G/-4X/-2Q/-2Y) not included: add uplink ports as Gi{m}/1/x or Te{m}/1/x per installed module. Stackable; {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300-24t",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300",
+      "model": "C9300-24T",
+      "partNumbers": [
+        "C9300-24T-E",
+        "C9300-24T-A"
+      ],
+      "aliases": [
+        "C9300-24T"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9300-NM-*) not included: add uplinks as Gi/Te/Fo{m}/1/x per installed module. Stackable (StackWise-480); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300-24p",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300",
+      "model": "C9300-24P",
+      "partNumbers": [
+        "C9300-24P-E",
+        "C9300-24P-A"
+      ],
+      "aliases": [
+        "C9300-24P"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9300-NM-*) not included: add uplinks as Gi/Te/Fo{m}/1/x per installed module. Stackable (StackWise-480); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300-48t",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300",
+      "model": "C9300-48T",
+      "partNumbers": [
+        "C9300-48T-E",
+        "C9300-48T-A"
+      ],
+      "aliases": [
+        "C9300-48T"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9300-NM-*) not included: add uplinks as Gi/Te/Fo{m}/1/x per installed module. Stackable (StackWise-480); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300-48p",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300",
+      "model": "C9300-48P",
+      "partNumbers": [
+        "C9300-48P-E",
+        "C9300-48P-A",
+        "C9300-48P2-E",
+        "C9300-48P2-A"
+      ],
+      "aliases": [
+        "C9300-48P"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9300-NM-*) not included: add uplinks as Gi/Te/Fo{m}/1/x per installed module. Stackable (StackWise-480); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300-48u",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300",
+      "model": "C9300-48U",
+      "partNumbers": [
+        "C9300-48U-E",
+        "C9300-48U-A"
+      ],
+      "aliases": [
+        "C9300-48U"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Modular uplink slot (C9300-NM-*) not included: add uplinks as Gi/Te/Fo{m}/1/x per installed module. Stackable (StackWise-480); {m} = stack member. C9300-48U = UPOE (60 W)."
+    },
+    {
+      "id": "cisco-c9300l-24t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-24T-4G",
+      "partNumbers": [
+        "C9300L-24T-4G-E",
+        "C9300L-24T-4G-A"
+      ],
+      "aliases": [
+        "C9300L-24T-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300l-24p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-24P-4G",
+      "partNumbers": [
+        "C9300L-24P-4G-E",
+        "C9300L-24P-4G-A"
+      ],
+      "aliases": [
+        "C9300L-24P-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300l-48t-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-48T-4G",
+      "partNumbers": [
+        "C9300L-48T-4G-E",
+        "C9300L-48T-4G-A"
+      ],
+      "aliases": [
+        "C9300L-48T-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300l-48p-4g",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-48P-4G",
+      "partNumbers": [
+        "C9300L-48P-4G-E",
+        "C9300L-48P-4G-A"
+      ],
+      "aliases": [
+        "C9300L-48P-4G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300l-24t-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-24T-4X",
+      "partNumbers": [
+        "C9300L-24T-4X-E",
+        "C9300L-24T-4X-A"
+      ],
+      "aliases": [
+        "C9300L-24T-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-c9300l-48p-4x",
+      "vendor": "Cisco",
+      "family": "Catalyst 9300L",
+      "model": "C9300L-48P-4X",
+      "partNumbers": [
+        "C9300L-48P-4X-E",
+        "C9300L-48P-4X-A"
+      ],
+      "aliases": [
+        "C9300L-48P-4X"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9300-series-switches/nb-06-cat9300-ser-data-sheet-cte-en.html",
+      "notes": "Fixed uplinks. Stackable (StackWise-320); {m} = stack member."
+    },
+    {
+      "id": "cisco-ws-c2960x-24ts-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-24TS-L",
+      "partNumbers": [
+        "WS-C2960X-24TS-L"
+      ],
+      "aliases": [
+        "2960X-24TS-L",
+        "Catalyst 2960X-24TS-L"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960x-24ps-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-24PS-L",
+      "partNumbers": [
+        "WS-C2960X-24PS-L"
+      ],
+      "aliases": [
+        "2960X-24PS-L",
+        "Catalyst 2960X-24PS-L"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960x-48ts-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-48TS-L",
+      "partNumbers": [
+        "WS-C2960X-48TS-L"
+      ],
+      "aliases": [
+        "2960X-48TS-L",
+        "Catalyst 2960X-48TS-L"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960x-48fps-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-48FPS-L",
+      "partNumbers": [
+        "WS-C2960X-48FPS-L"
+      ],
+      "aliases": [
+        "2960X-48FPS-L",
+        "Catalyst 2960X-48FPS-L"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960x-24td-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-24TD-L",
+      "partNumbers": [
+        "WS-C2960X-24TD-L"
+      ],
+      "aliases": [
+        "2960X-24TD-L",
+        "Catalyst 2960X-24TD-L"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960x-48td-l",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-X",
+      "model": "WS-C2960X-48TD-L",
+      "partNumbers": [
+        "WS-C2960X-48TD-L"
+      ],
+      "aliases": [
+        "2960X-48TD-L",
+        "Catalyst 2960X-48TD-L"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet{m}/0/{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "FastEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "End-of-sale legacy model. FlexStack-Plus stackable (with optional module); {m} = stack member. FastEthernet0 = out-of-band management port."
+    },
+    {
+      "id": "cisco-ws-c2960l-24ts-ll",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-L",
+      "model": "WS-C2960L-24TS-LL",
+      "partNumbers": [
+        "WS-C2960L-24TS-LL"
+      ],
+      "aliases": [
+        "2960L-24TS-LL",
+        "Catalyst 2960L-24TS-LL"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/hardware/installation/guide/b_c2960l_24_48_hig.pdf",
+      "notes": "Not stackable (virtual stacking only), so names are Gi0/x. Verified Gi0/1-24 + Gi0/25-28 SFP."
+    },
+    {
+      "id": "cisco-ws-c2960l-24ps-ll",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-L",
+      "model": "WS-C2960L-24PS-LL",
+      "partNumbers": [
+        "WS-C2960L-24PS-LL"
+      ],
+      "aliases": [
+        "2960L-24PS-LL",
+        "Catalyst 2960L-24PS-LL"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/hardware/installation/guide/b_c2960l_24_48_hig.pdf",
+      "notes": "Not stackable (virtual stacking only), so names are Gi0/x. Layout inferred from WS-C2960L-24TS-LL."
+    },
+    {
+      "id": "cisco-ws-c2960l-48ts-ll",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-L",
+      "model": "WS-C2960L-48TS-LL",
+      "partNumbers": [
+        "WS-C2960L-48TS-LL"
+      ],
+      "aliases": [
+        "2960L-48TS-LL",
+        "Catalyst 2960L-48TS-LL"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/hardware/installation/guide/b_c2960l_24_48_hig.pdf",
+      "notes": "Not stackable (virtual stacking only), so names are Gi0/x. Layout inferred from WS-C2960L-24TS-LL."
+    },
+    {
+      "id": "cisco-ws-c2960l-48ps-ll",
+      "vendor": "Cisco",
+      "family": "Catalyst 2960-L",
+      "model": "WS-C2960L-48PS-LL",
+      "partNumbers": [
+        "WS-C2960L-48PS-LL"
+      ],
+      "aliases": [
+        "2960L-48PS-LL",
+        "Catalyst 2960L-48PS-LL"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/hardware/installation/guide/b_c2960l_24_48_hig.pdf",
+      "notes": "Not stackable (virtual stacking only), so names are Gi0/x. Layout inferred from WS-C2960L-24TS-LL."
+    },
+    {
+      "id": "cisco-c1111-4p",
+      "vendor": "Cisco",
+      "family": "ISR 1100",
+      "model": "C1111-4P",
+      "partNumbers": [
+        "C1111-4P"
+      ],
+      "aliases": [
+        "ISR 1111-4P",
+        "ISR1100 C1111-4P"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/1/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/1000-series-integrated-services-routers-isr/datasheet-c78-739512.html",
+      "notes": "Gi0/0/0 is an RJ45/SFP combo WAN port; Gi0/0/1 copper WAN. Gi0/1/x are LAN switch ports (L2, use VLAN SVIs); PoE on LAN ports only with the optional PoE power supply (not marked)."
+    },
+    {
+      "id": "cisco-c1111-8p",
+      "vendor": "Cisco",
+      "family": "ISR 1100",
+      "model": "C1111-8P",
+      "partNumbers": [
+        "C1111-8P"
+      ],
+      "aliases": [
+        "ISR 1111-8P",
+        "ISR1100 C1111-8P"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/1/{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/1000-series-integrated-services-routers-isr/datasheet-c78-739512.html",
+      "notes": "Gi0/0/0 is an RJ45/SFP combo WAN port; Gi0/0/1 copper WAN. Gi0/1/x are LAN switch ports (L2, use VLAN SVIs); PoE on LAN ports only with the optional PoE power supply (not marked)."
+    },
+    {
+      "id": "cisco-c1121-8p",
+      "vendor": "Cisco",
+      "family": "ISR 1100",
+      "model": "C1121-8P",
+      "partNumbers": [
+        "C1121-8P"
+      ],
+      "aliases": [
+        "ISR 1121-8P",
+        "ISR1100 C1121-8P"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/1/{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/1000-series-integrated-services-routers-isr/datasheet-c78-739512.html",
+      "notes": "Gi0/0/0 is an RJ45/SFP combo WAN port; Gi0/0/1 copper WAN. Gi0/1/x are LAN switch ports (L2, use VLAN SVIs); PoE on LAN ports only with the optional PoE power supply (not marked). C1121 naming assumed identical to C1111 (datasheet confirms 1 combo + 1 copper WAN, 8 LAN)."
+    },
+    {
+      "id": "cisco-isr4221",
+      "vendor": "Cisco",
+      "family": "ISR 4000",
+      "model": "ISR4221",
+      "partNumbers": [
+        "ISR4221/K9",
+        "ISR4221-SEC/K9",
+        "ISR4221-AX/K9"
+      ],
+      "aliases": [
+        "ISR 4221",
+        "ISR4221"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/data_sheet-c78-732542.html",
+      "notes": "Gi0/0/1 is RJ45/SFP combo. No dedicated management port; console/aux share one RJ45 port. NIM/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-isr4321",
+      "vendor": "Cisco",
+      "family": "ISR 4000",
+      "model": "ISR4321",
+      "partNumbers": [
+        "ISR4321/K9",
+        "ISR4321-SEC/K9",
+        "ISR4321-AX/K9"
+      ],
+      "aliases": [
+        "ISR 4321",
+        "ISR4321"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/data_sheet-c78-732542.html",
+      "notes": "Gi0/0/1 is RJ45/SFP combo (datasheet: 2 RJ45, 1 SFP). NIM/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-isr4331",
+      "vendor": "Cisco",
+      "family": "ISR 4000",
+      "model": "ISR4331",
+      "partNumbers": [
+        "ISR4331/K9",
+        "ISR4331-SEC/K9",
+        "ISR4331-AX/K9"
+      ],
+      "aliases": [
+        "ISR 4331",
+        "ISR4331"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/2",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/data_sheet-c78-732542.html",
+      "notes": "Datasheet: 3 GE ports, 2 RJ45 + 2 SFP; Gi0/0/0 is combo, Gi0/0/2 SFP-only. NIM/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-isr4351",
+      "vendor": "Cisco",
+      "family": "ISR 4000",
+      "model": "ISR4351",
+      "partNumbers": [
+        "ISR4351/K9",
+        "ISR4351-SEC/K9",
+        "ISR4351-AX/K9"
+      ],
+      "aliases": [
+        "ISR 4351",
+        "ISR4351"
+      ],
+      "type": "router",
+      "uHeight": 2,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/data_sheet-c78-732542.html",
+      "notes": "All 3 onboard GE ports are RJ45/SFP combo. NIM/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-isr4431",
+      "vendor": "Cisco",
+      "family": "ISR 4000",
+      "model": "ISR4431",
+      "partNumbers": [
+        "ISR4431/K9",
+        "ISR4431-SEC/K9",
+        "ISR4431-AX/K9"
+      ],
+      "aliases": [
+        "ISR 4431",
+        "ISR4431"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/data_sheet-c78-732542.html",
+      "notes": "All 4 onboard GE ports are RJ45/SFP combo. NIM/SM module ports and AUX not included."
+    },
+    {
+      "id": "cisco-c8200-1n-4t",
+      "vendor": "Cisco",
+      "family": "Catalyst 8200",
+      "model": "C8200-1N-4T",
+      "partNumbers": [
+        "C8200-1N-4T"
+      ],
+      "aliases": [
+        "Catalyst 8200-1N-4T"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 2,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/catalyst-8200-series-edge-platforms/nb-06-cat8200-series-edge-plat-ds-cte-en.html",
+      "notes": "Gi0/0/0-1 RJ45, Gi0/0/2-3 SFP. NIM/PIM slot modules not included. No out-of-band management port."
+    },
+    {
+      "id": "cisco-c8300-1n1s-6t",
+      "vendor": "Cisco",
+      "family": "Catalyst 8300",
+      "model": "C8300-1N1S-6T",
+      "partNumbers": [
+        "C8300-1N1S-6T"
+      ],
+      "aliases": [
+        "Catalyst 8300-1N1S-6T"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 4,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/catalyst-8300-series-edge-platforms/datasheet-c78-744088.html",
+      "notes": "Gi0/0/0-3 RJ45, Gi0/0/4-5 SFP. NIM/SM modules not included. No out-of-band management port."
+    },
+    {
+      "id": "cisco-meraki-mx64",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MX",
+      "model": "MX64",
+      "partNumbers": [
+        "MX64-HW"
+      ],
+      "aliases": [
+        "Meraki MX64"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Internet",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/dam/m/en_sg/assets/pdfs/meraki-security-datasheet.pdf",
+      "notes": "Meraki has no CLI; names follow the Dashboard (Internet = WAN uplink, other ports numbered as on the chassis). Port 2 can be set as a second WAN."
+    },
+    {
+      "id": "cisco-meraki-mx67",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MX",
+      "model": "MX67",
+      "partNumbers": [
+        "MX67-HW"
+      ],
+      "aliases": [
+        "Meraki MX67"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Internet 1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/dam/m/en_sg/assets/pdfs/meraki-security-datasheet.pdf",
+      "notes": "Meraki has no CLI; names follow the Dashboard (Internet = WAN uplink, other ports numbered as on the chassis). Port 2 is configurable as Internet 2."
+    },
+    {
+      "id": "cisco-meraki-mx68",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MX",
+      "model": "MX68",
+      "partNumbers": [
+        "MX68-HW"
+      ],
+      "aliases": [
+        "Meraki MX68"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Internet {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 11,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/dam/m/en_sg/assets/pdfs/meraki-security-datasheet.pdf",
+      "notes": "Meraki has no CLI; names follow the Dashboard (Internet = WAN uplink, other ports numbered as on the chassis). 2 PoE+ LAN ports (60 W total), assumed to be ports 11-12."
+    },
+    {
+      "id": "cisco-meraki-mx75",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MX",
+      "model": "MX75",
+      "partNumbers": [
+        "MX75-HW"
+      ],
+      "aliases": [
+        "Meraki MX75"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Internet {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 3,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 11,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        }
+      ],
+      "verified": false,
+      "source": "https://documentation.meraki.com/SASE_and_SD-WAN/MX/Product_Information/Overviews_and_Datasheets/WAN_Behavior_on_MX75//85//95//105",
+      "notes": "Meraki has no CLI; names follow the Dashboard (Internet = WAN uplink, other ports numbered as on the chassis). One WAN RJ45 is paired with an SFP (shared media, listed once). 2 PoE+ LAN ports assumed to be 11-12."
+    },
+    {
+      "id": "cisco-meraki-mx85",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MX",
+      "model": "MX85",
+      "partNumbers": [
+        "MX85-HW"
+      ],
+      "aliases": [
+        "Meraki MX85"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Internet {n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Internet {n}",
+          "start": 3,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 13,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.cisco.com/c/dam/m/en_sg/assets/pdfs/meraki-security-datasheet.pdf",
+      "notes": "Meraki has no CLI; names follow the Dashboard (Internet = WAN uplink, other ports numbered as on the chassis). 2x RJ45 + 2x SFP WAN (one RJ45 WAN has PoE+ out), 8x RJ45 + 2x SFP LAN, dedicated management port. Port numbering to confirm."
+    },
+    {
+      "id": "cisco-meraki-ms120-8",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MS120",
+      "model": "MS120-8",
+      "partNumbers": [
+        "MS120-8-HW"
+      ],
+      "aliases": [
+        "Meraki MS120-8"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://meraki.cisco.com/wp-content/uploads/2020/10/meraki_datasheet_ms120_compact.pdf",
+      "notes": "Cloud-managed; Dashboard numbers ports 1..N with SFP uplinks continuing the numbering."
+    },
+    {
+      "id": "cisco-meraki-ms120-8lp",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MS120",
+      "model": "MS120-8LP",
+      "partNumbers": [
+        "MS120-8LP-HW"
+      ],
+      "aliases": [
+        "Meraki MS120-8LP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://meraki.cisco.com/wp-content/uploads/2020/10/meraki_datasheet_ms120_compact.pdf",
+      "notes": "Cloud-managed; Dashboard numbers ports 1..N with SFP uplinks continuing the numbering."
+    },
+    {
+      "id": "cisco-meraki-ms120-24p",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MS120",
+      "model": "MS120-24P",
+      "partNumbers": [
+        "MS120-24P-HW"
+      ],
+      "aliases": [
+        "Meraki MS120-24P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://meraki.cisco.com/wp-content/uploads/2020/10/meraki_datasheet_ms120_compact.pdf",
+      "notes": "Cloud-managed; Dashboard numbers ports 1..N with SFP uplinks continuing the numbering. Management port is for the local status page."
+    },
+    {
+      "id": "cisco-meraki-ms120-48lp",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MS120",
+      "model": "MS120-48LP",
+      "partNumbers": [
+        "MS120-48LP-HW"
+      ],
+      "aliases": [
+        "Meraki MS120-48LP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://meraki.cisco.com/wp-content/uploads/2020/10/meraki_datasheet_ms120_compact.pdf",
+      "notes": "Cloud-managed; Dashboard numbers ports 1..N with SFP uplinks continuing the numbering. Management port is for the local status page."
+    },
+    {
+      "id": "cisco-meraki-mr36",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MR",
+      "model": "MR36",
+      "partNumbers": [
+        "MR36-HW"
+      ],
+      "aliases": [
+        "Meraki MR36"
+      ],
+      "type": "access_point",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Ethernet 0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://documentation.meraki.com/Wireless/Install_and_Get_Started/Installation_Guides/MR36_Installation_Guide",
+      "notes": "Wi-Fi 6 AP, single PoE (802.3af) uplink port."
+    },
+    {
+      "id": "cisco-meraki-mr44",
+      "vendor": "Cisco Meraki",
+      "family": "Meraki MR",
+      "model": "MR44",
+      "partNumbers": [
+        "MR44-HW"
+      ],
+      "aliases": [
+        "Meraki MR44"
+      ],
+      "type": "access_point",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Ethernet 0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        }
+      ],
+      "verified": true,
+      "source": "https://documentation.meraki.com/Wireless/Install_and_Get_Started/Installation_Guides/MR44_Installation_Guide",
+      "notes": "Wi-Fi 6 AP, single 2.5G mGig PoE uplink (needs 802.3at for 2.5G/full radios)."
+    },
+    {
+      "id": "fortinet-fortigate-40f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 40F",
+      "partNumbers": [
+        "FG-40F"
+      ],
+      "aliases": [
+        "FG-40F",
+        "FGT-40F",
+        "FortiGate-40F",
+        "FGT40F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "lan{n}",
+          "start": 1,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.6.0/hardware-acceleration/965349/fortigate-40f-fast-path-architecture",
+      "notes": "lan1-lan3 form the default 'lan' hardware switch; 'a' is the default FortiLink port."
+    },
+    {
+      "id": "fortinet-fortigate-60f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 60F",
+      "partNumbers": [
+        "FG-60F"
+      ],
+      "aliases": [
+        "FG-60F",
+        "FGT-60F",
+        "FortiGate-60F",
+        "FGT60F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "dmz",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "internal{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.6.0/hardware-acceleration/758378/fortigate-60f-and-61f-fast-path-architecture",
+      "notes": "Front-panel ports 1-5 are internal1-internal5 (default 'internal' hardware switch); a/b are FortiLink."
+    },
+    {
+      "id": "fortinet-fortigate-61f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 61F",
+      "partNumbers": [
+        "FG-61F"
+      ],
+      "aliases": [
+        "FG-61F",
+        "FGT-61F",
+        "FortiGate-61F",
+        "FGT61F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "dmz",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "internal{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.6.0/hardware-acceleration/758378/fortigate-60f-and-61f-fast-path-architecture",
+      "notes": "Front-panel ports 1-5 are internal1-internal5 (default 'internal' hardware switch); a/b are FortiLink. 61F adds 128 GB storage."
+    },
+    {
+      "id": "fortinet-fortigate-70f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 70F",
+      "partNumbers": [
+        "FG-70F"
+      ],
+      "aliases": [
+        "FG-70F",
+        "FGT-70F",
+        "FortiGate-70F",
+        "FGT70F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "dmz",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "internal{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.6.0/hardware-acceleration/749156/fortigate-70f-and-71f-fast-path-architecture",
+      "notes": "Front-panel ports 1-5 are internal1-internal5; a/b are FortiLink."
+    },
+    {
+      "id": "fortinet-fortigate-80f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 80F",
+      "partNumbers": [
+        "FG-80F"
+      ],
+      "aliases": [
+        "FG-80F",
+        "FGT-80F",
+        "FortiGate-80F",
+        "FGT80F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "internal{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.2.3/hardware-acceleration/300792/fortigate-80f-81f-and-80f-bypass-fast-path-architecture",
+      "notes": "wan1/wan2 are RJ45/SFP shared-media ports (SFP1/SFP2, one active at a time, listed once). Front-panel ports 1-6 show as internal1-internal6 in FortiOS (not port1-6). a/b are FortiLink."
+    },
+    {
+      "id": "fortinet-fortigate-81f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 81F",
+      "partNumbers": [
+        "FG-81F"
+      ],
+      "aliases": [
+        "FG-81F",
+        "FGT-81F",
+        "FortiGate-81F",
+        "FGT81F"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "internal{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.2.3/hardware-acceleration/300792/fortigate-80f-81f-and-80f-bypass-fast-path-architecture",
+      "notes": "wan1/wan2 are RJ45/SFP shared-media ports (SFP1/SFP2, one active at a time, listed once). Front-panel ports 1-6 show as internal1-internal6 in FortiOS (not port1-6). a/b are FortiLink. 81F adds storage."
+    },
+    {
+      "id": "fortinet-fortigate-90g",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 90G",
+      "partNumbers": [
+        "FG-90G"
+      ],
+      "aliases": [
+        "FG-90G",
+        "FGT-90G",
+        "FortiGate-90G",
+        "FGT90G"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "10G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/8.0.0/hardware-acceleration/403368/fortigate-90g-and-91g-fast-path-architecture",
+      "notes": "wan1/wan2 are 10G RJ45/SFP+ shared-media ports (listed once). Gen2 units (P/N -11-01 and later) name them x1/x2 and use them as default FortiLink."
+    },
+    {
+      "id": "fortinet-fortigate-100f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 100F",
+      "partNumbers": [
+        "FG-100F"
+      ],
+      "aliases": [
+        "FG-100F",
+        "FGT-100F",
+        "FortiGate-100F",
+        "FGT100F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "dmz",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 13,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/42d64717-83f1-11e9-81a4-00505692583a/FG-100F-QSG.pdf",
+      "notes": "port17-port20 are RJ45/SFP shared media (listed once as RJ45); port13-port16 SFP-only (inferred from datasheet counts); x1/x2 10G SFP+ FortiLink."
+    },
+    {
+      "id": "fortinet-fortigate-101f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 101F",
+      "partNumbers": [
+        "FG-101F"
+      ],
+      "aliases": [
+        "FG-101F",
+        "FGT-101F",
+        "FortiGate-101F",
+        "FGT101F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "wan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "dmz",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 13,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/42d64717-83f1-11e9-81a4-00505692583a/FG-100F-QSG.pdf",
+      "notes": "port17-port20 are RJ45/SFP shared media (listed once as RJ45); port13-port16 SFP-only (inferred from datasheet counts); x1/x2 10G SFP+ FortiLink. 101F adds 480 GB SSD."
+    },
+    {
+      "id": "fortinet-fortigate-120g",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 120G",
+      "partNumbers": [
+        "FG-120G"
+      ],
+      "aliases": [
+        "FG-120G",
+        "FGT-120G",
+        "FortiGate-120G",
+        "FGT120G"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/8.0.1/hardware-acceleration/221839/fortigate-120g-and-121g-fast-path-architecture",
+      "notes": "x1-x4 are default FortiLink ports."
+    },
+    {
+      "id": "fortinet-fortigate-200f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 200F",
+      "partNumbers": [
+        "FG-200F"
+      ],
+      "aliases": [
+        "FG-200F",
+        "FGT-200F",
+        "FortiGate-200F",
+        "FGT200F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/8.0.0/hardware-acceleration/336140/fortigate-200f-and-201f-fast-path-architecture",
+      "notes": "x3/x4 are default FortiLink ports."
+    },
+    {
+      "id": "fortinet-fortigate-201f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 201F",
+      "partNumbers": [
+        "FG-201F"
+      ],
+      "aliases": [
+        "FG-201F",
+        "FGT-201F",
+        "FortiGate-201F",
+        "FGT201F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/8.0.0/hardware-acceleration/336140/fortigate-200f-and-201f-fast-path-architecture",
+      "notes": "x3/x4 are default FortiLink ports. 201F adds storage."
+    },
+    {
+      "id": "fortinet-fortigate-400f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 400F",
+      "partNumbers": [
+        "FG-400F"
+      ],
+      "aliases": [
+        "FG-400F",
+        "FGT-400F",
+        "FortiGate-400F",
+        "FGT400F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 8,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/7.6.4/hardware-acceleration/785717/fortigate-400f-and-401f-fast-path-architecture",
+      "notes": "x5-x8 are ultra-low-latency ports connected directly to the NP7. port17-24 numbering for the SFP slots inferred from 200F/600F layout."
+    },
+    {
+      "id": "fortinet-fortigate-600f",
+      "vendor": "Fortinet",
+      "family": "FortiGate",
+      "model": "FortiGate 600F",
+      "partNumbers": [
+        "FG-600F"
+      ],
+      "aliases": [
+        "FG-600F",
+        "FGT-600F",
+        "FortiGate-600F",
+        "FGT600F"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "x{n}",
+          "start": 5,
+          "count": 4,
+          "media": "SFP28",
+          "speed": "25G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.fortinet.com/document/fortigate/8.0.0/hardware-acceleration/589036/fortigate-600f-and-601f-fast-path-architecture",
+      "notes": "x1/x2 default FortiLink; x5-x8 25G/10G ultra-low-latency ports (10G by default, ull-port-mode 25G)."
+    },
+    {
+      "id": "fortinet-fortiswitch-108f",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 108F",
+      "partNumbers": [
+        "FS-108F"
+      ],
+      "aliases": [
+        "FS-108F",
+        "FSW-108F"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 9,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": "Fanless; one RJ45 port can be PoE-powered (PD)."
+    },
+    {
+      "id": "fortinet-fortiswitch-124f",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 124F",
+      "partNumbers": [
+        "FS-124F"
+      ],
+      "aliases": [
+        "FS-124F",
+        "FSW-124F"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": ""
+    },
+    {
+      "id": "fortinet-fortiswitch-124f-poe",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 124F-POE",
+      "partNumbers": [
+        "FS-124F-POE"
+      ],
+      "aliases": [
+        "FS-124F-POE",
+        "FSW-124F-POE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "port{n}",
+          "start": 13,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": "Datasheet: 12 PoE+ ports, 185 W budget; which 12 ports carry PoE (assumed port1-12) to confirm."
+    },
+    {
+      "id": "fortinet-fortiswitch-148f",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 148F",
+      "partNumbers": [
+        "FS-148F"
+      ],
+      "aliases": [
+        "FS-148F",
+        "FSW-148F"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": ""
+    },
+    {
+      "id": "fortinet-fortiswitch-224e",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 224E",
+      "partNumbers": [
+        "FS-224E"
+      ],
+      "aliases": [
+        "FS-224E",
+        "FSW-224E"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": "Fanless; no dedicated management port."
+    },
+    {
+      "id": "fortinet-fortiswitch-248e-poe",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 248E-POE",
+      "partNumbers": [
+        "FS-248E-POE"
+      ],
+      "aliases": [
+        "FS-248E-POE",
+        "FSW-248E-POE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "port{n}",
+          "start": 25,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": "24 PoE+ ports (370 W), assumed port1-24; no dedicated management port."
+    },
+    {
+      "id": "fortinet-fortiswitch-424e",
+      "vendor": "Fortinet",
+      "family": "FortiSwitch",
+      "model": "FortiSwitch 424E",
+      "partNumbers": [
+        "FS-424E"
+      ],
+      "aliases": [
+        "FS-424E",
+        "FSW-424E"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiswitch-secure-access-series.pdf",
+      "notes": "Dedicated 10/100 management port."
+    },
+    {
+      "id": "fortinet-fortiap-231f",
+      "vendor": "Fortinet",
+      "family": "FortiAP",
+      "model": "FortiAP 231F",
+      "partNumbers": [
+        "FAP-231F-E",
+        "FAP-231F-A",
+        "FAP-231F-I"
+      ],
+      "aliases": [
+        "FAP-231F",
+        "FortiAP-231F"
+      ],
+      "type": "access_point",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "lan{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiap-series.pdf",
+      "notes": "Datasheet: 2x GE RJ45 (PoE in, 802.3at full / 802.3af reduced) + RJ45 serial console. Interface names lan1/lan2 to confirm."
+    },
+    {
+      "id": "fortinet-fortiap-431f",
+      "vendor": "Fortinet",
+      "family": "FortiAP",
+      "model": "FortiAP 431F",
+      "partNumbers": [
+        "FAP-431F-E",
+        "FAP-431F-A",
+        "FAP-431F-I"
+      ],
+      "aliases": [
+        "FAP-431F",
+        "FortiAP-431F"
+      ],
+      "type": "access_point",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "lan1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "lan2",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortiap-series.pdf",
+      "notes": "Datasheet: 1x 2.5G RJ45 + 1x GE RJ45 (dual 802.3at PoE in) + RJ45 serial console. Assumed lan1 = 2.5G port; confirm."
+    }
+  ]
+}

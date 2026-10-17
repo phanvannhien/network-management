@@ -81,6 +81,7 @@ Phase hiện tại: **Phase 0**
 
 ### Nhập/xuất & tiện ích
 - [x] **P1-21 Import Excel thiết bị**: file mẫu tải về, ánh xạ cột, xem trước, lỗi từng dòng, tạo mới/cập nhật theo hostname hoặc S/N, chạy nền có tiến trình; ánh xạ Site→Danh mục, Location→Site; chuẩn hóa và gộp tên gần giống; đề xuất cụm HA khi trùng IP.
+- [x] **P1-21b Thư viện thiết bị có sẵn (ADR-035)**: 359 model của 12 hãng + ONT nhà mạng, cổng đúng tên CLI; nhập Excel tự chép template từ thư viện; trang Template "Thêm từ thư viện"; thêm cổng tại chỗ dùng thư viện.
 - [ ] **P1-22 Export**: PNG (1x–4x) / SVG có legend; Excel danh sách thiết bị; `.ntb.json` export/import theo `schema/ntb.schema.json` (không có bí mật); mỗi lần export ghi audit `export.*` (từ P1-05).
 - [ ] **P1-23 Tìm kiếm toàn cục**: hostname, IP, MAC, S/N, part number, site; kết quả mở đúng trang/zoom tới node trên sơ đồ.
 - [ ] **P1-24 Dashboard cơ bản**: số thiết bị theo site/loại/trạng thái, top vấn đề validation, thiết bị thiếu thông tin.

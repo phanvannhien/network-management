@@ -1,0 +1,2589 @@
+{
+  "models": [
+    {
+      "id": "sophos-xgs-87",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 87",
+      "partNumbers": [],
+      "aliases": [
+        "XGS87",
+        "XGS-87"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/quickstart/xgs/sophos-quick-start-guide-xgs-87-87w-107-107w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Console is the COM port (RJ45/Micro-USB)."
+    },
+    {
+      "id": "sophos-xgs-87w",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 87w",
+      "partNumbers": [],
+      "aliases": [
+        "XGS87w",
+        "XGS-87w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/quickstart/xgs/sophos-quick-start-guide-xgs-87-87w-107-107w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Console is the COM port (RJ45/Micro-USB). Wi-Fi model (802.11ac radio not listed as a port)."
+    },
+    {
+      "id": "sophos-xgs-107",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 107",
+      "partNumbers": [],
+      "aliases": [
+        "XGS107",
+        "XGS 107w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/quickstart/xgs/sophos-quick-start-guide-xgs-87-87w-107-107w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Also sold as XGS 107w (Wi-Fi)."
+    },
+    {
+      "id": "sophos-xgs-116",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 116",
+      "partNumbers": [],
+      "aliases": [
+        "XGS116",
+        "XGS 116w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 7,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 8,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-116-116w-126-126w-136-136w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Port8 is PoE 802.3at (30 W). Also sold as XGS 116w. Expansion bay (VDSL/LTE/Wi-Fi module) not listed."
+    },
+    {
+      "id": "sophos-xgs-126",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 126",
+      "partNumbers": [],
+      "aliases": [
+        "XGS126",
+        "XGS 126w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 10,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 11,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-116-116w-126-126w-136-136w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Port11-12 PoE 802.3at (30 W each). Also sold as XGS 126w."
+    },
+    {
+      "id": "sophos-xgs-136",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 136",
+      "partNumbers": [],
+      "aliases": [
+        "XGS136",
+        "XGS 136w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 10,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 11,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-116-116w-126-126w-136-136w.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Port11-12 are 2.5GbE PoE 802.3at. Also sold as XGS 136w."
+    },
+    {
+      "id": "sophos-xgs-2100",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 2100",
+      "partNumbers": [],
+      "aliases": [
+        "XGS2100"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortMGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-2100-2300-3100-3300.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Dedicated MGMT port = PortMGMT (10.0.1.1). Port1/2 bypass pair. One Flexi Port slot not listed."
+    },
+    {
+      "id": "sophos-xgs-2300",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 2300",
+      "partNumbers": [],
+      "aliases": [
+        "XGS2300"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortMGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-2100-2300-3100-3300.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Dedicated MGMT port = PortMGMT (10.0.1.1). Port1/2 bypass pair. One Flexi Port slot not listed."
+    },
+    {
+      "id": "sophos-xgs-3100",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 3100",
+      "partNumbers": [],
+      "aliases": [
+        "XGS3100"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 3,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortMGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-2100-2300-3100-3300.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. F1-F2 SFP+, F3-F4 SFP. Port1/2 bypass pair. One Flexi Port slot not listed."
+    },
+    {
+      "id": "sophos-xgs-4300",
+      "vendor": "Sophos",
+      "family": "Sophos Firewall XGS",
+      "model": "XGS 4300",
+      "partNumbers": [],
+      "aliases": [
+        "XGS4300"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 5,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "PortMGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-4300-4500.pdf",
+      "notes": "SFOS names copper ports PortN and SFP ports PortF1/PortF2. Two bypass pairs (Port1/2, Port3/4). Two Flexi Port slots not listed."
+    },
+    {
+      "id": "sophos-xg-86",
+      "vendor": "Sophos",
+      "family": "Sophos XG Firewall",
+      "model": "XG 86",
+      "partNumbers": [],
+      "aliases": [
+        "XG86",
+        "XG 86w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/xg/sophos-operating-instructions-xg-86-86w-rev1-oina.pdf",
+      "notes": "End of sale; replaced by XGS 87. Also XG 86w."
+    },
+    {
+      "id": "sophos-xg-106",
+      "vendor": "Sophos",
+      "family": "Sophos XG Firewall",
+      "model": "XG 106",
+      "partNumbers": [],
+      "aliases": [
+        "XG106",
+        "XG 106w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 5,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.sophos.com/en-us/medialibrary/PDFs/factsheets/sophos-xg-series-hardware-br.pdf",
+      "notes": "End of sale. 4 GbE copper + 1 GbE SFP (shared); SFP interface name in SFOS not verified."
+    },
+    {
+      "id": "sophos-xg-125",
+      "vendor": "Sophos",
+      "family": "Sophos XG Firewall",
+      "model": "XG 125",
+      "partNumbers": [],
+      "aliases": [
+        "XG125",
+        "XG 125w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 9,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.sophos.com/en-us/medialibrary/PDFs/factsheets/sophos-xg-series-hardware-br.pdf",
+      "notes": "End of sale. 8 GbE copper + 1 GbE SFP per brochure; SFP interface name in SFOS not verified. Expansion slot not listed."
+    },
+    {
+      "id": "sophos-xg-135",
+      "vendor": "Sophos",
+      "family": "Sophos XG Firewall",
+      "model": "XG 135",
+      "partNumbers": [],
+      "aliases": [
+        "XG135",
+        "XG 135w"
+      ],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 9,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.sophos.com/en-us/medialibrary/PDFs/factsheets/sophos-xg-series-hardware-br.pdf",
+      "notes": "End of sale. 8 GbE copper + 1 GbE SFP per brochure; SFP interface name in SFOS not verified. Expansion slot not listed."
+    },
+    {
+      "id": "sophos-cs110-24fp",
+      "vendor": "Sophos",
+      "family": "Sophos Switch 100 Series",
+      "model": "CS110-24FP",
+      "partNumbers": [
+        "C12CTCHEU"
+      ],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/switch/sophos-operating-instructions-sophos-switch-series.pdf",
+      "notes": "PoE 802.3af/at, 410 W budget. Port naming as in the switch web UI (port numbers)."
+    },
+    {
+      "id": "sophos-cs210-24fp",
+      "vendor": "Sophos",
+      "family": "Sophos Switch 200 Series",
+      "model": "CS210-24FP",
+      "partNumbers": [],
+      "aliases": [],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 17,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.sophos.com/nsg/hardware/operatinginstructions/switch/sophos-operating-instructions-sophos-switch-series.pdf",
+      "notes": "PoE 802.3af/at, 410 W budget. Port naming as in the switch web UI (port numbers)."
+    },
+    {
+      "id": "paloalto-pa-410",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-410",
+      "partNumbers": [
+        "PAN-PA-410"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 7,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": "7 RJ45 data ports; MGT out-of-band port."
+    },
+    {
+      "id": "paloalto-pa-415",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-415",
+      "partNumbers": [
+        "PAN-PA-415"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 6,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": "ethernet1/1 and mgmt are SFP/RJ45 combo ports (listed as RJ45). Ports 6-9 PoE, 91 W budget. Requires PAN-OS 11.0+."
+    },
+    {
+      "id": "paloalto-pa-445",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-445",
+      "partNumbers": [
+        "PAN-PA-445"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 2,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 6,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": "ethernet1/1 and mgmt are SFP/RJ45 combo ports (listed as RJ45). Ports 6-9 PoE, 91 W budget. Requires PAN-OS 11.0+."
+    },
+    {
+      "id": "paloalto-pa-440",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-440",
+      "partNumbers": [
+        "PAN-PA-440"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": ""
+    },
+    {
+      "id": "paloalto-pa-450",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-450",
+      "partNumbers": [
+        "PAN-PA-450"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": ""
+    },
+    {
+      "id": "paloalto-pa-460",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-400 Series",
+      "model": "PA-460",
+      "partNumbers": [
+        "PAN-PA-460"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel",
+      "notes": ""
+    },
+    {
+      "id": "paloalto-pa-1410",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-1400 Series",
+      "model": "PA-1410",
+      "partNumbers": [
+        "PAN-PA-1410"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 9,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "5G",
+          "poe": true
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 13,
+          "count": 6,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 19,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ha1-a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha1-b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "hsci",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-1400-hardware-reference/pa-1400-series-overview/front-panel-1400-series",
+      "notes": "Ports 9-12 PoE (151 W budget). Dedicated HA1-A/HA1-B and HSCI (HA2/HA3) ports."
+    },
+    {
+      "id": "paloalto-pa-1420",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-1400 Series",
+      "model": "PA-1420",
+      "partNumbers": [
+        "PAN-PA-1420"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 5,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "5G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 9,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "5G",
+          "poe": true
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 13,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 15,
+          "count": 8,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ha1-a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha1-b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "hsci",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-1400-hardware-reference/pa-1400-series-overview/front-panel-1400-series",
+      "notes": "Ports 9-12 PoE (151 W budget). Dedicated HA1-A/HA1-B and HSCI (HA2/HA3) ports."
+    },
+    {
+      "id": "paloalto-pa-3410",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-3400 Series",
+      "model": "PA-3410",
+      "partNumbers": [
+        "PAN-PA-3410"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 13,
+          "count": 10,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 23,
+          "count": 4,
+          "media": "SFP28",
+          "speed": "25G"
+        },
+        {
+          "pattern": "ha1-a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha1-b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "hsci",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-3400-hardware-reference/pa-3400-series-overview/front-panel-3400-series",
+      "notes": "RJ45 1-12 are multi-gig 1/2.5/5/10G. Dedicated HA1-A/HA1-B (RJ45) and HSCI (SFP+)."
+    },
+    {
+      "id": "paloalto-pa-220",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-220",
+      "model": "PA-220",
+      "partNumbers": [
+        "PAN-PA-220"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-220-hardware-reference",
+      "notes": "End of sale. Port counts from memory, not re-checked against the datasheet."
+    },
+    {
+      "id": "paloalto-pa-820",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-800 Series",
+      "model": "PA-820",
+      "partNumbers": [
+        "PAN-PA-820"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 5,
+          "count": 8,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha2",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-800-hardware-reference/pa-800-firewall-overview/pa-800-front-panel",
+      "notes": "Dedicated HA1/HA2 RJ45 ports. End of life 2029; successor PA-1400."
+    },
+    {
+      "id": "paloalto-pa-850",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-800 Series",
+      "model": "PA-850",
+      "partNumbers": [
+        "PAN-PA-850"
+      ],
+      "aliases": [],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 5,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 9,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ha1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha2",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://docs.paloaltonetworks.com/hardware/pa-800-hardware-reference/pa-800-firewall-overview/pa-800-front-panel",
+      "notes": "Ports 9-12 are SFP+ by default, can be switched as a group to SFP. Dedicated HA1/HA2 RJ45 ports."
+    },
+    {
+      "id": "draytek-vigor2620ln",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2620Ln",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2620Ln",
+        "Vigor2620 LTE"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "xDSL"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LTE",
+          "start": 1,
+          "count": 1,
+          "media": "Cellular"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.co.uk/products/business/vigor-2620ln",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. WAN1 = VDSL2/ADSL2+ RJ-11; P2 can be Ethernet WAN; embedded LTE with dual SIM."
+    },
+    {
+      "id": "draytek-vigor2765",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2765",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2765",
+        "Vigor2765ac",
+        "Vigor2765ax"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "xDSL"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor2765/",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. WAN1 = VDSL2 35b/ADSL2+ RJ-11; P4 switchable to Ethernet WAN2. Variants ac/ax/Vac."
+    },
+    {
+      "id": "draytek-vigor2865",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2865",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2865",
+        "Vigor2865ac",
+        "Vigor2865Vac"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "xDSL"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor2865/",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. WAN1 = VDSL2 35b/ADSL2+ RJ-11; P6 switchable to Ethernet WAN2. Variants ac/Vac/L."
+    },
+    {
+      "id": "draytek-vigor2865ax",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2865ax",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2865ax"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "xDSL"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.techradar.com/reviews/draytek-vigor2865ax-review",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. WAN1 = VDSL2 35b/ADSL2+ RJ-11; P6 = WAN2/LAN switchable. Wi-Fi 6."
+    },
+    {
+      "id": "draytek-vigor2866",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2866",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2866",
+        "Vigor2866ax",
+        "Vigor2866ac"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "xDSL"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor2866/",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. WAN1 = G.fast/VDSL2 35b/ADSL2+ RJ-11; P6 switchable to Ethernet WAN2."
+    },
+    {
+      "id": "draytek-vigor2133",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2133",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2133",
+        "Vigor2133ac",
+        "Vigor2133ax"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor2133/",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. FVac variant has 1G SFP WAN instead of RJ45."
+    },
+    {
+      "id": "draytek-vigor2135ax",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2135ax",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2135ax",
+        "Vigor2135"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.provu.co.uk/products/draytek/Vigor2135ax/Vigor2135ax.pdf",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. All ports Gigabit (2.5G is Vigor2136)."
+    },
+    {
+      "id": "draytek-vigor2915",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2915",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2915",
+        "Vigor2915ac"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://draytek.pl/wp-content/uploads/2020/03/datasheet_seriavigor2915_en.pdf",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. P4 switchable to WAN2. Discontinued."
+    },
+    {
+      "id": "draytek-vigor2927",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2927",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2927",
+        "Vigor2927ac",
+        "Vigor2927Vac"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor2927/",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. P6 switchable to WAN2. Vigor2927F adds SFP WAN (not listed)."
+    },
+    {
+      "id": "draytek-vigor2927ax",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2927ax",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2927ax"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytekusa.com/product/vigor-2927-series",
+      "notes": "Names follow the router UI: WAN1 = fixed WAN, Pn = front-panel LAN ports. P6 switchable to WAN2. Wi-Fi 6."
+    },
+    {
+      "id": "draytek-vigor2962",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor2962",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 2962"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 2,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 3,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.draytek.com/products/vigor2962/",
+      "notes": "P1 2.5GbE, P2 SFP/RJ45 combo (listed as RJ45), P3-P4 GbE - P1-P4 WAN/LAN switchable (max 2 WAN at once); 2 fixed GbE LAN. Numbering of the fixed LAN ports (P5-P6) and console port not verified."
+    },
+    {
+      "id": "draytek-vigor3910",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor3910",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 3910"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 3,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 5,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/assets/online_manuals/pdf/DrayTek_QS_Vigor3910_V1.7.pdf",
+      "notes": "P1-P8 WAN/LAN switchable (WAN1-WAN8), P9-P12 LAN. RJ45 console. Discontinued; successor Vigor3912."
+    },
+    {
+      "id": "draytek-vigor3912s",
+      "vendor": "DrayTek",
+      "family": "Vigor",
+      "model": "Vigor3912S",
+      "partNumbers": [],
+      "aliases": [
+        "Vigor 3912S",
+        "Vigor3912"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 3,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 5,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigor3912/",
+      "notes": "Same port layout as Vigor3910: P1-P8 WAN/LAN switchable, P9-P12 LAN. 256 GB SSD for Linux apps."
+    },
+    {
+      "id": "draytek-vigorswitch-g1080",
+      "vendor": "DrayTek",
+      "family": "VigorSwitch",
+      "model": "VigorSwitch G1080",
+      "partNumbers": [
+        "VSG1080-K"
+      ],
+      "aliases": [
+        "G1080",
+        "VSG1080"
+      ],
+      "type": "l2_switch",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigorswitch-g1080/",
+      "notes": "Smart Lite web-managed, USB-powered."
+    },
+    {
+      "id": "draytek-vigorswitch-g1282",
+      "vendor": "DrayTek",
+      "family": "VigorSwitch",
+      "model": "VigorSwitch G1282",
+      "partNumbers": [],
+      "aliases": [
+        "G1282",
+        "VSG1282"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigorswitch-g1282/",
+      "notes": "Ports 25-28 are GbE/SFP combo (listed as RJ45). Web smart, no console."
+    },
+    {
+      "id": "draytek-vigorswitch-p2280x",
+      "vendor": "DrayTek",
+      "family": "VigorSwitch",
+      "model": "VigorSwitch P2280x",
+      "partNumbers": [
+        "VSP2280X-K"
+      ],
+      "aliases": [
+        "P2280x",
+        "VSP2280x"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigorswitch-p2280x/",
+      "notes": "PoE/PoE+ 400 W budget. L2+ managed. Port naming as port numbers (not verified against CLI)."
+    },
+    {
+      "id": "draytek-vigorswitch-p2540xs",
+      "vendor": "DrayTek",
+      "family": "VigorSwitch",
+      "model": "VigorSwitch P2540xs",
+      "partNumbers": [],
+      "aliases": [
+        "P2540xs",
+        "VSP2540xs"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 49,
+          "count": 6,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.draytek.com/products/vigorswitch-p2540x",
+      "notes": "PoE+ 400 W budget. L2+ managed. Port naming as port numbers (not verified against CLI)."
+    },
+    {
+      "id": "ruijie-rg-es208gc",
+      "vendor": "Ruijie",
+      "family": "Reyee ES",
+      "model": "RG-ES208GC",
+      "partNumbers": [],
+      "aliases": [
+        "ES208GC"
+      ],
+      "type": "l2_switch",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/smart-cctv-switch/es208gc/",
+      "notes": "Reyee cloud-managed switch; ports named by number as on the panel/eWeb. Non-PoE. No 'RG-ES208GC-P' model was found; PoE 8-port sibling is RG-ES209GC-P."
+    },
+    {
+      "id": "ruijie-rg-es209gc-p",
+      "vendor": "Ruijie",
+      "family": "Reyee ES",
+      "model": "RG-ES209GC-P",
+      "partNumbers": [],
+      "aliases": [
+        "ES209GC-P"
+      ],
+      "type": "poe_switch",
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 9,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://sysnetcenter.com/documents/ruijie/RG-ES200-Series%20Switches%20Hardware%20Installation%20and%20Reference%20Guide%20(V1.2).pdf",
+      "notes": "Reyee cloud-managed switch; ports named by number as on the panel/eWeb. Ports 1-8 PoE/PoE+, 120 W budget; port 9 uplink."
+    },
+    {
+      "id": "ruijie-rg-es218gc-p",
+      "vendor": "Ruijie",
+      "family": "Reyee ES",
+      "model": "RG-ES218GC-P",
+      "partNumbers": [],
+      "aliases": [
+        "ES218GC-P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/smart-cctv-switch/es218gc-p/",
+      "notes": "Reyee cloud-managed switch; ports named by number as on the panel/eWeb. PoE/PoE+ 240 W budget."
+    },
+    {
+      "id": "ruijie-rg-es226gc-p",
+      "vendor": "Ruijie",
+      "family": "Reyee ES",
+      "model": "RG-ES226GC-P",
+      "partNumbers": [],
+      "aliases": [
+        "ES226GC-P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/smart-cctv-switch/es226gc-p/",
+      "notes": "Reyee cloud-managed switch; ports named by number as on the panel/eWeb. PoE/PoE+ 370 W budget."
+    },
+    {
+      "id": "ruijie-rg-es224gc",
+      "vendor": "Ruijie",
+      "family": "Reyee ES",
+      "model": "RG-ES224GC",
+      "partNumbers": [],
+      "aliases": [
+        "ES224GC"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/",
+      "notes": "Reyee cloud-managed switch; ports named by number as on the panel/eWeb. 24 GbE non-PoE; port layout not checked against datasheet."
+    },
+    {
+      "id": "ruijie-rg-nbs3100-24gt4sfp",
+      "vendor": "Ruijie",
+      "family": "Reyee NBS3100",
+      "model": "RG-NBS3100-24GT4SFP",
+      "partNumbers": [
+        "RG-NBS3100-24GT4SFP",
+        "RG-NBS3100-24GT4SFP-V2"
+      ],
+      "aliases": [
+        "NBS3100-24GT4SFP",
+        "RG-NBS3100-24GT4SFP-V2"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Gi{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Gi{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/l2-managed-switch/310024gt4sfpv1/",
+      "notes": "ReyeeOS eWeb names ports Gi<n> (GE) and Te<n> (10G). Uplink names Gi25-Gi28 inferred from naming rule. PoE sibling: -P."
+    },
+    {
+      "id": "ruijie-rg-nbs3200-24gt4xs",
+      "vendor": "Ruijie",
+      "family": "Reyee NBS3200",
+      "model": "RG-NBS3200-24GT4XS",
+      "partNumbers": [],
+      "aliases": [
+        "NBS3200-24GT4XS"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Gi{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Te{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-switch/l2-managed-switch/rg-nbs3200-24gt4xs/",
+      "notes": "ReyeeOS eWeb names ports Gi<n> (GE) and Te<n> (10G). L2+; no serial console (managed via Ethernet/web)."
+    },
+    {
+      "id": "ruijie-rg-nbs5200-24sfp-8gt4xs",
+      "vendor": "Ruijie",
+      "family": "Reyee NBS5200",
+      "model": "RG-NBS5200-24SFP/8GT4XS",
+      "partNumbers": [],
+      "aliases": [
+        "NBS5200-24SFP/8GT4XS"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Gi{n}",
+          "start": 1,
+          "count": 16,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Gi{n}",
+          "start": 17,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Te{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.getic.com/files/catalogue/4401/rges200series_qig-648c5663349bc.pdf",
+      "notes": "ReyeeOS eWeb names ports Gi<n> (GE) and Te<n> (10G). 24 SFP of which 8 are SFP/RJ45 combo (listed as RJ45) + 4 SFP+. Which 8 ports are combo (assumed 17-24) and console presence not verified."
+    },
+    {
+      "id": "ruijie-rg-s2910-24gt4xs-e",
+      "vendor": "Ruijie",
+      "family": "RG-S2910-E",
+      "model": "RG-S2910-24GT4XS-E",
+      "partNumbers": [],
+      "aliases": [
+        "S2910-24GT4XS-E"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet 0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet 0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://vn.ruijie.com/products/switches/campus-switches/RG-S2910-24GT4XS-E/",
+      "notes": "RGOS CLI names: GigabitEthernet 0/n, TenGigabitEthernet 0/n (standalone; VSU stack adds member number). L2+ access switch."
+    },
+    {
+      "id": "ruijie-rg-s5310-24gt4xs-e",
+      "vendor": "Ruijie",
+      "family": "RG-S5310-E",
+      "model": "RG-S5310-24GT4XS-E",
+      "partNumbers": [],
+      "aliases": [
+        "S5310-24GT4XS-E"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet 0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet 0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "Mgmt 0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.ruijie.com/vi-vn/products/switches/core-aggregation-switches/RG-S5310-24GT4XS-E",
+      "notes": "RGOS CLI names: GigabitEthernet 0/n, TenGigabitEthernet 0/n (standalone; VSU stack adds member number). Dedicated MGMT port (CLI 'Mgmt 0')."
+    },
+    {
+      "id": "ruijie-rg-cs83-24gt4xs",
+      "vendor": "Ruijie",
+      "family": "RG-CS83",
+      "model": "RG-CS83-24GT4XS",
+      "partNumbers": [],
+      "aliases": [
+        "CS83-24GT4XS"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet 0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "TenGigabitEthernet 0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.ruijie.com/en-global/products/switches/campus-switches/rg-cs83-24gt4xs",
+      "notes": "RGOS CLI names: GigabitEthernet 0/n, TenGigabitEthernet 0/n (standalone; VSU stack adds member number). No separate MGMT port on this model (the -PD variant has one)."
+    },
+    {
+      "id": "ruijie-rg-eg105g",
+      "vendor": "Ruijie",
+      "family": "Reyee EG",
+      "model": "RG-EG105G",
+      "partNumbers": [],
+      "aliases": [
+        "EG105G",
+        "RG-EG105G-V2",
+        "RG-EG105G-V3"
+      ],
+      "type": "router",
+      "ports": [
+        {
+          "pattern": "WAN",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-router/eg-series/eg105gv3/",
+      "notes": "Reyee EG router; port names (WAN/LANn) follow the panel labels but exact labels not verified. 5 GbE: 1 WAN, 3 LAN, 1 LAN/WAN switchable (V2/V3)."
+    },
+    {
+      "id": "ruijie-rg-eg210g-e",
+      "vendor": "Ruijie",
+      "family": "Reyee EG",
+      "model": "RG-EG210G-E",
+      "partNumbers": [],
+      "aliases": [
+        "EG210G-E"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "WAN",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 9,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-router/eg-series/rg-eg210g-e/",
+      "notes": "Reyee EG router; port names (WAN/LANn) follow the panel labels but exact labels not verified. 10 GbE: 1 WAN + 9 LAN, 3 LAN ports switchable to WAN (max 4 WAN)."
+    },
+    {
+      "id": "ruijie-rg-eg310gh-e",
+      "vendor": "Ruijie",
+      "family": "Reyee EG",
+      "model": "RG-EG310GH-E",
+      "partNumbers": [],
+      "aliases": [
+        "EG310GH-E"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "WAN",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 9,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-router/eg-series/rg-eg310gh-e/",
+      "notes": "Reyee EG router; port names (WAN/LANn) follow the panel labels but exact labels not verified. 10 GbE: 1 WAN + 9 LAN, 3 LAN ports switchable to WAN (max 4 WAN)."
+    },
+    {
+      "id": "ruijie-rg-eg3230",
+      "vendor": "Ruijie",
+      "family": "Ruijie EG",
+      "model": "RG-EG3230",
+      "partNumbers": [],
+      "aliases": [
+        "EG3230"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 9,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port{n}",
+          "start": 10,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.ruijie.com/vi-vn/products/security/next-generation-integrated-gateway/rg-eg3230",
+      "notes": "8 GbE + 1 SFP + 1 SFP+ (non-combo), up to 6 WAN. Interface names not verified. Discontinued at some resellers."
+    },
+    {
+      "id": "ruijie-rg-rap2200-e",
+      "vendor": "Ruijie",
+      "family": "Reyee RAP",
+      "model": "RG-RAP2200(E)",
+      "partNumbers": [],
+      "aliases": [
+        "RAP2200(E)",
+        "RG-RAP2200E"
+      ],
+      "type": "access_point",
+      "ports": [
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 2,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/en-global/products/reyee-wireless/reyee-indoor-ap/rg-rap2200e/",
+      "notes": "Wi-Fi 5 ceiling AP. LAN1 = PoE in (802.3af/at), LAN2 = pass-through LAN."
+    },
+    {
+      "id": "ruijie-rg-rap2260-g",
+      "vendor": "Ruijie",
+      "family": "Reyee RAP",
+      "model": "RG-RAP2260(G)",
+      "partNumbers": [],
+      "aliases": [
+        "RAP2260(G)",
+        "RG-RAP2260G"
+      ],
+      "type": "access_point",
+      "ports": [
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 2,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://reyee.ruijie.com/id-id/products/reyee-wireless/reyee-indoor-ap/rg-rap2260g/",
+      "notes": "Wi-Fi 6 AX1800 ceiling AP. LAN1 = PoE in (802.3at), LAN2 = LAN. The RAP2260(E) has a 2.5G uplink instead."
+    },
+    {
+      "id": "huawei-hg8145v5",
+      "vendor": "Huawei",
+      "family": "EchoLife",
+      "model": "HG8145V5",
+      "partNumbers": [],
+      "aliases": [
+        "EchoLife HG8145V5"
+      ],
+      "type": "ont",
+      "ports": [
+        {
+          "pattern": "PON",
+          "start": 1,
+          "count": 1,
+          "media": "PON"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://manuals.plus/huawei/echolife-hg8145v5-4ge-plus-tel-gpon-terminal-wifi-router-manual",
+      "notes": "GPON ONT, 4 GE LAN + 1 POTS (TEL, not listed) + USB + Wi-Fi 5. Common FPT/VNPT/Viettel CPE."
+    },
+    {
+      "id": "huawei-eg8145v5",
+      "vendor": "Huawei",
+      "family": "EchoLife",
+      "model": "EG8145V5",
+      "partNumbers": [],
+      "aliases": [
+        "EchoLife EG8145V5"
+      ],
+      "type": "ont",
+      "ports": [
+        {
+          "pattern": "PON",
+          "start": 1,
+          "count": 1,
+          "media": "PON"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://ontolt.com/product/huawei-xpon-ont-4ge-tel-usb-2-4ghz-5ghz-wifi-echolife-eg8145v5-hg8145v5/",
+      "notes": "GPON ONT, 4 GE LAN + 1 POTS + USB + Wi-Fi 5 (operator variant of HG8145V5, used by Viettel). Reseller source only."
+    },
+    {
+      "id": "zte-f670l",
+      "vendor": "ZTE",
+      "family": "ZXHN",
+      "model": "F670L",
+      "partNumbers": [],
+      "aliases": [
+        "ZXHN F670L"
+      ],
+      "type": "ont",
+      "ports": [
+        {
+          "pattern": "PON",
+          "start": 1,
+          "count": 1,
+          "media": "PON"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "https://www.thunder-link.com/zxhn-f670l.html",
+      "notes": "GPON ONT, 4 LAN + 1 POTS + USB + Wi-Fi 5. Some listings say 1GE+3FE; reseller source only."
+    },
+    {
+      "id": "zte-f670y",
+      "vendor": "ZTE",
+      "family": "ZXHN",
+      "model": "F670Y",
+      "partNumbers": [],
+      "aliases": [
+        "ZXHN F670Y"
+      ],
+      "type": "ont",
+      "ports": [
+        {
+          "pattern": "PON",
+          "start": 1,
+          "count": 1,
+          "media": "PON"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": false,
+      "source": "",
+      "notes": "Viettel-branded GPON ONT; 4 LAN + PON assumed, not verified."
+    },
+    {
+      "id": "vnpt-igate-gw040-h",
+      "vendor": "VNPT Technology",
+      "family": "iGate",
+      "model": "GW040-H",
+      "partNumbers": [],
+      "aliases": [
+        "iGate GW040-H",
+        "GW040H"
+      ],
+      "type": "ont",
+      "ports": [
+        {
+          "pattern": "PON",
+          "start": 1,
+          "count": 1,
+          "media": "PON"
+        },
+        {
+          "pattern": "LAN{n}",
+          "start": 1,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://www.vnpt-technology.vn/vi/product_detail/gpon-ont-igate-gw040-h",
+      "notes": "VNPT GPON ONT: 4 x 10/100/1000 LAN, 1 x SC/APC GPON, USB, Wi-Fi 5 dual-band."
+    }
+  ]
+}

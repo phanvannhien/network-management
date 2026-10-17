@@ -1344,6 +1344,25 @@ type AuthSession struct {
 	User CurrentUser `json:"user"`
 }
 
+// CatalogModel defines model for CatalogModel.
+type CatalogModel struct {
+	Aliases     []string    `json:"aliases"`
+	Family      string      `json:"family"`
+	Id          string      `json:"id"`
+	Model       string      `json:"model"`
+	Notes       string      `json:"notes"`
+	PartNumbers []string    `json:"partNumbers"`
+	PortCount   int32       `json:"portCount"`
+	Ports       []PortGroup `json:"ports"`
+	Source      string      `json:"source"`
+	Type        DeviceType  `json:"type"`
+	UHeight     int32       `json:"uHeight"`
+	Vendor      string      `json:"vendor"`
+
+	// Verified port layout checked against the vendor datasheet at source
+	Verified bool `json:"verified"`
+}
+
 // Category defines model for Category.
 type Category struct {
 	ChildCount   int64               `json:"childCount"`
@@ -1651,6 +1670,11 @@ type DeviceBulkUpdate struct {
 	OwnerName  *string              `json:"ownerName,omitempty"`
 	RemoveTags *[]string            `json:"removeTags,omitempty"`
 	Role       *DeviceRole          `json:"role,omitempty"`
+}
+
+// DeviceCatalog defines model for DeviceCatalog.
+type DeviceCatalog struct {
+	Models []CatalogModel `json:"models"`
 }
 
 // DeviceDeleteImpact defines model for DeviceDeleteImpact.
@@ -3544,6 +3568,16 @@ type CreateDeviceTemplateParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// CreateTemplateFromCatalogJSONBody defines parameters for CreateTemplateFromCatalog.
+type CreateTemplateFromCatalogJSONBody struct {
+	CatalogId string `json:"catalogId"`
+}
+
+// CreateTemplateFromCatalogParams defines parameters for CreateTemplateFromCatalog.
+type CreateTemplateFromCatalogParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // DeleteDeviceTemplateParams defines parameters for DeleteDeviceTemplate.
 type DeleteDeviceTemplateParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -3930,6 +3964,9 @@ type ImportDevicesJSONRequestBody = DeviceImport
 // CreateDeviceTemplateJSONRequestBody defines body for CreateDeviceTemplate for application/json ContentType.
 type CreateDeviceTemplateJSONRequestBody = DeviceTemplateInput
 
+// CreateTemplateFromCatalogJSONRequestBody defines body for CreateTemplateFromCatalog for application/json ContentType.
+type CreateTemplateFromCatalogJSONRequestBody CreateTemplateFromCatalogJSONBody
+
 // UpdateDeviceTemplateJSONRequestBody defines body for UpdateDeviceTemplate for application/json ContentType.
 type UpdateDeviceTemplateJSONRequestBody = DeviceTemplateUpdate
 
@@ -4157,6 +4194,9 @@ type ServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams)
+	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
+	// (GET /orgs/{orgId}/device-catalog)
+	ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId)
 	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
 	// (POST /orgs/{orgId}/device-imports)
 	ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams)
@@ -4166,6 +4206,9 @@ type ServerInterface interface {
 	// CreateDeviceTemplate Create a template (organization owner/admin/editor)
 	// (POST /orgs/{orgId}/device-templates)
 	CreateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceTemplateParams)
+	// CreateTemplateFromCatalog Copy a catalog model into the organization's templates (or return the template it already has for it)
+	// (POST /orgs/{orgId}/device-templates/from-catalog)
+	CreateTemplateFromCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateTemplateFromCatalogParams)
 	// DeleteDeviceTemplate Delete a template (devices keep their ports)
 	// (DELETE /orgs/{orgId}/device-templates/{templateId})
 	DeleteDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, templateId TemplateId, params DeleteDeviceTemplateParams)
@@ -4628,6 +4671,12 @@ func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request,
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
+// (GET /orgs/{orgId}/device-catalog)
+func (_ Unimplemented) ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
 // (POST /orgs/{orgId}/device-imports)
 func (_ Unimplemented) ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams) {
@@ -4643,6 +4692,12 @@ func (_ Unimplemented) ListDeviceTemplates(w http.ResponseWriter, r *http.Reques
 // CreateDeviceTemplate Create a template (organization owner/admin/editor)
 // (POST /orgs/{orgId}/device-templates)
 func (_ Unimplemented) CreateDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateDeviceTemplateParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateTemplateFromCatalog Copy a catalog model into the organization's templates (or return the template it already has for it)
+// (POST /orgs/{orgId}/device-templates/from-catalog)
+func (_ Unimplemented) CreateTemplateFromCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateTemplateFromCatalogParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6914,6 +6969,32 @@ func (siw *ServerInterfaceWrapper) UpdateCustomField(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListDeviceCatalog operation middleware
+func (siw *ServerInterfaceWrapper) ListDeviceCatalog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDeviceCatalog(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ImportDevices operation middleware
 func (siw *ServerInterfaceWrapper) ImportDevices(w http.ResponseWriter, r *http.Request) {
 
@@ -7039,6 +7120,60 @@ func (siw *ServerInterfaceWrapper) CreateDeviceTemplate(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateDeviceTemplate(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateTemplateFromCatalog operation middleware
+func (siw *ServerInterfaceWrapper) CreateTemplateFromCatalog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateTemplateFromCatalogParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTemplateFromCatalog(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11614,6 +11749,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/device-imports", wrapper.ImportDevices)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/device-catalog", wrapper.ListDeviceCatalog)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/device-templates/from-catalog", wrapper.CreateTemplateFromCatalog)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
 	})
 	r.Group(func(r chi.Router) {
@@ -14365,6 +14506,70 @@ func (response UpdateCustomField409JSONResponse) VisitUpdateCustomFieldResponse(
 	return err
 }
 
+type ListDeviceCatalogRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListDeviceCatalogResponseObject interface {
+	VisitListDeviceCatalogResponse(w http.ResponseWriter) error
+}
+
+type ListDeviceCatalog200JSONResponse DeviceCatalog
+
+func (response ListDeviceCatalog200JSONResponse) VisitListDeviceCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceCatalog401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDeviceCatalog401JSONResponse) VisitListDeviceCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceCatalog403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListDeviceCatalog403JSONResponse) VisitListDeviceCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeviceCatalog404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDeviceCatalog404JSONResponse) VisitListDeviceCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ImportDevicesRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ImportDevicesParams
@@ -14585,6 +14790,100 @@ func (response CreateDeviceTemplate409JSONResponse) VisitCreateDeviceTemplateRes
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalogRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateTemplateFromCatalogParams
+	Body   *CreateTemplateFromCatalogJSONRequestBody
+}
+
+type CreateTemplateFromCatalogResponseObject interface {
+	VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error
+}
+
+type CreateTemplateFromCatalog200JSONResponse DeviceTemplate
+
+func (response CreateTemplateFromCatalog200JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalog201JSONResponse DeviceTemplate
+
+func (response CreateTemplateFromCatalog201JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalog400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateTemplateFromCatalog400JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalog401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateTemplateFromCatalog401JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalog403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateTemplateFromCatalog403JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTemplateFromCatalog404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateTemplateFromCatalog404JSONResponse) VisitCreateTemplateFromCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20845,6 +21144,9 @@ type StrictServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(ctx context.Context, request UpdateCustomFieldRequestObject) (UpdateCustomFieldResponseObject, error)
+	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
+	// (GET /orgs/{orgId}/device-catalog)
+	ListDeviceCatalog(ctx context.Context, request ListDeviceCatalogRequestObject) (ListDeviceCatalogResponseObject, error)
 	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
 	// (POST /orgs/{orgId}/device-imports)
 	ImportDevices(ctx context.Context, request ImportDevicesRequestObject) (ImportDevicesResponseObject, error)
@@ -20854,6 +21156,9 @@ type StrictServerInterface interface {
 	// CreateDeviceTemplate Create a template (organization owner/admin/editor)
 	// (POST /orgs/{orgId}/device-templates)
 	CreateDeviceTemplate(ctx context.Context, request CreateDeviceTemplateRequestObject) (CreateDeviceTemplateResponseObject, error)
+	// CreateTemplateFromCatalog Copy a catalog model into the organization's templates (or return the template it already has for it)
+	// (POST /orgs/{orgId}/device-templates/from-catalog)
+	CreateTemplateFromCatalog(ctx context.Context, request CreateTemplateFromCatalogRequestObject) (CreateTemplateFromCatalogResponseObject, error)
 	// DeleteDeviceTemplate Delete a template (devices keep their ports)
 	// (DELETE /orgs/{orgId}/device-templates/{templateId})
 	DeleteDeviceTemplate(ctx context.Context, request DeleteDeviceTemplateRequestObject) (DeleteDeviceTemplateResponseObject, error)
@@ -22245,6 +22550,32 @@ func (sh *strictHandler) UpdateCustomField(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListDeviceCatalog operation middleware
+func (sh *strictHandler) ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListDeviceCatalogRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDeviceCatalog(ctx, request.(ListDeviceCatalogRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDeviceCatalog")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDeviceCatalogResponseObject); ok {
+		if err := validResponse.VisitListDeviceCatalogResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ImportDevices operation middleware
 func (sh *strictHandler) ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams) {
 	var request ImportDevicesRequestObject
@@ -22332,6 +22663,40 @@ func (sh *strictHandler) CreateDeviceTemplate(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateDeviceTemplateResponseObject); ok {
 		if err := validResponse.VisitCreateDeviceTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateTemplateFromCatalog operation middleware
+func (sh *strictHandler) CreateTemplateFromCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateTemplateFromCatalogParams) {
+	var request CreateTemplateFromCatalogRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateTemplateFromCatalogJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTemplateFromCatalog(ctx, request.(CreateTemplateFromCatalogRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTemplateFromCatalog")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateTemplateFromCatalogResponseObject); ok {
+		if err := validResponse.VisitCreateTemplateFromCatalogResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

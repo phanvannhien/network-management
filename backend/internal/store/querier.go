@@ -101,6 +101,8 @@ type Querier interface {
 	// Same serial (trimmed, case-insensitive) on another live device; empty and placeholder values do not count.
 	DuplicateSerials(ctx context.Context, arg DuplicateSerialsParams) ([]DuplicateSerialsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	// The organization's template already standing for a catalog model: same name, or same type and model / part number.
+	FindTemplateForCatalog(ctx context.Context, arg FindTemplateForCatalogParams) (DeviceTemplate, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)

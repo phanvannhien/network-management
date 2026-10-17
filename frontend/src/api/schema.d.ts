@@ -622,6 +622,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/device-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** The built-in device catalog (ADR-035) — read only, the same for every organization */
+        get: operations["listDeviceCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/device-templates/from-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy a catalog model into the organization's templates (or return the template it already has for it) */
+        post: operations["createTemplateFromCatalog"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/delete-impact": {
         parameters: {
             query?: never;
@@ -2592,6 +2632,27 @@ export interface components {
         };
         DeviceTemplateList: {
             templates: components["schemas"]["DeviceTemplate"][];
+        };
+        DeviceCatalog: {
+            models: components["schemas"]["CatalogModel"][];
+        };
+        CatalogModel: {
+            id: string;
+            vendor: string;
+            family: string;
+            model: string;
+            partNumbers: string[];
+            aliases: string[];
+            type: components["schemas"]["DeviceType"];
+            /** Format: int32 */
+            uHeight: number;
+            ports: components["schemas"]["PortGroup"][];
+            /** Format: int32 */
+            portCount: number;
+            /** @description port layout checked against the vendor datasheet at source */
+            verified: boolean;
+            source: string;
+            notes: string;
         };
         /** @description a template, or port groups typed on the spot (same format as a template's) — exactly one of them */
         ApplyTemplate: {
@@ -4709,6 +4770,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDeviceCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceCatalog"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createTemplateFromCatalog: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    catalogId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The organization already had a template for this model */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplate"];
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTemplate"];
                 };
             };
             400: components["responses"]["BadRequest"];

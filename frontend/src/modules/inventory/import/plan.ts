@@ -202,6 +202,22 @@ export function matchTemplate<
   )
 }
 
+/**
+ * Catalog model (ADR-035) for what a file / device calls its product: exact match on model, part number or alias,
+ * ignoring case, spaces and punctuation ("FortiGate 80F" = "FG-80F"? only if listed as an alias / part number).
+ */
+export function matchCatalog<
+  C extends { model: string; partNumbers: string[]; aliases: string[]; type: string },
+>(models: C[], texts: string[], type?: string | null): C | undefined {
+  const keys = texts.map(norm).filter(Boolean)
+  if (keys.length === 0) return undefined
+  const hits = models.filter((m) =>
+    [m.model, ...m.partNumbers, ...m.aliases].some((x) => keys.includes(norm(x))),
+  )
+  // Same name, different kind (a switch and its PoE twin share a family name): prefer the row's type.
+  return hits.find((m) => m.type === type) ?? hits[0]
+}
+
 /** Place-name key: no diacritics, aliases for the big cities ("Hochiminh", "TP.HCM", "Ho Chi Minh" → hcm). */
 export function placeKey(v: string): string {
   return norm(v)
