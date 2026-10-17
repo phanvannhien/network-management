@@ -18,6 +18,23 @@ export type Device = components['schemas']['Device']
 export type DeviceInput = components['schemas']['DeviceInput']
 export type DeviceUpdate = components['schemas']['DeviceUpdate']
 export type EndpointGroup = components['schemas']['EndpointGroup']
+export type EndpointGroupInput = components['schemas']['EndpointGroupInput']
+export type EndpointGroupUpdate = components['schemas']['EndpointGroupUpdate']
+
+/** An endpoint group on the diagram (ADR-036): stands for many alike endpoints, not in the device list. */
+export interface GroupCard {
+  id: string
+  name: string
+  kind: EndpointGroup['kind']
+  siteId: string
+  expectedCount: number | null
+  ipRangeId: string | null
+  /** e.g. "10.1.20.10–10.1.20.60" when a range is linked. */
+  range: string
+  notes: string
+  /** Created in this editor and not saved yet. */
+  draft?: boolean
+}
 export type Link = components['schemas']['Link']
 export type LinkInput = components['schemas']['LinkInput']
 export type LinkUpdate = components['schemas']['LinkUpdate']
@@ -58,7 +75,7 @@ export interface LinkCard {
 export interface DocState {
   view: DiagramView
   devices: Record<string, DeviceCard>
-  groups: Record<string, { id: string; name: string; kind: EndpointGroup['kind'] }>
+  groups: Record<string, GroupCard>
   links: Record<string, LinkCard>
   /** Ids the caller may not see: kept on the view untouched. */
   hidden: string[]
@@ -73,6 +90,10 @@ export interface DocState {
   newLinkOrder: string[]
   linkEdits: Record<string, LinkUpdate>
   deletedLinks: string[]
+  /** Endpoint groups drawn in this editor (ADR-036), saved with the diagram; optional for older drafts. */
+  newGroups?: Record<string, EndpointGroupInput>
+  newGroupOrder?: string[]
+  groupEdits?: Record<string, EndpointGroupUpdate>
 }
 
 export function linkCard(l: Link): LinkCard {
@@ -84,6 +105,19 @@ export function linkCard(l: Link): LinkCard {
     aPort: l.a.interfaceName,
     bPort: l.b.interfaceName,
     status: l.status,
+  }
+}
+
+export function groupCard(g: EndpointGroup): GroupCard {
+  return {
+    id: g.id,
+    name: g.name,
+    kind: g.kind,
+    siteId: g.siteId,
+    expectedCount: g.expectedCount ?? null,
+    ipRangeId: g.ipRangeId ?? null,
+    range: g.rangeStart && g.rangeEnd ? `${g.rangeStart}–${g.rangeEnd}` : '',
+    notes: g.notes,
   }
 }
 
@@ -108,7 +142,7 @@ export function docFromDetail(d: DiagramDetail): DocState {
       managed: x.managed,
     }
   const groups: DocState['groups'] = {}
-  for (const g of d.endpointGroups) groups[g.id] = { id: g.id, name: g.name, kind: g.kind }
+  for (const g of d.endpointGroups) groups[g.id] = groupCard(g)
   const links: DocState['links'] = {}
   for (const l of d.links) links[l.id] = linkCard(l)
   // The inventory is the source of truth (ADR-015): a link between two objects on the view is always drawn, even if
@@ -145,6 +179,9 @@ export function docFromDetail(d: DiagramDetail): DocState {
     newLinkOrder: [],
     linkEdits: {},
     deletedLinks: [],
+    newGroups: {},
+    newGroupOrder: [],
+    groupEdits: {},
   }
 }
 
@@ -169,6 +206,13 @@ export function changesOf(doc: DocState): DiagramChange[] {
   }
   for (const [id, u] of Object.entries(doc.deviceEdits))
     out.push({ op: 'updateDevice', id, deviceUpdate: u })
+  // Groups before the cables that end on them.
+  for (const id of doc.newGroupOrder ?? []) {
+    const g = doc.newGroups?.[id]
+    if (g) out.push({ op: 'createEndpointGroup', tempId: id, endpointGroup: g })
+  }
+  for (const [id, u] of Object.entries(doc.groupEdits ?? {}))
+    out.push({ op: 'updateEndpointGroup', id, endpointGroupUpdate: u })
   for (const id of doc.deletedLinks) out.push({ op: 'deleteLink', id })
   for (const id of doc.newLinkOrder)
     if (doc.newLinks[id]) out.push({ op: 'createLink', tempId: id, link: doc.newLinks[id] })

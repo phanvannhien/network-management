@@ -233,97 +233,104 @@ func (s *Server) saveGroup(ctx context.Context, m tenant.Membership, f groupFiel
 		detail apigen.EndpointGroupDetail
 	)
 	err := s.withTx(ctx, func(q store.Querier) error {
-		var before store.GetEndpointGroupRow
-		if id != nil {
-			var ok bool
-			var err error
-			if before, ok, err = loadGroup(ctx, q, m, *id); err != nil {
-				return err
-			}
-			if !ok {
-				out.gone = true
-				return errRollback
-			}
-			if level, err := groupLevel(ctx, q, m, before); err != nil {
-				return err
-			} else if level < tenant.LevelEdit {
-				out.code = 403
-				return errRollback
-			}
-		}
-		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
-		if err != nil || bad != "" {
-			out.bad = bad
-			return orRollback(err)
-		}
-		if !m.CanEdit() {
-			out.code = 403
-			return errRollback
-		}
-		var rng pgtype.UUID
-		if f.rng != nil {
-			r, bad, err := linkRange(ctx, q, m, *f.rng, p.site.ID)
-			if err != nil || bad != "" {
-				out.bad = bad
-				return orRollback(err)
-			}
-			rng = r.ID
-			// Members already addressed must fit the newly linked range.
-			if id != nil && r.ID != before.IpRangeID {
-				members, err := q.ListEndpointMembers(ctx, store.ListEndpointMembersParams{OrganizationID: m.OrgID, GroupID: before.ID})
-				if err != nil {
-					return fmt.Errorf("list members: %w", err)
-				}
-				for _, mb := range members {
-					if mb.Ip != nil && !inRange(*mb.Ip, r.StartIp, r.EndIp) {
-						out.bad = fmt.Sprintf("Thành viên %s (%s) nằm ngoài dải %s–%s", mb.Name, mb.Ip, r.StartIp, r.EndIp)
-						return errRollback
-					}
-				}
-			}
-		}
-		var gid pgtype.UUID
-		if id == nil {
-			gid, err = q.CreateEndpointGroup(ctx, store.CreateEndpointGroupParams{
-				OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
-				IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
-			})
-		} else {
-			gid = before.ID
-			var n int64
-			n, err = q.UpdateEndpointGroup(ctx, store.UpdateEndpointGroupParams{
-				ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
-				Kind: f.kind, Name: f.name, IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
-			})
-			if err == nil && n == 0 {
-				out.conf = msgStale
-				return errRollback
-			}
-		}
-		if isUniqueViolation(err) {
-			out.conf = fmt.Sprintf("Site %s đã có nhóm tên %s", p.site.Code, f.name)
-			return errRollback
-		}
+		after, err := writeGroup(ctx, q, m, f, id, version, &out)
 		if err != nil {
-			return fmt.Errorf("save endpoint group: %w", err)
-		}
-		after, ok, err := loadGroup(ctx, q, m, uuid.UUID(gid.Bytes))
-		if err != nil || !ok {
-			out.code = 403
-			return orRollback(err)
-		}
-		entry := audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "endpoint_group.create", ObjectType: "endpoint_group",
-			ObjectID: uuidStr(gid), After: snapGroup(after), Meta: infoFrom(ctx).meta}
-		if id != nil {
-			entry.Action, entry.Before = "endpoint_group.update", snapGroup(before)
-		}
-		if err := audit.Write(ctx, q, entry); err != nil {
 			return err
 		}
 		detail, err = s.groupDetail(ctx, q, m, after)
 		return err
 	})
 	return detail, out, err
+}
+
+// writeGroup creates (id nil) or updates an endpoint group inside the caller's transaction (also a diagram save);
+// a refusal is reported in out with errRollback.
+func writeGroup(ctx context.Context, q store.Querier, m tenant.Membership, f groupFields, id *uuid.UUID, version int32, out *writeOutcome) (store.GetEndpointGroupRow, error) {
+	var before store.GetEndpointGroupRow
+	if id != nil {
+		var ok bool
+		var err error
+		if before, ok, err = loadGroup(ctx, q, m, *id); err != nil {
+			return store.GetEndpointGroupRow{}, err
+		}
+		if !ok {
+			out.gone = true
+			return store.GetEndpointGroupRow{}, errRollback
+		}
+		if level, err := groupLevel(ctx, q, m, before); err != nil {
+			return store.GetEndpointGroupRow{}, err
+		} else if level < tenant.LevelEdit {
+			out.code = 403
+			return store.GetEndpointGroupRow{}, errRollback
+		}
+	}
+	p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
+	if err != nil || bad != "" {
+		out.bad = bad
+		return store.GetEndpointGroupRow{}, orRollback(err)
+	}
+	if !m.CanEdit() {
+		out.code = 403
+		return store.GetEndpointGroupRow{}, errRollback
+	}
+	var rng pgtype.UUID
+	if f.rng != nil {
+		r, bad, err := linkRange(ctx, q, m, *f.rng, p.site.ID)
+		if err != nil || bad != "" {
+			out.bad = bad
+			return store.GetEndpointGroupRow{}, orRollback(err)
+		}
+		rng = r.ID
+		// Members already addressed must fit the newly linked range.
+		if id != nil && r.ID != before.IpRangeID {
+			members, err := q.ListEndpointMembers(ctx, store.ListEndpointMembersParams{OrganizationID: m.OrgID, GroupID: before.ID})
+			if err != nil {
+				return store.GetEndpointGroupRow{}, fmt.Errorf("list members: %w", err)
+			}
+			for _, mb := range members {
+				if mb.Ip != nil && !inRange(*mb.Ip, r.StartIp, r.EndIp) {
+					out.bad = fmt.Sprintf("Thành viên %s (%s) nằm ngoài dải %s–%s", mb.Name, mb.Ip, r.StartIp, r.EndIp)
+					return store.GetEndpointGroupRow{}, errRollback
+				}
+			}
+		}
+	}
+	var gid pgtype.UUID
+	if id == nil {
+		gid, err = q.CreateEndpointGroup(ctx, store.CreateEndpointGroupParams{
+			OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
+			IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
+		})
+	} else {
+		gid = before.ID
+		var n int64
+		n, err = q.UpdateEndpointGroup(ctx, store.UpdateEndpointGroupParams{
+			ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
+			Kind: f.kind, Name: f.name, IpRangeID: rng, ExpectedCount: f.expected, Notes: f.notes,
+		})
+		if err == nil && n == 0 {
+			out.conf = msgStale
+			return store.GetEndpointGroupRow{}, errRollback
+		}
+	}
+	if isUniqueViolation(err) {
+		out.conf = fmt.Sprintf("Site %s đã có nhóm tên %s", p.site.Code, f.name)
+		return store.GetEndpointGroupRow{}, errRollback
+	}
+	if err != nil {
+		return store.GetEndpointGroupRow{}, fmt.Errorf("save endpoint group: %w", err)
+	}
+	after, ok, err := loadGroup(ctx, q, m, uuid.UUID(gid.Bytes))
+	if err != nil || !ok {
+		out.code = 403
+		return store.GetEndpointGroupRow{}, orRollback(err)
+	}
+	entry := audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "endpoint_group.create", ObjectType: "endpoint_group",
+		ObjectID: uuidStr(gid), After: snapGroup(after), Meta: infoFrom(ctx).meta}
+	if id != nil {
+		entry.Action, entry.Before = "endpoint_group.update", snapGroup(before)
+	}
+	return after, audit.Write(ctx, q, entry)
 }
 
 func (s *Server) CreateEndpointGroup(ctx context.Context, req apigen.CreateEndpointGroupRequestObject) (apigen.CreateEndpointGroupResponseObject, error) {

@@ -5,8 +5,27 @@ import type { components } from '@/api/client'
 
 export type DeviceType = components['schemas']['DeviceType']
 
+export type EndpointKind = components['schemas']['EndpointKind']
+
+/**
+ * Kinds drawn as endpoint groups (ADR-036): one node stands for the alike endpoints of a place (cameras on ports
+ * 1–24, the PCs of an office), outside the device list. Servers, NAS, VMs stay devices of the inventory.
+ */
+export const ENDPOINT_KINDS: EndpointKind[] = [
+  'pc',
+  'laptop',
+  'printer',
+  'ip_phone',
+  'video_conference',
+  'ip_camera',
+  'access_control',
+  'iot',
+  'other',
+]
+
 export type LibraryItem =
   | { kind: 'type'; type: DeviceType }
+  | { kind: 'endpoint'; endpointKind: EndpointKind }
   | { kind: 'template'; templateId: string; type: DeviceType }
   | {
       kind: 'device'
@@ -34,6 +53,8 @@ export function decodeItem(raw: string): LibraryItem | null {
     const v = JSON.parse(raw) as Partial<Record<string, unknown>>
     const str = (x: unknown) => typeof x === 'string' && x !== ''
     if (v.kind === 'type' && str(v.type)) return { kind: 'type', type: v.type as DeviceType }
+    if (v.kind === 'endpoint' && ENDPOINT_KINDS.includes(v.endpointKind as EndpointKind))
+      return { kind: 'endpoint', endpointKind: v.endpointKind as EndpointKind }
     if (v.kind === 'template' && str(v.templateId) && str(v.type))
       return { kind: 'template', templateId: v.templateId as string, type: v.type as DeviceType }
     const d = v.device as Partial<Record<string, unknown>> | undefined

@@ -17,7 +17,7 @@ import type { DocStoreApi } from '../doc/store'
 import type { DeviceCard } from '../doc/types'
 import { HOSTNAME_PREFIX } from '../library/hostname'
 import { clipboard, copySelection, mustClone, planPaste, type Clip } from './clipboard'
-import { ANN, isAnnotationId } from './flow'
+import { ANN, isAnnotationId, toFlowEdges } from './flow'
 import type { DeleteTarget } from './DeleteFromInventoryDialog'
 
 type Link = Awaited<ReturnType<typeof fetchLinks>>[number]
@@ -195,7 +195,15 @@ export function useEditActions({
     const nodes = selectedNodes().filter((n) => n.refKind === 'device')
     // Nodes win: cables count only when no node is selected (a stale cable pick never rides along).
     const edges = new Set(selectedNodes().length > 0 ? [] : s.edgeSelection)
-    const linkIds = s.doc.view.edges.filter((e) => edges.has(e.id)).map((e) => e.linkId)
+    // A bundled edge (an endpoint group on a port range, ADR-036) stands for all of its cables.
+    const bundled = new Map(toFlowEdges(s.doc).map((e) => [e.id, e.data?.bundle]))
+    const linkIds = [
+      ...new Set(
+        s.doc.view.edges
+          .filter((e) => edges.has(e.id))
+          .flatMap((e) => bundled.get(e.id) ?? [e.linkId]),
+      ),
+    ]
     const deviceIds = nodes.filter((n) => !n.locked).map((n) => n.refId)
     const skippedLocked = nodes.length - deviceIds.length
     if (deviceIds.length === 0 && linkIds.length === 0) {

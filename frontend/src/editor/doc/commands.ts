@@ -5,6 +5,7 @@ import type {
   DeviceInput,
   DeviceUpdate,
   DocState,
+  EndpointGroupInput,
   LinkInput,
   LinkUpdate,
 } from './types'
@@ -246,6 +247,73 @@ export function deleteLink(id: string): DocCommand {
       delete d.linkEdits[id]
       delete d.links[id]
       d.view.edges = d.view.edges.filter((e) => e.linkId !== id)
+    },
+  }
+}
+
+/** A new endpoint group drawn on the diagram (ADR-036); created in the inventory when the diagram is saved. */
+export function createGroup(
+  input: EndpointGroupInput,
+  x: number,
+  y: number,
+  tempId = newId(),
+  nodeId = newId(),
+): DocCommand {
+  return {
+    label: 'createGroup',
+    apply(d) {
+      d.newGroups ??= {}
+      d.newGroupOrder ??= []
+      d.newGroups[tempId] = input
+      d.newGroupOrder.push(tempId)
+      d.groups[tempId] = {
+        id: tempId,
+        name: input.name,
+        kind: input.kind,
+        siteId: input.siteId,
+        expectedCount: input.expectedCount ?? null,
+        ipRangeId: input.ipRangeId ?? null,
+        range: '',
+        notes: input.notes ?? '',
+        draft: true,
+      }
+      d.view.nodes.push({ id: nodeId, refKind: 'endpoint_group', refId: tempId, x, y })
+    },
+  }
+}
+
+/**
+ * Edit an endpoint group from the panel: an unsaved group changes its pending input; a saved one gets a pending
+ * update (with its version). `range` is the label of the linked IP range, for the node.
+ */
+export function updateGroup(
+  id: string,
+  patch: EndpointGroupInput,
+  version: number,
+  range: string,
+  mergeKey?: string,
+): DocCommand {
+  return {
+    label: 'updateGroup',
+    mergeKey,
+    apply(d) {
+      const card = d.groups[id]
+      if (!card) return
+      if (d.newGroups?.[id]) d.newGroups[id] = patch
+      else {
+        d.groupEdits ??= {}
+        d.groupEdits[id] = { ...patch, version }
+      }
+      d.groups[id] = {
+        ...card,
+        name: patch.name,
+        kind: patch.kind,
+        siteId: patch.siteId,
+        expectedCount: patch.expectedCount ?? null,
+        ipRangeId: patch.ipRangeId ?? null,
+        range,
+        notes: patch.notes ?? '',
+      }
     },
   }
 }

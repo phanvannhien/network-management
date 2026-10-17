@@ -999,6 +999,12 @@ export const en: Strings = {
     escToCancel: '(Esc to cancel)',
     portOf: 'Port on {{name}}',
     noPort: 'No port yet',
+    rangeTo: 'To port (a whole range)',
+    rangeGuide:
+      'An endpoint group on consecutive ports (e.g. cameras on 1–24): pick the last port, one cable per port is made.',
+    rangeNone: 'Just one port',
+    rangeCount: '{{count}} ports will be cabled.',
+    rangeSkipped: '{{count}} taken or unfit ports skipped.',
     noPortGroup: 'An endpoint group has no ports.',
     noPortNeeded: 'No port needed at this end',
     noPortCloud: "No port to pick: this is the provider's network, not one of your devices.",
@@ -1177,6 +1183,10 @@ export const en: Strings = {
       'The device joins the inventory when you save the diagram. Rack, IPs, serial… are edited later in the property panel or the device page.',
     modelGuide:
       "Type the model or part number (e.g. C1300-24T-4G): with a template the device gets the vendor's ports.",
+    endpoints: 'Endpoints (not in the inventory)',
+    endpointsGuide:
+      'One symbol stands for many alike machines (e.g. 24 cameras on ports 1–24 in one IP range). Not in the device list.',
+    endpointDetail: 'Endpoint group — set count and IP range in the panel',
     noTemplate: 'No template',
     chooseSite: 'Choose a site…',
     siteGuide: 'Where the device really is; a diagram may hold devices of several sites.',
@@ -1789,6 +1799,38 @@ export const en: Strings = {
     add: 'Add',
     added: 'Template {{name}} is ready',
     none: 'No model found.',
+  },
+  endpointPanel: {
+    subtitle: 'Endpoint group · {{kind}}',
+    guide:
+      'Stands for the alike machines of a place — not in the device list. Edit, then Apply; saved with the diagram.',
+    rangeGuide:
+      "The IP range the group's machines use (e.g. 10.1.20.10–10.1.20.60). Pick one or create it in a subnet of the site.",
+    newRange: '+ New range…',
+    rangeStart: 'First IP',
+    rangeEnd: 'Last IP',
+    createRange: 'Create range',
+    rangeCreated: 'Range {{range}} created in IPAM',
+    ports: 'Plugged into',
+    noPorts:
+      'No cable yet. Cable it to a switch and pick "from port … to port …" to cable a whole port range at once.',
+    noPortYet: 'no port yet',
+  },
+  endpointNew: {
+    title: 'Add endpoints',
+    body: 'One symbol for the alike machines of a place (e.g. cameras on ports 1–24). Not in the device list; count, IP range and switch ports are set later in the panel and when cabling.',
+    kind: 'Kind',
+    name: 'Group name',
+    nameHint: 'Empty: "{{name}}". E.g. "Cameras floor 1", "Accounting PCs".',
+    taken: 'This site already has a group of that name on the diagram.',
+    count: 'Count',
+    countGuide: 'How many machines the group stands for (empty if unknown).',
+    badCount: 'The count is a whole number from 1.',
+    asDevice: 'Manage each one in the inventory',
+    asDeviceGuide:
+      'Create a device of the device list (hostname, S/N…) instead of an endpoint group — for important machines.',
+    create: 'Add to the diagram',
+    next: 'Next: create the device',
   },
   addPorts: {
     title: '{{name}} has no ports yet',

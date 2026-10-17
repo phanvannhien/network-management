@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { LinkInput } from '@/modules/inventory/links'
 import { fetchLinks } from '../doc/api'
-import { createLink, newId, updateLink, type PortNames } from '../doc/commands'
+import { compound, createLink, newId, updateLink, type PortNames } from '../doc/commands'
 import type { DocStoreApi } from '../doc/store'
 import type { CableEnd, CableValue } from './CableDialog'
 
@@ -134,11 +134,22 @@ export function useWiring({
     })
   }
 
-  const save = (input: LinkInput, ports: PortNames) => {
+  const save = (input: LinkInput, ports: PortNames, more?: { id: string; name: string }[]) => {
     const o = open
     if (!o) return
     const s = store.getState()
-    if (!o.edit) {
+    if (!o.edit && more && more.length > 0) {
+      // A port range to an endpoint group: one cable per port, one undo step (ADR-036).
+      const side = input.a.kind === 'device' ? 'a' : 'b'
+      const extra = more.map((p) =>
+        createLink(
+          { ...input, [side]: { ...input[side], interfaceId: p.id } },
+          newId(),
+          side === 'a' ? { ...ports, aPort: p.name } : { ...ports, bPort: p.name },
+        ),
+      )
+      s.dispatch(compound('createLinks', [createLink(input, newId(), ports), ...extra]))
+    } else if (!o.edit) {
       s.dispatch(createLink(input, newId(), ports))
     } else {
       const merged: LinkInput = {

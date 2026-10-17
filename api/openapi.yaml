@@ -6518,7 +6518,7 @@ components:
       properties:
         op:
           type: string
-          enum: [createDevice, updateDevice, deleteDevice, createLink, updateLink, deleteLink]
+          enum: [createDevice, updateDevice, deleteDevice, createLink, updateLink, deleteLink, createEndpointGroup, updateEndpointGroup]
         tempId:
           type: string
           format: uuid
@@ -6541,6 +6541,11 @@ components:
           $ref: '#/components/schemas/LinkInput'
         linkUpdate:
           $ref: '#/components/schemas/LinkUpdate'
+        endpointGroup:
+          $ref: '#/components/schemas/EndpointGroupInput'
+          description: createEndpointGroup — a group of endpoints drawn on the diagram (ADR-036), with a tempId
+        endpointGroupUpdate:
+          $ref: '#/components/schemas/EndpointGroupUpdate'
 
     PortTempId:
       type: object

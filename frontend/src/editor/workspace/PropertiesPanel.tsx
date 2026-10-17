@@ -40,6 +40,7 @@ import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId } from './flow'
 import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
 import { AddPorts } from './AddPorts'
+import { EndpointPanel } from './EndpointPanel'
 import { MgmtIpField } from './MgmtIpField'
 import { PortIpam } from './PortIpam'
 import { sortPorts, takenPorts } from './wiring'
@@ -660,20 +661,11 @@ function GroupPanel({
 }) {
   const { t } = useTranslation()
   const doc = useDoc((s) => s.doc)!
-  const g = doc.groups[groupId]!
   const node = doc.view.nodes.find((n) => n.id === nodeId)
+  if (!doc.groups[groupId]) return null
   return (
     <>
-      <p className="font-medium">{g.name}</p>
-      <p className="text-muted-foreground">{t(`devices.types.${g.kind as 'pc'}`)}</p>
-      <a
-        href={`/o/${orgId}/endpoint-groups/${groupId}`}
-        target="_blank"
-        rel="noopener"
-        className="inline-flex items-center gap-1 text-primary hover:underline"
-      >
-        <ExternalLink aria-hidden className="size-3.5" /> {t('panel.openPage')}
-      </a>
+      <EndpointPanel key={groupId} orgId={orgId} groupId={groupId} canEdit={canEdit} />
       {canEdit && (
         <Section title={t('panel.labelColor')}>
           <LabelColorPicker nodeIds={[nodeId]} current={node?.labelStyle?.color ?? ''} />

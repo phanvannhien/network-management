@@ -105,3 +105,31 @@ export function shortPort(name: string): string {
   for (const [re, short] of LONG_NAMES) if (re.test(name)) return name.replace(re, short)
   return name
 }
+
+/**
+ * Port names as ranges: ["Gi1/0/1", "Gi1/0/2", "Gi1/0/3", "Gi1/0/7"] → "Gi1/0/1–3, Gi1/0/7" (ADR-036: the cables of an
+ * endpoint group drawn as one edge). Names that do not end in a number are listed as they are.
+ */
+export function portRanges(names: string[]): string {
+  const parsed = names
+    .map((name) => {
+      const m = /^(.*?)(\d+)$/.exec(name)
+      return m ? { prefix: m[1]!, n: Number(m[2]), name } : { prefix: name, n: NaN, name }
+    })
+    .sort((a, b) => a.prefix.localeCompare(b.prefix) || a.n - b.n)
+  const out: string[] = []
+  for (let i = 0; i < parsed.length;) {
+    const first = parsed[i]!
+    let j = i
+    while (
+      j + 1 < parsed.length &&
+      !Number.isNaN(first.n) &&
+      parsed[j + 1]!.prefix === first.prefix &&
+      parsed[j + 1]!.n === parsed[j]!.n + 1
+    )
+      j++
+    out.push(j > i ? `${first.name}–${parsed[j]!.n}` : first.name)
+    i = j + 1
+  }
+  return out.join(', ')
+}

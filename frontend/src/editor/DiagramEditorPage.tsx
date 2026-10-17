@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
-import { createDevice, newId } from './doc/commands'
+import { createDevice, createGroup, newId } from './doc/commands'
 import { expandTemplatePorts } from './library/ports'
 import { useTemplateChoices } from '@/modules/inventory/TemplatePicker'
 import { draftStore, type Draft } from './doc/drafts'
@@ -39,6 +39,8 @@ import { isAnnotationId } from './workspace/flow'
 import { frameAt } from './workspace/frames'
 import { useAnnotate } from './workspace/useAnnotate'
 import { NewDeviceDialog, type NewDeviceInput } from './library/NewDeviceDialog'
+import { NewEndpointDialog, type NewEndpointInput } from './library/NewEndpointDialog'
+import type { EndpointKind } from './library/items'
 import { QuickAdd } from './library/QuickAdd'
 import { Canvas } from './workspace/Canvas'
 import { DeleteFromInventoryDialog } from './workspace/DeleteFromInventoryDialog'
@@ -278,6 +280,10 @@ function Workspace({
   const [help, setHelp] = useState(false)
   const [quick, setQuick] = useState(false)
   const [creating, setCreating] = useState<PendingNew | null>(null)
+  const [creatingEndpoint, setCreatingEndpoint] = useState<{
+    kind: EndpointKind
+    at: { x: number; y: number }
+  } | null>(null)
   const [lastSite, setLastSite] = useState<string | null>(null)
   const onView = useMemo(() => new Set(doc.view.nodes.map((n) => n.refId)), [doc.view.nodes])
   const hostnames = useMemo(
@@ -338,11 +344,34 @@ function Workspace({
       void edit.placeDevice(item.device, x, y)
       return
     }
+    if (item.kind === 'endpoint') {
+      setCreatingEndpoint({ kind: item.endpointKind, at })
+      return
+    }
     setCreating({
       type: item.type,
       templateId: item.kind === 'template' ? item.templateId : null,
       at,
     })
+  }
+  /** Endpoints (ADR-036): a pending endpoint group drawn where it was dropped, created on save. */
+  const createEndpoint = (input: NewEndpointInput) => {
+    if (!creatingEndpoint) return
+    const { x, y } = place(creatingEndpoint.at)
+    store.getState().dispatch(
+      createGroup(
+        {
+          kind: input.kind,
+          name: input.name,
+          siteId: input.siteId,
+          expectedCount: input.expectedCount,
+        },
+        x,
+        y,
+      ),
+    )
+    setLastSite(input.siteId)
+    setCreatingEndpoint(null)
   }
   const create = (input: NewDeviceInput) => {
     if (!creating) return
@@ -762,6 +791,26 @@ function Workspace({
           self={wiring.open.edit?.linkId}
           onSave={wiring.save}
           onClose={wiring.close}
+        />
+      )}
+      {creatingEndpoint && (
+        <NewEndpointDialog
+          orgId={orgId}
+          kind={creatingEndpoint.kind}
+          defaultSiteId={
+            frameAt(doc, creatingEndpoint.at.x, creatingEndpoint.at.y)?.siteId ??
+            defaultSiteFor(doc, lastSite)
+          }
+          takenNames={
+            new Set(Object.values(doc.groups).map((g) => `${g.siteId}|${g.name.toLowerCase()}`))
+          }
+          onCreate={createEndpoint}
+          onAsDevice={(kind) => {
+            const at = creatingEndpoint.at
+            setCreatingEndpoint(null)
+            setCreating({ type: kind as DeviceType, templateId: null, at })
+          }}
+          onClose={() => setCreatingEndpoint(null)}
         />
       )}
       {creating && (

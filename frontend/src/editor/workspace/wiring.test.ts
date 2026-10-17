@@ -4,7 +4,7 @@ import { createDocStore } from '../doc/store'
 import { changesOf, type DiagramDetail } from '../doc/types'
 import { expandTemplatePorts } from '../library/ports'
 import { borderPoint, parallelOffset, toFlowEdges } from './flow'
-import { shortPort, sortPorts, suggestKind, takenPorts } from './wiring'
+import { shortPort, sortPorts, suggestKind, takenPorts, portRanges } from './wiring'
 
 const SITE = '66666666-6666-4666-8666-666666666666'
 const FW = 'aaaaaaaa-0000-4000-8000-000000000001'
@@ -179,5 +179,69 @@ describe('cables on the canvas (P1-17)', () => {
         { name: 'Gi1/0/2', tempId: ports[1]!.id },
       ],
     })
+  })
+})
+
+describe('portRanges', () => {
+  it('compresses consecutive port numbers', () => {
+    expect(portRanges(['Gi1/0/3', 'Gi1/0/1', 'Gi1/0/2', 'Gi1/0/7'])).toBe('Gi1/0/1–3, Gi1/0/7')
+    expect(portRanges(['port1', 'port2', 'wan1'])).toBe('port1–2, wan1')
+    expect(portRanges(['console'])).toBe('console')
+  })
+})
+
+describe('endpoint groups on the diagram (ADR-036)', () => {
+  it('a drawn group, edited, cabled to a port range: one edge, one cable per port, saved in order', async () => {
+    const { createGroup, updateGroup, compound } = await import('../doc/commands')
+    const s = loaded()
+    const G = 'bbbbbbbb-0000-4000-8000-000000000001'
+    s.getState().dispatch(
+      createGroup(
+        { kind: 'ip_camera', name: 'Camera', siteId: SITE, expectedCount: 24 },
+        0,
+        300,
+        G,
+        'n-cam',
+      ),
+    )
+    s.getState().dispatch(
+      updateGroup(
+        G,
+        { kind: 'ip_camera', name: 'Camera tầng 1', siteId: SITE, expectedCount: 24 },
+        0,
+        '',
+      ),
+    )
+    const cable = (port: string, name: string) =>
+      createLink(
+        {
+          a: { kind: 'device', id: SW, interfaceId: port },
+          b: { kind: 'endpoint_group', id: G },
+          kind: 'ethernet',
+        },
+        port.replace('p', 'aaaaaaaa-1111-4000-8000-00000000000'),
+        { aPort: name, bPort: '' },
+      )
+    s.getState().dispatch(
+      compound('createLinks', [
+        cable('p1', 'Gi1/0/1'),
+        cable('p2', 'Gi1/0/2'),
+        cable('p3', 'Gi1/0/3'),
+      ]),
+    )
+    const doc = s.getState().doc!
+    const edges = toFlowEdges(doc).filter((e) => e.target === 'n-cam' || e.source === 'n-cam')
+    expect(edges).toHaveLength(1)
+    expect(edges[0]!.data!.aPort).toBe('Gi1/0/1–3 (3)')
+    expect(edges[0]!.data!.bundle).toHaveLength(3)
+    const ops = changesOf(doc).map((c) => c.op)
+    expect(ops).toEqual(['createEndpointGroup', 'createLink', 'createLink', 'createLink'])
+    expect(changesOf(doc)[0]!.endpointGroup).toMatchObject({
+      name: 'Camera tầng 1',
+      expectedCount: 24,
+    })
+    // One undo removes all three cables.
+    s.getState().undo()
+    expect(toFlowEdges(s.getState().doc!)).toHaveLength(0)
   })
 })

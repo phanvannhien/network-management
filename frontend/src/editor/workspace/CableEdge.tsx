@@ -24,6 +24,8 @@ export interface CableData extends Record<string, unknown> {
   /** Position among the cables of the same node pair, and their count. */
   index: number
   count: number
+  /** An endpoint group's cables to one device drawn as this one edge (ADR-036): every link id, this one first. */
+  bundle?: string[]
 }
 
 export type CableFlowEdge = Edge<CableData>

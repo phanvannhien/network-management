@@ -93,6 +93,7 @@ export function useSubnets(orgId: string, siteId: string, q: string) {
 export function useSubnet(orgId: string, subnetId: string) {
   return useQuery({
     queryKey: keys.subnet(orgId, subnetId),
+    enabled: orgId !== '' && subnetId !== '',
     retry: false,
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/subnets/{subnetId}', {

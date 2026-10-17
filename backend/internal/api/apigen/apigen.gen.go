@@ -409,18 +409,22 @@ func (e DiagramAnnotationLineStyle) Valid() bool {
 
 // Defines values for DiagramChangeOp.
 const (
-	CreateDevice DiagramChangeOp = "createDevice"
-	CreateLink   DiagramChangeOp = "createLink"
-	DeleteDevice DiagramChangeOp = "deleteDevice"
-	DeleteLink   DiagramChangeOp = "deleteLink"
-	UpdateDevice DiagramChangeOp = "updateDevice"
-	UpdateLink   DiagramChangeOp = "updateLink"
+	CreateDevice        DiagramChangeOp = "createDevice"
+	CreateEndpointGroup DiagramChangeOp = "createEndpointGroup"
+	CreateLink          DiagramChangeOp = "createLink"
+	DeleteDevice        DiagramChangeOp = "deleteDevice"
+	DeleteLink          DiagramChangeOp = "deleteLink"
+	UpdateDevice        DiagramChangeOp = "updateDevice"
+	UpdateEndpointGroup DiagramChangeOp = "updateEndpointGroup"
+	UpdateLink          DiagramChangeOp = "updateLink"
 )
 
 // Valid indicates whether the value is a known member of the DiagramChangeOp enum.
 func (e DiagramChangeOp) Valid() bool {
 	switch e {
 	case CreateDevice:
+		return true
+	case CreateEndpointGroup:
 		return true
 	case CreateLink:
 		return true
@@ -429,6 +433,8 @@ func (e DiagramChangeOp) Valid() bool {
 	case DeleteLink:
 		return true
 	case UpdateDevice:
+		return true
+	case UpdateEndpointGroup:
 		return true
 	case UpdateLink:
 		return true
@@ -2000,12 +2006,16 @@ type DiagramAnnotationLineStyle string
 
 // DiagramChange One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id.
 type DiagramChange struct {
-	Device       *DeviceInput        `json:"device,omitempty"`
-	DeviceUpdate *DeviceUpdate       `json:"deviceUpdate,omitempty"`
-	Id           *openapi_types.UUID `json:"id,omitempty"`
-	Link         *LinkInput          `json:"link,omitempty"`
-	LinkUpdate   *LinkUpdate         `json:"linkUpdate,omitempty"`
-	Op           DiagramChangeOp     `json:"op"`
+	Device       *DeviceInput  `json:"device,omitempty"`
+	DeviceUpdate *DeviceUpdate `json:"deviceUpdate,omitempty"`
+
+	// EndpointGroup createEndpointGroup — a group of endpoints drawn on the diagram (ADR-036), with a tempId
+	EndpointGroup       *EndpointGroupInput  `json:"endpointGroup,omitempty"`
+	EndpointGroupUpdate *EndpointGroupUpdate `json:"endpointGroupUpdate,omitempty"`
+	Id                  *openapi_types.UUID  `json:"id,omitempty"`
+	Link                *LinkInput           `json:"link,omitempty"`
+	LinkUpdate          *LinkUpdate          `json:"linkUpdate,omitempty"`
+	Op                  DiagramChangeOp      `json:"op"`
 
 	// PortTempIds createDevice with a template (P1-17): client temp ids of the ports the template will generate, by name, so cables drawn before saving can name them; the result maps them to the real interface ids.
 	PortTempIds *[]PortTempId       `json:"portTempIds,omitempty"`

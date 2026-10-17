@@ -712,6 +712,43 @@ func applyChange(ctx context.Context, q store.Querier, m tenant.Membership, c ap
 			return "thiết bị không tồn tại", "", 0, err
 		}
 		return "", "", code, err
+	case apigen.CreateEndpointGroup, apigen.UpdateEndpointGroup:
+		// Endpoints drawn on the diagram (ADR-036): a group stands for many alike devices, not in the device list.
+		var (
+			in      apigen.EndpointGroupInput
+			id      *uuid.UUID
+			version int32
+		)
+		if c.Op == apigen.CreateEndpointGroup {
+			if c.TempId == nil || c.EndpointGroup == nil {
+				return "tạo nhóm đầu cuối cần tempId và endpointGroup", "", 0, nil
+			}
+			in = *c.EndpointGroup
+		} else {
+			gid, bad := needID()
+			if bad != "" || c.EndpointGroupUpdate == nil {
+				return "sửa nhóm đầu cuối cần id và endpointGroupUpdate", "", 0, nil
+			}
+			u := c.EndpointGroupUpdate
+			in = apigen.EndpointGroupInput{Kind: u.Kind, Name: u.Name, SiteId: u.SiteId, IpRangeId: u.IpRangeId,
+				ExpectedCount: u.ExpectedCount, Notes: u.Notes}
+			id, version = &gid, u.Version
+		}
+		f, bad := validateGroup(in.Kind, in.Name, in.SiteId, in.IpRangeId, in.ExpectedCount, in.Notes)
+		if bad != "" {
+			return bad, "", 0, nil
+		}
+		var out writeOutcome
+		g, err := writeGroup(ctx, q, m, f, id, version, &out)
+		if stop, err := refusal(err); err != nil || stop {
+			if out.gone {
+				return "nhóm đầu cuối không tồn tại", "", 0, err
+			}
+			return out.bad, out.conf, out.code, err
+		}
+		if c.Op == apigen.CreateEndpointGroup {
+			idMap[*c.TempId] = uuid.UUID(g.ID.Bytes)
+		}
 	case apigen.CreateLink, apigen.UpdateLink:
 		var in apigen.LinkInput
 		var id *uuid.UUID

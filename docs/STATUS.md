@@ -5,6 +5,26 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Đầu cuối trên sơ đồ (ADR-036): nhóm đại diện, nối dải cổng, cấu hình trong panel
+- Đã làm:
+  - Thư viện sơ đồ có mục **"Đầu cuối (không vào kho)"** (PC, laptop, máy in, điện thoại IP, họp trực tuyến, camera, chấm công, IoT,
+    khác). Kéo/bấm → hộp "Thêm đầu cuối" (loại, site, tên — gợi ý sẵn, số lượng); tùy chọn "Quản lý từng máy trong kho" để tạo thiết bị
+    như cũ. Nhóm là nháp, tạo khi lưu sơ đồ (thao tác `createEndpointGroup`/`updateEndpointGroup` mới của lần lưu, có hoàn tác).
+  - **Panel nhóm:** tên, loại, số lượng, site, subnet → dải IP (chọn có sẵn hoặc **tạo dải mới** — ghi IPAM ngay), ghi chú; mục "Cắm
+    vào" liệt kê cổng theo dải ("SW-POE: Gi1/0/1–24 (24)").
+  - **Nối dải cổng:** nhóm ↔ thiết bị có ô "Đến cổng (nối cả dải)" → mỗi cổng một link, một bước hoàn tác; bỏ qua cổng đã có dây.
+  - **Sơ đồ:** các dây của một nhóm tới cùng thiết bị gộp thành một cạnh, nhãn "Gi1/0/1–10 (10)"; Shift+Delete trên cạnh đó xóa cả
+    nhóm dây. Nút nhóm có biểu tượng đúng loại và "×số lượng", dòng phụ là dải IP.
+  - Backend: tách `writeGroup` (dùng trong lưu sơ đồ). ADR-036; Glossary. Sửa test MFA chập chờn (chờ editor tải lười tới 5 s).
+- Test / cách kiểm tra: `make check` pass (Go `TestDiagramSaveEndpointGroups`: tạo nhóm + 3 dây trong một lần lưu, sửa nhóm, không thành
+  thiết bị, site tổ chức khác bị từ chối; vitest 281: gộp cạnh, thứ tự thao tác lưu, một lần hoàn tác bỏ cả dải dây, rút gọn tên
+  cổng). Chromium: thêm "Camera tầng 1" ×24 từ thư viện, nối cổng 1–10 của switch HCM, lưu → 1 nhóm, 10 dây, 0 thiết bị mới.
+- Còn dở / lỗi đã biết: sửa loại/trạng thái dây cho cả nhóm dây một lần chưa có (hộp sửa dây chỉ sửa dây đại diện); thư viện tab
+  "Trong kho" chưa liệt kê nhóm đầu cuối có sẵn để đặt lại lên sơ đồ khác.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: sửa cả nhóm dây; nhóm đầu cuối trong tab "Trong kho"; hoặc P1-22 Export.
+
 ## 2026-10-17 — Editor: kéo cả nhóm site, thanh tiêu đề khung dễ nắm
 - Đã làm: thanh tiêu đề khung có biểu tượng tay nắm + chú thích "Kéo để di chuyển cả site…"; khi thu nhỏ màn vẽ (< 80 %) tiêu đề giữ cỡ
   đủ lớn để nắm/đọc (tối đa 2,5×, cắt chữ trong bề rộng khung). **Shift + bấm tiêu đề** chọn thêm site; kéo một tiêu đề → mọi khung đã

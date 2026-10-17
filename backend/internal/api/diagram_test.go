@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -277,5 +278,70 @@ func TestDiagramFrames(t *testing.T) {
 	}
 	if status, body := save(2, frame(hcm, room)); status != http.StatusOK {
 		t.Errorf("re-save with the stored binding: %d %v", status, body)
+	}
+}
+
+// ADR-036: endpoints drawn on the diagram — a group created with the save, cabled to a range of switch ports; edited
+// later from the diagram; never listed as devices.
+func TestDiagramSaveEndpointGroups(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	hcm := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "HCM"}))
+	sw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW-POE", "type": "poe_switch", "siteId": hcm}))
+	ports := []string{}
+	for i := 1; i <= 3; i++ {
+		ports = append(ports, idOf(t, mustCreate(t, fx.A, devicePath(org, sw)+"/interfaces", map[string]any{"name": fmt.Sprintf("Gi1/0/%d", i), "kind": "physical", "media": "RJ45"})))
+	}
+	dg := idOf(t, mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "CCTV", "layer": "physical"})["diagram"].(map[string]any))
+	cams := uuid.NewString()
+	grp := func(id string) map[string]any { return map[string]any{"kind": "endpoint_group", "id": id} }
+	changes := []map[string]any{{"op": "createEndpointGroup", "tempId": cams, "endpointGroup": map[string]any{
+		"kind": "ip_camera", "name": "Camera tầng 1", "siteId": hcm, "expectedCount": 3}}}
+	for _, p := range ports {
+		changes = append(changes, map[string]any{"op": "createLink", "tempId": uuid.NewString(), "link": map[string]any{
+			"a": devEnd(sw, p), "b": grp(cams), "kind": "ethernet"}})
+	}
+	status, res := fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{
+		"version": 1,
+		"view":    view([]map[string]any{node("n-sw", "device", sw, 0), node("n-cam", "endpoint_group", cams, 300)}),
+		"changes": changes,
+	})
+	if status != http.StatusOK {
+		t.Fatalf("save: %d %v", status, res)
+	}
+	gid := res["idMap"].(map[string]any)[cams].(string)
+	_, g := fx.A.Do("GET", orgPath(org)+"/endpoint-groups/"+gid, nil)
+	if g["name"] != "Camera tầng 1" || g["expectedCount"] != float64(3) {
+		t.Errorf("group: %v", g)
+	}
+	if _, links := fx.A.Do("GET", linksPath(org)+"?endId="+gid, nil); len(links["links"].([]any)) != 3 {
+		t.Errorf("one cable per port: %v", links)
+	}
+	if _, list := fx.A.Do("GET", devicesPath(org), nil); len(list["devices"].([]any)) != 1 {
+		t.Errorf("endpoints are not devices: %v", list["devices"])
+	}
+	// Edited from the diagram (name, count), with the group's version.
+	detail := res["detail"].(map[string]any)
+	status, res = fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{
+		"version": detail["diagram"].(map[string]any)["version"],
+		"view":    detail["view"],
+		"changes": []map[string]any{{"op": "updateEndpointGroup", "id": gid, "endpointGroupUpdate": map[string]any{
+			"kind": "ip_camera", "name": "Camera nhà xưởng", "siteId": hcm, "expectedCount": 24, "version": g["version"]}}},
+	})
+	if status != http.StatusOK {
+		t.Fatalf("update: %d %v", status, res)
+	}
+	if _, g = fx.A.Do("GET", orgPath(org)+"/endpoint-groups/"+gid, nil); g["name"] != "Camera nhà xưởng" || g["expectedCount"] != float64(24) {
+		t.Errorf("updated group: %v", g)
+	}
+	// Another organization's site is refused.
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "B01", "name": "B"}))
+	status, _ = fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{
+		"version": res["detail"].(map[string]any)["diagram"].(map[string]any)["version"],
+		"view":    res["detail"].(map[string]any)["view"],
+		"changes": []map[string]any{{"op": "createEndpointGroup", "tempId": uuid.NewString(), "endpointGroup": map[string]any{"kind": "pc", "name": "PC", "siteId": siteB}}},
+	})
+	if status == http.StatusOK {
+		t.Errorf("group in another organization's site accepted")
 	}
 }

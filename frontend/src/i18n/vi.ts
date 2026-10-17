@@ -993,6 +993,12 @@ export const vi = {
     escToCancel: '(Esc để hủy)',
     portOf: 'Cổng ở {{name}}',
     noPort: 'Chưa gán cổng',
+    rangeTo: 'Đến cổng (nối cả dải)',
+    rangeGuide:
+      'Nhóm đầu cuối cắm nhiều cổng liền nhau (vd camera cổng 1–24): chọn cổng cuối, hệ thống tạo mỗi cổng một dây.',
+    rangeNone: 'Chỉ một cổng',
+    rangeCount: 'Sẽ nối {{count}} cổng.',
+    rangeSkipped: 'Bỏ qua {{count}} cổng đã có dây hoặc không hợp.',
     noPortGroup: 'Nhóm thiết bị đầu cuối không có cổng.',
     noPortNeeded: 'Không cần cổng ở đầu này',
     noPortCloud: 'Không cần chọn cổng: đây là mạng của nhà cung cấp, không phải thiết bị của mình.',
@@ -1169,6 +1175,10 @@ export const vi = {
       'Thiết bị được thêm vào kho khi bạn lưu sơ đồ. Vị trí rack, IP, serial… sửa sau ở panel thuộc tính hoặc trang thiết bị.',
     modelGuide:
       'Gõ model hoặc part number (vd C1300-24T-4G): nếu có template, thiết bị tự có đủ cổng đúng tên của hãng.',
+    endpoints: 'Đầu cuối (không vào kho)',
+    endpointsGuide:
+      'Một biểu tượng đại diện cho nhiều máy giống nhau (vd 24 camera cắm cổng 1–24 cùng một dải IP). Không vào danh sách thiết bị.',
+    endpointDetail: 'Nhóm đầu cuối — cấu hình số lượng, dải IP trong panel',
     noTemplate: 'Không dùng template',
     chooseSite: 'Chọn site…',
     siteGuide: 'Nơi thiết bị đặt thật; sơ đồ có thể chứa thiết bị của nhiều site.',
@@ -1774,6 +1784,38 @@ export const vi = {
     add: 'Thêm',
     added: 'Đã có template {{name}}',
     none: 'Không tìm thấy model nào.',
+  },
+  endpointPanel: {
+    subtitle: 'Nhóm đầu cuối · {{kind}}',
+    guide:
+      'Đại diện cho các máy giống nhau ở một nơi — không vào danh sách thiết bị. Sửa xong bấm Áp dụng; lưu cùng sơ đồ.',
+    rangeGuide:
+      'Dải IP các máy của nhóm dùng (vd 10.1.20.10–10.1.20.60). Chọn dải có sẵn hoặc tạo mới trong subnet của site.',
+    newRange: '+ Tạo dải mới…',
+    rangeStart: 'IP đầu',
+    rangeEnd: 'IP cuối',
+    createRange: 'Tạo dải',
+    rangeCreated: 'Đã tạo dải {{range}} trong IPAM',
+    ports: 'Cắm vào',
+    noPorts:
+      'Chưa nối dây. Nối với switch, chọn "từ cổng … đến cổng …" để nối cả dải cổng một lần.',
+    noPortYet: 'chưa gán cổng',
+  },
+  endpointNew: {
+    title: 'Thêm đầu cuối',
+    body: 'Một biểu tượng đại diện cho các máy giống nhau ở một nơi (vd camera cổng 1–24). Không vào danh sách thiết bị; số lượng, dải IP và cổng switch cấu hình sau trong panel và khi nối dây.',
+    kind: 'Loại',
+    name: 'Tên nhóm',
+    nameHint: 'Bỏ trống thì đặt là "{{name}}". Vd "Camera tầng 1", "PC phòng kế toán".',
+    taken: 'Site này đã có nhóm tên này trên sơ đồ.',
+    count: 'Số lượng',
+    countGuide: 'Bao nhiêu máy nhóm này đại diện (bỏ trống nếu chưa biết).',
+    badCount: 'Số lượng là số nguyên từ 1.',
+    asDevice: 'Quản lý từng máy trong kho',
+    asDeviceGuide:
+      'Tạo một thiết bị trong danh sách thiết bị (có hostname, S/N…) thay vì nhóm đầu cuối — dùng cho máy quan trọng.',
+    create: 'Thêm vào sơ đồ',
+    next: 'Tiếp: tạo thiết bị',
   },
   addPorts: {
     title: '{{name}} chưa có cổng',

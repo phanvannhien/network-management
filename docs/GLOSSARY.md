@@ -88,6 +88,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | Thuật ngữ | Là gì | Ví dụ |
 | --- | --- | --- |
 | **Nhóm thiết bị đầu cuối** | Nhiều thiết bị giống nhau (camera, PC, điện thoại IP…) quản lý như một mục: dải IP, số lượng dự kiến, danh sách thành viên. Trên sơ đồ là một biểu tượng có "đã dùng/tổng" | "Camera nhà xưởng" 14/20 |
+| **Đầu cuối trên sơ đồ / nối dải cổng** | Kéo "Camera", "PC"… từ mục Đầu cuối của thư viện → một nhóm đại diện, không vào danh sách thiết bị. Nối với switch chọn "từ cổng 1 đến cổng 24": mỗi cổng một dây, sơ đồ gộp thành một dây ghi "Gi1/0/1–24 (24)" | 24 camera tầng 1 trên switch PoE |
 | **Thành viên** | Một thiết bị trong nhóm, chỉ ghi tên, IP, MAC, cổng switch đang cắm | `CAM-01` · `10.72.120.2` · cắm `BD-SW01 Gi1/0/5` |
 | **Tách thành thiết bị** | Biến một thành viên thành thiết bị đầy đủ khi cần quản lý riêng (S/N, bảo hành, giám sát) | Camera cổng chính cần theo dõi bảo hành |
 

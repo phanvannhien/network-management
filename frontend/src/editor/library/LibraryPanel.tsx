@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DEVICE_TYPE_GROUPS, useDeviceList, useTemplates } from '@/modules/inventory/devices'
 import { DeviceIcon } from '../catalog/icons'
-import { encodeItem, LIBRARY_MIME, type DeviceType, type LibraryItem } from './items'
+import {
+  ENDPOINT_KINDS,
+  encodeItem,
+  LIBRARY_MIME,
+  type DeviceType,
+  type LibraryItem,
+} from './items'
 import { matches } from './search'
 
 /**
@@ -154,16 +160,22 @@ function NewDevices({
     () =>
       DEVICE_TYPE_GROUPS.map((g) => ({
         group: g.group,
-        types: g.types.filter((ty) =>
-          matches(query, ty, t(`devices.types.${ty}`), t(`devices.typeInfo.${ty}`)),
+        // Endpoint kinds are offered as endpoints below (ADR-036), not as inventory devices.
+        types: g.types.filter(
+          (ty) =>
+            !(ENDPOINT_KINDS as string[]).includes(ty) &&
+            matches(query, ty, t(`devices.types.${ty}`), t(`devices.typeInfo.${ty}`)),
         ),
       })).filter((g) => g.types.length > 0),
     [query, t],
   )
+  const endpoints = ENDPOINT_KINDS.filter((k) =>
+    matches(query, k, t(`devices.types.${k}`), t('library.endpoints')),
+  )
   const tpls = (templates.data ?? []).filter((x) =>
     matches(query, x.name, x.vendor, x.model, x.partNumber, t(`devices.types.${x.type}`)),
   )
-  if (groups.length === 0 && tpls.length === 0)
+  if (groups.length === 0 && tpls.length === 0 && endpoints.length === 0)
     return <p className="px-1 py-4 text-center text-muted-foreground">{t('library.noMatch')}</p>
   return (
     <div className="space-y-3">
@@ -184,6 +196,27 @@ function NewDevices({
                   count: x.portCount,
                 })}
                 label={t('library.addNew', { name: x.name })}
+                onPick={onPick}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+      {endpoints.length > 0 && (
+        <section aria-label={t('library.endpoints')}>
+          <h3 className="px-1 text-label font-medium text-muted-foreground">
+            {t('library.endpoints')}
+          </h3>
+          <p className="px-1 pb-1 text-xs text-muted-foreground">{t('library.endpointsGuide')}</p>
+          <ul className="space-y-0.5">
+            {endpoints.map((k) => (
+              <Entry
+                key={k}
+                item={{ kind: 'endpoint', endpointKind: k }}
+                icon={icon(k)}
+                title={t(`devices.types.${k}`)}
+                detail={t('library.endpointDetail')}
+                label={t('library.addNew', { name: t(`devices.types.${k}`) })}
                 onPick={onPick}
               />
             ))}

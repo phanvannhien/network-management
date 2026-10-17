@@ -3202,7 +3202,7 @@ export interface components {
         /** @description One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id. */
         DiagramChange: {
             /** @enum {string} */
-            op: "createDevice" | "updateDevice" | "deleteDevice" | "createLink" | "updateLink" | "deleteLink";
+            op: "createDevice" | "updateDevice" | "deleteDevice" | "createLink" | "updateLink" | "deleteLink" | "createEndpointGroup" | "updateEndpointGroup";
             /** Format: uuid */
             tempId?: string;
             /** Format: uuid */
@@ -3213,6 +3213,9 @@ export interface components {
             deviceUpdate?: components["schemas"]["DeviceUpdate"];
             link?: components["schemas"]["LinkInput"];
             linkUpdate?: components["schemas"]["LinkUpdate"];
+            /** @description createEndpointGroup — a group of endpoints drawn on the diagram (ADR-036), with a tempId */
+            endpointGroup?: components["schemas"]["EndpointGroupInput"];
+            endpointGroupUpdate?: components["schemas"]["EndpointGroupUpdate"];
         };
         PortTempId: {
             name: string;

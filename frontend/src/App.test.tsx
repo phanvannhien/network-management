@@ -291,7 +291,10 @@ describe('MFA', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Tôi đã lưu mã khôi phục ở nơi an toàn' }))
     await waitFor(() => expect(cont).toBeEnabled())
     fireEvent.click(cont)
-    await waitFor(() => expect(document.body.querySelector('.react-flow')).toBeInTheDocument())
+    // The editor is a lazy chunk with React Flow: give it time on a busy machine.
+    await waitFor(() => expect(document.body.querySelector('.react-flow')).toBeInTheDocument(), {
+      timeout: 5000,
+    })
   })
 
   it('lets non-admin users with MFA off reach the app, with an enable link', async () => {

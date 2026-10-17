@@ -48,9 +48,10 @@ export function useEndpointGroups(orgId: string, enabled = true) {
   })
 }
 
-export function useEndpointGroup(orgId: string, groupId: string) {
+export function useEndpointGroup(orgId: string, groupId: string, enabled = true) {
   return useQuery({
     queryKey: keys.one(orgId, groupId),
+    enabled: enabled && groupId !== '',
     retry: false,
     queryFn: async () => {
       const r = await api.GET('/orgs/{orgId}/endpoint-groups/{groupId}', {

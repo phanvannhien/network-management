@@ -5,7 +5,7 @@ import {
   type NodeProps,
   type Node,
 } from '@xyflow/react'
-import { Boxes, CircleHelp, Lock } from 'lucide-react'
+import { CircleHelp, Lock } from 'lucide-react'
 import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
@@ -181,11 +181,24 @@ function GroupNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlowN
       selected={selected}
       connectable={isConnectable}
       locked={data.locked}
-      draft={false}
-      title={group.name}
-      icon={<Boxes aria-hidden className="size-8 text-muted-foreground" />}
+      title={[group.name, t(`devices.types.${group.kind}`), group.range]
+        .filter(Boolean)
+        .join(' · ')}
+      icon={
+        // The kind's icon with a count badge: one node stands for all the endpoints of the group (ADR-036).
+        <span className="relative">
+          <DeviceIcon typeId={group.kind} size={32} />
+          {group.expectedCount ? (
+            <span className="absolute -right-4 -bottom-1 rounded-full border border-border bg-card px-1 text-[10px] leading-4 font-semibold">
+              ×{group.expectedCount}
+            </span>
+          ) : null}
+        </span>
+      }
       label={group.name}
-      detail={t('editorCanvas.group')}
+      detail={group.range || t('editorCanvas.group')}
+      mono={Boolean(group.range)}
+      draft={group.draft === true}
       problem={problem}
     />
   )

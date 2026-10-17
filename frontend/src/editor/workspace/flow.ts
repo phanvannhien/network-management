@@ -1,3 +1,4 @@
+import { portRanges } from './wiring'
 import type { Edge, Node } from '@xyflow/react'
 import type { AnnotationData, ClusterData } from './annotationNodes'
 import type { CableData } from './CableEdge'
@@ -51,6 +52,9 @@ export function toFlowEdges(
   for (const n of doc.view.nodes) if (!nodeOf.has(n.refId)) nodeOf.set(n.refId, n.id)
   const out: Edge<CableData>[] = []
   const pairCount = new Map<string, number>()
+  // The cables of an endpoint group to one device are one edge (ports 1–24 of a PoE switch, ADR-036).
+  const bundles = new Map<string, Edge<CableData>>()
+  const bundlePorts = new Map<Edge<CableData>, string[]>()
   for (const e of doc.view.edges) {
     const l = doc.links[e.linkId]
     if (!l) continue
@@ -58,6 +62,15 @@ export function toFlowEdges(
     const target = nodeOf.get(l.bId)
     if (!source || !target) continue
     const pair = source < target ? `${source}|${target}` : `${target}|${source}`
+    const groupAt = doc.groups[l.aId] ? 'a' : doc.groups[l.bId] ? 'b' : null
+    const bundleKey = groupAt ? `${pair}|${l.kind}` : null
+    const rep = bundleKey ? bundles.get(bundleKey) : undefined
+    if (rep) {
+      rep.data!.bundle!.push(l.id)
+      bundlePorts.get(rep)!.push((groupAt === 'a' ? l.bPort : l.aPort) ?? '')
+      if (selection.has(e.id)) rep.selected = true
+      continue
+    }
     const index = pairCount.get(pair) ?? 0
     pairCount.set(pair, index + 1)
     out.push({
@@ -83,8 +96,22 @@ export function toFlowEdges(
       },
       selected: selection.has(e.id),
     })
+    if (bundleKey) {
+      const edge = out[out.length - 1]!
+      edge.data!.bundle = [l.id]
+      bundles.set(bundleKey, edge)
+      bundlePorts.set(edge, [(groupAt === 'a' ? l.bPort : l.aPort) ?? ''])
+      edge.data!.groupAt = groupAt
+    }
   }
   for (const e of out) e.data!.count = pairCount.get(e.data!.pair as string) ?? 1
+  // A bundle shows its ports as ranges at the device end: "Gi1/0/1–24 (24)".
+  for (const [edge, names] of bundlePorts) {
+    if (names.length < 2) continue
+    const label = `${portRanges(names.filter(Boolean)) || '—'} (${names.length})`
+    if (edge.data!.groupAt === 'a') edge.data!.bPort = label
+    else edge.data!.aPort = label
+  }
   return out
 }
 

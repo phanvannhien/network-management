@@ -398,3 +398,23 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   cần sửa theo từng tổ chức nên file trong mã nguồn là đơn giản và kiểm soát được (review qua git).
 - **Đánh đổi:** model mới phải chờ bản phần mềm sau (tạm thời tự tạo template); dữ liệu soạn từ datasheet có thể sai sót — giảm bằng
   cờ `verified` và việc template chép ra vẫn sửa được.
+
+### ADR-036 — Thiết bị đầu cuối vẽ trên sơ đồ là "nhóm đầu cuối", không vào kho
+- **Bối cảnh:** sơ đồ cần biểu diễn PC, camera, điện thoại IP… nhưng không quản lý từng máy trong danh sách thiết bị. Người dùng
+  chốt 2026-10-17: một biểu tượng **đại diện** cho các máy giống nhau (vd camera cắm cổng 1–24 của switch PoE, cùng một dải IP),
+  cấu hình được ngay trên sơ đồ.
+- **Quyết định:**
+  - Thư viện sơ đồ có mục **"Đầu cuối (không vào kho)"**: PC, laptop, máy in, điện thoại IP, họp trực tuyến, camera, chấm công,
+    IoT, khác. Kéo vào → **nhóm đầu cuối** (bảng `endpoint_groups` sẵn có) ở dạng nháp, tạo khi lưu sơ đồ (thao tác
+    `createEndpointGroup` / `updateEndpointGroup` của lần lưu, có hoàn tác). Máy chủ, NAS, máy ảo vẫn là thiết bị trong kho.
+  - Muốn quản lý từng máy thì tích "Quản lý từng máy trong kho" → tạo thiết bị như cũ.
+  - **Panel nhóm:** tên, loại, số lượng, site, dải IP (chọn, hoặc tạo dải mới trong subnet của site — ghi IPAM ngay như ADR-034),
+    ghi chú, danh sách cổng đang cắm.
+  - **Nối dải cổng:** nối nhóm với thiết bị chọn "từ cổng … đến cổng …" → mỗi cổng một link (cổng switch được đánh dấu đã dùng
+    đúng thực tế, quy tắc "một cổng một dây" giữ nguyên); một bước hoàn tác.
+  - **Hiển thị:** các dây của một nhóm tới cùng một thiết bị vẽ thành **một cạnh**, nhãn dải cổng "Gi1/0/1–24 (24)"; xóa cạnh đó xóa
+    cả nhóm dây. Nút nhóm có biểu tượng đúng loại và "×số lượng".
+- **Lý do:** sơ đồ chuẩn chỉ cần đại diện; dữ liệu vẫn đủ để biết cổng nào đã dùng, dải IP nào thuộc camera; không làm phình danh
+  sách thiết bị.
+- **Đánh đổi:** nhiều link cho một nhóm (mỗi cổng một link) — chấp nhận để giữ đúng trạng thái cổng; sửa thuộc tính dây của cả nhóm
+  dây một lần để sau.

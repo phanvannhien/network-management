@@ -77,7 +77,8 @@ export function CableDialog({
   initial?: CableValue
   /** The cable being edited (its own ports are not "taken"). */
   self?: string
-  onSave: (input: LinkInput, ports: PortNames) => void
+  /** `more`: further device ports for the same endpoint group (a port range, ADR-036) — one cable each. */
+  onSave: (input: LinkInput, ports: PortNames, more?: { id: string; name: string }[]) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -108,6 +109,25 @@ export function CableDialog({
     return null
   }
   const title = self ? t('cable.editTitle') : t('cable.title')
+  // An endpoint group cabled to a device: a range of the device's ports at once (cameras on ports 1–24, ADR-036).
+  const groupSide: 'a' | 'b' | null = self
+    ? null
+    : a.kind === 'device' && b.kind === 'endpoint_group'
+      ? 'a'
+      : b.kind === 'device' && a.kind === 'endpoint_group'
+        ? 'b'
+        : null
+  const [rangeTo, setRangeTo] = useState('')
+  const devPorts = groupSide === 'a' ? portsA : portsB
+  const rangeStart = groupSide === 'a' ? v.aPort : groupSide === 'b' ? v.bPort : ''
+  const physicalOrder = devPorts.list.filter((p) => p.kind !== 'lag')
+  const startIdx = physicalOrder.findIndex((p) => p.id === rangeStart)
+  const usable = (p: PortOption) =>
+    portFits(v.kind, p.kind, p.media) && (!devPorts.taken.has(p.id) || sharesPort(v.kind, p.media))
+  const endIdx = physicalOrder.findIndex((p) => p.id === rangeTo)
+  const span = startIdx >= 0 && endIdx > startIdx ? physicalOrder.slice(startIdx, endIdx + 1) : []
+  const rangePorts = span.filter(usable)
+  const skipped = span.length - rangePorts.length
   const endField = (
     e: CableEnd,
     ports: ReturnType<typeof usePorts>,
@@ -189,6 +209,9 @@ export function CableDialog({
                 status: v.status,
               },
               { aPort: nameOf(portsA.list, aPort), bPort: nameOf(portsB.list, bPort) },
+              rangePorts.length > 1
+                ? rangePorts.slice(1).map((p) => ({ id: p.id, name: p.name }))
+                : undefined,
             )
           }}
         >
@@ -258,6 +281,30 @@ export function CableDialog({
               setV((cur) => ({ ...cur, bPort, kind: refine(cur, undefined, port?.media) }))
             })}
           </div>
+          {groupSide && startIdx >= 0 && (
+            <FormField
+              label={t('cable.rangeTo')}
+              guide={t('cable.rangeGuide')}
+              hint={
+                rangePorts.length > 1
+                  ? t('cable.rangeCount', { count: rangePorts.length }) +
+                    (skipped > 0 ? ` ${t('cable.rangeSkipped', { count: skipped })}` : '')
+                  : undefined
+              }
+            >
+              {(p) => (
+                <NativeSelect {...p} value={rangeTo} onChange={(e) => setRangeTo(e.target.value)}>
+                  <option value="">{t('cable.rangeNone')}</option>
+                  {physicalOrder.slice(startIdx + 1).map((port) => (
+                    <option key={port.id} value={port.id}>
+                      {port.name}
+                      {port.media ? ` · ${port.media}` : ''}
+                    </option>
+                  ))}
+                </NativeSelect>
+              )}
+            </FormField>
+          )}
           <FormField label={t('links.medium')} guide={t('guides.linkMedium')}>
             {(p) => (
               <>
