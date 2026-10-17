@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Hộp nối dây: đầu không cần cổng nói rõ, khung "chưa có cổng" không còn giống lỗi
+- Bối cảnh: nối Internet → modem, người dùng tưởng bị báo lỗi "không có cổng Internet" (ô cổng bị khóa + khung vàng). Thực ra nối được.
+- Đã làm: đầu không có cổng (mạng nhà cung cấp, nhóm đầu cuối, dây nguồn ở đầu thiết bị…) hiện "Không cần cổng ở đầu này" thay cho ô
+  chọn bị khóa, kèm giải thích; khung "<thiết bị> chưa có cổng" đổi sang màu trung tính, ghi rõ "có thể nối dây ngay và gán cổng
+  sau"; không có model thì ghi "Thêm các cổng thường có của <loại>".
+- Test / cách kiểm tra: `make check` pass. Chromium: Internet (HCMC-HQ) → modem chưa có cổng → loại dây tự chọn DSL, bấm Nối → dây
+  xuất hiện trên sơ đồ.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: như mục trước (HCM ra Internet qua đâu).
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor, hoặc P1-22 Export.
+
 ## 2026-10-17 — Thêm cổng tại chỗ: đoán theo loại thiết bị khi không có model
 - Đã làm: thiết bị chưa có model (vd modem tạo nhanh trên sơ đồ) → "Thêm các cổng này" đề xuất mặt trước điển hình theo loại:
   ONT `PON` + `LAN1–4`; modem `DSL` (xDSL) + `LAN1–4`; router/firewall/SD-WAN/VPN `WAN` + `LAN1–4`; AP `LAN` (trước đây đề xuất

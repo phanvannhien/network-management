@@ -123,37 +123,42 @@ export function CableDialog({
         hint={reason ?? undefined}
         guide={reason || !withGuide ? undefined : t('guides.linkPort')}
       >
-        {(p) => (
-          <NativeSelect
-            {...p}
-            value={reason ? '' : value}
-            disabled={reason !== null}
-            onChange={(ev) => set(ev.target.value)}
-          >
-            <option value="">{t('cable.noPort')}</option>
-            {orderPorts(ports, v.kind).map((port) => {
-              const busy = ports.taken.get(port.id)
-              const fits = portFits(v.kind, port.kind, port.media)
-              const free = busy === undefined || sharesPort(v.kind, port.media)
-              return (
-                <option
-                  key={port.id}
-                  value={port.id}
-                  disabled={(!fits || !free) && port.id !== value}
-                >
-                  {port.name}
-                  {port.media ? ` · ${port.media}` : ''}
-                  {port.speed ? ` ${port.speed}` : ''}
-                  {!fits
-                    ? ` (${t('cable.unfit')})`
-                    : !free
-                      ? ` (${t('cable.takenBy', { name: busy })})`
-                      : ''}
-                </option>
-              )
-            })}
-          </NativeSelect>
-        )}
+        {(p) =>
+          reason ? (
+            // Nothing to pick at this end (provider network, endpoint group…): say so instead of a locked select.
+            <p
+              id={p.id}
+              className="flex h-(--control-h) items-center rounded-md border border-dashed border-border px-2.5 text-[13px] text-muted-foreground"
+            >
+              {t('cable.noPortNeeded')}
+            </p>
+          ) : (
+            <NativeSelect {...p} value={value} onChange={(ev) => set(ev.target.value)}>
+              <option value="">{t('cable.noPort')}</option>
+              {orderPorts(ports, v.kind).map((port) => {
+                const busy = ports.taken.get(port.id)
+                const fits = portFits(v.kind, port.kind, port.media)
+                const free = busy === undefined || sharesPort(v.kind, port.media)
+                return (
+                  <option
+                    key={port.id}
+                    value={port.id}
+                    disabled={(!fits || !free) && port.id !== value}
+                  >
+                    {port.name}
+                    {port.media ? ` · ${port.media}` : ''}
+                    {port.speed ? ` ${port.speed}` : ''}
+                    {!fits
+                      ? ` (${t('cable.unfit')})`
+                      : !free
+                        ? ` (${t('cable.takenBy', { name: busy })})`
+                        : ''}
+                  </option>
+                )
+              })}
+            </NativeSelect>
+          )
+        }
       </FormField>
     )
   }

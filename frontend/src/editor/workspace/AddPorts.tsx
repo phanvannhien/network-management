@@ -47,7 +47,7 @@ export function AddPorts({
     <div
       role="group"
       aria-label={t('addPorts.title', { name: device.name })}
-      className="space-y-2 rounded-md border border-status-warning/50 bg-status-warning/5 p-3 text-sm"
+      className="space-y-2 rounded-md border border-border bg-muted/40 p-3 text-sm"
     >
       <p className="font-medium">{t('addPorts.title', { name: device.name })}</p>
       <p className="text-muted-foreground">{t('addPorts.why')}</p>
@@ -94,7 +94,11 @@ export function AddPorts({
         </div>
       )}
       <div className="space-y-1">
-        <p className="text-muted-foreground">{t('addPorts.guess', { model: model || '—' })}</p>
+        <p className="text-muted-foreground">
+          {model
+            ? t('addPorts.guess', { model })
+            : t('addPorts.guessType', { type: t(`devices.types.${device.type as 'modem'}`) })}
+        </p>
         {!editing ? (
           <ul className="list-inside list-disc font-mono text-xs">
             {groups.map((g, i) => (
