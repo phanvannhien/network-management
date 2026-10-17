@@ -69,7 +69,7 @@ export const en: Strings = {
   palette: {
     title: 'Search and commands',
     description: 'Type to find a page or device',
-    placeholder: 'Type a page, hostname, IP…',
+    placeholder: 'Type a page, hostname, S/N, IP, MAC…',
     empty: 'Nothing found',
     organizations: 'Other organizations',
     members: 'Members',
@@ -80,6 +80,19 @@ export const en: Strings = {
     categories: 'Categories',
     pages: 'Pages',
     devices: 'Devices',
+    clusters: 'Clusters',
+    addresses: 'IP addresses',
+    macs: 'MAC addresses',
+    groups: 'Endpoint groups',
+    searching: 'Searching…',
+    openOn: '{{name}} → open on diagram “{{diagram}}”',
+    matched: {
+      hostname: 'Hostname',
+      serial: 'S/N',
+      partNumber: 'Part number',
+      model: 'Model',
+      assetTag: 'Asset tag',
+    },
   },
   session: {
     expiring: 'Your session expires in {{time}}.',
@@ -1670,6 +1683,7 @@ export const en: Strings = {
     },
   },
   errors: {
+    searchFailed: 'Search failed',
     categoriesLoad: 'Could not load categories',
     diagramsLoad: 'Could not load diagrams',
     linksLoad: 'Could not load connections',

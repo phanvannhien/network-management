@@ -1325,6 +1325,36 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/search:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: globalSearch
+      summary: Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/delete-impact:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5758,6 +5788,155 @@ components:
           type: array
           items:
             type: string
+
+    SearchResult:
+      type: object
+      required: [devices, clusters, ips, macs, groups]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchDeviceHit'
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchClusterHit'
+        ips:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchIPHit'
+        macs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchMACHit'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchGroupHit'
+
+    SearchDeviceHit:
+      type: object
+      required: [id, hostname, type, siteCode, matched, matchedValue, diagrams]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        siteCode:
+          type: string
+        matched:
+          type: string
+          enum: [hostname, serial, partNumber, model, assetTag]
+        matchedValue:
+          type: string
+        diagrams:
+          type: array
+          description: diagrams showing the device (to open it there)
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+
+    SearchClusterHit:
+      type: object
+      required: [id, name, kind, hostname, siteCode, diagrams]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ClusterKind'
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+
+    SearchIPHit:
+      type: object
+      required: [host, address, role, name, interfaceName, siteCode, diagrams]
+      properties:
+        host:
+          type: string
+        address:
+          type: string
+        role:
+          type: string
+        deviceId:
+          type: string
+          format: uuid
+        clusterId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: device hostname, cluster name or member name
+        interfaceName:
+          type: string
+        siteCode:
+          type: string
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+
+    SearchMACHit:
+      type: object
+      required: [mac, name, interfaceName, diagrams]
+      properties:
+        mac:
+          type: string
+        deviceId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        interfaceName:
+          type: string
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+
+    SearchGroupHit:
+      type: object
+      required: [id, name, kind, siteCode, diagrams]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/EndpointKind'
+        siteCode:
+          type: string
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchDiagram'
+
+    SearchDiagram:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
 
     ApplyTemplate:
       type: object

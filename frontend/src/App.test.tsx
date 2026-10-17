@@ -887,7 +887,7 @@ describe('app shell (P1-06)', () => {
     renderAt(`/o/${ORG_ID}`)
     await screen.findByText('Xin chào Admin')
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-    fireEvent.change(await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…'), {
+    fireEvent.change(await screen.findByPlaceholderText('Gõ trang, hostname, S/N, IP, MAC…'), {
       target: { value: 'viewer@example' },
     })
     fireEvent.click(await screen.findByRole('option', { name: /Viewer/ }))
@@ -896,7 +896,7 @@ describe('app shell (P1-06)', () => {
     )
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-    fireEvent.change(await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…'), {
+    fireEvent.change(await screen.findByPlaceholderText('Gõ trang, hostname, S/N, IP, MAC…'), {
       target: { value: 'Khách hàng B' },
     })
     fireEvent.click(await screen.findByRole('option', { name: /Khách hàng B/ }))
@@ -1415,14 +1415,39 @@ describe('device inventory (P1-08)', () => {
     expect(screen.queryByRole('button', { name: 'Sửa' })).not.toBeInTheDocument()
   })
 
-  it('Ctrl+K jumps to a device', async () => {
-    fakeApi(routes())
+  it('Ctrl+K searches the server (P1-23) and jumps to a device', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/search`]: () =>
+          json({
+            devices: [
+              {
+                id: 'dev-1',
+                hostname: 'AGRI-BD-FW01',
+                type: 'firewall',
+                siteCode: 'AGRI-BD01',
+                matched: 'partNumber',
+                matchedValue: 'FGT60F',
+                diagrams: [{ id: 'dg-1', name: 'LAN BD' }],
+              },
+            ],
+            clusters: [],
+            ips: [],
+            macs: [],
+            groups: [],
+          }),
+      }),
+    )
     renderAt(`/o/${ORG_ID}`)
     await screen.findByText('Xin chào Admin')
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-    const input = await screen.findByPlaceholderText('Gõ tên trang, hostname, IP…')
+    const input = await screen.findByPlaceholderText('Gõ trang, hostname, S/N, IP, MAC…')
     fireEvent.change(input, { target: { value: 'FGT60F' } })
-    fireEvent.click(await screen.findByRole('option', { name: /AGRI-BD-FW01/ }))
+    expect(
+      await screen.findByRole('option', { name: /AGRI-BD-FW01 → mở trên sơ đồ «LAN BD»/ }),
+    ).toBeInTheDocument()
+    expect(calls.some((c) => c.url.includes('/search?q=FGT60F'))).toBe(true)
+    fireEvent.click(screen.getByRole('option', { name: /^AGRI-BD-FW01.*Part number: FGT60F/ }))
     expect(await screen.findByRole('heading', { name: 'AGRI-BD-FW01' })).toBeInTheDocument()
   })
 

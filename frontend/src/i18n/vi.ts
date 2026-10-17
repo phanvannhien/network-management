@@ -67,7 +67,7 @@ export const vi = {
   palette: {
     title: 'Tìm kiếm và lệnh',
     description: 'Gõ để tìm trang hoặc thiết bị',
-    placeholder: 'Gõ tên trang, hostname, IP…',
+    placeholder: 'Gõ trang, hostname, S/N, IP, MAC…',
     empty: 'Không tìm thấy',
     organizations: 'Tổ chức khác',
     members: 'Thành viên',
@@ -78,6 +78,19 @@ export const vi = {
     categories: 'Danh mục',
     pages: 'Trang',
     devices: 'Thiết bị',
+    clusters: 'Cụm thiết bị',
+    addresses: 'Địa chỉ IP',
+    macs: 'Địa chỉ MAC',
+    groups: 'Nhóm đầu cuối',
+    searching: 'Đang tìm…',
+    openOn: '{{name}} → mở trên sơ đồ «{{diagram}}»',
+    matched: {
+      hostname: 'Hostname',
+      serial: 'S/N',
+      partNumber: 'Part number',
+      model: 'Model',
+      assetTag: 'Mã tài sản',
+    },
   },
   session: {
     expiring: 'Phiên đăng nhập sẽ hết hạn sau {{time}}.',
@@ -1656,6 +1669,7 @@ export const vi = {
     },
   },
   errors: {
+    searchFailed: 'Tìm kiếm không thành công',
     categoriesLoad: 'Không tải được danh mục',
     diagramsLoad: 'Không tải được sơ đồ',
     linksLoad: 'Không tải được kết nối',

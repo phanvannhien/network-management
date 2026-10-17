@@ -1130,6 +1130,33 @@ func (e Role) Valid() bool {
 	}
 }
 
+// Defines values for SearchDeviceHitMatched.
+const (
+	SearchDeviceHitMatchedAssetTag   SearchDeviceHitMatched = "assetTag"
+	SearchDeviceHitMatchedHostname   SearchDeviceHitMatched = "hostname"
+	SearchDeviceHitMatchedModel      SearchDeviceHitMatched = "model"
+	SearchDeviceHitMatchedPartNumber SearchDeviceHitMatched = "partNumber"
+	SearchDeviceHitMatchedSerial     SearchDeviceHitMatched = "serial"
+)
+
+// Valid indicates whether the value is a known member of the SearchDeviceHitMatched enum.
+func (e SearchDeviceHitMatched) Valid() bool {
+	switch e {
+	case SearchDeviceHitMatchedAssetTag:
+		return true
+	case SearchDeviceHitMatchedHostname:
+		return true
+	case SearchDeviceHitMatchedModel:
+		return true
+	case SearchDeviceHitMatchedPartNumber:
+		return true
+	case SearchDeviceHitMatchedSerial:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SiteKind.
 const (
 	SiteKindDatacenter SiteKind = "datacenter"
@@ -3062,6 +3089,83 @@ type RackUpdate struct {
 // Role organization role; it decides everything a member may do in the organization (ADR-032)
 type Role string
 
+// SearchClusterHit defines model for SearchClusterHit.
+type SearchClusterHit struct {
+	Diagrams []SearchDiagram    `json:"diagrams"`
+	Hostname string             `json:"hostname"`
+	Id       openapi_types.UUID `json:"id"`
+	Kind     ClusterKind        `json:"kind"`
+	Name     string             `json:"name"`
+	SiteCode string             `json:"siteCode"`
+}
+
+// SearchDeviceHit defines model for SearchDeviceHit.
+type SearchDeviceHit struct {
+	// Diagrams diagrams showing the device (to open it there)
+	Diagrams     []SearchDiagram        `json:"diagrams"`
+	Hostname     string                 `json:"hostname"`
+	Id           openapi_types.UUID     `json:"id"`
+	Matched      SearchDeviceHitMatched `json:"matched"`
+	MatchedValue string                 `json:"matchedValue"`
+	SiteCode     string                 `json:"siteCode"`
+	Type         DeviceType             `json:"type"`
+}
+
+// SearchDeviceHitMatched defines model for SearchDeviceHit.Matched.
+type SearchDeviceHitMatched string
+
+// SearchDiagram defines model for SearchDiagram.
+type SearchDiagram struct {
+	Id   openapi_types.UUID `json:"id"`
+	Name string             `json:"name"`
+}
+
+// SearchGroupHit defines model for SearchGroupHit.
+type SearchGroupHit struct {
+	Diagrams []SearchDiagram    `json:"diagrams"`
+	Id       openapi_types.UUID `json:"id"`
+
+	// Kind The device type of the group's members (used when a member becomes a device)
+	Kind     EndpointKind `json:"kind"`
+	Name     string       `json:"name"`
+	SiteCode string       `json:"siteCode"`
+}
+
+// SearchIPHit defines model for SearchIPHit.
+type SearchIPHit struct {
+	Address       string              `json:"address"`
+	ClusterId     *openapi_types.UUID `json:"clusterId,omitempty"`
+	DeviceId      *openapi_types.UUID `json:"deviceId,omitempty"`
+	Diagrams      []SearchDiagram     `json:"diagrams"`
+	GroupId       *openapi_types.UUID `json:"groupId,omitempty"`
+	Host          string              `json:"host"`
+	InterfaceName string              `json:"interfaceName"`
+
+	// Name device hostname, cluster name or member name
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	SiteCode string `json:"siteCode"`
+}
+
+// SearchMACHit defines model for SearchMACHit.
+type SearchMACHit struct {
+	DeviceId      *openapi_types.UUID `json:"deviceId,omitempty"`
+	Diagrams      []SearchDiagram     `json:"diagrams"`
+	GroupId       *openapi_types.UUID `json:"groupId,omitempty"`
+	InterfaceName string              `json:"interfaceName"`
+	Mac           string              `json:"mac"`
+	Name          string              `json:"name"`
+}
+
+// SearchResult defines model for SearchResult.
+type SearchResult struct {
+	Clusters []SearchClusterHit `json:"clusters"`
+	Devices  []SearchDeviceHit  `json:"devices"`
+	Groups   []SearchGroupHit   `json:"groups"`
+	Ips      []SearchIPHit      `json:"ips"`
+	Macs     []SearchMACHit     `json:"macs"`
+}
+
 // Site defines model for Site.
 type Site struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
@@ -3996,6 +4100,11 @@ type PreviewNtbImportParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// GlobalSearchParams defines parameters for GlobalSearch.
+type GlobalSearchParams struct {
+	Q string `form:"q" json:"q"`
+}
+
 // ListSitesParams defines parameters for ListSites.
 type ListSitesParams struct {
 	// CategoryId Only sites of this category and the categories below it
@@ -4581,6 +4690,9 @@ type ServerInterface interface {
 	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 	// (POST /orgs/{orgId}/ntb-imports/preview)
 	PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams)
+	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
+	// (GET /orgs/{orgId}/search)
+	GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
@@ -5238,6 +5350,12 @@ func (_ Unimplemented) ImportNtb(w http.ResponseWriter, r *http.Request, orgId O
 // PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 // (POST /orgs/{orgId}/ntb-imports/preview)
 func (_ Unimplemented) PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
+// (GET /orgs/{orgId}/search)
+func (_ Unimplemented) GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10411,6 +10529,48 @@ func (siw *ServerInterfaceWrapper) PreviewNtbImport(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// GlobalSearch operation middleware
+func (siw *ServerInterfaceWrapper) GlobalSearch(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GlobalSearchParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GlobalSearch(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSites operation middleware
 func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
 
@@ -12289,6 +12449,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/ntb-imports", wrapper.ImportNtb)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/search", wrapper.GlobalSearch)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
@@ -19482,6 +19645,85 @@ func (response PreviewNtbImport404JSONResponse) VisitPreviewNtbImportResponse(w 
 	return err
 }
 
+type GlobalSearchRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GlobalSearchParams
+}
+
+type GlobalSearchResponseObject interface {
+	VisitGlobalSearchResponse(w http.ResponseWriter) error
+}
+
+type GlobalSearch200JSONResponse SearchResult
+
+func (response GlobalSearch200JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GlobalSearch400JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GlobalSearch401JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GlobalSearch403JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GlobalSearch404JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSitesRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListSitesParams
@@ -22245,6 +22487,9 @@ type StrictServerInterface interface {
 	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 	// (POST /orgs/{orgId}/ntb-imports/preview)
 	PreviewNtbImport(ctx context.Context, request PreviewNtbImportRequestObject) (PreviewNtbImportResponseObject, error)
+	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
+	// (GET /orgs/{orgId}/search)
+	GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
@@ -25242,6 +25487,33 @@ func (sh *strictHandler) PreviewNtbImport(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewNtbImportResponseObject); ok {
 		if err := validResponse.VisitPreviewNtbImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GlobalSearch operation middleware
+func (sh *strictHandler) GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams) {
+	var request GlobalSearchRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GlobalSearch(ctx, request.(GlobalSearchRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GlobalSearch")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GlobalSearchResponseObject); ok {
+		if err := validResponse.VisitGlobalSearchResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -239,6 +239,22 @@ type Querier interface {
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
+	// Live members of the clusters: a cluster is drawn through its members.
+	SearchClusterMembers(ctx context.Context, arg SearchClusterMembersParams) ([]SearchClusterMembersRow, error)
+	// Stacks / HA pairs / VCs by name or hostname (their VIP is found by SearchIPs).
+	SearchClusters(ctx context.Context, arg SearchClustersParams) ([]SearchClustersRow, error)
+	// Global search (P1-23, SRS §2): hostname, S/N, part number, model, IP, MAC, cluster, endpoint group (sites and
+	// categories are matched in the browser, all of them are loaded). Every query takes
+	// organization_id; results are capped by @lim.
+	SearchDevices(ctx context.Context, arg SearchDevicesParams) ([]SearchDevicesRow, error)
+	SearchGroups(ctx context.Context, arg SearchGroupsParams) ([]SearchGroupsRow, error)
+	// Addresses held by devices, cluster VIPs and endpoint group members starting with the text being typed ("10.136.").
+	SearchIPs(ctx context.Context, arg SearchIPsParams) ([]SearchIPsRow, error)
+	// The same, inside a prefix: one exact address (a /32 or /128) or every address of a subnet ("10.136.10.0/24").
+	SearchIPsIn(ctx context.Context, arg SearchIPsInParams) ([]SearchIPsInRow, error)
+	// Interfaces and endpoint group members by MAC, compared as bare hex (any of aa:bb:cc…, aabb.cc…, aa-bb-cc…).
+	// For a group member: hostname = the member's name, interface_name = the group's name.
+	SearchMACs(ctx context.Context, arg SearchMACsParams) ([]SearchMACsRow, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error

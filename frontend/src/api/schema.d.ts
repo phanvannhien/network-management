@@ -743,6 +743,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group */
+        get: operations["globalSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/delete-impact": {
         parameters: {
             query?: never;
@@ -2837,6 +2857,73 @@ export interface components {
             /** @description devices / groups / clusters already there and used as they are */
             reused: number;
             warnings: string[];
+        };
+        SearchResult: {
+            devices: components["schemas"]["SearchDeviceHit"][];
+            clusters: components["schemas"]["SearchClusterHit"][];
+            ips: components["schemas"]["SearchIPHit"][];
+            macs: components["schemas"]["SearchMACHit"][];
+            groups: components["schemas"]["SearchGroupHit"][];
+        };
+        SearchDeviceHit: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            siteCode: string;
+            /** @enum {string} */
+            matched: "hostname" | "serial" | "partNumber" | "model" | "assetTag";
+            matchedValue: string;
+            /** @description diagrams showing the device (to open it there) */
+            diagrams: components["schemas"]["SearchDiagram"][];
+        };
+        SearchClusterHit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["ClusterKind"];
+            hostname: string;
+            siteCode: string;
+            diagrams: components["schemas"]["SearchDiagram"][];
+        };
+        SearchIPHit: {
+            host: string;
+            address: string;
+            role: string;
+            /** Format: uuid */
+            deviceId?: string;
+            /** Format: uuid */
+            clusterId?: string;
+            /** Format: uuid */
+            groupId?: string;
+            /** @description device hostname, cluster name or member name */
+            name: string;
+            interfaceName: string;
+            siteCode: string;
+            diagrams: components["schemas"]["SearchDiagram"][];
+        };
+        SearchMACHit: {
+            mac: string;
+            /** Format: uuid */
+            deviceId?: string;
+            /** Format: uuid */
+            groupId?: string;
+            name: string;
+            interfaceName: string;
+            diagrams: components["schemas"]["SearchDiagram"][];
+        };
+        SearchGroupHit: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["EndpointKind"];
+            siteCode: string;
+            diagrams: components["schemas"]["SearchDiagram"][];
+        };
+        SearchDiagram: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         /** @description an organization template, a system template (catalogId) or port groups typed on the spot — exactly one */
         ApplyTemplate: {
@@ -5166,6 +5253,35 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    globalSearch: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     deviceDeleteImpact: {

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useStore } from 'zustand'
 import { NotFoundPage } from '@/app/NotFoundPage'
@@ -331,6 +331,37 @@ function Workspace({
   } | null>(null)
 
   const fit = () => void flow.fitView({ ...fitOptions(libraryOpen, panelOpen), duration: ZOOM_MS })
+  // ?focus=<object id> (global search, P1-23): select the object's node and bring it into view once the nodes are
+  // measured, then drop the parameter so a reload does not jump again.
+  const [params, setParams] = useSearchParams()
+  const focusRef = params.get('focus')
+  // useNodesInitialized stays false with frames and notes (no handles): wait for any measured node instead.
+  const nodesReady = useFlowStore((st) => st.nodes.some((n) => n.measured?.width))
+  useEffect(() => {
+    if (!focusRef || !nodesReady) return
+    // A cluster is drawn through its members: its first member on the diagram.
+    const node =
+      doc.view.nodes.find((n) => n.refId === focusRef) ??
+      doc.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef)
+    if (node) {
+      const s = store.getState()
+      s.setEdgeSelection([])
+      s.setSelection([node.id])
+      void flow.fitView({
+        ...fitOptions(libraryOpen, panelOpen),
+        nodes: [{ id: node.id }],
+        maxZoom: 1.2,
+        duration: ZOOM_MS,
+      })
+    }
+    setParams(
+      (p) => {
+        p.delete('focus')
+        return p
+      },
+      { replace: true },
+    )
+  }, [focusRef, nodesReady]) // eslint-disable-line react-hooks/exhaustive-deps
   /** Top-left for a node centred on `at`, on the grid when snapping. */
   const place = (at: { x: number; y: number }) => {
     const step = prefs.snap ? prefs.grid : 1

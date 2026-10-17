@@ -5,6 +5,45 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-23 Tìm kiếm toàn cục
+- Đã làm:
+  - **API** `GET /orgs/{orgId}/search?q=` (2–100 ký tự, tối đa 10 kết quả mỗi nhóm), trả về:
+    - thiết bị: theo hostname / S/N / part number / model / mã tài sản, kèm trường nào khớp;
+    - cụm (stack, HA): theo tên hoặc hostname;
+    - địa chỉ IP: gõ đúng một IP (cả IPv6, viết kiểu nào cũng được) thì ra đúng IP đó; gõ subnet `10.136.10.0/24` thì ra mọi IP trong subnet;
+      gõ dở `10.136.` thì ra các IP bắt đầu như vậy;
+    - MAC: gõ kiểu nào cũng được (`aa:bb:cc`, `aabb.ccdd` của Cisco, `aa-bb-cc` của Windows, hay vài số cuối);
+      gõ một IP thì không tra nhầm sang MAC;
+    - nhóm đầu cuối.
+  - Mỗi kết quả kèm các **sơ đồ đang vẽ nó**. Cụm không nằm trực tiếp trên sơ đồ thì lấy sơ đồ của các thành viên.
+    Mọi query lọc theo organization_id; có test chứng minh tổ chức khác không đọc được.
+  - **Ctrl+K**:
+    - Từ 2 ký tự trở lên thì gọi API (chờ 250 ms sau khi ngừng gõ) và hiện các nhóm Thiết bị / Cụm / Địa chỉ IP / Địa chỉ MAC / Nhóm đầu cuối.
+    - Mỗi kết quả có thêm dòng "→ mở trên sơ đồ «…»".
+    - Bỏ danh sách 200 thiết bị tải sẵn. Bộ lọc tại chỗ đổi từ "đoán gần đúng" sang "chứa đủ các từ đã gõ", không phân biệt dấu:
+      trước đây gõ "cjidc" lại ra "CJ Foodville".
+  - **Editor** đọc `?focus=<id>`: chọn node đó (với cụm thì chọn thành viên đầu tiên), zoom tới, rồi bỏ tham số khỏi URL.
+  - Agent review song song đã chỉ ra, và đã sửa:
+    - subnet và IPv6 không tìm được;
+    - gõ "10.0.0.1" ra cả .10 đến .19;
+    - gõ IP mà vẫn tra MAC;
+    - cụm không tìm được theo tên;
+    - kết quả MAC không có thứ tự cố định.
+- Test / cách kiểm tra:
+  - `search_test.go` (TestGlobalSearch): mọi kiểu tìm ở trên, ký tự `%` và `_` được hiểu là chữ thường, kiểm tra chéo tổ chức, và lỗi 400 khi chỉ gõ 1 ký tự.
+  - App.test: Ctrl+K gọi API và hiện dòng "mở trên sơ đồ".
+  - Kiểm tra trên trình duyệt với dữ liệu mẫu CJ Foodville: gõ `10.136.4.101` ra VIP của cụm; gõ `cjidc` ra 2 thiết bị và 1 cụm;
+    bấm "CJIDC-HA → mở trên sơ đồ" thì mở sơ đồ, chọn sẵn VPN_CJIDC và zoom tới.
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Tìm kiếm dùng `LIKE '%…%'`, không dùng được index; với dữ liệu cỡ SRS thì đủ, sẽ đo ở P1-25.
+  - Việc tìm "sơ đồ nào đang vẽ thiết bị này" phải quét JSON của mọi sơ đồ trong tổ chức. Nếu P1-25 đo thấy chậm,
+    sẽ đề xuất thêm bảng `diagram_refs` cập nhật mỗi lần lưu.
+  - Site và danh mục vẫn lọc ngay trên trình duyệt (đã tải sẵn toàn bộ). Chưa tìm được VLAN và subnet theo tên hoặc mô tả.
+- Câu hỏi cho người dùng: không có.
+- Đề xuất quyết định cần chốt: nếu benchmark P1-25 chậm thì có dùng extension `pg_trgm` của Postgres (index cho tìm chuỗi) không? Việc này cần ADR.
+- Task tiếp theo đề xuất: P1-24 Dashboard cơ bản.
+
 ## 2026-10-17 — P1-22 Export (phần 2): file .ntb.json v2 xuất / nhập (ADR-037)
 - Đã làm:
   - **Schema v2** `schema/ntb.schema.json` (theo tên trường của API); schema cũ + file mẫu cũ chuyển sang `schema/legacy/`, `testdata/legacy/`
