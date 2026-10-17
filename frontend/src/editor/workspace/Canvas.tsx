@@ -89,6 +89,8 @@ export function Canvas({
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
   const [dataCache] = useState(() => new Map<string, RefData>())
   const dragKey = useRef<string | null>(null)
+  /** One undo step per resize gesture (NodeResizer reports `resizing: false` when it ends). */
+  const resizeKey = useRef<{ id: string; key: string } | null>(null)
   const wireFrom = useRef<string | null>(null)
 
   const nodes = useMemo(() => {
@@ -142,12 +144,19 @@ export function Canvas({
     const a = s.doc?.view.annotations.find((x) => x.id === annId)
     if (!a) return
     const key = dragKey.current ?? undefined
-    if (c.type === 'dimensions' && c.dimensions && c.resizing && a.kind === 'zone') {
+    if (c.type === 'dimensions' && a.kind === 'zone') {
+      if (!c.resizing) {
+        if (resizeKey.current?.id === annId) resizeKey.current = null
+        return
+      }
+      if (!c.dimensions) return
+      if (resizeKey.current?.id !== annId)
+        resizeKey.current = { id: annId, key: `resize:${annId}:${crypto.randomUUID()}` }
       s.dispatch(
         updateAnnotation(
           annId,
           { width: Math.round(c.dimensions.width), height: Math.round(c.dimensions.height) },
-          `resize:${annId}`,
+          resizeKey.current.key,
         ),
       )
       return
@@ -185,14 +194,9 @@ export function Canvas({
       )
       return
     }
-    // Resizing from the top / left moves the frame's origin too.
-    s.dispatch(
-      updateAnnotation(
-        annId,
-        { x, y },
-        c.type === 'position' && a.kind === 'zone' ? `resize:${annId}` : key,
-      ),
-    )
+    // Resizing from the top / left moves the frame's origin too (same step as the resize).
+    const resizing = resizeKey.current?.id === annId ? resizeKey.current.key : undefined
+    s.dispatch(updateAnnotation(annId, { x, y }, resizing ?? key))
   }
 
   const onNodesChange = useCallback(
@@ -252,6 +256,7 @@ export function Canvas({
       nodeTypes={NODE_TYPES}
       edgeTypes={EDGE_TYPES}
       onNodesChange={onNodesChange}
+      elevateNodesOnSelect={false}
       onEdgesChange={(changes) => {
         const s = store.getState()
         const next = new Set(s.edgeSelection)

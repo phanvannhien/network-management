@@ -168,6 +168,8 @@ export function toAnnotationNodes(
           zIndex: -1,
           selectable: false,
           dragHandle: '.ntb-frame-title',
+          // The wrapper takes pointer events when onNodeClick is set; only the title bar should.
+          style: { pointerEvents: 'none' },
         }
       if (a.kind === 'arrow') return { ...base, type: 'arrow', position: arrowOrigin(a), zIndex: 5 }
       return { ...base, type: 'text', position: { x: a.x, y: a.y }, zIndex: 5 }
@@ -187,5 +189,6 @@ export function toClusterNodes(boxes: ClusterBox[]): Node<ClusterData>[] {
     draggable: false,
     focusable: false,
     zIndex: -1,
+    style: { pointerEvents: 'none' },
   }))
 }

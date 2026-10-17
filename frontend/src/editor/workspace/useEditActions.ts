@@ -170,15 +170,22 @@ export function useEditActions({
       .getState()
       .selection.filter(isAnnotationId)
       .map((id) => id.slice(ANN.length))
-    if (anns.length > 0) store.getState().dispatch(removeAnnotations(anns))
     if (nodes.length === 0) {
-      if (anns.length > 0) return
+      if (anns.length > 0) {
+        store.getState().dispatch(removeAnnotations(anns))
+        return
+      }
       // Cables cannot leave the view while both ends are drawn (ADR-015): Delete on them deletes from the inventory.
       if (store.getState().edgeSelection.length > 0) requestDelete()
       return
     }
     const locked = nodes.filter((n) => n.locked).length
-    store.getState().dispatch(removeNodes(nodes.map((n) => n.id)))
+    const removal = removeNodes(nodes.map((n) => n.id))
+    store
+      .getState()
+      .dispatch(
+        anns.length > 0 ? compound(removal.label, [removeAnnotations(anns), removal]) : removal,
+      )
     if (locked > 0) toast.info(t('editorEdit.lockedSkipped', { count: locked }))
   }
 
