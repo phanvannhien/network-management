@@ -77,6 +77,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **IP quản trị** | IP kỹ sư dùng để SSH/web vào thiết bị = IP chính của interface quản trị | Switch quản trị qua `Vlan10` |
 | **NAT** | Đổi địa chỉ khi đi qua firewall/router; thiết bị bên trong được "nhìn thấy" bằng IP khác | Camera `10.72.120.5` được truy cập qua `203.0.113.10:8080` |
 | **IP public** | IP trên Internet | `203.0.113.10` |
+| **Kiểm tra sơ đồ (Vấn đề)** | Hệ thống tự soát sơ đồ khi vẽ: **Lỗi** = gần như chắc chắn sai (IP trùng, 2 dây một cổng), **Cảnh báo** = nên xem (RJ45 cắm SFP, IP là địa chỉ broadcast), **Ghi chú** = còn thiếu (dây chưa gán cổng). Không chặn lưu | Nút ⚠ trên toolbar sơ đồ → panel Vấn đề → bấm dòng để tới thiết bị |
 | **VRF** | Bảng định tuyến riêng trên cùng thiết bị; cùng một IP ở 2 VRF khác nhau là hợp lệ | Hai khách hàng cùng dùng `192.168.1.0/24` trên một router MPLS |
 | **Poll address** | Địa chỉ hệ thống giám sát (Phase 3) dùng để hỏi thiết bị; trống = IP quản trị | Poller đi qua IP NAT |
 | **IPv6** | Thế hệ địa chỉ mới, dài hơn | `2001:db8::1/64` |

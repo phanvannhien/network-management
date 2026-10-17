@@ -5,6 +5,43 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-20 Validation (kiểm tra sơ đồ)
+- Đã làm:
+  - **Bộ rule chạy trong Web Worker** (`frontend/src/editor/checks/`), 300 ms sau thay đổi cuối, có fallback chạy trực tiếp khi
+    không có Worker. Rule tính trên dữ liệu kho + thay đổi chưa lưu trên sơ đồ (dây mới/sửa/xóa, cổng của thiết bị mới).
+    - **Lỗi:** IP không gán được (sai định dạng, 0.0.0.0, multicast, loopback, 169.254.x); trùng IP cùng VRF; trùng hostname
+      (kể cả thiết bị chưa lưu trên sơ đồ); trùng serial; một cổng vật lý > 1 dây (trừ PON/wireless/4G/logical); dây vật lý cắm
+      vào interface ảo/LAG.
+    - **Cảnh báo:** IP là địa chỉ mạng/broadcast (IP trần lấy mask theo subnet IPAM dài nhất cùng VRF); RJ45 ↔ SFP; hai đầu khác
+      tốc độ; hai đầu L3 khác subnet (theo họ IPv4/IPv6, bỏ /32, cổng access/trunk; cổng thành viên dùng IP của LAG); IP thành
+      viên ngoài dải nhóm; VLAN không khớp chế độ cổng (access/trunk/routed); LAG khác tốc độ; cụm khác firmware / khác model (HA);
+      thiết bị trong khung site/location khác.
+    - **Ghi chú:** thiết bị không có dây (tính cả dây không vẽ trên sơ đồ này); dây chưa gán cổng; có IP nhưng chưa chọn interface
+      quản trị; LAG khác loại cổng cùng tốc độ; stack khác model.
+  - **Backend** `POST /orgs/{orgId}/validation-context`: dữ liệu rule cần cho các thiết bị/nhóm trên sơ đồ (chỉ gửi cổng có dây/IP/
+    LAG/VLAN để payload nhỏ) + xung đột toàn tổ chức: trùng hostname, serial (bỏ trống/placeholder, retired), IP cùng VRF (gom theo
+    "chủ": các thành viên cụm và VIP của cụm là một; bỏ retired và IPv6 link-local; bản NAT/public hoặc thiết bị planned/spare/RMA →
+    cảnh báo). Lọc theo organization_id, test chứng minh tổ chức B không thấy dữ liệu A.
+  - **Panel Vấn đề**: nút trên toolbar hiện tổng số + biểu tượng mức nặng nhất; panel lọc theo mức, mỗi dòng có "cách sửa" bằng lời
+    dễ hiểu; bấm dòng → chọn thiết bị/dây và zoom tới. **Badge** trên node (hình + màu theo mức). Dữ liệu tự tải lại sau khi lưu và
+    sau mỗi thao tác IPAM từ panel.
+  - **Sửa lỗi P1-19 từ rà soát:** thân khung/hộp cụm không còn chặn khoanh chọn, click nền, chuột phải; khung đang chọn không nổi
+    lên che thiết bị; mỗi lần đổi kích thước khung là một bước hoàn tác riêng (trước gộp chung); Delete khung + thiết bị là một bước.
+  - SRS §7 cập nhật theo các mức đã chốt ở PLAN; Glossary: "Kiểm tra sơ đồ (Vấn đề)".
+- Test / cách kiểm tra: `make check` pass (Go `TestValidationContext`: cụm, retired, NAT/public, serial không phân biệt hoa thường,
+  chặn chéo tổ chức; vitest 259 — 17 test rule; App: context gửi đúng id, nút toolbar, panel, bấm dòng mở thiết bị).
+  Chromium (môi trường riêng, dữ liệu CJ Foodville): panel hiện 1 cảnh báo + 1 ghi chú, bấm dòng chọn đúng router, không lỗi console.
+- Còn dở / lỗi đã biết: chưa có badge trên dây (dây được chọn khi bấm dòng); "dải IP đầy" và "gateway ngoài subnet" chưa làm (thiếu dữ
+  liệu gateway thiết bị); IP VRRP/HSRP dùng chung giữa 2 router không thuộc cụm sẽ bị báo trùng.
+  **Dữ liệu demo:** router Hà Nội có IP WAN `27.72.96.43/30` — đây là địa chỉ broadcast của dải `27.72.96.40/30`, nhiều khả năng mask
+  thật là khác (vd /29) hoặc IP gõ nhầm; nên kiểm tra lại thông tin nhà mạng.
+- Câu hỏi cho người dùng:
+  1. Trùng IP và trùng serial: hiện chỉ **báo** (không chặn), giống ADR-034. Có muốn API **từ chối** khi gán IP trùng/nhập serial trùng
+     (và khi import Excel P1-21) không?
+  2. IP ảo VRRP/HSRP trên 2 router độc lập: thêm vai trò IP `vip` (chỉ cho trùng khi mọi bản đều là `vip` cùng subnet)?
+- Đề xuất quyết định cần chốt: (1) và (2) ở trên → ADR mới khi chốt.
+- Task tiếp theo đề xuất: P1-21 Import Excel thiết bị (chạy lại các rule Error trên dữ liệu file, kể cả trùng trong file).
+
 ## 2026-10-17 — P1-19 Annotation & khung nhóm theo site/location
 - Đã làm:
   - **Khung** (annotation `zone`, thêm `siteId` / `locationId` — ADR-032): nút "Khung" trên toolbar hoặc **Ctrl+G** tạo khung quanh

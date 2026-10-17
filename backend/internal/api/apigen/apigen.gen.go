@@ -1043,6 +1043,45 @@ func (e SiteKind) Valid() bool {
 	}
 }
 
+// Defines values for ValConflictKind.
+const (
+	ValConflictKindHostname ValConflictKind = "hostname"
+	ValConflictKindIp       ValConflictKind = "ip"
+	ValConflictKindSerial   ValConflictKind = "serial"
+)
+
+// Valid indicates whether the value is a known member of the ValConflictKind enum.
+func (e ValConflictKind) Valid() bool {
+	switch e {
+	case ValConflictKindHostname:
+		return true
+	case ValConflictKindIp:
+		return true
+	case ValConflictKindSerial:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ValConflictSeverity.
+const (
+	ValConflictSeverityError   ValConflictSeverity = "error"
+	ValConflictSeverityWarning ValConflictSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the ValConflictSeverity enum.
+func (e ValConflictSeverity) Valid() bool {
+	switch e {
+	case ValConflictSeverityError:
+		return true
+	case ValConflictSeverityWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeviceSort.
 const (
 	DeviceSortCategory    DeviceSort = "category"
@@ -2933,6 +2972,115 @@ type UpdateOrganizationRequest struct {
 	Version int32 `json:"version"`
 }
 
+// ValConflict defines model for ValConflict.
+type ValConflict struct {
+	DeviceId       openapi_types.UUID `json:"deviceId"`
+	Kind           ValConflictKind    `json:"kind"`
+	Other          string             `json:"other"`
+	OtherInterface string             `json:"otherInterface"`
+
+	// Severity warning for a NAT / public copy or a device not in service yet
+	Severity ValConflictSeverity `json:"severity"`
+	Value    string              `json:"value"`
+}
+
+// ValConflictKind defines model for ValConflict.Kind.
+type ValConflictKind string
+
+// ValConflictSeverity warning for a NAT / public copy or a device not in service yet
+type ValConflictSeverity string
+
+// ValDevice defines model for ValDevice.
+type ValDevice struct {
+	ClusterId       *openapi_types.UUID `json:"clusterId"`
+	Firmware        string              `json:"firmware"`
+	Hostname        string              `json:"hostname"`
+	Id              openapi_types.UUID  `json:"id"`
+	Lifecycle       string              `json:"lifecycle"`
+	LocationId      *openapi_types.UUID `json:"locationId"`
+	MgmtInterfaceId *openapi_types.UUID `json:"mgmtInterfaceId"`
+	Model           string              `json:"model"`
+	SerialNumber    string              `json:"serialNumber"`
+	SiteId          openapi_types.UUID  `json:"siteId"`
+	Type            string              `json:"type"`
+}
+
+// ValGroup defines model for ValGroup.
+type ValGroup struct {
+	Id         openapi_types.UUID `json:"id"`
+	Members    []ValGroupMember   `json:"members"`
+	Name       string             `json:"name"`
+	RangeEnd   string             `json:"rangeEnd"`
+	RangeStart string             `json:"rangeStart"`
+}
+
+// ValGroupMember defines model for ValGroupMember.
+type ValGroupMember struct {
+	Ip   string `json:"ip"`
+	Name string `json:"name"`
+}
+
+// ValInterface defines model for ValInterface.
+type ValInterface struct {
+	AccessVlan   *int32              `json:"accessVlan"`
+	AllowedVlans string              `json:"allowedVlans"`
+	DeviceId     openapi_types.UUID  `json:"deviceId"`
+	Id           openapi_types.UUID  `json:"id"`
+	Kind         string              `json:"kind"`
+	LagId        *openapi_types.UUID `json:"lagId"`
+	Media        string              `json:"media"`
+	Mode         string              `json:"mode"`
+	Name         string              `json:"name"`
+	NativeVlan   *int32              `json:"nativeVlan"`
+	Speed        string              `json:"speed"`
+}
+
+// ValIp defines model for ValIp.
+type ValIp struct {
+	Address     string              `json:"address"`
+	DeviceId    openapi_types.UUID  `json:"deviceId"`
+	InterfaceId *openapi_types.UUID `json:"interfaceId"`
+	Role        string              `json:"role"`
+	Vrf         string              `json:"vrf"`
+}
+
+// ValLink defines model for ValLink.
+type ValLink struct {
+	AId          openapi_types.UUID  `json:"aId"`
+	AInterfaceId *openapi_types.UUID `json:"aInterfaceId"`
+	AKind        string              `json:"aKind"`
+	BId          openapi_types.UUID  `json:"bId"`
+	BInterfaceId *openapi_types.UUID `json:"bInterfaceId"`
+	BKind        string              `json:"bKind"`
+	Id           openapi_types.UUID  `json:"id"`
+	Kind         string              `json:"kind"`
+}
+
+// ValSubnet defines model for ValSubnet.
+type ValSubnet struct {
+	Cidr    string             `json:"cidr"`
+	Gateway string             `json:"gateway"`
+	Id      openapi_types.UUID `json:"id"`
+	Vrf     string             `json:"vrf"`
+}
+
+// ValidationContext defines model for ValidationContext.
+type ValidationContext struct {
+	Conflicts  []ValConflict  `json:"conflicts"`
+	Devices    []ValDevice    `json:"devices"`
+	Groups     []ValGroup     `json:"groups"`
+	Interfaces []ValInterface `json:"interfaces"`
+	Ips        []ValIp        `json:"ips"`
+	Links      []ValLink      `json:"links"`
+	Subnets    []ValSubnet    `json:"subnets"`
+}
+
+// ValidationRequest defines model for ValidationRequest.
+type ValidationRequest struct {
+	DeviceIds []openapi_types.UUID `json:"deviceIds"`
+	GroupIds  []openapi_types.UUID `json:"groupIds"`
+}
+
 // Vlan defines model for Vlan.
 type Vlan struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
@@ -3597,6 +3745,11 @@ type UpdateIpRangeParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ValidationContextParams defines parameters for ValidationContext.
+type ValidationContextParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListVlansParams defines parameters for ListVlans.
 type ListVlansParams struct {
 	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
@@ -3760,6 +3913,9 @@ type CreateIpRangeJSONRequestBody = IpRangeInput
 
 // UpdateIpRangeJSONRequestBody defines body for UpdateIpRange for application/json ContentType.
 type UpdateIpRangeJSONRequestBody = IpRangeUpdate
+
+// ValidationContextJSONRequestBody defines body for ValidationContext for application/json ContentType.
+type ValidationContextJSONRequestBody = ValidationRequest
 
 // CreateVlanJSONRequestBody defines body for CreateVlan for application/json ContentType.
 type CreateVlanJSONRequestBody = VlanInput
@@ -4099,6 +4255,9 @@ type ServerInterface interface {
 	// UpdateIpRange Update an IP range
 	// (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
 	UpdateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params UpdateIpRangeParams)
+	// ValidationContext What the diagram checks need about these objects (read only, P1-20)
+	// (POST /orgs/{orgId}/validation-context)
+	ValidationContext(w http.ResponseWriter, r *http.Request, orgId OrgId, params ValidationContextParams)
 	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
 	// (GET /orgs/{orgId}/vlans)
 	ListVlans(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVlansParams)
@@ -4774,6 +4933,12 @@ func (_ Unimplemented) DeleteIpRange(w http.ResponseWriter, r *http.Request, org
 // UpdateIpRange Update an IP range
 // (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
 func (_ Unimplemented) UpdateIpRange(w http.ResponseWriter, r *http.Request, orgId OrgId, subnetId SubnetId, rangeId RangeId, params UpdateIpRangeParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ValidationContext What the diagram checks need about these objects (read only, P1-20)
+// (POST /orgs/{orgId}/validation-context)
+func (_ Unimplemented) ValidationContext(w http.ResponseWriter, r *http.Request, orgId OrgId, params ValidationContextParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10743,6 +10908,60 @@ func (siw *ServerInterfaceWrapper) UpdateIpRange(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ValidationContext operation middleware
+func (siw *ServerInterfaceWrapper) ValidationContext(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ValidationContextParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ValidationContext(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListVlans operation middleware
 func (siw *ServerInterfaceWrapper) ListVlans(w http.ResponseWriter, r *http.Request) {
 
@@ -11215,6 +11434,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/validation-context", wrapper.ValidationContext)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
@@ -19821,6 +20043,86 @@ func (response UpdateIpRange409JSONResponse) VisitUpdateIpRangeResponse(w http.R
 	return err
 }
 
+type ValidationContextRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ValidationContextParams
+	Body   *ValidationContextJSONRequestBody
+}
+
+type ValidationContextResponseObject interface {
+	VisitValidationContextResponse(w http.ResponseWriter) error
+}
+
+type ValidationContext200JSONResponse ValidationContext
+
+func (response ValidationContext200JSONResponse) VisitValidationContextResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ValidationContext400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ValidationContext400JSONResponse) VisitValidationContextResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ValidationContext401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ValidationContext401JSONResponse) VisitValidationContextResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ValidationContext403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ValidationContext403JSONResponse) VisitValidationContextResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ValidationContext404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ValidationContext404JSONResponse) VisitValidationContextResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListVlansRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListVlansParams
@@ -20495,6 +20797,9 @@ type StrictServerInterface interface {
 	// UpdateIpRange Update an IP range
 	// (PATCH /orgs/{orgId}/subnets/{subnetId}/ranges/{rangeId})
 	UpdateIpRange(ctx context.Context, request UpdateIpRangeRequestObject) (UpdateIpRangeResponseObject, error)
+	// ValidationContext What the diagram checks need about these objects (read only, P1-20)
+	// (POST /orgs/{orgId}/validation-context)
+	ValidationContext(ctx context.Context, request ValidationContextRequestObject) (ValidationContextResponseObject, error)
 	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
 	// (GET /orgs/{orgId}/vlans)
 	ListVlans(ctx context.Context, request ListVlansRequestObject) (ListVlansResponseObject, error)
@@ -23872,6 +24177,40 @@ func (sh *strictHandler) UpdateIpRange(w http.ResponseWriter, r *http.Request, o
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateIpRangeResponseObject); ok {
 		if err := validResponse.VisitUpdateIpRangeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ValidationContext operation middleware
+func (sh *strictHandler) ValidationContext(w http.ResponseWriter, r *http.Request, orgId OrgId, params ValidationContextParams) {
+	var request ValidationContextRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body ValidationContextJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ValidationContext(ctx, request.(ValidationContextRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ValidationContext")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ValidationContextResponseObject); ok {
+		if err := validResponse.VisitValidationContextResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

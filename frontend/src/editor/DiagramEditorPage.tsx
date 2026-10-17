@@ -45,6 +45,9 @@ import { useEditActions } from './workspace/useEditActions'
 import { CableDialog } from './workspace/CableDialog'
 import { PropertiesPanel } from './workspace/PropertiesPanel'
 import { useWiring } from './workspace/useWiring'
+import { ProblemsPanel } from './checks/ProblemsPanel'
+import { countProblems } from './checks/types'
+import { useChecks } from './checks/useChecks'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { useEditorPrefs } from './workspace/prefs'
@@ -294,6 +297,10 @@ function Workspace({
       ),
   })
   const wiring = useWiring({ orgId, store, canEdit })
+  const checks = useChecks(orgId, store)
+  const problems = useStore(store, (s) => s.problems)
+  const problemCounts = useMemo(() => countProblems(problems), [problems])
+  const [problemsOpen, setProblemsOpen] = useState(false)
   const [menu, setMenu] = useState<{
     x: number
     y: number
@@ -620,7 +627,18 @@ function Workspace({
         onAddArrow={annotate.arrow}
         connecting={wiring.mode !== null}
         onConnect={() => wiring.toggle()}
+        problems={problemCounts}
+        problemsOpen={problemsOpen}
+        onProblems={() => setProblemsOpen((o) => !o)}
       />
+      {problemsOpen && (
+        <ProblemsPanel
+          loading={checks.loading}
+          error={checks.error}
+          fitPadding={fitOptions(libraryOpen, prefs.panel)}
+          onClose={() => setProblemsOpen(false)}
+        />
+      )}
       {wiring.mode && (
         <div
           role="status"
@@ -653,7 +671,8 @@ function Workspace({
           </p>
         </div>
       )}
-      {prefs.tips && <Tips onHide={() => setPrefs({ tips: false })} />}
+      {/* Same spot as the Problems panel: the panel wins while open. */}
+      {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
       {quick && (
         <QuickAdd

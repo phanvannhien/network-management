@@ -1149,6 +1149,40 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/validation-context:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: validationContext
+      summary: What the diagram checks need about these objects (read only, P1-20)
+      description: >-
+        Devices, their interfaces / IPs, every cable touching them (also cables drawn on no diagram), org subnets,
+        endpoint groups with member IPs, and conflicts computed across the organization (duplicate hostname, serial,
+        IP in the same VRF — members of the same cluster excluded). Unknown ids are ignored.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationContext'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/bulk-delete:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4393,6 +4427,154 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DiagramShowing'
+
+    ValidationRequest:
+      type: object
+      required: [deviceIds, groupIds]
+      properties:
+        deviceIds:
+          type: array
+          maxItems: 5000
+          items:
+            type: string
+            format: uuid
+        groupIds:
+          type: array
+          maxItems: 5000
+          items:
+            type: string
+            format: uuid
+
+    ValidationContext:
+      type: object
+      required: [devices, interfaces, ips, links, subnets, groups, conflicts]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValDevice'
+        interfaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValInterface'
+        ips:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValIp'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValLink'
+        subnets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValSubnet'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValGroup'
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValConflict'
+
+    ValDevice:
+      type: object
+      required: [id, hostname, type, serialNumber, model, firmware, lifecycle, clusterId, siteId, locationId, mgmtInterfaceId]
+      properties:
+        id: {type: string, format: uuid}
+        hostname: {type: string}
+        type: {type: string}
+        serialNumber: {type: string}
+        model: {type: string}
+        firmware: {type: string}
+        lifecycle: {type: string}
+        clusterId: {type: [string, 'null'], format: uuid}
+        siteId: {type: string, format: uuid}
+        locationId: {type: [string, 'null'], format: uuid}
+        mgmtInterfaceId: {type: [string, 'null'], format: uuid}
+
+    ValInterface:
+      type: object
+      required: [id, deviceId, name, kind, media, speed, mode, accessVlan, nativeVlan, allowedVlans, lagId]
+      properties:
+        id: {type: string, format: uuid}
+        deviceId: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string}
+        media: {type: string}
+        speed: {type: string}
+        mode: {type: string}
+        accessVlan: {type: [integer, 'null'], format: int32}
+        nativeVlan: {type: [integer, 'null'], format: int32}
+        allowedVlans: {type: string}
+        lagId: {type: [string, 'null'], format: uuid}
+
+    ValIp:
+      type: object
+      required: [deviceId, interfaceId, address, vrf, role]
+      properties:
+        deviceId: {type: string, format: uuid}
+        interfaceId: {type: [string, 'null'], format: uuid}
+        address: {type: string}
+        vrf: {type: string}
+        role: {type: string}
+
+    ValLink:
+      type: object
+      required: [id, kind, aKind, aId, aInterfaceId, bKind, bId, bInterfaceId]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string}
+        aKind: {type: string}
+        aId: {type: string, format: uuid}
+        aInterfaceId: {type: [string, 'null'], format: uuid}
+        bKind: {type: string}
+        bId: {type: string, format: uuid}
+        bInterfaceId: {type: [string, 'null'], format: uuid}
+
+    ValSubnet:
+      type: object
+      required: [id, cidr, vrf, gateway]
+      properties:
+        id: {type: string, format: uuid}
+        cidr: {type: string}
+        vrf: {type: string}
+        gateway: {type: string}
+
+    ValGroup:
+      type: object
+      required: [id, name, rangeStart, rangeEnd, members]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        rangeStart: {type: string}
+        rangeEnd: {type: string}
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValGroupMember'
+
+    ValGroupMember:
+      type: object
+      required: [name, ip]
+      properties:
+        name: {type: string}
+        ip: {type: string}
+
+    ValConflict:
+      type: object
+      required: [kind, severity, deviceId, value, other, otherInterface]
+      properties:
+        kind: {type: string, enum: [hostname, serial, ip]}
+        severity:
+          type: string
+          enum: [error, warning]
+          description: warning for a NAT / public copy or a device not in service yet
+        deviceId: {type: string, format: uuid}
+        value: {type: string}
+        other: {type: string}
+        otherInterface: {type: string}
 
     DeviceImpact:
       type: object

@@ -1735,6 +1735,81 @@ export const vi = {
     label: 'Lọc theo danh mục',
     all: 'Toàn tổ chức',
   },
+  checks: {
+    title: 'Vấn đề',
+    toolbar: 'Vấn đề trên sơ đồ: {{error}} lỗi, {{warning}} cảnh báo, {{info}} ghi chú',
+    filter: 'Lọc theo mức',
+    guide:
+      'Hệ thống tự kiểm tra sơ đồ khi bạn vẽ. Lỗi = gần như chắc chắn sai; Cảnh báo = nên xem lại; Ghi chú = còn thiếu thông tin. Không chặn việc lưu. Bấm một dòng để tới chỗ đó.',
+    loading: 'Đang kiểm tra…',
+    loadError: 'Không tải được dữ liệu kiểm tra',
+    none: 'Không thấy vấn đề nào.',
+    allHidden: 'Các vấn đề đang bị ẩn bởi bộ lọc.',
+    severity: { error: 'Lỗi', warning: 'Cảnh báo', info: 'Ghi chú' },
+    why: {
+      format: 'sai định dạng',
+      unspecified: 'là địa chỉ rỗng (0.0.0.0 / ::)',
+      multicast: 'là địa chỉ multicast',
+      loopback: 'là địa chỉ loopback 127.x',
+      broadcast: 'là 255.255.255.255',
+      linkLocal: 'là địa chỉ tự cấp 169.254.x',
+    },
+    which: { network: 'địa chỉ mạng', broadcast: 'địa chỉ broadcast' },
+    rules: {
+      'duplicate-ip': '{{host}}: IP {{value}} trùng với {{other}} {{otherIface}}',
+      'duplicate-hostname': 'Hostname {{value}} trùng với một thiết bị khác ({{other}})',
+      'duplicate-serial': '{{host}}: serial {{value}} trùng với {{other}}',
+      'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'ip-edge': '{{host}}: IP {{ip}} là {{which}} của {{cidr}}',
+      'port-multi': '{{host}} {{port}}: một cổng đang có {{count}} dây',
+      'cable-virtual': '{{host}} {{port}}: dây vật lý cắm vào interface ảo hoặc LAG',
+      'media-mismatch': 'Dây {{a}} ↔ {{b}}: một đầu RJ45, một đầu SFP',
+      'speed-mismatch': 'Dây {{a}} ↔ {{b}}: hai đầu khác tốc độ',
+      'l3-subnet': 'Dây {{a}} ↔ {{b}}: IP hai đầu không cùng subnet',
+      'member-outside-range': 'Nhóm {{group}}: {{member}} ({{ip}}) nằm ngoài dải {{start}}–{{end}}',
+      'vlan-mode': '{{host}} {{port}}: VLAN không khớp chế độ cổng {{mode}}',
+      'lag-speed': '{{host}} {{lag}}: các cổng thành viên khác tốc độ',
+      'lag-media': '{{host}} {{lag}}: các cổng thành viên khác loại cổng',
+      'cluster-firmware': '{{host}}: firmware khác các thành viên cùng cụm',
+      'cluster-model': '{{host}}: model khác các thành viên cùng cụm',
+      'frame-site': '{{host}} nằm trong khung của site/location khác',
+      'no-cable': '{{host}} chưa có dây nối nào',
+      'cable-no-port': 'Dây tới {{host}} chưa gán cổng',
+      'no-mgmt': '{{host}} có IP nhưng chưa chọn interface quản trị',
+    },
+    fix: {
+      'duplicate-ip':
+        'Hai thiết bị cùng IP trong một VRF sẽ tranh nhau, mạng chập chờn. Đổi IP một bên; nếu là cặp HA thì gom vào một cụm.',
+      'duplicate-hostname': 'Mỗi thiết bị cần tên riêng để tra cứu. Đổi tên một bên.',
+      'duplicate-serial':
+        'Serial thường là duy nhất — kiểm tra nhập nhầm hoặc thiết bị bị khai hai lần.',
+      'ip-format':
+        'Địa chỉ này không gán được cho một interface. Sửa lại IP trong panel thuộc tính.',
+      'ip-edge':
+        'Địa chỉ đầu/cuối của subnet không dùng cho thiết bị. Thường là nhập sai mask (prefix) hoặc sai IP.',
+      'port-multi': 'Một cổng vật lý chỉ cắm được một dây. Chuyển một dây sang cổng khác.',
+      'cable-virtual':
+        'Interface ảo (VLAN, loopback, tunnel) và LAG không có lỗ cắm. Gán dây vào cổng vật lý (thành viên LAG).',
+      'media-mismatch':
+        'Cổng đồng không cắm thẳng vào khe SFP — trừ khi dùng module SFP đồng. Kiểm tra loại cổng.',
+      'speed-mismatch':
+        'Hai đầu khác tốc độ có thể không lên link hoặc chạy chậm. Kiểm tra cấu hình tốc độ.',
+      'l3-subnet':
+        'Hai cổng định tuyến nối thẳng nhau thường cùng một subnet. Kiểm tra IP/mask hai đầu.',
+      'member-outside-range': 'Sửa IP thành viên hoặc nới dải IP của nhóm.',
+      'vlan-mode':
+        'Access chỉ có một VLAN; trunk dùng VLAN cho phép + native; cổng routed không có VLAN. Xóa trường thừa.',
+      'lag-speed': 'Các cổng gộp (LAG) phải cùng tốc độ thì mới gộp được.',
+      'lag-media': 'Gộp cổng đồng với cổng quang cùng tốc độ vẫn chạy, nhưng nên kiểm tra lại.',
+      'cluster-firmware': 'Cụm HA/stack cần cùng firmware mới đồng bộ được. Kiểm tra phiên bản.',
+      'cluster-model': 'Cụm HA thường phải cùng model; stack có thể trộn model cùng dòng.',
+      'frame-site':
+        'Khung không tự đổi site của thiết bị. Kéo thiết bị ra khỏi khung, hoặc sửa site/location trong kho.',
+      'no-cable': 'Nối dây nếu thiết bị đang dùng, hoặc bỏ qua nếu là đồ dự phòng.',
+      'cable-no-port': 'Nhấp đúp vào dây để chọn cổng khi đã biết.',
+      'no-mgmt': 'Chọn interface quản trị để sơ đồ hiện IP quản lý của thiết bị.',
+    },
+  },
   devUi: {
     title: 'Thư viện giao diện',
     subtitle: 'Mọi component dùng chung ở mọi trạng thái — chỉ có ở môi trường dev, dữ liệu giả.',

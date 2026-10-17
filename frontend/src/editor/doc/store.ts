@@ -1,5 +1,7 @@
 import { produce } from 'immer'
 import { create } from 'zustand'
+import type { Problem, Severity } from '../checks/types'
+import { SEVERITY_ORDER } from '../checks/types'
 import type { DocCommand } from './commands'
 import {
   changesOf,
@@ -34,6 +36,11 @@ export interface DocStore {
   viewport: DiagramViewport | null
   /** Selected view node ids: editor state, not part of the document or its history. */
   selection: string[]
+  /** Results of the diagram checks (P1-20): editor state, not history. */
+  problems: Problem[]
+  /** Worst severity per view node id, for the badges. */
+  problemsByNode: Record<string, Severity>
+  setProblems(problems: Problem[]): void
   /** Selected edge ids (cables): Delete on them deletes from the inventory, after a confirmation. */
   edgeSelection: string[]
   /** The document as last loaded or saved: undoing back to it is "clean" again. */
@@ -91,6 +98,18 @@ export function createDocStore() {
     viewport: null,
     selection: [],
     edgeSelection: [],
+    problems: [],
+    problemsByNode: {},
+    setProblems: (problems) => {
+      const byNode: Record<string, Severity> = {}
+      for (const p of problems) {
+        if (p.target.kind !== 'node') continue
+        const cur = byNode[p.target.id]
+        if (!cur || SEVERITY_ORDER[p.severity] < SEVERITY_ORDER[cur])
+          byNode[p.target.id] = p.severity
+      }
+      set({ problems, problemsByNode: byNode })
+    },
     savedDoc: null,
     loadId: 0,
     setViewport: (viewport) => set({ viewport }),

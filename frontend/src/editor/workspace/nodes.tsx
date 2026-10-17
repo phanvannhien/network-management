@@ -10,6 +10,8 @@ import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { DeviceIcon } from '../catalog/icons'
+import { SeverityIcon } from '../checks/SeverityIcon'
+import type { Severity } from '../checks/types'
 import { useDoc } from './context'
 import type { RefData } from './flow'
 import { renderLabel, type LabelLine } from './labels'
@@ -37,6 +39,7 @@ function Frame({
   lines,
   unmanaged = false,
   color = '',
+  problem,
 }: {
   selected: boolean
   connectable?: boolean
@@ -53,6 +56,8 @@ function Frame({
   unmanaged?: boolean
   /** Label background palette name. */
   color?: string
+  /** Worst check result on this node (P1-20). */
+  problem?: Severity
 }) {
   const { t } = useTranslation()
   const showDetails = useShowDetails()
@@ -116,6 +121,12 @@ function Frame({
           className="absolute top-1 right-1 size-3 text-muted-foreground"
         />
       )}
+      {problem && (
+        <span className="absolute -top-2 -right-2 rounded-full bg-card">
+          <SeverityIcon severity={problem} className="size-4" />
+          <span className="sr-only">{t(`checks.severity.${problem}`)}</span>
+        </span>
+      )}
       {unmanaged && <span className="sr-only">{t('editorCanvas.unmanaged')}</span>}
       {/* Dashed borders are for unmanaged devices (SRS §6.3); a new, unsaved device gets a badge. */}
       {draft && (
@@ -133,8 +144,9 @@ function Frame({
   )
 }
 
-function DeviceNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>) {
+function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
+  const problem = useDoc((s) => s.problemsByNode[id])
   const card = useDoc((s) => s.doc?.devices[data.refId])
   const template = useDoc((s) => s.doc?.view.labelTemplate)
   if (!card) return <HiddenFrame selected={selected} />
@@ -154,12 +166,14 @@ function DeviceNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode
       lines={details}
       unmanaged={card.managed === false}
       color={data.labelColor}
+      problem={problem}
     />
   )
 }
 
-function GroupNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>) {
+function GroupNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
+  const problem = useDoc((s) => s.problemsByNode[id])
   const group = useDoc((s) => s.doc?.groups[data.refId])
   if (!group) return <HiddenFrame selected={selected} />
   return (
@@ -172,6 +186,7 @@ function GroupNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>
       icon={<Boxes aria-hidden className="size-8 text-muted-foreground" />}
       label={group.name}
       detail={t('editorCanvas.group')}
+      problem={problem}
     />
   )
 }

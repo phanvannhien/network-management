@@ -622,6 +622,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/validation-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What the diagram checks need about these objects (read only, P1-20)
+         * @description Devices, their interfaces / IPs, every cable touching them (also cables drawn on no diagram), org subnets, endpoint groups with member IPs, and conflicts computed across the organization (duplicate hostname, serial, IP in the same VRF — members of the same cluster excluded). Unknown ids are ignored.
+         */
+        post: operations["validationContext"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/bulk-delete": {
         parameters: {
             query?: never;
@@ -2087,6 +2110,112 @@ export interface components {
             devices: components["schemas"]["DeviceImpact"][];
             links: components["schemas"]["Link"][];
             diagrams: components["schemas"]["DiagramShowing"][];
+        };
+        ValidationRequest: {
+            deviceIds: string[];
+            groupIds: string[];
+        };
+        ValidationContext: {
+            devices: components["schemas"]["ValDevice"][];
+            interfaces: components["schemas"]["ValInterface"][];
+            ips: components["schemas"]["ValIp"][];
+            links: components["schemas"]["ValLink"][];
+            subnets: components["schemas"]["ValSubnet"][];
+            groups: components["schemas"]["ValGroup"][];
+            conflicts: components["schemas"]["ValConflict"][];
+        };
+        ValDevice: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: string;
+            serialNumber: string;
+            model: string;
+            firmware: string;
+            lifecycle: string;
+            /** Format: uuid */
+            clusterId: string | null;
+            /** Format: uuid */
+            siteId: string;
+            /** Format: uuid */
+            locationId: string | null;
+            /** Format: uuid */
+            mgmtInterfaceId: string | null;
+        };
+        ValInterface: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            deviceId: string;
+            name: string;
+            kind: string;
+            media: string;
+            speed: string;
+            mode: string;
+            /** Format: int32 */
+            accessVlan: number | null;
+            /** Format: int32 */
+            nativeVlan: number | null;
+            allowedVlans: string;
+            /** Format: uuid */
+            lagId: string | null;
+        };
+        ValIp: {
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            interfaceId: string | null;
+            address: string;
+            vrf: string;
+            role: string;
+        };
+        ValLink: {
+            /** Format: uuid */
+            id: string;
+            kind: string;
+            aKind: string;
+            /** Format: uuid */
+            aId: string;
+            /** Format: uuid */
+            aInterfaceId: string | null;
+            bKind: string;
+            /** Format: uuid */
+            bId: string;
+            /** Format: uuid */
+            bInterfaceId: string | null;
+        };
+        ValSubnet: {
+            /** Format: uuid */
+            id: string;
+            cidr: string;
+            vrf: string;
+            gateway: string;
+        };
+        ValGroup: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            rangeStart: string;
+            rangeEnd: string;
+            members: components["schemas"]["ValGroupMember"][];
+        };
+        ValGroupMember: {
+            name: string;
+            ip: string;
+        };
+        ValConflict: {
+            /** @enum {string} */
+            kind: "hostname" | "serial" | "ip";
+            /**
+             * @description warning for a NAT / public copy or a device not in service yet
+             * @enum {string}
+             */
+            severity: "error" | "warning";
+            /** Format: uuid */
+            deviceId: string;
+            value: string;
+            other: string;
+            otherInterface: string;
         };
         DeviceImpact: {
             /** Format: uuid */
@@ -4508,6 +4637,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceDeleteImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    validationContext: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationContext"];
                 };
             };
             400: components["responses"]["BadRequest"];

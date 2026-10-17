@@ -2897,6 +2897,52 @@ describe('diagrams (P1-13)', () => {
     ])
   })
 
+  it('P1-20: checks run on the diagram; the Problems panel lists them and a click selects the node', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/validation-context`]: () =>
+          json({
+            devices: [],
+            interfaces: [],
+            ips: [],
+            links: [],
+            subnets: [],
+            groups: [],
+            conflicts: [
+              {
+                kind: 'ip',
+                severity: 'error',
+                deviceId: 'dev-1',
+                value: '10.72.114.1',
+                other: 'AGRI-BD-SW09',
+                otherInterface: 'Vlan10',
+              },
+            ],
+          }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    // Saved devices on the view are sent; the result lands on the toolbar button and as a node badge.
+    const button = await screen.findByRole(
+      'button',
+      { name: /Vấn đề trên sơ đồ: 1 lỗi, 0 cảnh báo, 1 ghi chú/ },
+      { timeout: 3000 },
+    )
+    const ctxCall = calls.find((r) => r.url.endsWith('/validation-context'))!
+    expect(await ctxCall.clone().json()).toEqual({ deviceIds: ['dev-1'], groupIds: [] })
+    expect(within(canvas).getAllByText('Lỗi').length).toBeGreaterThan(0)
+    fireEvent.click(button)
+    const panel = screen.getByRole('region', { name: 'Vấn đề' })
+    const line = within(panel).getByRole('button', {
+      name: /AGRI-BD-FW01: IP 10\.72\.114\.1 trùng với AGRI-BD-SW09 Vlan10/,
+    })
+    expect(within(panel).getByText('AGRI-BD-FW01 chưa có dây nối nào')).toBeInTheDocument()
+    fireEvent.click(line)
+    const props = screen.getByRole('complementary', { name: 'Thuộc tính' })
+    expect(await within(props).findByLabelText(/^Hostname/)).toHaveValue('AGRI-BD-FW01')
+  })
+
   it('a viewer opens the diagram read-only', async () => {
     fakeApi(
       routes({

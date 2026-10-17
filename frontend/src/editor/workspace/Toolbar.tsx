@@ -1,6 +1,7 @@
 import { useStore as useFlowStore } from '@xyflow/react'
 import {
   ArrowLeft,
+  CircleCheck,
   Cable,
   Keyboard,
   LibraryBig,
@@ -25,6 +26,8 @@ import { Link } from 'react-router'
 import { NativeSelect } from '@/components/NativeSelect'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { SeverityIcon } from '../checks/SeverityIcon'
+import type { Severity } from '../checks/types'
 import type { SaveStatus } from '../doc/store'
 import { GRID_SIZES, type GridSize } from './flow'
 import type { EditorPrefs } from './prefs'
@@ -115,6 +118,10 @@ export interface ToolbarProps {
   onAddFrame: () => void
   onAddText: () => void
   onAddArrow: () => void
+  /** Check results per level (P1-20). */
+  problems: Record<Severity, number>
+  problemsOpen: boolean
+  onProblems: () => void
 }
 
 /** Floating toolbar over the canvas (P1-14). */
@@ -260,6 +267,26 @@ export function Toolbar(p: ToolbarProps) {
       >
         <Lightbulb aria-hidden />
       </ToolButton>
+      <Tip label={t('checks.toolbar', p.problems)}>
+        <Button
+          variant={p.problemsOpen ? 'secondary' : 'ghost'}
+          size="sm"
+          className="h-8 gap-1 px-2 tabular-nums"
+          aria-label={t('checks.toolbar', p.problems)}
+          aria-pressed={p.problemsOpen}
+          onClick={p.onProblems}
+        >
+          {p.problems.error + p.problems.warning + p.problems.info === 0 ? (
+            <CircleCheck aria-hidden className="text-status-up" />
+          ) : (
+            <SeverityIcon
+              severity={p.problems.error ? 'error' : p.problems.warning ? 'warning' : 'info'}
+              className="size-4"
+            />
+          )}
+          {p.problems.error + p.problems.warning + p.problems.info}
+        </Button>
+      </Tip>
       <ToolButton label={t('editorCanvas.shortcuts')} shortcut="help" onClick={p.onHelp}>
         <Keyboard aria-hidden />
       </ToolButton>

@@ -1748,6 +1748,80 @@ export const en: Strings = {
     label: 'Filter by category',
     all: 'Whole organization',
   },
+  checks: {
+    title: 'Problems',
+    toolbar: 'Diagram problems: {{error}} errors, {{warning}} warnings, {{info}} notes',
+    filter: 'Filter by level',
+    guide:
+      'The diagram is checked as you draw. Error = almost certainly wrong; Warning = worth a look; Note = information missing. Saving is never blocked. Click a line to go there.',
+    loading: 'Checking…',
+    loadError: 'Could not load the check data',
+    none: 'No problems found.',
+    allHidden: 'The problems are hidden by the filter.',
+    severity: { error: 'Error', warning: 'Warning', info: 'Note' },
+    why: {
+      format: 'is not a valid address',
+      unspecified: 'is the empty address (0.0.0.0 / ::)',
+      multicast: 'is a multicast address',
+      loopback: 'is a 127.x loopback address',
+      broadcast: 'is 255.255.255.255',
+      linkLocal: 'is a self-assigned 169.254.x address',
+    },
+    which: { network: 'the network address', broadcast: 'the broadcast address' },
+    rules: {
+      'duplicate-ip': '{{host}}: IP {{value}} also used by {{other}} {{otherIface}}',
+      'duplicate-hostname': 'Hostname {{value}} is used by another device ({{other}})',
+      'duplicate-serial': '{{host}}: serial {{value}} also on {{other}}',
+      'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'ip-edge': '{{host}}: IP {{ip}} is {{which}} of {{cidr}}',
+      'port-multi': '{{host}} {{port}}: {{count}} cables on one port',
+      'cable-virtual': '{{host}} {{port}}: physical cable on a virtual or LAG interface',
+      'media-mismatch': 'Cable {{a}} ↔ {{b}}: RJ45 on one end, SFP on the other',
+      'speed-mismatch': 'Cable {{a}} ↔ {{b}}: the ends have different speeds',
+      'l3-subnet': 'Cable {{a}} ↔ {{b}}: the ends are in different subnets',
+      'member-outside-range': 'Group {{group}}: {{member}} ({{ip}}) is outside {{start}}–{{end}}',
+      'vlan-mode': '{{host}} {{port}}: VLANs do not fit the {{mode}} mode',
+      'lag-speed': '{{host}} {{lag}}: member ports have different speeds',
+      'lag-media': '{{host}} {{lag}}: member ports have different port types',
+      'cluster-firmware': '{{host}}: firmware differs from the other cluster members',
+      'cluster-model': '{{host}}: model differs from the other cluster members',
+      'frame-site': '{{host}} sits in the frame of another site / location',
+      'no-cable': '{{host}} has no cable',
+      'cable-no-port': 'Cable to {{host}} has no port yet',
+      'no-mgmt': '{{host}} has IPs but no management interface',
+    },
+    fix: {
+      'duplicate-ip':
+        'Two devices with one IP in a VRF fight over it and the network flaps. Change one; an HA pair belongs in one cluster.',
+      'duplicate-hostname': 'Every device needs its own name to be found. Rename one.',
+      'duplicate-serial':
+        'Serials are normally unique — check for a typo or a device entered twice.',
+      'ip-format': 'This address cannot be set on an interface. Fix it in the properties panel.',
+      'ip-edge':
+        'The first / last address of a subnet is not for devices. Usually the mask (prefix) or the IP is mistyped.',
+      'port-multi': 'A physical port takes one cable. Move one cable to another port.',
+      'cable-virtual':
+        'Virtual interfaces (VLAN, loopback, tunnel) and LAGs have no socket. Put the cable on a physical (member) port.',
+      'media-mismatch':
+        'A copper port does not plug into an SFP slot — unless a copper SFP module is used. Check the port types.',
+      'speed-mismatch':
+        'Ends with different speeds may not link up or run slow. Check the speed settings.',
+      'l3-subnet':
+        'Two routed ports cabled together usually share a subnet. Check IP / mask on both ends.',
+      'member-outside-range': "Fix the member's IP or widen the group's range.",
+      'vlan-mode':
+        'Access has one VLAN; trunk uses allowed + native VLANs; a routed port has none. Clear the extra fields.',
+      'lag-speed': 'Ports bundled in a LAG must have the same speed.',
+      'lag-media': 'Copper and fibre of one speed can bundle, but it is worth checking.',
+      'cluster-firmware': 'HA pairs / stacks need the same firmware to sync. Check the versions.',
+      'cluster-model': 'HA pairs usually need one model; stacks can mix models of one series.',
+      'frame-site':
+        "Frames never change a device's site. Move the device out, or fix its site / location in the inventory.",
+      'no-cable': 'Cable it if it is in use, or ignore it for a spare.',
+      'cable-no-port': 'Double-click the cable to pick the ports once known.',
+      'no-mgmt': "Pick the management interface so the diagram shows the device's management IP.",
+    },
+  },
   devUi: {
     title: 'UI library',
     subtitle: 'Every shared component in every state — dev only, fake data.',

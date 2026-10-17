@@ -206,21 +206,25 @@ bản sao được nhân bản (không giữ cable ID/circuit). Nhóm thiết b�
 
 ## §7. Validation
 
-Chạy trong Web Worker khi đang vẽ (debounce 300 ms) và chạy ở backend khi lưu/import. Kết quả ở panel Problems và trang thiết bị;
+Chạy trong Web Worker khi đang vẽ (debounce 300 ms) và chạy ở backend khi lưu/import. Kết quả **không chặn lưu sơ đồ**; các rule Error
+về cổng/dây/hostname đã bị API từ chối ngay khi ghi. Trùng IP/serial hiện chỉ báo (ADR-034) — chờ chốt có chặn khi ghi/import hay không. Kết quả ở panel Problems và trang thiết bị;
 click → zoom tới đối tượng; badge trên node.
 
 | Quy tắc | Mức | Phase |
 | --- | --- | --- |
-| IP sai định dạng / là network hoặc broadcast | Error | 1 |
-| Trùng IP trong cùng VRF (mọi interface + IP NAT/public + thành viên nhóm) (bỏ qua nếu cùng cụm HA/stack) | Error | 1 |
+| IP không gán được cho interface (sai định dạng, 0.0.0.0, multicast, loopback, 169.254.x) | Error | 1 |
+| IP là địa chỉ network/broadcast của subnet IPv4 (trừ /31, /32; IP trần lấy mask theo subnet IPAM) — thường do nhập sai mask (PLAN 2026-10-16) | Warning | 1 |
+| Trùng IP trong cùng VRF (interface, IP quản trị cụm, thành viên nhóm) (bỏ qua nếu cùng cụm HA/stack, thiết bị retired, IPv6 link-local) | Error | 1 |
+| Trùng IP mà một bản là NAT/public (PAT nhiều máy sau một IP WAN là bình thường) hoặc thiết bị chưa vận hành (planned/spare/RMA) | Warning | 1 |
 | Trùng hostname trong tổ chức (bỏ qua nếu cùng cụm); trùng serial number | Error | 1 |
 | Một cổng vật lý có > 1 link | Error | 1 |
 | Link vật lý nối vào interface ảo | Error | 1 |
 | Nối sai loại cổng (RJ45 ↔ SFP) | Warning | 1 |
-| Gateway không thuộc subnet của host | Warning | 1 |
+| Gateway không thuộc subnet của host — *chưa áp dụng: kho chưa lưu default gateway của thiết bị* | Warning | 1 |
 | Hai đầu link L3 khác subnet | Warning | 1 |
 | IP thành viên nằm ngoài dải của nhóm | Warning | 1 |
-| Thiết bị không có link; link chưa gán cổng; có IP nhưng chưa chọn interface quản trị; dải IP đã đầy | Info | 1 |
+| Thiết bị không có link; link chưa gán cổng; có IP nhưng chưa chọn interface quản trị; dải IP đã đầy (*dải đầy: để P1-24 dashboard*) | Info | 1 |
+| Cổng access có allowed/native VLAN, trunk có access VLAN, routed có VLAN; thành viên LAG khác tốc độ; thành viên cụm khác firmware (khác model: HA cảnh báo, stack ghi chú); thiết bị nằm trong khung site/location khác (PLAN 2026-10-16) | Warning | 1 |
 | Access VLAN hai đầu khác nhau; VLAN thiếu trong trunk; speed/duplex mismatch | Warning | 2 |
 | Subnet chồng lấn; dải IP chồng nhau; IP tĩnh nằm trong dải DHCP | Warning | 2 |
 | Thiết bị active nhưng thiếu S/N, part number, site hoặc location | Info | 2 |

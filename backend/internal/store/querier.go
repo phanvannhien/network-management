@@ -91,6 +91,15 @@ type Querier interface {
 	DeviceDeleteImpact(ctx context.Context, arg DeviceDeleteImpactParams) ([]DeviceDeleteImpactRow, error)
 	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
+	// Another live device with the same name, except members of the same cluster and provider clouds (ADR-027, ADR-033).
+	DuplicateHostnames(ctx context.Context, arg DuplicateHostnamesParams) ([]DuplicateHostnamesRow, error)
+	// An address of a device on the diagram that another holder uses in the same VRF. Holders are grouped by owner: the
+	// members of a cluster and its VIP are one owner (ADR-027); retired devices and IPv6 link-local do not count. Error when
+	// both copies are interface addresses of active devices; a NAT / public copy (PAT behind one WAN IP is normal) or a
+	// planned / spare / RMA device makes it a warning.
+	DuplicateIps(ctx context.Context, arg DuplicateIpsParams) ([]DuplicateIpsRow, error)
+	// Same serial (trimmed, case-insensitive) on another live device; empty and placeholder values do not count.
+	DuplicateSerials(ctx context.Context, arg DuplicateSerialsParams) ([]DuplicateSerialsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
@@ -244,6 +253,17 @@ type Querier interface {
 	UseUserToken(ctx context.Context, tokenHash []byte) (int64, error)
 	// ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 	UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error)
+	// Validation context of a diagram (P1-20): what the rules need about the objects on it, plus conflicts computed
+	// org-wide. Every query takes organization_id.
+	ValidationDevices(ctx context.Context, arg ValidationDevicesParams) ([]ValidationDevicesRow, error)
+	ValidationGroupMembers(ctx context.Context, arg ValidationGroupMembersParams) ([]ValidationGroupMembersRow, error)
+	ValidationGroups(ctx context.Context, arg ValidationGroupsParams) ([]ValidationGroupsRow, error)
+	// Only the ports a rule can look at (cabled, addressed, LAG, VLAN mode): a 48-port switch rarely needs all 48.
+	ValidationInterfaces(ctx context.Context, arg ValidationInterfacesParams) ([]ValidationInterfacesRow, error)
+	ValidationIps(ctx context.Context, arg ValidationIpsParams) ([]ValidationIpsRow, error)
+	// Every cable touching the objects, also those drawn on no diagram (a port taken elsewhere is still taken).
+	ValidationLinks(ctx context.Context, arg ValidationLinksParams) ([]ValidationLinksRow, error)
+	ValidationSubnets(ctx context.Context, organizationID pgtype.UUID) ([]ValidationSubnetsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)
