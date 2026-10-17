@@ -2378,7 +2378,7 @@ describe('diagrams (P1-13)', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Thiết bị mới' })
     // The diagram shows devices of one site only: that site is offered.
     await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
-    expect(within(dialog).getByLabelText(/^Template thiết bị|^Template/)).toHaveValue('tpl-1')
+    expect(within(dialog).getByLabelText(/^Template thiết bị|^Template/)).toHaveValue('org:tpl-1')
     // ADR-033: the user names the device; the site-path suggestion sits under the field.
     const host = within(dialog).getByLabelText(/^Hostname/)
     expect(host).toHaveValue('')

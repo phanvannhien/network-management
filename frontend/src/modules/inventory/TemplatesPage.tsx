@@ -1,4 +1,4 @@
-import { LayoutTemplate, LibraryBig, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { LayoutTemplate, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
@@ -21,11 +21,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOrgAccess } from '@/modules/sites/access'
-import { CatalogDialog } from './CatalogDialog'
+import { SystemTemplates } from './SystemTemplates'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DEVICE_TYPE_GROUPS,
   expandPorts,
   MEDIA,
+  useCatalog,
   useTemplateMutations,
   useTemplates,
   type DeviceTemplate,
@@ -386,7 +388,8 @@ export function TemplatesPage() {
   const canEdit = useOrgAccess(orgId).orgEdit
   const [editing, setEditing] = useState<DeviceTemplate | 'new' | null>(null)
   const [deleting, setDeleting] = useState<DeviceTemplate | null>(null)
-  const [picking, setPicking] = useState(false)
+  const [tab, setTab] = useState<'own' | 'system'>('system')
+  const catalogCount = useCatalog(orgId).data?.length ?? 0
   useBreadcrumbs([{ label: t('templates.title') }])
   return (
     <div className="max-w-5xl space-y-3 p-4">
@@ -394,66 +397,88 @@ export function TemplatesPage() {
         title={t('templates.title')}
         actions={
           canEdit && (
-            <>
-              <Button variant="outline" onClick={() => setPicking(true)}>
-                <LibraryBig aria-hidden /> {t('catalog.open')}
-              </Button>
-              <Button onClick={() => setEditing('new')}>
-                <Plus aria-hidden /> {t('templates.add')}
-              </Button>
-            </>
+            <Button
+              onClick={() => {
+                setTab('own')
+                setEditing('new')
+              }}
+            >
+              <Plus aria-hidden /> {t('templates.add')}
+            </Button>
           )
         }
       />
       <p className="text-muted-foreground">{t('templates.subtitle')}</p>
-      {picking && <CatalogDialog orgId={orgId} onClose={() => setPicking(false)} />}
-      {templates.isPending ? (
-        <Skeleton className="h-24" />
-      ) : templates.isError ? (
-        <p role="alert" className="text-destructive">
-          {templates.error.message}
-        </p>
-      ) : templates.data.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card">
-          <EmptyState icon={<LayoutTemplate />} title={t('templates.empty')} />
-        </div>
-      ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-          {templates.data.map((tp) => (
-            <li key={tp.id} className="flex items-center gap-3 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">{tp.name}</div>
-                <div className="text-muted-foreground">
-                  {t(`devices.types.${tp.type}`)}
-                  {tp.vendor && ` · ${tp.vendor}`}
-                  {tp.partNumber && ` · ${tp.partNumber}`} ·{' '}
-                  {t('templates.portCount', { count: tp.portCount })}
-                </div>
-              </div>
-              {canEdit && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`${t('templates.edit')} ${tp.name}`}
-                    onClick={() => setEditing(tp)}
-                  >
-                    <Pencil aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`${t('templates.delete')} ${tp.name}`}
-                    onClick={() => setDeleting(tp)}
-                  >
-                    <Trash2 aria-hidden />
-                  </Button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'own' | 'system')}>
+        <TabsList>
+          <TabsTrigger value="system">
+            {t('templates.system')} ({catalogCount})
+          </TabsTrigger>
+          <TabsTrigger value="own">
+            {t('templates.own')} ({templates.data?.length ?? 0})
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="system" className="pt-2">
+          <SystemTemplates
+            orgId={orgId}
+            canEdit={canEdit}
+            onCopied={(tpl) => {
+              setTab('own')
+              setEditing(tpl)
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="own" className="space-y-2 pt-2">
+          <p className="text-sm text-muted-foreground">{t('templates.ownGuide')}</p>
+          {templates.isPending ? (
+            <Skeleton className="h-24" />
+          ) : templates.isError ? (
+            <p role="alert" className="text-destructive">
+              {templates.error.message}
+            </p>
+          ) : templates.data.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card">
+              <EmptyState icon={<LayoutTemplate />} title={t('templates.empty')} />
+            </div>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+              {templates.data.map((tp) => (
+                <li key={tp.id} className="flex items-center gap-3 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{tp.name}</div>
+                    <div className="text-muted-foreground">
+                      {t(`devices.types.${tp.type}`)}
+                      {tp.vendor && ` · ${tp.vendor}`}
+                      {tp.partNumber && ` · ${tp.partNumber}`} ·{' '}
+                      {t('templates.portCount', { count: tp.portCount })}
+                    </div>
+                  </div>
+                  {canEdit && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${t('templates.edit')} ${tp.name}`}
+                        onClick={() => setEditing(tp)}
+                      >
+                        <Pencil aria-hidden />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${t('templates.delete')} ${tp.name}`}
+                        onClick={() => setDeleting(tp)}
+                      >
+                        <Trash2 aria-hidden />
+                      </Button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+      </Tabs>
       {editing && (
         <TemplateDialog
           orgId={orgId}

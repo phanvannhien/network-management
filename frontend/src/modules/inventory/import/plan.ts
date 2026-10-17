@@ -396,6 +396,8 @@ export interface PlannedRow {
   mgmtIp: string
   mgmtInterface: string
   templateId: string | null
+  /** System template (built-in catalog) when the organization has none for the model (ADR-035). */
+  catalogId?: string
   /** Problems found before sending (the server checks the rest). */
   problems: string[]
 }
@@ -510,6 +512,7 @@ export function toImportRow(r: PlannedRow, cluster: ProposedCluster | undefined)
       ownerName: r.owner || undefined,
       notes: r.notes || undefined,
       templateId: r.templateId ?? undefined,
+      ...(r.catalogId ? { catalogId: r.catalogId } : {}),
       ...(cluster
         ? {
             clusterRole: pos === 0 ? 'primary' : cluster.kind === 'stack' ? 'member' : 'secondary',

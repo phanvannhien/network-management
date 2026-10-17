@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { DEVICE_TYPE_GROUPS, useDeviceList, useTemplates } from '@/modules/inventory/devices'
+import { DEVICE_TYPE_GROUPS, useDeviceList } from '@/modules/inventory/devices'
+import { TemplatePicker, useTemplateChoices } from '@/modules/inventory/TemplatePicker'
 import { useSites } from '@/modules/sites/sites'
 import {
   hostnameDnsWarning,
@@ -26,7 +27,9 @@ export interface NewDeviceInput {
   hostname: string
   type: DeviceType
   siteId: string
+  /** "org:<id>" / "sys:<catalog id>" (TemplatePicker), or null. */
   templateId: string | null
+  model: string
 }
 
 /**
@@ -54,9 +57,11 @@ export function NewDeviceDialog({
 }) {
   const { t } = useTranslation()
   const sites = useSites(orgId)
-  const templates = useTemplates(orgId)
+  const choices = useTemplateChoices(orgId)
+  const [model, setModel] = useState('')
+  const [manualTemplate, setManualTemplate] = useState(false)
   const [type, setType] = useState<DeviceType>(initialType)
-  const [templateId, setTemplateId] = useState(initialTemplate ?? '')
+  const [templateId, setTemplateId] = useState(initialTemplate ? `org:${initialTemplate}` : '')
   const [siteId, setSiteId] = useState(defaultSiteId ?? '')
   const [hostname, setHostname] = useState('')
   const site = sites.data?.find((s) => s.id === siteId) ?? null
@@ -95,7 +100,7 @@ export function NewDeviceDialog({
       : value && hostnameDnsWarning(value)
         ? 'dns'
         : null
-  const forType = (templates.data ?? []).filter((x) => x.type === type)
+  const picked = choices.resolve(templateId)
   const canSave = siteId !== '' && value.trim() !== '' && problem === null
 
   return (
@@ -106,7 +111,13 @@ export function NewDeviceDialog({
           onSubmit={(e) => {
             e.preventDefault()
             if (!canSave) return
-            onCreate({ hostname: value.trim(), type, siteId, templateId: templateId || null })
+            onCreate({
+              hostname: value.trim(),
+              type,
+              siteId,
+              templateId: templateId || null,
+              model: model.trim(),
+            })
           }}
         >
           <DialogHeader>
@@ -135,28 +146,52 @@ export function NewDeviceDialog({
               </NativeSelect>
             )}
           </FormField>
-          {forType.length > 0 && (
-            <FormField
-              label={t('devices.template')}
-              guide={t('devices.templateHint')}
-              help="template"
-            >
-              {(p) => (
-                <NativeSelect
-                  {...p}
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
-                >
-                  <option value="">{t('library.noTemplate')}</option>
-                  {forType.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name} ({t('library.ports', { count: x.portCount })})
-                    </option>
-                  ))}
-                </NativeSelect>
-              )}
-            </FormField>
-          )}
+          <FormField label={t('devices.model')} guide={t('library.modelGuide')}>
+            {(p) => (
+              <Input
+                {...p}
+                maxLength={100}
+                value={model}
+                placeholder="C1300-24T-4G, FortiGate 80F…"
+                onChange={(e) => {
+                  setModel(e.target.value)
+                  // A known model picks its template (and its type) unless one was chosen by hand.
+                  if (manualTemplate) return
+                  const choice = choices.match([e.target.value])
+                  setTemplateId(choice ?? '')
+                  const tpl = choices.resolve(choice)
+                  if (tpl) setType(tpl.type)
+                }}
+              />
+            )}
+          </FormField>
+          <FormField
+            label={t('devices.template')}
+            guide={t('devices.templateHint')}
+            hint={
+              picked
+                ? t(picked.kind === 'sys' ? 'templates.pickedSystem' : 'templates.pickedOwn', {
+                    name: picked.label,
+                    count: picked.portCount,
+                  }) + (picked.verified ? '' : ` ${t('deviceImport.catalogUnverified')}`)
+                : undefined
+            }
+            help="template"
+          >
+            {(p) => (
+              <TemplatePicker
+                {...p}
+                choices={choices}
+                type={type}
+                noneLabel={t('library.noTemplate')}
+                value={templateId}
+                onChange={(e) => {
+                  setManualTemplate(true)
+                  setTemplateId(e.target.value)
+                }}
+              />
+            )}
+          </FormField>
           <FormField label={t('devices.site')} guide={t('library.siteGuide')} help="site" required>
             {(p) => (
               <NativeSelect

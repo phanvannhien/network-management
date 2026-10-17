@@ -16,7 +16,6 @@ import { useDiagramMutations } from '@/editor/doc/api'
 import { useCategories, useSaveSite, useSites } from '@/modules/sites/sites'
 import {
   DEVICE_TYPES,
-  templateFromCatalog,
   useCatalog,
   useTemplates,
   type CatalogModel,
@@ -217,8 +216,8 @@ export function DeviceImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, mapping, header, JSON.stringify(types), JSON.stringify(siteIds), templates.data],
   )
-  // Models the organization has no template for but the built-in catalog knows (ADR-035): a template is copied from
-  // the catalog at import time (placeholder id "cat:<id>" until then), and its type refines a generic "Switch".
+  // Models the organization has no template for but the system templates know (ADR-035): the device is created from
+  // the system template directly (nothing copied), and its type refines a generic "Switch".
   const catalogOf = useMemo(() => {
     const out = new Map<number, CatalogModel>()
     for (const p of basePlan)
@@ -235,7 +234,7 @@ export function DeviceImportPage() {
         if (!c || skipCatalog.has(c.id)) return p
         const switches = new Set(['l2_switch', 'l3_switch', 'poe_switch'])
         const type = p.type && switches.has(p.type) && switches.has(c.type) ? c.type : p.type
-        return { ...p, type, vendor: p.vendor || c.vendor, templateId: `cat:${c.id}` }
+        return { ...p, type, vendor: p.vendor || c.vendor, catalogId: c.id }
       }),
     [basePlan, catalogOf, skipCatalog],
   )
@@ -249,18 +248,11 @@ export function DeviceImportPage() {
   const noTemplate = [...new Set(plan.filter((p) => !p.templateId && p.model).map((p) => p.model))]
   const ready = plan.filter((p) => p.problems.length === 0 && !inFile.has(p.line))
 
-  const requestBody = (
-    rowsIn: PlannedRow[],
-    dryRun: boolean,
-    ids: Record<string, string>,
-    tplIds: Record<string, string> = {},
-  ) => {
+  const requestBody = (rowsIn: PlannedRow[], dryRun: boolean, ids: Record<string, string>) => {
     const fix = (id: string | null) => (id && id.startsWith('new:') ? (ids[id] ?? null) : id)
-    const fixTpl = (id: string | null) => (id && id.startsWith('cat:') ? (tplIds[id] ?? null) : id)
     const fixed = rowsIn.map((r) => ({
       ...r,
       siteId: fix(r.siteId),
-      templateId: fixTpl(r.templateId),
     }))
     const used = clusters.filter((c) => c.accepted && fixed.some((r) => c.lines.includes(r.line)))
     return {
@@ -313,15 +305,10 @@ export function DeviceImportPage() {
         })
         if (created) ids[`new:${k}`] = created.id
       }
-      // Templates from the catalog for the models that need one.
-      const tplIds: Record<string, string> = {}
-      for (const r of ready)
-        if (r.templateId?.startsWith('cat:') && !tplIds[r.templateId])
-          tplIds[r.templateId] = (await templateFromCatalog(orgId, r.templateId.slice(4))).id
       const results: ImportRowResult[] = []
       for (let i = 0; i < ready.length; i += CHUNK) {
         results.push(
-          ...(await postImport(orgId, requestBody(ready.slice(i, i + CHUNK), false, ids, tplIds))),
+          ...(await postImport(orgId, requestBody(ready.slice(i, i + CHUNK), false, ids))),
         )
         setBusy({ done: Math.min(i + CHUNK, ready.length), total: ready.length })
       }
@@ -776,7 +763,7 @@ export function DeviceImportPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {p.model}
-                          {p.templateId?.startsWith('cat:') ? (
+                          {p.catalogId ? (
                             <span className="block text-xs text-muted-foreground">
                               {t('deviceImport.withCatalog')}
                             </span>

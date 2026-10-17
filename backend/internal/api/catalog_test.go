@@ -57,3 +57,33 @@ func TestTemplateFromCatalog(t *testing.T) {
 		t.Errorf("org B copy: %d %v", status, b)
 	}
 }
+
+// ADR-035 rev.: a device made from a system template gets its ports and identity without copying the template.
+func TestDeviceFromSystemTemplate(t *testing.T) {
+	c, ok := catalog.Get("cisco-c1300-24t-4g")
+	if !ok {
+		t.Skip("model not in catalog")
+	}
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "HCM"}))
+	status, dev := fx.A.Do("POST", devicesPath(org), map[string]any{"hostname": "SW1", "type": "l2_switch", "siteId": site, "catalogId": c.Id})
+	if status != http.StatusCreated || dev["catalogId"] != c.Id || dev["model"] != c.Model || dev["vendor"] != "Cisco" {
+		t.Fatalf("create from catalog: %d %v", status, dev)
+	}
+	id := dev["id"].(string)
+	if _, ifs := fx.A.Do("GET", devicePath(org, id)+"/interfaces", nil); len(ifs["interfaces"].([]any)) != int(c.PortCount) {
+		t.Errorf("ports: %d, want %d", len(ifs["interfaces"].([]any)), c.PortCount)
+	}
+	if _, tpls := fx.A.Do("GET", orgPath(org)+"/device-templates", nil); len(tpls["templates"].([]any)) != 0 {
+		t.Errorf("nothing is copied into the organization: %v", tpls["templates"])
+	}
+	if status, _ := fx.A.Do("POST", devicesPath(org), map[string]any{"hostname": "SW2", "type": "l2_switch", "siteId": site, "catalogId": "nope"}); status != http.StatusBadRequest {
+		t.Errorf("unknown system template: %d", status)
+	}
+	// A device without ports takes the system template's ports.
+	bare := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW3", "type": "l2_switch", "siteId": site}))
+	if status, body := fx.A.Do("POST", devicePath(org, bare)+"/apply-template", map[string]any{"catalogId": c.Id}); status != http.StatusOK || body["added"] != float64(c.PortCount) {
+		t.Errorf("apply system template: %d %v", status, body)
+	}
+}

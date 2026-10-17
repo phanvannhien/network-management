@@ -1151,6 +1151,8 @@ export const vi = {
     newTitle: 'Thiết bị mới',
     newBody:
       'Thiết bị được thêm vào kho khi bạn lưu sơ đồ. Vị trí rack, IP, serial… sửa sau ở panel thuộc tính hoặc trang thiết bị.',
+    modelGuide:
+      'Gõ model hoặc part number (vd C1300-24T-4G): nếu có template, thiết bị tự có đủ cổng đúng tên của hãng.',
     noTemplate: 'Không dùng template',
     chooseSite: 'Chọn site…',
     siteGuide: 'Nơi thiết bị đặt thật; sơ đồ có thể chứa thiết bị của nhiều site.',
@@ -1251,6 +1253,16 @@ export const vi = {
     badge: '{{kind}} ×{{count}}',
   },
   templates: {
+    systemGuide:
+      '{{count}} model phổ biến đi kèm phần mềm, có đủ cổng đúng tên của hãng. Khi tạo hoặc nhập thiết bị, gõ đúng model / part number là thiết bị tự có các cổng này — không cần làm gì ở đây. Model khác thực tế thì "Sao chép để sửa" thành template riêng.',
+    ownGuide:
+      'Template do tổ chức tạo — dùng cho model chưa có trong template hệ thống, hoặc khi cần sửa khác (được ưu tiên hơn template hệ thống cùng model).',
+    copyToEdit: 'Sao chép để sửa',
+    source: 'Nguồn (datasheet)',
+    own: 'Template tự tạo',
+    system: 'Template hệ thống',
+    pickedSystem: 'Template hệ thống {{name}}: thiết bị sẽ có {{count}} cổng đúng tên của hãng.',
+    pickedOwn: 'Template của tổ chức {{name}}: thiết bị sẽ có {{count}} cổng.',
     title: 'Template thiết bị',
     subtitle:
       'Khuôn theo model: hãng, model, part number và các cổng vật lý sinh sẵn khi tạo thiết bị.',
@@ -1843,9 +1855,9 @@ export const vi = {
     line: 'Dòng',
     result: 'Kết quả',
     vip: 'IP chung của cụm',
-    catalogTitle: 'Tạo template từ thư viện thiết bị có sẵn',
+    catalogTitle: 'Dùng template hệ thống cho các model chưa có template riêng',
     catalogGuide:
-      'Các model này chưa có template trong tổ chức nhưng có trong thư viện: hệ thống chép thành template của tổ chức (sửa được sau) để thiết bị có đủ cổng đúng tên của hãng.',
+      'Các model này chưa có template của tổ chức nhưng có trong template hệ thống: thiết bị được tạo với đủ cổng đúng tên của hãng. Bỏ chọn nếu muốn tạo thiết bị không có cổng.',
     catalogUnverified: 'chưa đối chiếu datasheet — nên kiểm tra',
     withCatalog: 'cổng theo thư viện có sẵn',
     noTemplate: 'chưa có template — sẽ không có cổng',

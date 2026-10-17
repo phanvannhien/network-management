@@ -94,6 +94,7 @@ type Device struct {
 	ClusterID       pgtype.UUID
 	ClusterRole     pgtype.Text
 	ClusterMemberNo pgtype.Int4
+	CatalogID       string
 }
 
 type DeviceCluster struct {

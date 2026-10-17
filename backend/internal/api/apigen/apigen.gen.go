@@ -1283,8 +1283,9 @@ type AdminUserList struct {
 	Users []AdminUser `json:"users"`
 }
 
-// ApplyTemplate a template, or port groups typed on the spot (same format as a template's) — exactly one of them
+// ApplyTemplate an organization template, a system template (catalogId) or port groups typed on the spot — exactly one
 type ApplyTemplate struct {
+	CatalogId  *string             `json:"catalogId,omitempty"`
 	Ports      *[]PortGroup        `json:"ports,omitempty"`
 	TemplateId *openapi_types.UUID `json:"templateId,omitempty"`
 }
@@ -1588,6 +1589,9 @@ type Device struct {
 	Access   AccessLevel `json:"access"`
 	AssetTag string      `json:"assetTag"`
 
+	// CatalogId system template (built-in catalog) the device was created from; empty when none
+	CatalogId string `json:"catalogId"`
+
 	// CategoryId the site's category (null = attached straight to the organization)
 	CategoryId *openapi_types.UUID `json:"categoryId"`
 
@@ -1780,6 +1784,9 @@ type DeviceImportRowResultAction string
 type DeviceInput struct {
 	AssetTag *string `json:"assetTag,omitempty"`
 
+	// CatalogId Create only — a system template (built-in catalog, ADR-035) instead of an organization template
+	CatalogId *string `json:"catalogId,omitempty"`
+
 	// ClusterId Cluster of the device (same site, ADR-027)
 	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`
 	ClusterMemberNo *int32              `json:"clusterMemberNo,omitempty"`
@@ -1894,6 +1901,9 @@ type DeviceType string
 // DeviceUpdate defines model for DeviceUpdate.
 type DeviceUpdate struct {
 	AssetTag *string `json:"assetTag,omitempty"`
+
+	// CatalogId Create only — a system template (built-in catalog, ADR-035) instead of an organization template
+	CatalogId *string `json:"catalogId,omitempty"`
 
 	// ClusterId Cluster of the device (same site, ADR-027)
 	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`

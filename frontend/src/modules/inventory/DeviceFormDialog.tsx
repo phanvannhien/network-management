@@ -26,7 +26,6 @@ import {
   useClusters,
   useCustomFields,
   useInterfaces,
-  useTemplates,
   useSaveDevice,
   type ClusterRole,
   type CustomField,
@@ -36,6 +35,7 @@ import {
   type DeviceRole,
   type DeviceType,
 } from './devices'
+import { TemplatePicker, useTemplateChoices, type ResolvedTemplate } from './TemplatePicker'
 
 type CustomValue = string | number | boolean
 
@@ -126,7 +126,9 @@ export function DeviceFormDialog({
   const orgName = useOrganization(orgId).data?.organization.name ?? ''
   const sites = useSites(orgId)
   const fields = useCustomFields(orgId)
-  const templates = useTemplates(orgId, !device)
+  const choices = useTemplateChoices(orgId, !device)
+  /** The user picked a template by hand: typing a model no longer changes it. */
+  const [manualTemplate, setManualTemplate] = useState(false)
   const clusters = useClusters(orgId)
   const interfaces = useInterfaces(orgId, device?.id ?? '', Boolean(device))
   const [f, setF] = useState({
@@ -167,6 +169,12 @@ export function DeviceFormDialog({
   )
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
+  const picked = choices.resolve(f.templateId)
+  /** A template sets the type and size, and the vendor when it is still empty. */
+  const applyTemplate = (next: typeof f, tpl: ResolvedTemplate | null): typeof f =>
+    tpl
+      ? { ...next, type: tpl.type, uHeight: String(tpl.uHeight), vendor: next.vendor || tpl.vendor }
+      : next
   const site = sites.data?.find((s) => s.id === f.siteId)
   const locations = useLocations(orgId, f.siteId)
   const racks = useRacks(orgId, f.siteId)
@@ -205,7 +213,8 @@ export function DeviceFormDialog({
       rackId: f.rackId || null,
       rackU: f.rackId && f.rackU ? Number(f.rackU) : null,
       uHeight: Number(f.uHeight) || 1,
-      templateId: device ? null : f.templateId || null,
+      templateId: !device && f.templateId.startsWith('org:') ? f.templateId.slice(4) : null,
+      ...(!device && f.templateId.startsWith('sys:') ? { catalogId: f.templateId.slice(4) } : {}),
       mgmtInterfaceId: f.mgmtInterfaceId || null,
       pollAddress: f.pollAddress.trim() || null,
       clusterId: f.clusterId || null,
@@ -245,34 +254,37 @@ export function DeviceFormDialog({
 
           <fieldset className="grid grid-cols-3 gap-3">
             <legend className={legend}>{t('devices.groupIdentity')}</legend>
-            {!device && (templates.data ?? []).length > 0 && (
+            {!device && (
               <FormField
                 label={t('devices.template')}
                 guide={t('devices.templateHint')}
+                hint={
+                  picked
+                    ? t(picked.kind === 'sys' ? 'templates.pickedSystem' : 'templates.pickedOwn', {
+                        name: picked.label,
+                        count: picked.portCount,
+                      }) + (picked.verified ? '' : ` ${t('deviceImport.catalogUnverified')}`)
+                    : undefined
+                }
                 help="template"
                 className="col-span-3"
               >
                 {(p) => (
-                  <NativeSelect
+                  <TemplatePicker
                     {...p}
+                    choices={choices}
+                    noneLabel={t('devices.noTemplate')}
                     value={f.templateId}
                     onChange={(e) => {
-                      const tp = templates.data?.find((x) => x.id === e.target.value)
-                      setF({
-                        ...f,
-                        templateId: e.target.value,
-                        type: tp ? tp.type : f.type,
-                        uHeight: tp ? String(tp.uHeight) : f.uHeight,
-                      })
+                      setManualTemplate(true)
+                      setF(
+                        applyTemplate(
+                          { ...f, templateId: e.target.value },
+                          choices.resolve(e.target.value),
+                        ),
+                      )
                     }}
-                  >
-                    <option value="">{t('devices.noTemplate')}</option>
-                    {(templates.data ?? []).map((tp) => (
-                      <option key={tp.id} value={tp.id}>
-                        {tp.name} ({t('templates.portCount', { count: tp.portCount })})
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  />
                 )}
               </FormField>
             )}
@@ -330,7 +342,26 @@ export function DeviceFormDialog({
                 guide={IDENTITY_HELP[k]?.guide && t(`guides.${IDENTITY_HELP[k].guide}`)}
                 help={IDENTITY_HELP[k]?.help}
               >
-                {(p) => <Input {...p} maxLength={100} value={f[k]} onChange={set(k)} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    maxLength={100}
+                    value={f[k]}
+                    onChange={(e) => {
+                      const next = { ...f, [k]: e.target.value }
+                      // A known model / part number picks its template (ports, size) unless one was chosen by hand.
+                      if (!device && !manualTemplate && (k === 'model' || k === 'partNumber')) {
+                        const choice = choices.match([next.partNumber, next.model], next.type)
+                        setF(
+                          applyTemplate(
+                            { ...next, templateId: choice ?? '' },
+                            choices.resolve(choice),
+                          ),
+                        )
+                      } else setF(next)
+                    }}
+                  />
+                )}
               </FormField>
             ))}
           </fieldset>

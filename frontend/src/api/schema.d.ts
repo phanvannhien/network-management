@@ -2059,6 +2059,8 @@ export interface components {
              * @description Create only — fill empty type/vendor/model/part number from the template and generate its ports
              */
             templateId?: string | null;
+            /** @description Create only — a system template (built-in catalog, ADR-035) instead of an organization template */
+            catalogId?: string;
         };
         DeviceUpdate: components["schemas"]["DeviceInput"] & {
             /** Format: int32 */
@@ -2070,6 +2072,8 @@ export interface components {
              * @description Template the device was created from (its ports came from it); used when cloning
              */
             templateId: string | null;
+            /** @description system template (built-in catalog) the device was created from; empty when none */
+            catalogId: string;
             /**
              * Format: uuid
              * @description the site's category (null = attached straight to the organization)
@@ -2654,8 +2658,9 @@ export interface components {
             source: string;
             notes: string;
         };
-        /** @description a template, or port groups typed on the spot (same format as a template's) — exactly one of them */
+        /** @description an organization template, a system template (catalogId) or port groups typed on the spot — exactly one */
         ApplyTemplate: {
+            catalogId?: string;
             /** Format: uuid */
             templateId?: string;
             ports?: components["schemas"]["PortGroup"][];

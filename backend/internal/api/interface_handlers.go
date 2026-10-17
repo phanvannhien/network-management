@@ -17,6 +17,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/audit"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
@@ -777,9 +778,20 @@ func (s *Server) ApplyDeviceTemplate(ctx context.Context, req apigen.ApplyDevice
 		b := req.Body
 		var tpl store.DeviceTemplate
 		switch {
-		case (b.TemplateId == nil) == (b.Ports == nil || len(*b.Ports) == 0):
+		case countSet(b.TemplateId != nil, b.Ports != nil && len(*b.Ports) > 0, b.CatalogId != nil && *b.CatalogId != "") != 1:
 			out.bad = "Chọn một template hoặc khai báo nhóm cổng"
 			return errRollback
+		case b.CatalogId != nil && *b.CatalogId != "":
+			c, ok := catalog.Get(*b.CatalogId)
+			if !ok {
+				out.bad = "Không có model này trong template hệ thống"
+				return errRollback
+			}
+			raw, err := json.Marshal(c.Ports)
+			if err != nil {
+				return fmt.Errorf("encode catalog ports: %w", err)
+			}
+			tpl = store.DeviceTemplate{Name: c.Vendor + " " + c.Model, Ports: raw}
 		case b.Ports != nil:
 			// Port groups typed on the spot (a device imported without a template, P1-21).
 			if _, msg := expandPorts(*b.Ports, max(dev.ClusterMemberNo.Int32, 1)); msg != "" {
@@ -1101,4 +1113,15 @@ func optMac(hw net.HardwareAddr) *string {
 	}
 	v := hw.String()
 	return &v
+}
+
+// countSet: how many of the alternatives are given.
+func countSet(alts ...bool) int {
+	n := 0
+	for _, a := range alts {
+		if a {
+			n++
+		}
+	}
+	return n
 }

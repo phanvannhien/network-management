@@ -232,12 +232,12 @@ WHERE d.id = @id AND d.organization_id = @organization_id AND d.deleted_at IS NU
 INSERT INTO devices (organization_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
-                     template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
+                     template_id, catalog_id, poll_address, cluster_id, cluster_role, cluster_member_no)
 VALUES (@organization_id, @site_id, sqlc.narg('location_id'), sqlc.narg('rack_id'), sqlc.narg('rack_u'),
         @u_height, @hostname, @type, @vendor, @model, @part_number, @serial_number, @asset_tag, @firmware, @role, @lifecycle,
         @managed, @owner_name, sqlc.narg('purchase_date'), @po_number, sqlc.narg('warranty_end'), sqlc.narg('license_end'),
         sqlc.narg('eol_date'), sqlc.narg('eos_date'), @notes, @tags, @custom_fields, sqlc.narg('template_id'),
-        sqlc.narg('poll_address'), sqlc.narg('cluster_id'), sqlc.narg('cluster_role'), sqlc.narg('cluster_member_no'))
+        @catalog_id, sqlc.narg('poll_address'), sqlc.narg('cluster_id'), sqlc.narg('cluster_role'), sqlc.narg('cluster_member_no'))
 RETURNING id;
 
 -- name: UpdateDevice :execrows

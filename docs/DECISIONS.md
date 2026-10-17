@@ -385,11 +385,14 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Lưu là **file JSON trong mã nguồn** (`backend/internal/catalog/data/*.json`), nhúng vào binary, **chỉ đọc**, cập nhật theo phiên
     bản phần mềm. Không phải dữ liệu của tổ chức nào nên **không có `organization_id`** (giống danh sách loại thiết bị) — không phải
     ngoại lệ của quy tắc tenant vì không có bảng nào.
-  - Tổ chức **không dùng trực tiếp** mục thư viện: khi cần thì **chép thành template của tổ chức** (sửa được, có audit
-    `template.create`, ghi nguồn "thư viện"). Mọi thứ áp vào thiết bị vẫn là template của tổ chức.
-  - **Nhập Excel:** model chưa có template tổ chức nhưng có trong thư viện → bước Xem trước liệt kê "sẽ tạo template từ thư viện"
-    (bỏ chọn được); khi nhập thì tạo template rồi thiết bị sinh cổng theo đó.
-  - Thêm cổng tại chỗ / trang Template tìm trong thư viện trước khi đoán theo tên model.
+  - *(Sửa cùng ngày theo người dùng — bản đầu chép mục thư viện thành template tổ chức khi dùng, gây khó hiểu vì "không thấy".)*
+    Mục thư viện là **template hệ thống**, dùng **trực tiếp**: thiết bị tạo từ template hệ thống được sinh cổng và điền hãng/model/
+    part number/số U, lưu `devices.catalog_id`; **không chép** gì vào tổ chức.
+  - Trang Template có hai phần: **Template hệ thống** (chỉ xem, tìm theo hãng/model, xem nhóm cổng, nhãn "chưa đối chiếu") và
+    **Template tự tạo** (của tổ chức). "Sao chép để sửa" tạo template tự tạo từ một template hệ thống (audit `template.create`).
+  - **Tự nhận theo model:** form thêm thiết bị, hộp thêm thiết bị trên sơ đồ, nhập Excel và tab Cổng của thiết bị chọn sẵn template
+    khớp model / part number — template tự tạo được ưu tiên, sau đó mới tới template hệ thống. Người dùng vẫn đổi được.
+  - Áp template cho thiết bị đã có (apply-template) nhận cả template hệ thống.
   - Mỗi mục có `verified` + `source` (datasheet hãng); mục chưa đối chiếu hiện "cần kiểm tra".
 - **Lý do:** đúng tên cổng ngay từ đầu (khớp CLI, khớp LLDP/SNMP ở Phase 3), không bắt người dùng tự gõ; dữ liệu tham chiếu không
   cần sửa theo từng tổ chức nên file trong mã nguồn là đơn giản và kiểm soát được (review qua git).

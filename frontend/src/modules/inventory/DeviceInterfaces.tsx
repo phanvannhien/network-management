@@ -36,7 +36,6 @@ import {
   useInterfaces,
   useIpMutations,
   useSaveDevice,
-  useTemplates,
   type Device,
   type Interface,
   type InterfaceKind,
@@ -45,6 +44,7 @@ import {
   type IpAddress,
   type IpRole,
 } from './devices'
+import { TemplatePicker, useTemplateChoices } from './TemplatePicker'
 import { SuggestFreeIp } from '@/modules/ipam/SuggestFreeIp'
 
 /** Read-only table styled like DataTable, for per-device lists. */
@@ -368,12 +368,15 @@ export function InterfacesTab({
   const { t } = useTranslation()
   const interfaces = useInterfaces(orgId, device.id)
   const ips = useDeviceIps(orgId, device.id)
-  const templates = useTemplates(orgId, canEdit)
+  const choices = useTemplateChoices(orgId, canEdit)
   const { remove, apply } = useInterfaceMutations(orgId, device.id)
   const saveDevice = useSaveDevice(orgId)
   const [editing, setEditing] = useState<Interface | 'new' | null>(null)
   const [deleting, setDeleting] = useState<Interface | null>(null)
-  const [templateId, setTemplateId] = useState('')
+  const [pickedTemplate, setTemplateId] = useState<string | null>(null)
+  // Pre-selected from the device's model / part number (the organization's template first, then the system one).
+  const templateId =
+    pickedTemplate ?? choices.match([device.partNumber, device.model], device.type) ?? ''
 
   if (interfaces.isPending) return <Skeleton className="h-32" />
   if (interfaces.isError)
@@ -400,36 +403,32 @@ export function InterfacesTab({
           <Button onClick={() => setEditing('new')}>
             <Plus aria-hidden /> {t('devices.ifaceAdd')}
           </Button>
-          {(templates.data ?? []).length > 0 && (
-            <>
-              <div className="w-64">
-                <NativeSelect
-                  aria-label={t('devices.template')}
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
-                >
-                  <option value="">{t('devices.template')}…</option>
-                  {(templates.data ?? []).map((tp) => (
-                    <option key={tp.id} value={tp.id}>
-                      {tp.name} ({t('templates.portCount', { count: tp.portCount })})
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-              <Button
-                variant="outline"
-                disabled={!templateId || apply.isPending}
-                onClick={() =>
-                  apply.mutate(templateId, {
-                    onSuccess: (n) => toast.success(t('devices.applied', { count: n })),
-                    onError: (e) => toast.error(e.message),
-                  })
-                }
-              >
-                {t('devices.applyTemplate')}
-              </Button>
-            </>
-          )}
+          <div className="w-72">
+            <TemplatePicker
+              aria-label={t('devices.template')}
+              choices={choices}
+              noneLabel={`${t('devices.template')}…`}
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            disabled={!templateId || apply.isPending}
+            onClick={() =>
+              apply.mutate(
+                templateId.startsWith('sys:')
+                  ? { catalogId: templateId.slice(4) }
+                  : templateId.slice(4),
+                {
+                  onSuccess: (n) => toast.success(t('devices.applied', { count: n })),
+                  onError: (e) => toast.error(e.message),
+                },
+              )
+            }
+          >
+            {t('devices.applyTemplate')}
+          </Button>
         </div>
       )}
       {list.length === 0 ? (

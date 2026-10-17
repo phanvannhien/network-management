@@ -186,12 +186,12 @@ const createDevice = `-- name: CreateDevice :one
 INSERT INTO devices (organization_id, site_id, location_id, rack_id, rack_u, u_height, hostname, type,
                      vendor, model, part_number, serial_number, asset_tag, firmware, role, lifecycle, managed, owner_name,
                      purchase_date, po_number, warranty_end, license_end, eol_date, eos_date, notes, tags, custom_fields,
-                     template_id, poll_address, cluster_id, cluster_role, cluster_member_no)
+                     template_id, catalog_id, poll_address, cluster_id, cluster_role, cluster_member_no)
 VALUES ($1, $2, $3, $4, $5,
         $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
         $17, $18, $19, $20, $21, $22,
         $23, $24, $25, $26, $27, $28,
-        $29, $30, $31, $32)
+        $29, $30, $31, $32, $33)
 RETURNING id
 `
 
@@ -224,6 +224,7 @@ type CreateDeviceParams struct {
 	Tags            []string
 	CustomFields    []byte
 	TemplateID      pgtype.UUID
+	CatalogID       string
 	PollAddress     *netip.Addr
 	ClusterID       pgtype.UUID
 	ClusterRole     pgtype.Text
@@ -260,6 +261,7 @@ func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgt
 		arg.Tags,
 		arg.CustomFields,
 		arg.TemplateID,
+		arg.CatalogID,
 		arg.PollAddress,
 		arg.ClusterID,
 		arg.ClusterRole,
@@ -559,7 +561,7 @@ func (q *Queries) GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefPa
 }
 
 const getDevice = `-- name: GetDevice :one
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -620,6 +622,7 @@ type GetDeviceRow struct {
 	ClusterID         pgtype.UUID
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
+	CatalogID         string
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -674,6 +677,7 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.ClusterID,
 		&i.ClusterRole,
 		&i.ClusterMemberNo,
+		&i.CatalogID,
 		&i.SiteCode,
 		&i.SiteName,
 		&i.CategoryID,
@@ -780,7 +784,7 @@ func (q *Queries) ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryPa
 
 const listDevices = `-- name: ListDevices :many
 
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -889,6 +893,7 @@ type ListDevicesRow struct {
 	ClusterID         pgtype.UUID
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
+	CatalogID         string
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -966,6 +971,7 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.ClusterID,
 			&i.ClusterRole,
 			&i.ClusterMemberNo,
+			&i.CatalogID,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.CategoryID,
@@ -988,7 +994,7 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 }
 
 const listDevicesByIDs = `-- name: ListDevicesByIDs :many
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -1049,6 +1055,7 @@ type ListDevicesByIDsRow struct {
 	ClusterID         pgtype.UUID
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
+	CatalogID         string
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -1110,6 +1117,7 @@ func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsPara
 			&i.ClusterID,
 			&i.ClusterRole,
 			&i.ClusterMemberNo,
+			&i.CatalogID,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.CategoryID,

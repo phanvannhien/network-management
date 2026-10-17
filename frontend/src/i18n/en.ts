@@ -1158,6 +1158,8 @@ export const en: Strings = {
     newTitle: 'New device',
     newBody:
       'The device joins the inventory when you save the diagram. Rack, IPs, serial… are edited later in the property panel or the device page.',
+    modelGuide:
+      "Type the model or part number (e.g. C1300-24T-4G): with a template the device gets the vendor's ports.",
     noTemplate: 'No template',
     chooseSite: 'Choose a site…',
     siteGuide: 'Where the device really is; a diagram may hold devices of several sites.',
@@ -1259,6 +1261,17 @@ export const en: Strings = {
     badge: '{{kind}} ×{{count}}',
   },
   templates: {
+    systemGuide:
+      '{{count}} common models shipped with the software, with the vendor\'s ports. When a device is created or imported with that model / part number it gets these ports — nothing to do here. If a model differs in reality, "Copy to edit" makes an own template.',
+    ownGuide:
+      'Templates made by the organization — for models the system templates lack, or to change one (they win over a system template of the same model).',
+    copyToEdit: 'Copy to edit',
+    source: 'Source (datasheet)',
+    own: 'Own templates',
+    system: 'System templates',
+    pickedSystem:
+      "System template {{name}}: the device gets {{count}} ports with the vendor's names.",
+    pickedOwn: 'Organization template {{name}}: the device gets {{count}} ports.',
     title: 'Device templates',
     subtitle:
       'Per-model blueprints: vendor, model, part number and the physical ports generated for new devices.',
@@ -1857,9 +1870,9 @@ export const en: Strings = {
     line: 'Row',
     result: 'Result',
     vip: 'cluster shared IP',
-    catalogTitle: 'Create templates from the built-in device catalog',
+    catalogTitle: 'Use system templates for models without an own template',
     catalogGuide:
-      "These models have no template in the organization but are in the catalog: they are copied into the organization's templates (editable later) so the devices get the vendor's real ports.",
+      "These models have no organization template but are system templates: the devices are created with the vendor's real ports. Untick to create them without ports.",
     catalogUnverified: 'not checked against the datasheet — worth a look',
     withCatalog: 'ports from the built-in catalog',
     noTemplate: 'no template — no ports',

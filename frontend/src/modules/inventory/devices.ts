@@ -408,11 +408,16 @@ export function useInterfaceMutations(orgId: string, deviceId: string) {
     onSettled: invalidate,
   })
   const apply = useMutation({
-    /** A template id, or port groups typed on the spot. */
-    mutationFn: async (what: string | PortGroup[]) => {
+    /** An organization template id, a system template, or port groups typed on the spot. */
+    mutationFn: async (what: string | PortGroup[] | { catalogId: string }) => {
       const r = await api.POST('/orgs/{orgId}/devices/{deviceId}/apply-template', {
         params: { ...csrfParam, path },
-        body: typeof what === 'string' ? { templateId: what } : { ports: what },
+        body:
+          typeof what === 'string'
+            ? { templateId: what }
+            : Array.isArray(what)
+              ? { ports: what }
+              : what,
       })
       if (r.data) return r.data.added
       fail(r.error, r.response.status, i18n.t('errors.save'))

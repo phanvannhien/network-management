@@ -5,6 +5,25 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-21b sửa: template hệ thống dùng trực tiếp, tự nhận theo model (ADR-035 sửa)
+- Đã làm (theo phản hồi: "đã tạo template nhưng không thấy", người dùng chỉ cần gõ đúng model là có thông số):
+  - Template trong thư viện = **template hệ thống**, dùng trực tiếp, không chép vào tổ chức. Thiết bị tạo từ đó lưu `catalog_id`
+    (migration 000022), có đủ cổng, hãng/model/part number/số U.
+  - **Trang Template**: tab "Template hệ thống (359)" — tìm, lọc hãng, bấm để xem nhóm cổng + nguồn datasheet, "Sao chép để sửa";
+    tab "Template tự tạo".
+  - **Tự nhận theo model** ở: form thêm thiết bị (gõ Model/Part number → chọn sẵn template, loại, số U), hộp thêm thiết bị trên sơ đồ
+    (thêm ô Model), nhập Excel (không còn bước chép template), tab Cổng của thiết bị (chọn sẵn theo model), "Dùng cổng theo thư
+    viện" trong hộp nối dây/panel. Template tự tạo luôn được ưu tiên hơn template hệ thống cùng model.
+  - Ô chọn template chung (`TemplatePicker`): nhóm "Template tự tạo" + "Template hệ thống · <hãng>".
+- Test / cách kiểm tra: `make check` pass (Go `TestDeviceFromSystemTemplate`: tạo thiết bị từ template hệ thống → đủ cổng, không chép
+  template, id lạ bị từ chối, áp template hệ thống cho thiết bị chưa có cổng). Chromium: trang Template 2 tab; gõ "C1300-24T-4G" trong
+  form → tự chọn template hệ thống, lưu ra thiết bị 29 cổng, tổ chức vẫn 0 template tự tạo.
+- Còn dở / lỗi đã biết: trang chi tiết thiết bị chưa hiện dòng "Tạo từ template hệ thống …" (đã lưu `catalogId`); thư viện sơ đồ (tab
+  Thêm mới) chỉ liệt kê template tự tạo — template hệ thống dùng qua ô Model trong hộp thêm thiết bị.
+- Câu hỏi cho người dùng: như mục P1-21.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-22 Export.
+
 ## 2026-10-17 — P1-21b Thư viện thiết bị có sẵn (ADR-035)
 - Đã làm:
   - **Thư viện 359 model** (247 đã đối chiếu datasheet), file JSON trong `backend/internal/catalog/data/`, nhúng vào binary, chỉ đọc:

@@ -24,9 +24,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
-import { useTemplates } from '@/modules/inventory/devices'
 import { createDevice, newId } from './doc/commands'
 import { expandTemplatePorts } from './library/ports'
+import { useTemplateChoices } from '@/modules/inventory/TemplatePicker'
 import { draftStore, type Draft } from './doc/drafts'
 import { createDocStore, type DocStoreApi } from './doc/store'
 import { changesOf } from './doc/types'
@@ -282,7 +282,7 @@ function Workspace({
     [doc.devices],
   )
   const libraryOpen = canEdit && prefs.library
-  const templates = useTemplates(orgId, canEdit)
+  const choices = useTemplateChoices(orgId, canEdit)
   const edit = useEditActions({ orgId, store, canEdit, grid: prefs.grid })
   const annotate = useAnnotate({
     store,
@@ -343,14 +343,17 @@ function Workspace({
     const frame = frameAt(doc, creating.at.x, creating.at.y)
     const { x, y } = place(creating.at)
     // The template's ports exist right away (temp ids), so the new device can be cabled before saving (P1-17).
-    const groups = templates.data?.find((tp) => tp.id === input.templateId)?.ports
+    const tpl = choices.resolve(input.templateId)
+    const groups = tpl?.ports
     store.getState().dispatch(
       createDevice(
         {
           hostname: input.hostname,
           type: input.type,
           siteId: input.siteId,
-          templateId: input.templateId,
+          templateId: tpl?.kind === 'org' ? tpl.id : null,
+          ...(tpl?.kind === 'sys' ? { catalogId: tpl.id } : {}),
+          ...(input.model ? { model: input.model } : {}),
           // Dropped inside a location frame of the same site: the device is in that location (ADR-032).
           ...(frame?.locationId && frame.siteId === input.siteId
             ? { locationId: frame.locationId }

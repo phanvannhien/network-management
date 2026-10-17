@@ -4,12 +4,7 @@ import { toast } from 'sonner'
 import { NativeSelect } from '@/components/NativeSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  templateFromCatalog,
-  useCatalog,
-  useInterfaceMutations,
-  useTemplates,
-} from '@/modules/inventory/devices'
+import { useCatalog, useInterfaceMutations, useTemplates } from '@/modules/inventory/devices'
 import { matchCatalog } from '@/modules/inventory/import/plan'
 import type { CableEnd } from './CableDialog'
 import { describeGroup, guessPorts, type PortGroup } from './portGuess'
@@ -33,31 +28,18 @@ export function AddPorts({
   const { apply } = useInterfaceMutations(orgId, device.id)
   const catalog = useCatalog(orgId)
   const fromCatalog = matchCatalog(catalog.data ?? [], [model], device.type)
-  const [copying, setCopying] = useState(false)
   const fitting = (templates.data ?? []).filter((x) => x.type === device.type)
   const [templateId, setTemplateId] = useState('')
   const [groups, setGroups] = useState<PortGroup[]>(() => guessPorts(model, device.type))
   const [editing, setEditing] = useState(false)
 
-  const run = (what: string | PortGroup[]) =>
+  const run = (what: string | PortGroup[] | { catalogId: string }) =>
     apply.mutate(what, {
       onSuccess: (added) =>
         toast.success(t('addPorts.added', { count: added ?? 0, name: device.name })),
       onError: (err) => toast.error(err.message),
     })
-  const copyFromCatalog = async () => {
-    if (!fromCatalog) return
-    setCopying(true)
-    try {
-      const tpl = await templateFromCatalog(orgId, fromCatalog.id)
-      void templates.refetch()
-      run(tpl.id)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err))
-    } finally {
-      setCopying(false)
-    }
-  }
+  const copyFromCatalog = () => fromCatalog && run({ catalogId: fromCatalog.id })
   const patch = (i: number, p: Partial<PortGroup>) =>
     setGroups((gs) => gs.map((x, j) => (j === i ? { ...x, ...p } : x)))
 
@@ -82,11 +64,7 @@ export function AddPorts({
               </span>
             )}
           </p>
-          <Button
-            type="button"
-            disabled={copying || apply.isPending}
-            onClick={() => void copyFromCatalog()}
-          >
+          <Button type="button" disabled={apply.isPending} onClick={copyFromCatalog}>
             {t('addPorts.useCatalog')}
           </Button>
         </div>

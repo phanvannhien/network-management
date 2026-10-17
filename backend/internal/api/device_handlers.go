@@ -18,6 +18,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/audit"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/tenant"
 )
@@ -50,6 +51,7 @@ type deviceFields struct {
 	uHeight                                                                                                 int32
 	uHeightSet                                                                                              bool
 	mgmt, template                                                                                          *uuid.UUID
+	catalog                                                                                                 string
 	poll                                                                                                    *netip.Addr
 	cluster                                                                                                 *uuid.UUID
 	clusterRole                                                                                             pgtype.Text
@@ -108,6 +110,7 @@ type deviceBody struct {
 	LocationId, RackId                                                                      *uuid.UUID
 	RackU, UHeight                                                                          *int32
 	MgmtInterfaceId, TemplateId                                                             *uuid.UUID
+	CatalogId                                                                               *string
 	PollAddress                                                                             *string
 	ClusterId                                                                               *uuid.UUID
 	ClusterRole                                                                             *apigen.ClusterRole
@@ -122,7 +125,10 @@ func validateDevice(b deviceBody) (deviceFields, string) {
 		purchase: pgDate(b.PurchaseDate), warranty: pgDate(b.WarrantyEnd), license: pgDate(b.LicenseEnd),
 		eol: pgDate(b.EolDate), eos: pgDate(b.EosDate), site: b.SiteId,
 		location: b.LocationId, rack: b.RackId, uHeight: 1, custom: map[string]any{},
-		mgmt: b.MgmtInterfaceId, template: b.TemplateId, cluster: b.ClusterId,
+		mgmt: b.MgmtInterfaceId, template: b.TemplateId, cluster: b.ClusterId, catalog: strings.TrimSpace(str(b.CatalogId)),
+	}
+	if f.template != nil && f.catalog != "" {
+		return f, "Chọn template của tổ chức hoặc template hệ thống, không cả hai"
 	}
 	if b.ClusterRole != nil {
 		if !b.ClusterRole.Valid() {
@@ -397,7 +403,7 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 	out := apigen.Device{
 		Id: uuid.UUID(d.ID.Bytes), Hostname: d.Hostname, Type: apigen.DeviceType(d.Type), Vendor: d.Vendor, Model: d.Model,
-		TemplateId: optUUID(d.TemplateID),
+		TemplateId: optUUID(d.TemplateID), CatalogId: d.CatalogID,
 		PartNumber: d.PartNumber, SerialNumber: d.SerialNumber, AssetTag: d.AssetTag, Firmware: d.Firmware,
 		Role: apigen.DeviceRole(d.Role), Lifecycle: apigen.DeviceLifecycle(d.Lifecycle), Managed: d.Managed, OwnerName: d.OwnerName,
 		PoNumber: d.PoNumber, PurchaseDate: apiDate(d.PurchaseDate), WarrantyEnd: apiDate(d.WarrantyEnd),
@@ -712,6 +718,34 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 				f.uHeight = t.UHeight
 			}
 		}
+		// A system template (built-in catalog, ADR-035) does the same without being copied into the organization.
+		var catalogPorts *store.DeviceTemplate
+		catalogID := ""
+		if id == nil && f.catalog != "" {
+			c, ok := catalog.Get(f.catalog)
+			if !ok {
+				out.bad = "Không có model này trong template hệ thống"
+				return errRollback
+			}
+			if f.vendor == "" {
+				f.vendor = c.Vendor
+			}
+			if f.model == "" {
+				f.model = c.Model
+			}
+			if f.partNumber == "" && len(c.PartNumbers) > 0 {
+				f.partNumber = c.PartNumbers[0]
+			}
+			if !f.uHeightSet {
+				f.uHeight = c.UHeight
+			}
+			raw, err := json.Marshal(c.Ports)
+			if err != nil {
+				return fmt.Errorf("encode catalog ports: %w", err)
+			}
+			catalogPorts = &store.DeviceTemplate{Ports: raw}
+			catalogID = c.Id
+		}
 		// The management interface must be one of the device's own (ADR-012).
 		var mgmt pgtype.UUID
 		if id != nil && f.mgmt != nil {
@@ -746,7 +780,7 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 				PartNumber: f.partNumber, SerialNumber: f.serial, AssetTag: f.assetTag, Firmware: f.firmware, Role: f.role,
 				Lifecycle: f.lifecycle, Managed: f.managed, OwnerName: f.owner, PurchaseDate: f.purchase, PoNumber: f.po,
 				WarrantyEnd: f.warranty, LicenseEnd: f.license, EolDate: f.eol, EosDate: f.eos, Notes: f.notes, Tags: f.tags,
-				CustomFields: customJSON, TemplateID: templateID(tpl), PollAddress: f.poll,
+				CustomFields: customJSON, TemplateID: templateID(tpl), CatalogID: catalogID, PollAddress: f.poll,
 				ClusterID: cluster, ClusterRole: f.clusterRole, ClusterMemberNo: f.clusterNo,
 			})
 		} else {
@@ -773,9 +807,11 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 		if err != nil {
 			return fmt.Errorf("save device: %w", err)
 		}
-		if tpl != nil {
-			if _, err := generatePorts(ctx, q, m, devID, *tpl, f.clusterNo.Int32); err != nil {
-				return err
+		for _, t := range []*store.DeviceTemplate{tpl, catalogPorts} {
+			if t != nil {
+				if _, err := generatePorts(ctx, q, m, devID, *t, f.clusterNo.Int32); err != nil {
+					return err
+				}
 			}
 		}
 		after, ok, err := loadDevice(ctx, q, m, uuid.UUID(devID.Bytes))
@@ -819,7 +855,7 @@ func bodyFromInput(b apigen.DeviceInput) deviceBody {
 		Lifecycle: b.Lifecycle, Managed: b.Managed, PurchaseDate: b.PurchaseDate, WarrantyEnd: b.WarrantyEnd, LicenseEnd: b.LicenseEnd,
 		EolDate: b.EolDate, EosDate: b.EosDate, Tags: b.Tags, CustomFields: b.CustomFields, SiteId: b.SiteId,
 		LocationId: b.LocationId, RackId: b.RackId, RackU: b.RackU, UHeight: b.UHeight,
-		MgmtInterfaceId: b.MgmtInterfaceId, TemplateId: b.TemplateId, PollAddress: b.PollAddress,
+		MgmtInterfaceId: b.MgmtInterfaceId, TemplateId: b.TemplateId, CatalogId: b.CatalogId, PollAddress: b.PollAddress,
 		ClusterId: b.ClusterId, ClusterRole: b.ClusterRole, ClusterMemberNo: b.ClusterMemberNo,
 	}
 }
