@@ -39,3 +39,14 @@ export function addressProblem(cidr: string): 'network' | 'broadcast' | '' {
     return ''
   }
 }
+
+/** Whether an address (no prefix) lies inside a CIDR of the same family. */
+export function inSubnet(host: string, cidr: string): boolean {
+  try {
+    const addr = ipaddr.parse(host)
+    const [net, len] = ipaddr.parseCIDR(cidr)
+    return addr.kind() === net.kind() && addr.match(net, len)
+  } catch {
+    return true
+  }
+}

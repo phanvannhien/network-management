@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import ipaddr from 'ipaddr.js'
 import { Plus, Sparkles, Trash2 } from 'lucide-react'
-import { useDeferredValue, useState } from 'react'
+import { useDeferredValue, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { components } from '@/api/client'
@@ -12,11 +12,13 @@ import { Input } from '@/components/ui/input'
 import { useInterfaceMutations, useIpMutations } from '@/modules/inventory/devices'
 import { SubnetDialog, VlanDialog } from '@/modules/ipam/IpamDialogs'
 import { fetchNextFree, useIpLookup, useSubnets, useVlans } from '@/modules/ipam/ipam'
-import { addressProblem, interfaceInput } from './portIpamRules'
+import { fetchDevice } from '../doc/api'
+import { useDocStoreApi } from './context'
+import { addressProblem, inSubnet, interfaceInput } from './portIpamRules'
 
 // IPAM on a port, from the diagram panel (P1-18, ADR-034): mode / VLANs of the port and its IPs are written to the
 // shared IPAM right away (not undone by Ctrl+Z — each write offers "Undo" in its notice). Warnings, not blocks: a VLAN
-// unknown to IPAM, an address already used elsewhere in the VRF, the network / broadcast address, no matching subnet.
+// unknown to IPAM, an address already used elsewhere in the VRF, the network / broadcast address, outside the subnet.
 
 type Interface = components['schemas']['Interface']
 type InterfaceInput = components['schemas']['InterfaceInput']
@@ -24,6 +26,22 @@ type IpAddress = components['schemas']['IpAddress']
 type Device = components['schemas']['Device']
 
 const MODES = ['', 'access', 'trunk', 'routed', 'hybrid'] as const
+
+const portFields = (i: Interface) => ({
+  mode: i.mode,
+  accessVlan: i.accessVlan ? String(i.accessVlan) : '',
+  allowedVlans: i.allowedVlans,
+  nativeVlan: i.nativeVlan ? String(i.nativeVlan) : '',
+})
+
+/** A non-blocking warning: announced politely, not as an error. */
+function Warning({ children }: { children: ReactNode }) {
+  return (
+    <span role="status" className="block text-status-warning">
+      {children}
+    </span>
+  )
+}
 
 export function PortIpam({
   orgId,
@@ -38,30 +56,46 @@ export function PortIpam({
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const store = useDocStoreApi()
   const { save: saveIface } = useInterfaceMutations(orgId, device.id)
   const { save: saveIp, remove: removeIp } = useIpMutations(orgId, device.id)
   const vlans = useVlans(orgId, device.siteId)
   const subnets = useSubnets(orgId, '', '')
-  const [port, setPort] = useState({
-    mode: iface.mode,
-    accessVlan: iface.accessVlan ? String(iface.accessVlan) : '',
-    allowedVlans: iface.allowedVlans,
-    nativeVlan: iface.nativeVlan ? String(iface.nativeVlan) : '',
-  })
+  const [port, setPort] = useState(() => portFields(iface))
+  const [portFor, setPortFor] = useState(iface.version)
+  // A saved (or undone) port shows the server's values again; what is typed for the IP stays.
+  if (portFor !== iface.version) {
+    setPortFor(iface.version)
+    setPort(portFields(iface))
+  }
   const [subnetId, setSubnetId] = useState('')
   const [address, setAddress] = useState('')
-  const [role, setRole] = useState<'primary' | 'secondary'>(
-    ips.some((x) => x.role === 'primary') ? 'secondary' : 'primary',
-  )
+  const [role, setRole] = useState<'primary' | 'secondary' | null>(null)
+  const effectiveRole = role ?? (ips.some((x) => x.role === 'primary') ? 'secondary' : 'primary')
   const [creating, setCreating] = useState<'vlan' | 'subnet' | null>(null)
+
   const refreshIpam = () => qc.invalidateQueries({ queryKey: ['orgs', orgId, 'ipam'] })
+  /**
+   * After a write of ours the device version went up by one: a pending device edit of this diagram follows it (so the
+   * diagram save does not conflict). Any other jump means someone else changed the device — the conflict is kept.
+   */
+  const afterOwnWrite = async () => {
+    void refreshIpam()
+    try {
+      const before = store.getState().doc?.deviceEdits[device.id]?.version
+      const fresh = await fetchDevice(orgId, device.id)
+      const own = before !== undefined && fresh.version === before + 1
+      store
+        .getState()
+        .syncDevice(device.id, { mgmtIp: fresh.mgmtIp, ...(own ? { version: fresh.version } : {}) })
+    } catch {
+      // the node shows the old IP until the next load
+    }
+  }
+  const failed = (e: Error) => toast.error(e.message)
   const physical = iface.kind === 'physical' || iface.kind === 'subinterface'
-  const vlanNumbers = new Set((vlans.data ?? []).map((v) => v.vid))
-  const portDirty =
-    port.mode !== iface.mode ||
-    port.accessVlan !== (iface.accessVlan ? String(iface.accessVlan) : '') ||
-    port.allowedVlans !== iface.allowedVlans ||
-    port.nativeVlan !== (iface.nativeVlan ? String(iface.nativeVlan) : '')
+  const vlanNumbers = vlans.data ? new Set(vlans.data.map((v) => v.vid)) : null
+  const portDirty = JSON.stringify(port) !== JSON.stringify(portFields(iface))
 
   const savePort = () => {
     const before = interfaceInput(iface)
@@ -78,15 +112,19 @@ export function PortIpam({
       { iface, body },
       {
         onSuccess: (saved) => {
-          void refreshIpam()
+          void afterOwnWrite()
           toast.success(t('portIpam.portSaved', { name: iface.name }), {
             action: {
               label: t('portIpam.undo'),
-              onClick: () => saveIface.mutate({ iface: saved, body: before }),
+              onClick: () =>
+                saveIface.mutate(
+                  { iface: saved, body: before },
+                  { onSuccess: () => void afterOwnWrite(), onError: failed },
+                ),
             },
           })
         },
-        onError: (e) => toast.error(e.message),
+        onError: failed,
       },
     )
   }
@@ -104,7 +142,20 @@ export function PortIpam({
       !(device.clusterId && a.clusterId === device.clusterId),
   )
   const problem = typed.includes('/') ? addressProblem(typed) : ''
-  const noSubnet = Boolean(lookup.data && lookup.data.subnets.length === 0)
+  const outside = Boolean(subnet && host && ipaddr.isValid(host) && !inSubnet(host, subnet.cidr))
+  const noSubnet = !subnet && Boolean(lookup.data && lookup.data.subnets.length === 0)
+  const warning =
+    others.length > 0
+      ? t('portIpam.inUse', {
+          who: others.map((a) => `${a.hostname} ${a.interfaceName}`).join(', '),
+        })
+      : problem
+        ? t(`portIpam.problems.${problem}`)
+        : outside
+          ? t('portIpam.outside', { cidr: subnet!.cidr })
+          : noSubnet
+            ? t('portIpam.noSubnetFor')
+            : ''
 
   const nextFree = async () => {
     if (!subnetId) return
@@ -118,27 +169,32 @@ export function PortIpam({
   }
   const addIp = () => {
     saveIp.mutate(
-      { body: { interfaceId: iface.id, address: address.trim(), role } },
+      // The VRF follows the chosen subnet (a customer VRF keeps its own address space).
+      { body: { interfaceId: iface.id, address: address.trim(), role: effectiveRole, vrf } },
       {
         onSuccess: (saved) => {
-          void refreshIpam()
+          void afterOwnWrite()
           setAddress('')
-          setRole('secondary')
+          setRole(null)
           toast.success(t('portIpam.ipAdded', { ip: saved.address, name: iface.name }), {
             action: {
               label: t('portIpam.undo'),
-              onClick: () => removeIp.mutate(saved.id, { onSettled: () => void refreshIpam() }),
+              onClick: () =>
+                removeIp.mutate(saved.id, {
+                  onSuccess: () => void afterOwnWrite(),
+                  onError: failed,
+                }),
             },
           })
         },
-        onError: (e) => toast.error(e.message),
+        onError: failed,
       },
     )
   }
   const dropIp = (ip: IpAddress) => {
     removeIp.mutate(ip.id, {
       onSuccess: () => {
-        void refreshIpam()
+        void afterOwnWrite()
         toast.success(t('portIpam.ipRemoved', { ip: ip.address }), {
           action: {
             label: t('portIpam.undo'),
@@ -153,14 +209,19 @@ export function PortIpam({
                     description: ip.description,
                   },
                 },
-                { onSettled: () => void refreshIpam() },
+                { onSuccess: () => void afterOwnWrite(), onError: failed },
               ),
           },
         })
       },
-      onError: (e) => toast.error(e.message),
+      onError: failed,
     })
   }
+  // Picking a subnet proposes its next free IP when the field is empty.
+  useEffect(() => {
+    if (subnetId && address === '') void nextFree()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subnetId])
 
   return (
     <div className="space-y-3 rounded-md border border-border p-2">
@@ -186,10 +247,10 @@ export function PortIpam({
             <FormField
               label={t('portIpam.accessVlan')}
               help="access"
-              error={
-                port.accessVlan && !vlanNumbers.has(Number(port.accessVlan))
-                  ? t('portIpam.vlanUnknown', { vid: port.accessVlan })
-                  : undefined
+              hint={
+                vlanNumbers && port.accessVlan && !vlanNumbers.has(Number(port.accessVlan)) ? (
+                  <Warning>{t('portIpam.vlanUnknown', { vid: port.accessVlan })}</Warning>
+                ) : undefined
               }
             >
               {(p) => (
@@ -200,9 +261,11 @@ export function PortIpam({
                     onChange={(e) => setPort({ ...port, accessVlan: e.target.value })}
                   >
                     <option value="">{t('portIpam.noVlan')}</option>
-                    {port.accessVlan && !vlanNumbers.has(Number(port.accessVlan)) && (
-                      <option value={port.accessVlan}>{port.accessVlan}</option>
-                    )}
+                    {port.accessVlan &&
+                      vlanNumbers &&
+                      !vlanNumbers.has(Number(port.accessVlan)) && (
+                        <option value={port.accessVlan}>{port.accessVlan}</option>
+                      )}
                     {(vlans.data ?? []).map((v) => (
                       <option key={v.id} value={String(v.vid)}>
                         {v.vid} · {v.name}
@@ -313,19 +376,8 @@ export function PortIpam({
         </FormField>
         <FormField
           label={t('portIpam.address')}
-          hint={t('portIpam.addressHint')}
           help="ip"
-          error={
-            others.length > 0
-              ? t('portIpam.inUse', {
-                  who: others.map((a) => `${a.hostname} ${a.interfaceName}`).join(', '),
-                })
-              : problem
-                ? t(`portIpam.problems.${problem}`)
-                : noSubnet
-                  ? t('portIpam.noSubnetFor')
-                  : undefined
-          }
+          hint={warning ? <Warning>{warning}</Warning> : t('portIpam.addressHint')}
         >
           {(p) => (
             <div className="flex gap-1">
@@ -353,8 +405,8 @@ export function PortIpam({
         <div className="flex items-center gap-2">
           <NativeSelect
             aria-label={t('portIpam.role')}
-            value={role}
-            onChange={(e) => setRole(e.target.value as typeof role)}
+            value={effectiveRole}
+            onChange={(e) => setRole(e.target.value as 'primary' | 'secondary')}
             className="w-36"
           >
             <option value="primary">{t('portIpam.roles.primary')}</option>

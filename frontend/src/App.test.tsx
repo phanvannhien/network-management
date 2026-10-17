@@ -2845,10 +2845,12 @@ describe('diagrams (P1-13)', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Gán IP' }))
     const isIp = (r: Request) => r.method === 'POST' && r.url.endsWith('/devices/dev-1/ips')
     await waitFor(() => expect(calls.some(isIp)).toBe(true))
+    // The VRF follows the chosen subnet (review fix).
     expect(await calls.find(isIp)!.clone().json()).toEqual({
       interfaceId: 'if-1',
       address: '10.72.114.10/24',
       role: 'primary',
+      vrf: SUBNET.vrf,
     })
     // Not a diagram change: nothing to save.
     expect(

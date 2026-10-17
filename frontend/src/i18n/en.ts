@@ -1050,6 +1050,7 @@ export const en: Strings = {
       broadcast: 'This is the broadcast address of the subnet — not for a device.',
     },
     noSubnetFor: 'No subnet contains this IP yet — create one to manage it.',
+    outside: 'The IP is outside the chosen subnet {{cidr}}.',
   },
   panel: {
     title: 'Properties',

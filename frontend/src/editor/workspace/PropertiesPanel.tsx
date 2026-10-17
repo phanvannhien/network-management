@@ -276,13 +276,12 @@ function DevicePanel({
   const node = doc.view.nodes.find((n) => n.id === nodeId)
   const base = useDeviceBase(orgId, doc, deviceId)
   const sites = useSites(orgId)
-  // IPAM writes from the panel bump the device version and may change its management IP (ADR-034).
-  const serverVersion = base.device?.version
+  // The management IP on the node follows the server (IPAM writes from the panel, ADR-034). The version of a pending
+  // edit is only moved by our own writes (PortIpam), never by a refetch — someone else's change must still conflict.
   const serverIp = base.device?.mgmtIp
   useEffect(() => {
-    if (serverVersion !== undefined)
-      store.getState().syncDevice(deviceId, { version: serverVersion, mgmtIp: serverIp })
-  }, [store, deviceId, serverVersion, serverIp])
+    if (serverIp !== undefined) store.getState().syncDevice(deviceId, { mgmtIp: serverIp })
+  }, [store, deviceId, serverIp])
   const [edit, setEdit] = useState<DeviceFields | null>(null)
   const current = base.input ? fieldsOf(base.input) : null
   const f = edit ?? current
@@ -574,20 +573,28 @@ function PortsSection({
                 ) : (
                   <div className="flex gap-2">{row}</div>
                 )}
-                {device && iface && open === p.id && (
-                  <PortIpam
-                    key={iface.version}
-                    orgId={orgId}
-                    device={device}
-                    iface={iface}
-                    ips={portIps}
-                  />
-                )}
               </li>
             )
           })}
         </ul>
       )}
+      {/* The port editor sits under the list, not inside the scrolling list. */}
+      {device &&
+        (() => {
+          const iface = open ? ports.data?.find((x) => x.id === open) : undefined
+          if (!iface) return null
+          return (
+            <section aria-label={iface.name} className="space-y-1">
+              <p className="font-mono font-medium">{iface.name}</p>
+              <PortIpam
+                orgId={orgId}
+                device={device}
+                iface={iface}
+                ips={(ips.data ?? []).filter((x) => x.interfaceId === iface.id)}
+              />
+            </section>
+          )
+        })()}
     </Section>
   )
 }

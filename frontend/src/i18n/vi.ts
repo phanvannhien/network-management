@@ -1045,6 +1045,7 @@ export const vi = {
       broadcast: 'Đây là địa chỉ broadcast của subnet — không gán cho thiết bị.',
     },
     noSubnetFor: 'Chưa có subnet nào chứa IP này — nên tạo subnet để quản lý.',
+    outside: 'IP không nằm trong subnet {{cidr}} đã chọn.',
   },
   panel: {
     title: 'Thuộc tính',
