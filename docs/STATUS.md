@@ -5,6 +5,19 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Thêm cổng tại chỗ: đoán theo loại thiết bị khi không có model
+- Đã làm: thiết bị chưa có model (vd modem tạo nhanh trên sơ đồ) → "Thêm các cổng này" đề xuất mặt trước điển hình theo loại:
+  ONT `PON` + `LAN1–4`; modem `DSL` (xDSL) + `LAN1–4`; router/firewall/SD-WAN/VPN `WAN` + `LAN1–4`; AP `LAN` (trước đây đề xuất
+  8 cổng `Gi…` cho mọi loại).
+- Giải thích cho người dùng: "Internet / nhà mạng" không có cổng (mạng của nhà mạng) — nối được, chỉ chọn cổng ở đầu thiết bị; đi đúng
+  thực tế: Internet → modem/ONT → WAN của router/firewall → switch (switch L2 không đứng ngay sau đường Internet).
+- Test / cách kiểm tra: `make check` pass (vitest: đoán cổng theo loại).
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: văn phòng HCM (4 switch C1300, không có router/firewall trong danh sách) ra Internet qua đâu — modem nhà mạng
+  làm router luôn, hay VPN về FortiGate ở IDC?
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor, hoặc P1-22 Export.
+
 ## 2026-10-17 — Editor: công cụ Bàn tay, Space + kéo
 - Đã làm: nút **Bàn tay** trên toolbar (phím **H**): bật thì kéo chuột trái ở bất kỳ đâu — kể cả trên thiết bị/khung — để di chuyển
   màn vẽ, không thiết bị nào bị kéo theo. **Giữ Space + kéo chuột trái** luôn di chuyển màn vẽ (không cần bật bàn tay); con trỏ đổi

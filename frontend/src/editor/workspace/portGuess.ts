@@ -15,6 +15,25 @@ export function guessPorts(model = '', type = ''): PortGroup[] {
     return [g('GigabitEthernet0/0/{n}', 0, 2), g('GigabitEthernet0/1/{n}', 0, 8)]
   const fg = /FORTIGATE\s*(\d+)/.exec(m)
   if (fg) return [g('wan{n}', 1, 2), g('port{n}', 1, Number(fg[1]) >= 100 ? 16 : 7)]
+  // No model to go by: the usual front panel of the kind of device (ISP boxes, small routers, APs).
+  const sizesKnown = /-(\d+)[A-Z]*-(\d+)[GX]/.test(m)
+  if (!sizesKnown) {
+    const lan = g('LAN{n}', 1, 4)
+    switch (type) {
+      case 'ont':
+        return [g('PON', 1, 1, 'PON', '2.5G'), lan]
+      case 'modem':
+        return [g('DSL', 1, 1, 'xDSL', ''), lan]
+      case 'router':
+      case 'firewall':
+      case 'sdwan_edge':
+      case 'vpn_gateway':
+        return [g('WAN', 1, 1), lan]
+      case 'access_point':
+      case 'wireless_bridge':
+        return [g('LAN', 1, 1)]
+    }
+  }
   // "-24T-4G", "-48FP-4X", "-24P-4G": copper count, then uplinks (G = 1G SFP, X = 10G SFP+).
   const sizes = /-(\d+)[A-Z]*-(\d+)([GX])/.exec(m)
   const copper = sizes ? Number(sizes[1]) : /SWITCH/.test(type.toUpperCase()) ? 24 : 8

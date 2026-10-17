@@ -28,4 +28,18 @@ describe('guessPorts', () => {
   it('unknown models get a plain proposal', () => {
     expect(guessPorts('', 'l2_switch').map(describeGroup)).toEqual(['24 × Gi1–24 (RJ45 1G)'])
   })
+  it('no model: the usual ports of the kind of device', () => {
+    expect(guessPorts('', 'ont').map(describeGroup)).toEqual([
+      '1 × PON (PON 2.5G)',
+      '4 × LAN1–4 (RJ45 1G)',
+    ])
+    expect(guessPorts('', 'modem').map(describeGroup)).toEqual([
+      '1 × DSL (xDSL)',
+      '4 × LAN1–4 (RJ45 1G)',
+    ])
+    expect(guessPorts('', 'router').map(describeGroup)).toEqual([
+      '1 × WAN (RJ45 1G)',
+      '4 × LAN1–4 (RJ45 1G)',
+    ])
+  })
 })
