@@ -43,6 +43,11 @@ export interface DocStore {
   setViewport(viewport: DiagramViewport): void
   setSelection(ids: string[]): void
   setEdgeSelection(ids: string[]): void
+  /**
+   * Server facts of a saved device after an IPAM write from the panel (ADR-034): the new version for a pending edit
+   * (so the diagram save does not conflict) and the management IP — in the document and its history, no undo step.
+   */
+  syncDevice(id: string, facts: { version?: number; mgmtIp?: string }): void
   load(detail: DiagramDetail): void
   /** Restore a draft over the loaded diagram (same document shape). */
   restore(doc: DocState): void
@@ -98,6 +103,36 @@ export function createDocStore() {
       const cur = get().edgeSelection
       if (ids.length === cur.length && ids.every((id, i) => id === cur[i])) return
       set({ edgeSelection: ids })
+    },
+    syncDevice: (id, facts) => {
+      // The same snapshot patches to the same object, so "back at the saved document" stays recognisable.
+      const done = new Map<DocState, DocState>()
+      const patch = (doc: DocState): DocState => {
+        const seen = done.get(doc)
+        if (seen) return seen
+        const out = patchOne(doc)
+        done.set(doc, out)
+        return out
+      }
+      const patchOne = (doc: DocState): DocState => {
+        const card = doc.devices[id]
+        const edit = doc.deviceEdits[id]
+        const cardChanged = card && facts.mgmtIp !== undefined && card.mgmtIp !== facts.mgmtIp
+        const editChanged = edit && facts.version !== undefined && edit.version !== facts.version
+        if (!cardChanged && !editChanged) return doc
+        return produce(doc, (d) => {
+          if (cardChanged) d.devices[id]!.mgmtIp = facts.mgmtIp
+          if (editChanged) d.deviceEdits[id]!.version = facts.version!
+        })
+      }
+      const s = get()
+      if (!s.doc) return
+      set({
+        doc: patch(s.doc),
+        past: s.past.map((e) => ({ ...e, doc: patch(e.doc) })),
+        future: s.future.map(patch),
+        savedDoc: s.savedDoc && patch(s.savedDoc),
+      })
     },
     load: (detail) => {
       const doc = docFromDetail(detail)

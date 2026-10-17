@@ -130,11 +130,14 @@ export function VlanDialog({
   vlan,
   defaultSiteId,
   onClose,
+  onSaved,
 }: {
   orgId: string
   vlan?: Vlan
   defaultSiteId?: string
   onClose: () => void
+  /** The saved VLAN (e.g. to pick it for a port right away, P1-18). */
+  onSaved?: (v: Vlan) => void
 }) {
   const { t } = useTranslation()
   const { saveVlan } = useIpamMutations(orgId)
@@ -165,8 +168,9 @@ export function VlanDialog({
             },
           },
           {
-            onSuccess: () => {
+            onSuccess: (saved) => {
               toast.success(t('ipam.saved'))
+              onSaved?.(saved)
               onClose()
             },
           },

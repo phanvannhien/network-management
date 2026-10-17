@@ -1,5 +1,5 @@
 import { ExternalLink, Pencil, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FieldHelp } from '@/components/FieldHelp'
 import { FormField } from '@/components/FormField'
@@ -13,7 +13,9 @@ import {
   LIFECYCLES,
   deviceToInput,
   useDevice,
+  useDeviceIps,
   useInterfaces,
+  type Device,
   type DeviceInput,
 } from '@/modules/inventory/devices'
 import {
@@ -30,6 +32,7 @@ import { setLabelColor, setLabelTemplate, updateDevice, updateLink } from '../do
 import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
 import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
+import { PortIpam } from './PortIpam'
 import { sortPorts, takenPorts } from './wiring'
 
 /**
@@ -220,7 +223,7 @@ function DiagramPanel({ canEdit }: { canEdit: boolean }) {
 type DeviceFields = Pick<
   DeviceInput,
   'hostname' | 'type' | 'siteId' | 'vendor' | 'model' | 'role' | 'lifecycle' | 'managed' | 'notes'
->
+> & { mgmtInterfaceId: string }
 
 function fieldsOf(d: DeviceInput): DeviceFields {
   return {
@@ -233,6 +236,7 @@ function fieldsOf(d: DeviceInput): DeviceFields {
     lifecycle: d.lifecycle ?? 'active',
     managed: d.managed ?? true,
     notes: d.notes ?? '',
+    mgmtInterfaceId: d.mgmtInterfaceId ?? '',
   }
 }
 
@@ -240,11 +244,11 @@ function fieldsOf(d: DeviceInput): DeviceFields {
 function useDeviceBase(orgId: string, doc: DocState, id: string) {
   const pending = doc.newDevices[id]
   const edited = doc.deviceEdits[id]
-  const saved = useDevice(orgId, pending || edited ? '' : id)
+  const saved = useDevice(orgId, pending ? '' : id)
   if (pending) return { input: pending, version: 0, device: undefined, loading: false }
   if (edited) {
     const { version, ...input } = edited
-    return { input: input as DeviceInput, version, device: undefined, loading: false }
+    return { input: input as DeviceInput, version, device: saved.data, loading: false }
   }
   return {
     input: saved.data ? deviceToInput(saved.data) : undefined,
@@ -272,6 +276,13 @@ function DevicePanel({
   const node = doc.view.nodes.find((n) => n.id === nodeId)
   const base = useDeviceBase(orgId, doc, deviceId)
   const sites = useSites(orgId)
+  // IPAM writes from the panel bump the device version and may change its management IP (ADR-034).
+  const serverVersion = base.device?.version
+  const serverIp = base.device?.mgmtIp
+  useEffect(() => {
+    if (serverVersion !== undefined)
+      store.getState().syncDevice(deviceId, { version: serverVersion, mgmtIp: serverIp })
+  }, [store, deviceId, serverVersion, serverIp])
   const [edit, setEdit] = useState<DeviceFields | null>(null)
   const current = base.input ? fieldsOf(base.input) : null
   const f = edit ?? current
@@ -279,9 +290,14 @@ function DevicePanel({
   const dirty = edit !== null && JSON.stringify(edit) !== JSON.stringify(current)
   const apply = () => {
     if (!base.input || !edit) return
-    store
-      .getState()
-      .dispatch(updateDevice(deviceId, { ...base.input, ...edit, version: base.version }))
+    store.getState().dispatch(
+      updateDevice(deviceId, {
+        ...base.input,
+        ...edit,
+        mgmtInterfaceId: edit.mgmtInterfaceId || null,
+        version: base.version,
+      }),
+    )
     setEdit(null)
   }
   return (
@@ -443,6 +459,14 @@ function DevicePanel({
               </span>
               <FieldHelp term="managed" />
             </label>
+            {!card.draft && (
+              <MgmtInterfaceField
+                orgId={orgId}
+                deviceId={deviceId}
+                value={f.mgmtInterfaceId}
+                onChange={(mgmtInterfaceId) => set({ mgmtInterfaceId })}
+              />
+            )}
             <FormField label={t('devices.notes')}>
               {(p) => (
                 <Input
@@ -463,7 +487,12 @@ function DevicePanel({
           <LabelColorPicker nodeIds={[nodeId]} current={node?.labelStyle?.color ?? ''} />
         ) : null}
       </Section>
-      <PortsSection orgId={orgId} deviceId={deviceId} draft={card.draft === true} />
+      <PortsSection
+        orgId={orgId}
+        deviceId={deviceId}
+        draft={card.draft === true}
+        device={canEdit ? (base.device ?? undefined) : undefined}
+      />
     </>
   )
 }
@@ -473,13 +502,18 @@ function PortsSection({
   orgId,
   deviceId,
   draft,
+  device,
 }: {
   orgId: string
   deviceId: string
   draft: boolean
+  /** The saved device when the user may edit: ports open their IPAM editor (ADR-034). */
+  device?: Device
 }) {
   const { t } = useTranslation()
   const doc = useDoc((s) => s.doc)!
+  const [open, setOpen] = useState<string | null>(null)
+  const ips = useDeviceIps(orgId, device ? deviceId : '', Boolean(device))
   const ports = useInterfaces(orgId, draft ? '' : deviceId, !draft)
   const links = useLinks(orgId, draft ? '' : deviceId, !draft)
   const list = sortPorts(
@@ -503,6 +537,7 @@ function PortsSection({
   const used = list.filter((p) => taken.has(p.id))
   return (
     <Section title={t('panel.ports', { used: used.length, total: list.length })}>
+      {device && <p className="text-xs text-muted-foreground">{t('panel.portsHint')}</p>}
       {list.length === 0 ? (
         <p className="text-muted-foreground">{t('panel.noPorts')}</p>
       ) : (
@@ -512,16 +547,45 @@ function PortsSection({
           aria-label={t('panel.ports', { used: used.length, total: list.length })}
           className="max-h-60 space-y-0.5 overflow-y-auto rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
         >
-          {list.map((p) => (
-            <li key={p.id} className="flex gap-2">
-              <span className="w-28 shrink-0 truncate font-mono">{p.name}</span>
-              <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                {taken.get(p.id)
-                  ? `→ ${taken.get(p.id)}`
-                  : [p.media, p.speed].filter(Boolean).join(' ')}
-              </span>
-            </li>
-          ))}
+          {list.map((p) => {
+            const portIps = (ips.data ?? []).filter((x) => x.interfaceId === p.id)
+            const iface = ports.data?.find((x) => x.id === p.id)
+            const row = (
+              <>
+                <span className="w-28 shrink-0 truncate font-mono">{p.name}</span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                  {taken.get(p.id)
+                    ? `→ ${taken.get(p.id)}`
+                    : portIps[0]?.address || [p.media, p.speed].filter(Boolean).join(' ')}
+                </span>
+              </>
+            )
+            return (
+              <li key={p.id}>
+                {device && iface ? (
+                  <button
+                    type="button"
+                    aria-expanded={open === p.id}
+                    className="flex w-full gap-2 rounded-sm text-left hover:bg-muted"
+                    onClick={() => setOpen(open === p.id ? null : p.id)}
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <div className="flex gap-2">{row}</div>
+                )}
+                {device && iface && open === p.id && (
+                  <PortIpam
+                    key={iface.version}
+                    orgId={orgId}
+                    device={device}
+                    iface={iface}
+                    ips={portIps}
+                  />
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
     </Section>
@@ -883,5 +947,39 @@ function CablePanel({
         </Section>
       )}
     </>
+  )
+}
+
+/** The management interface: its primary IP is the device's management IP (ADR-012). Saved interfaces only. */
+function MgmtInterfaceField({
+  orgId,
+  deviceId,
+  value,
+  onChange,
+}: {
+  orgId: string
+  deviceId: string
+  value: string
+  onChange: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const ports = useInterfaces(orgId, deviceId)
+  return (
+    <FormField
+      label={t('panel.mgmtInterface')}
+      help="mgmt-ip"
+      guide={t('panel.mgmtInterfaceGuide')}
+    >
+      {(p) => (
+        <NativeSelect {...p} value={value} onChange={(e) => onChange(e.target.value)}>
+          <option value="">{t('panel.noMgmtInterface')}</option>
+          {sortPorts(ports.data ?? []).map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+        </NativeSelect>
+      )}
+    </FormField>
   )
 }

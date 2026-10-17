@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-18 bước 2: IPAM trong panel (ADR-034)
+- Đã làm:
+  - Người dùng chốt **cách A** → ADR-034: thay đổi IPAM/interface từ panel ghi **thẳng** vào IPAM qua API sẵn có (không qua Ctrl+Z
+    hay nút Lưu sơ đồ); mỗi lần ghi có thông báo kèm nút **Hoàn tác** chạy thao tác ngược; panel ghi rõ "lưu thẳng vào IPAM".
+  - Panel thiết bị → **Cổng**: bấm một cổng để đặt **chế độ** (access / trunk / routed / hybrid — chỉ giữ trường của chế độ đó),
+    **VLAN access** (chọn từ VLAN của site + toàn tổ chức, hoặc tạo VLAN mới tại chỗ), **VLAN cho phép + native** (trunk); xem/gỡ
+    **IP** của cổng; **gán IP**: chọn subnet (hoặc tạo subnet tại chỗ) → "Lấy IP trống kế tiếp" → Gán (IP chính/phụ).
+    Cảnh báo không chặn: VLAN chưa có trong IPAM, IP đang dùng ở thiết bị khác cùng VRF (bỏ qua thành viên cùng cụm), địa chỉ
+    mạng/broadcast, IP ngoài mọi subnet. Thiết bị chưa lưu: phần cổng chỉ xem.
+  - **Interface quản trị** chọn trong sửa nhanh (command, lưu cùng sơ đồ).
+  - Sau mỗi lần ghi IPAM: version thiết bị trong sửa chưa lưu được cập nhật (không bị xung đột khi lưu sơ đồ), IP quản trị trên
+    thẻ thiết bị làm mới — không tạo bước hoàn tác, trạng thái "Đã lưu" vẫn đúng (`syncDevice`).
+- Test / cách kiểm tra: `make check` pass (vitest 236: địa chỉ mạng/broadcast, đồng bộ version/IP qua lịch sử; App: chế độ cổng +
+  VLAN → PATCH interface, IP trống → POST IP, sơ đồ không "chưa lưu"). Chromium + API: ISR Gi0/0/2 → routed, subnet
+  10.136.42.0/24 → IP trống 10.136.42.2 (bỏ qua gateway) → gán; API xác nhận; axe không lỗi.
+- Còn dở / lỗi đã biết: chưa có nhãn subnet/IP trên dây sơ đồ (đề xuất làm cùng P1-20/annotation); SVI chưa gắn được với VLAN
+  (cần quyết định trường mới — ghi nhận từ rà soát); "IP trống" không giữ chỗ (hai người cùng lấy có thể trùng, có cảnh báo).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: SVI gắn với VLAN (thêm trường `vlan` cho interface kiểu SVI để kiểm "một SVI mỗi VLAN" và
+  "IP SVI thuộc subnet của VLAN").
+- Task tiếp theo đề xuất: P1-19 Annotation & khung nhóm theo site/location.
+
 ## 2026-10-17 — P1-18 bước 1: Panel thuộc tính & hiển thị
 - Đã làm:
   - **Panel thuộc tính** bên phải màn vẽ (bật/tắt trên toolbar, mặc định mở). Chọn thiết bị: IP quản trị (kể cả IP cụm), site,

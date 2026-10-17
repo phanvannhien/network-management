@@ -2762,6 +2762,102 @@ describe('diagrams (P1-13)', () => {
     ])
   })
 
+  it('P1-18: the port mode / VLAN and a next-free IP go straight to IPAM from the panel (ADR-034)', async () => {
+    const IFACE = {
+      id: 'if-1',
+      name: 'port1',
+      kind: 'physical',
+      media: 'RJ45',
+      speed: '1G',
+      duplex: 'auto',
+      mode: '',
+      accessVlan: null,
+      nativeVlan: null,
+      allowedVlans: '',
+      poe: false,
+      lagId: null,
+      lagName: '',
+      description: '',
+      adminUp: true,
+      mac: '',
+      vlanTag: null,
+      sortOrder: 1,
+      isManagement: false,
+      version: 1,
+    }
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () => json({ interfaces: [IFACE] }),
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/ips`]: () => json({ ips: [] }),
+        [`GET /api/orgs/${ORG_ID}/links`]: () => json({ links: [] }),
+        [`GET /api/orgs/${ORG_ID}/vlans`]: () => json({ vlans: [VLAN] }),
+        [`GET /api/orgs/${ORG_ID}/subnets`]: () => json({ subnets: [SUBNET] }),
+        [`GET /api/orgs/${ORG_ID}/subnets/${SUBNET.id}/next-free`]: () =>
+          json({ address: '10.72.114.10/24' }),
+        [`GET /api/orgs/${ORG_ID}/ipam/lookup`]: () =>
+          json({ ip: '10.72.114.10', subnets: [SUBNET], assignments: [], hiddenCount: 0 }),
+        [`PATCH /api/orgs/${ORG_ID}/devices/dev-1/interfaces/if-1`]: () =>
+          json({ ...IFACE, mode: 'access', accessVlan: 10, version: 2 }),
+        [`POST /api/orgs/${ORG_ID}/devices/dev-1/ips`]: () =>
+          json(
+            {
+              id: 'ip-1',
+              interfaceId: 'if-1',
+              interfaceName: 'port1',
+              address: '10.72.114.10/24',
+              vrf: '',
+              role: 'primary',
+              description: '',
+              version: 1,
+            },
+            201,
+          ),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    fireEvent.click(within(canvas).getByText('AGRI-BD-FW01'))
+    const panel = screen.getByRole('complementary', { name: 'Thuộc tính' })
+    fireEvent.click(await within(panel).findByRole('button', { name: /^port1/ }))
+    fireEvent.change(await within(panel).findByLabelText(/^Chế độ cổng/), {
+      target: { value: 'access' },
+    })
+    const vlan = within(panel).getByLabelText(/^VLAN của cổng/)
+    await waitFor(() => expect(vlan).toContainHTML('MGMT'))
+    fireEvent.change(vlan, { target: { value: '10' } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Lưu cổng' }))
+    const isPatch = (r: Request) => r.method === 'PATCH' && r.url.endsWith('/interfaces/if-1')
+    await waitFor(() => expect(calls.some(isPatch)).toBe(true))
+    expect(await calls.find(isPatch)!.clone().json()).toMatchObject({
+      mode: 'access',
+      accessVlan: 10,
+      allowedVlans: '',
+      nativeVlan: null,
+      version: 1,
+    })
+    const subnet = within(panel).getByLabelText(/^Subnet/)
+    await waitFor(() => expect(subnet).toContainHTML(SUBNET.cidr))
+    fireEvent.change(subnet, { target: { value: SUBNET.id } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Lấy IP trống kế tiếp' }))
+    await waitFor(() =>
+      expect(within(panel).getByLabelText(/^Địa chỉ IP/)).toHaveValue('10.72.114.10/24'),
+    )
+    fireEvent.click(within(panel).getByRole('button', { name: 'Gán IP' }))
+    const isIp = (r: Request) => r.method === 'POST' && r.url.endsWith('/devices/dev-1/ips')
+    await waitFor(() => expect(calls.some(isIp)).toBe(true))
+    expect(await calls.find(isIp)!.clone().json()).toEqual({
+      interfaceId: 'if-1',
+      address: '10.72.114.10/24',
+      role: 'primary',
+    })
+    // Not a diagram change: nothing to save.
+    expect(
+      within(screen.getByRole('toolbar', { name: 'Thanh công cụ sơ đồ' })).getByRole('button', {
+        name: /^Lưu/,
+      }),
+    ).toBeDisabled()
+  })
+
   it('a viewer opens the diagram read-only', async () => {
     fakeApi(
       routes({

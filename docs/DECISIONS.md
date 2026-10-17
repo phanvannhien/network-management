@@ -356,3 +356,21 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   gỡ khỏi sơ đồ.
 - **Lý do:** sơ đồ phản ánh đúng cách kỹ sư lắp mạng (bắt lỗi cắm DAC vào cổng RJ45, SM–MM lệch, thiếu dây nguồn khi mất điện).
 - **Đánh đổi:** thêm cột và luật kiểm tra; dây LAG cũ phải vẽ lại thành dây vật lý của từng cổng thành viên.
+
+### ADR-034 — IPAM trong panel sơ đồ ghi thẳng vào IPAM (không qua lưu sơ đồ)
+- **Bối cảnh:** P1-18 cho gán VLAN cho cổng, gán IP cho interface, lấy IP trống, tạo VLAN/subnet ngay trên panel của sơ đồ. Quy tắc
+  editor (CLAUDE.md) là mọi thay đổi đi qua command, hoàn tác bằng Ctrl+Z và lưu cùng sơ đồ. Người dùng chốt 2026-10-17.
+- **Quyết định:**
+  - Thay đổi **IPAM và interface** (mode/VLAN của cổng, IP, VLAN mới, subnet mới) từ panel gọi **ngay** API REST sẵn có của kho
+    (như trang thiết bị), **không** là command của sơ đồ, không vào Ctrl+Z, không chờ nút Lưu. Mỗi lần ghi có thông báo kèm nút
+    **"Hoàn tác"** chạy thao tác ngược (xóa IP vừa thêm, trả mode/VLAN cũ…).
+  - Panel ghi rõ "Lưu thẳng vào IPAM". Thiết bị **chưa lưu** (tạo trong editor) thì phần IPAM tắt, kèm hướng dẫn lưu sơ đồ trước.
+  - Mỗi lần ghi interface/IP làm tăng `version` của thiết bị: nếu sơ đồ đang giữ một sửa thiết bị chưa lưu, editor cập nhật version
+    đó (không tạo bước hoàn tác) để lần lưu sơ đồ không bị báo xung đột.
+  - IP quản trị hiển thị trên thẻ thiết bị được làm mới từ máy chủ sau khi ghi (không thuộc lịch sử hoàn tác).
+  - **Chọn interface quản trị** vẫn là trường của thiết bị → đi qua sửa nhanh thiết bị (command, lưu cùng sơ đồ).
+  - Panel cảnh báo (không chặn): IP trùng với thiết bị khác cùng VRF (bỏ qua thành viên cùng cụm), IP là địa chỉ mạng/broadcast,
+    IP nằm ngoài mọi subnet đã khai báo, cổng access mà VLAN chưa có trong IPAM. Validation P1-20 kiểm lại khi lưu.
+- **Lý do:** VLAN/subnet/IP là dữ liệu dùng chung của tổ chức (ADR-014), không thuộc một sơ đồ; "IP trống kế tiếp" chỉ đúng khi IP
+  vừa gán đã được ghi; một xung đột IP không được làm hỏng cả lần lưu bố cục.
+- **Đánh đổi:** hai kiểu hoàn tác trên cùng màn hình (Ctrl+Z cho sơ đồ, nút "Hoàn tác" cho IPAM) — panel ghi rõ để người dùng không nhầm.
