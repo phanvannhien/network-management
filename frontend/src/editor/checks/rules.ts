@@ -215,6 +215,33 @@ export function edgeAddress(
   return null
 }
 
+/**
+ * The IPAM gateway of the address's subnet when the address's own mask leaves it out (SRS §7 "gateway sai subnet",
+ * ADR-038 talk 2026-10-17): the subnet is a /23 with gateway .1 but the device was given a /24 that cannot reach it —
+ * usually a mistyped mask. Host routes (/32, /128) and the gateway itself are not checked.
+ */
+export function gatewayOutsideMask(
+  address: string,
+  vrf: string,
+  subnets: ValidationContext['subnets'],
+): { gateway: string; cidr: string } | null {
+  try {
+    const [addr, len] = ipaddr.parseCIDR(address)
+    if (len === (addr.kind() === 'ipv4' ? 32 : 128)) return null
+    const best = subnets
+      .filter((sn) => sn.vrf === vrf && sn.gateway)
+      .map((sn) => ({ sn, p: ipaddr.parseCIDR(sn.cidr) }))
+      .filter(({ p }) => p[0].kind() === addr.kind() && addr.match(p))
+      .sort((x, y) => y.p[1] - x.p[1])[0]
+    if (!best) return null
+    const gw = ipaddr.parse(best.sn.gateway)
+    if (gw.kind() !== addr.kind() || gw.toString() === addr.toString()) return null
+    return gw.match(addr, len) ? null : { gateway: gw.toString(), cidr: best.sn.cidr }
+  } catch {
+    return null // reported as a format problem
+  }
+}
+
 /** "1G", "1000M", "1 Gbps", "10GE", "100" → Mbps; unknown → 0. */
 export function speedMbps(speed?: string): number {
   const m = /^\s*(\d+(?:\.\d+)?)\s*([kmgt]?)/i.exec(speed ?? '')
@@ -320,6 +347,18 @@ export function runChecks(input: CheckInput): Problem[] {
       kind === 'loopback' || kind === 'tunnel'
         ? null
         : edgeAddress(ip.address, ip.vrf, input.ctx.subnets)
+    const gw =
+      kind === 'loopback' || kind === 'tunnel'
+        ? null
+        : gatewayOutsideMask(ip.address, ip.vrf, input.ctx.subnets)
+    if (gw)
+      push(
+        'gateway-mask',
+        'warning',
+        deviceTarget(ip.deviceId),
+        { host: host(ip.deviceId), ip: ip.address, gateway: gw.gateway, cidr: gw.cidr },
+        `${ip.deviceId}:${ip.address}`,
+      )
     if (edge)
       push(
         'ip-edge',

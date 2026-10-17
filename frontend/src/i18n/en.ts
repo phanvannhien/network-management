@@ -1092,7 +1092,7 @@ export const en: Strings = {
     deletedSite: 'Deleted site',
     site: 'Site',
     location: 'Location',
-    aria: 'Frame {{title}}',
+    aria: ' — frame',
     emptyText: 'Empty text',
     newText: 'Note',
     cluster: 'Cluster',
@@ -1201,6 +1201,8 @@ export const en: Strings = {
     templates: 'Organization templates',
     templateDetail: '{{type}} · {{count}} ports',
     ports: '{{count}} ports',
+    placePrefix: 'Place',
+    addPrefix: 'Add',
     addNew: 'Add a new {{name}}',
     addExisting: 'Place {{name}} on the diagram',
     newOfType: 'New device by type',
@@ -2117,6 +2119,8 @@ export const en: Strings = {
       'duplicate-hostname': 'Hostname {{value}} is used by another device ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} also on {{other}}',
       'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'gateway-mask':
+        '{{host}}: gateway {{gateway}} of subnet {{cidr}} is outside the mask of IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} is {{which}} of {{cidr}}',
       'port-multi': '{{host}} {{port}}: {{count}} cables on one port',
       'cable-virtual': '{{host}} {{port}}: physical cable on a virtual or LAG interface',
@@ -2141,6 +2145,8 @@ export const en: Strings = {
       'duplicate-serial':
         'Serials are normally unique — check for a typo or a device entered twice.',
       'ip-format': 'This address cannot be set on an interface. Fix it in the properties panel.',
+      'gateway-mask':
+        'With this mask the device cannot reach its gateway, so nothing beyond the subnet works. Usually a mistyped mask (e.g. /24 in a /23 subnet) — fix the IP mask, or the subnet gateway in IPAM.',
       'ip-edge':
         'The first / last address of a subnet is not for devices. Usually the mask (prefix) or the IP is mistyped.',
       'port-multi': 'A physical port takes one cable. Move one cable to another port.',

@@ -1087,7 +1087,7 @@ export const vi = {
     deletedSite: 'Site đã xóa',
     site: 'Site',
     location: 'Location',
-    aria: 'Khung {{title}}',
+    aria: ' — khung',
     emptyText: 'Chữ trống',
     newText: 'Ghi chú',
     cluster: 'Cụm',
@@ -1193,6 +1193,8 @@ export const vi = {
     templates: 'Template của tổ chức',
     templateDetail: '{{type}} · {{count}} cổng',
     ports: '{{count}} cổng',
+    placePrefix: 'Đặt',
+    addPrefix: 'Thêm',
     addNew: 'Thêm {{name}} mới',
     addExisting: 'Đặt {{name}} lên sơ đồ',
     newOfType: 'Thiết bị mới theo loại',
@@ -2100,6 +2102,8 @@ export const vi = {
       'duplicate-hostname': 'Hostname {{value}} trùng với một thiết bị khác ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} trùng với {{other}}',
       'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'gateway-mask':
+        '{{host}}: gateway {{gateway}} của subnet {{cidr}} nằm ngoài mask của IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} là {{which}} của {{cidr}}',
       'port-multi': '{{host}} {{port}}: một cổng đang có {{count}} dây',
       'cable-virtual': '{{host}} {{port}}: dây vật lý cắm vào interface ảo hoặc LAG',
@@ -2125,6 +2129,8 @@ export const vi = {
         'Serial thường là duy nhất — kiểm tra nhập nhầm hoặc thiết bị bị khai hai lần.',
       'ip-format':
         'Địa chỉ này không gán được cho một interface. Sửa lại IP trong panel thuộc tính.',
+      'gateway-mask':
+        'Với mask này thiết bị không tới được gateway nên không ra được mạng khác. Thường là gõ sai mask (vd /24 trong khi subnet là /23) — sửa mask của IP, hoặc gateway của subnet trong IPAM.',
       'ip-edge':
         'Địa chỉ đầu/cuối của subnet không dùng cho thiết bị. Thường là nhập sai mask (prefix) hoặc sai IP.',
       'port-multi': 'Một cổng vật lý chỉ cắm được một dây. Chuyển một dây sang cổng khác.',

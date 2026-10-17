@@ -33,6 +33,9 @@ func (s *Server) ImportDevices(ctx context.Context, req apigen.ImportDevicesRequ
 	bad := func(msg string) (apigen.ImportDevicesResponseObject, error) {
 		return apigen.ImportDevices400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
+	if !m.CanEdit() {
+		return apigen.ImportDevices403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
+	}
 	b := req.Body
 	switch {
 	case b == nil || len(b.Rows) == 0:
@@ -41,9 +44,6 @@ func (s *Server) ImportDevices(ctx context.Context, req apigen.ImportDevicesRequ
 		return bad(fmt.Sprintf("Tối đa %d dòng mỗi lần gửi", maxImportRows))
 	case !b.MatchBy.Valid():
 		return bad("Cách khớp thiết bị không hợp lệ")
-	}
-	if !m.CanEdit() {
-		return apigen.ImportDevices403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
 	}
 	results, err := s.importDevices(ctx, m, *b)
 	if err != nil {
@@ -328,6 +328,9 @@ func importMgmtIP(ctx context.Context, q store.Querier, m tenant.Membership, dev
 		if err != nil {
 			return fmt.Errorf("create mgmt interface: %w", err)
 		}
+		if err := deviceAudit(ctx, q, m, dev.ID, "interface.create", nil, snapInterface(created)); err != nil {
+			return err
+		}
 		iface = created.ID
 	} else if err != nil {
 		return fmt.Errorf("find mgmt interface: %w", err)
@@ -346,6 +349,9 @@ func importMgmtIP(ctx context.Context, q store.Querier, m tenant.Membership, dev
 	if !dev.MgmtInterfaceID.Valid {
 		if err := q.SetDeviceMgmtInterface(ctx, store.SetDeviceMgmtInterfaceParams{InterfaceID: iface, ID: dev.ID, OrganizationID: m.OrgID}); err != nil {
 			return fmt.Errorf("set mgmt interface: %w", err)
+		}
+		if err := deviceAudit(ctx, q, m, dev.ID, "device.update", map[string]string{"mgmtInterface": ""}, map[string]string{"mgmtInterface": name}); err != nil {
+			return err
 		}
 	}
 	return nil

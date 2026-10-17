@@ -78,7 +78,6 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<AnnNode>) {
       <button
         type="button"
         className="ntb-frame-title flex max-w-full cursor-move items-center gap-1 rounded-tl-sm rounded-br-md px-2 py-1 text-left text-xs font-semibold"
-        aria-label={t('frames.aria', { title })}
         aria-pressed={selected}
         title={t('frames.dragHint')}
         style={{
@@ -101,12 +100,17 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<AnnNode>) {
         }}
       >
         <GripVertical aria-hidden className="size-3.5 shrink-0 opacity-60" />
+        {/* The name read out is the text shown (WCAG 2.5.3, label in name) plus a hidden " — khung". */}
         <span className="truncate">{title}</span>
         {a.siteId && (
-          <span className="shrink-0 font-normal text-muted-foreground">
-            {a.locationId ? t('frames.location') : t('frames.site')}
-          </span>
+          <>
+            {' '}
+            <span className="shrink-0 font-normal text-muted-foreground">
+              {a.locationId ? t('frames.location') : t('frames.site')}
+            </span>
+          </>
         )}
+        <span className="sr-only">{t('frames.aria')}</span>
       </button>
     </div>
   )

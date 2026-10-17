@@ -105,6 +105,7 @@ export function LibraryPanel({
 }
 
 function Entry({
+  prefix,
   item,
   icon,
   title,
@@ -116,16 +117,19 @@ function Entry({
   icon: ReactNode
   title: string
   detail: string
-  /** Accessible name: action + object. */
+  /** The full action, shown as a tooltip ("Thêm PC mới"). */
   label: string
+  /** Read before the title: "Thêm " by default, "Đặt " for an inventory device. */
+  prefix?: string
   onPick: (item: LibraryItem) => void
 }) {
+  const { t } = useTranslation()
   return (
     <li>
       <button
         type="button"
         draggable
-        aria-label={label}
+        title={label}
         onDragStart={(e) => {
           e.dataTransfer.setData(LIBRARY_MIME, encodeItem(item))
           e.dataTransfer.effectAllowed = 'copy'
@@ -135,7 +139,10 @@ function Entry({
       >
         <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{title}</span>
+          {/* Name read out = "Thêm " + the text shown (WCAG 2.5.3, label in name); the full action as a tooltip. */}
+          <span className="block truncate font-medium">
+            <span className="sr-only">{prefix ?? t('library.addPrefix')}</span> {title}
+          </span>
           <span className="block text-xs text-muted-foreground">{detail}</span>
         </span>
       </button>
@@ -302,6 +309,7 @@ function InventoryDevices({
             title={d.hostname}
             detail={[d.siteCode, d.mgmtIp, d.model].filter(Boolean).join(' · ')}
             label={t('library.addExisting', { name: d.hostname })}
+            prefix={t('library.placePrefix')}
             onPick={onPick}
           />
         ))}

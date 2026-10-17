@@ -335,8 +335,12 @@ function Workspace({
   // measured, then drop the parameter so a reload does not jump again.
   const [params, setParams] = useSearchParams()
   const focusRef = params.get('focus')
-  // useNodesInitialized stays false with frames and notes (no handles): wait for any measured node instead.
-  const nodesReady = useFlowStore((st) => st.nodes.some((n) => n.measured?.width))
+  const [openedFocused] = useState(() => focusRef !== null)
+  // useNodesInitialized stays false with frames and notes (no handles): wait for any measured node instead — and for
+  // the zoom controller, or fitView is silently dropped (a diagram opening at a saved viewport).
+  const nodesReady = useFlowStore(
+    (st) => st.panZoom !== null && st.nodes.some((n) => n.measured?.width),
+  )
   useEffect(() => {
     if (!focusRef || !nodesReady) return
     // A cluster is drawn through its members: its first member on the diagram.
@@ -347,12 +351,21 @@ function Workspace({
       const s = store.getState()
       s.setEdgeSelection([])
       s.setSelection([node.id])
-      void flow.fitView({
-        ...fitOptions(libraryOpen, panelOpen),
-        nodes: [{ id: node.id }],
-        maxZoom: 1.2,
-        duration: ZOOM_MS,
-      })
+      // Opened with ?focus= the canvas skips its own "fit the whole drawing", which would otherwise win.
+      // Centre on it at 1.2× (fitView with nodes right after load can resolve without moving the view).
+      const n = flow.getInternalNode(node.id)
+      if (n) {
+        const w = n.measured.width ?? NODE_W
+        const h = n.measured.height ?? NODE_H
+        void flow.setCenter(
+          n.internals.positionAbsolute.x + w / 2,
+          n.internals.positionAbsolute.y + h / 2,
+          {
+            zoom: 1.2,
+            duration: ZOOM_MS,
+          },
+        )
+      }
     }
     setParams(
       (p) => {
@@ -680,6 +693,7 @@ function Workspace({
   return (
     <div ref={root} className="contents">
       <Canvas
+        focusing={openedFocused}
         diagramId={diagramId}
         canEdit={canEdit}
         prefs={prefs}

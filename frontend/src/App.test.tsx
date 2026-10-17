@@ -2365,9 +2365,9 @@ describe('diagrams (P1-13)', () => {
     // P1-15: the library is open; its inventory tab offers what is not drawn yet.
     const library = screen.getByRole('complementary', { name: 'Thư viện' })
     fireEvent.click(within(library).getByRole('tab', { name: /Trong kho/ }))
-    const place = await within(library).findByRole('button', { name: 'Đặt AGRI-BD-SW01 lên sơ đồ' })
+    const place = await within(library).findByRole('button', { name: /^Đặt AGRI\-BD\-SW01/ })
     expect(
-      within(library).queryByRole('button', { name: 'Đặt AGRI-BD-FW01 lên sơ đồ' }),
+      within(library).queryByRole('button', { name: /^Đặt AGRI\-BD\-FW01/ }),
     ).not.toBeInTheDocument()
     fireEvent.click(place)
     expect(await within(canvas).findByText('AGRI-BD-SW01')).toBeInTheDocument()
@@ -2402,7 +2402,7 @@ describe('diagrams (P1-13)', () => {
     fireEvent.change(within(library).getByLabelText('Tìm loại, model, hostname…'), {
       target: { value: 'fortigate' },
     })
-    fireEvent.click(await within(library).findByRole('button', { name: 'Thêm FortiGate 100F mới' }))
+    fireEvent.click(await within(library).findByRole('button', { name: /^Thêm FortiGate 100F/ }))
     const dialog = await screen.findByRole('dialog', { name: 'Thiết bị mới' })
     // The diagram shows devices of one site only: that site is offered.
     await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
@@ -2452,7 +2452,7 @@ describe('diagrams (P1-13)', () => {
     const canvas = await screen.findByRole('application')
     const library = screen.getByRole('complementary', { name: 'Thư viện' })
     // Delete / select all pressed while the library has the focus are ignored.
-    const entry = within(library).getAllByRole('button', { name: /^Thêm .* mới$/ })[0]!
+    const entry = within(library).getAllByRole('button', { name: /^Thêm / })[0]!
     fireEvent.keyDown(entry, { key: 'a', ctrlKey: true })
     fireEvent.keyDown(entry, { key: 'Delete' })
     expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
@@ -2673,9 +2673,7 @@ describe('diagrams (P1-13)', () => {
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
     const library = await screen.findByRole('complementary', { name: 'Thư viện' })
     fireEvent.click(within(library).getByRole('tab', { name: /Trong kho/ }))
-    fireEvent.click(
-      await within(library).findByRole('button', { name: 'Đặt AGRI-BD-SW01 lên sơ đồ' }),
-    )
+    fireEvent.click(await within(library).findByRole('button', { name: /^Đặt AGRI\-BD\-SW01/ }))
     expect(
       await within(screen.getByRole('application')).findByText('AGRI-BD-SW01'),
     ).toBeInTheDocument()
@@ -2706,7 +2704,7 @@ describe('diagrams (P1-13)', () => {
     fireEvent.change(within(library).getByLabelText('Tìm loại, model, hostname…'), {
       target: { value: 'fortigate' },
     })
-    fireEvent.click(await within(library).findByRole('button', { name: 'Thêm FortiGate 100F mới' }))
+    fireEvent.click(await within(library).findByRole('button', { name: /^Thêm FortiGate 100F/ }))
     const add = await screen.findByRole('dialog', { name: 'Thiết bị mới' })
     await waitFor(() => expect(within(add).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
     fireEvent.change(within(add).getByLabelText(/^Hostname/), {
@@ -2899,9 +2897,12 @@ describe('diagrams (P1-13)', () => {
     fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
     fireEvent.keyDown(window, { key: 'g', ctrlKey: true })
     // Named after the site, selected, with its panel.
-    expect(
-      await within(canvas).findByRole('button', { name: /^Khung VPM-AGRI-BD01/ }),
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      const names = within(canvas)
+        .getAllByRole('button')
+        .map((b) => b.textContent ?? '')
+      expect(names.some((n) => n.startsWith('VPM-AGRI-BD01') && n.includes('— khung'))).toBe(true)
+    })
     const panel = screen.getByRole('complementary', { name: 'Thuộc tính' })
     expect(within(panel).getByRole('heading', { name: 'Khung' })).toBeInTheDocument()
     await waitFor(() => expect(within(panel).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
@@ -2909,7 +2910,7 @@ describe('diagrams (P1-13)', () => {
       target: { value: 'Nhà máy Bình Định' },
     })
     expect(
-      await within(canvas).findByRole('button', { name: 'Khung Nhà máy Bình Định' }),
+      await within(canvas).findByRole('button', { name: /^Nhà máy Bình Định.*khung/ }),
     ).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
     const isSave = (r: Request) => r.url.endsWith('/save')

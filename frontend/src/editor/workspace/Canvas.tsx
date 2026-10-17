@@ -67,6 +67,7 @@ export function Canvas({
   onEditCable,
   onMenu,
   hand,
+  focusing = false,
 }: {
   diagramId: string
   canEdit: boolean
@@ -85,6 +86,8 @@ export function Canvas({
   onMenu: (target: { kind: 'node' | 'edge' | 'pane'; id?: string }, x: number, y: number) => void
   /** Hand tool on (toolbar / H). */
   hand: boolean
+  /** Opened to show one object (?focus=): the page zooms to it, so no "fit the whole drawing" first. */
+  focusing?: boolean
 }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -394,7 +397,7 @@ export function Canvas({
         onDropItem(item, flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }))
       }}
       defaultViewport={initialViewport ?? undefined}
-      fitView={!initialViewport}
+      fitView={!initialViewport && !focusing}
       fitViewOptions={fitOptions(libraryOpen, prefs.panel && !prefs.panelMin)}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}

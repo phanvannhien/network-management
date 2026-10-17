@@ -635,6 +635,9 @@ func (im *ntbImporter) importIPs(device pgtype.UUID, d ntbDevice, ips []ntbIP) e
 			if err := im.q.SetDeviceMgmtInterface(im.ctx, store.SetDeviceMgmtInterfaceParams{InterfaceID: id, ID: device, OrganizationID: im.m.OrgID}); err != nil {
 				return fmt.Errorf("set mgmt interface: %w", err)
 			}
+			if err := deviceAudit(im.ctx, im.q, im.m, device, "device.update", map[string]string{"mgmtInterface": ""}, map[string]string{"mgmtInterface": uuidStr(id)}); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

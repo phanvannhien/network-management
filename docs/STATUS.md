@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-26 Gate MVP (checklist SRS §16)
+- Kết quả từng mục (kiểm tra trên môi trường riêng và trên bản build production):
+  | # | Mục | Kết quả |
+  | --- | --- | --- |
+  | 1 | Tổ chức A không thấy dữ liệu tổ chức B | Test tự động cho mọi endpoint: đạt. **Còn phần kiểm tra tay: chờ người dùng** |
+  | 2 | Owner/admin bật MFA; viewer không sửa được (ở API) | Đạt. Agent rà cả 84 endpoint ghi; thêm `viewer_test.go` (29 endpoint chưa có test riêng) |
+  | 3 | Site → location → rack; thiết bị đủ thông tin | Đạt (FW đặt ở rack U40, đủ PN, S/N; tự có 11 cổng theo model) |
+  | 4 | Nhập Excel 500 dòng, báo lỗi từng dòng | Đạt: 4,1 s; trùng S/N / trùng IP trong file chặn ở bước xem trước; IP sai và hostname sai báo đúng từng dòng |
+  | 5 | File kiểu khách: đúng danh mục/site, gộp tên lệch, cặp HA chung IP không báo trùng | Đạt với file CJ Foodville thật: 8 thiết bị, 0 lỗi, 0 cảnh báo |
+  | 6 | Vẽ lại sơ đồ văn phòng mẫu | Đạt: FortiGate, 5 switch, VPN tới 3 site đối tác, nhóm IP Phone 3/20, ghi chú |
+  | 7 | Sửa IP ở danh sách ↔ sơ đồ | Đạt cả hai chiều |
+  | 8 | Phát hiện trùng IP / hostname / S/N, gateway sai subnet, sai loại cổng, IP ngoài dải | Đạt. Thêm luật "gateway của subnet nằm ngoài mask của IP" (cách người dùng chọn) |
+  | 9 | 500 thiết bị: kéo ≥ 50 FPS ở zoom làm việc, mở < 2 s | Đạt: 60 FPS, 0,86 s (P1-25) |
+  | 10 | Mọi thao tác ghi có audit | Đạt; bổ sung audit chi tiết cho interface/IP quản trị tạo khi nhập Excel và .ntb.json |
+  | 11 | PNG/SVG có chú giải; Excel; .ntb.json không mất dữ liệu | Đạt. Xuất → nhập sang tổ chức khác → xuất lại: thiết bị, cổng, IP, cụm, dây, node, khung giống hệt |
+  | 12 | Ctrl+K theo IP, S/N, hostname | Đạt |
+  | 13 | Sáng/tối đạt WCAG AA | Đạt: axe, 10 trang × 2 giao diện, không còn lỗi serious/critical (script `frontend/e2e/a11y.mjs`) |
+  - Docker: `docker compose build` ra được image `api` và `web` (chỉ build, không khởi động lại container của người dùng).
+- Lỗi tìm ra và đã sửa trong lúc gate:
+  - "Mở trên sơ đồ" (P1-23) không zoom tới thiết bị khi sơ đồ có viewport đã lưu. Nay canvas bỏ bước fit toàn sơ đồ khi mở bằng `?focus=`,
+    chờ bộ điều khiển zoom sẵn sàng, rồi căn giữa vào thiết bị ở mức 1,2×.
+  - WCAG 2.5.3 (tên đọc ra phải chứa chữ hiển thị): tiêu đề khung site, các nút trong thư viện.
+  - Nhập Excel kiểm tra dữ liệu trước rồi mới kiểm tra quyền; nay kiểm tra quyền trước.
+- Test / cách kiểm tra: `make check` pass (288 test frontend + backend). Các script kiểm tra trên trình duyệt vẫn ở `/tmp/ntbp`,
+  riêng script axe được lưu vào repo.
+- Còn dở / lỗi đã biết:
+  - **Mục 1 (kiểm tra tay):** đăng nhập bằng hai tài khoản thuộc hai tổ chức khác nhau; với tài khoản B, thử mở URL thiết bị / sơ đồ của tổ chức A
+    (phải ra "Không tìm thấy") và thử Ctrl+K tìm hostname của A (không ra gì). Vì mục này chưa xong nên P1-26 chưa tick.
+  - Audit của đăng nhập / MFA ghi kiểu best-effort ngoài giao dịch (theo thiết kế); nên ghi thành ADR khi review bảo mật (P2-01).
+- Câu hỏi cho người dùng: làm phần kiểm tra tay của mục 1 giúp; xong thì tick P1-26 và chuyển sang Phase 2.
+- Đề xuất quyết định cần chốt: không có.
+- Task tiếp theo đề xuất: sau khi xong mục 1 — P2-01 Review bảo mật nền tảng.
+
 ## 2026-10-17 — Chặn trùng S/N / IP, vai trò IP VIP (ADR-038); chốt các câu hỏi P1-24/25
 - Người dùng chốt:
   1. Mục tiêu FPS chỉ cần đạt ở mức zoom làm việc (đang 60 FPS); không cần khi thu nhỏ thấy toàn bộ. Đã ghi vào SRS §14.

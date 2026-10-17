@@ -220,7 +220,7 @@ click → zoom tới đối tượng; badge trên node.
 | Một cổng vật lý có > 1 link | Error | 1 |
 | Link vật lý nối vào interface ảo | Error | 1 |
 | Nối sai loại cổng (RJ45 ↔ SFP) | Warning | 1 |
-| Gateway không thuộc subnet của host — *chưa áp dụng: kho chưa lưu default gateway của thiết bị* | Warning | 1 |
+| Gateway của subnet IPAM nằm ngoài mask của IP thiết bị (thường do gõ sai mask) — người dùng chốt 2026-10-17: lấy gateway của subnet, không thêm trường gateway cho thiết bị | Warning | 1 |
 | Hai đầu link L3 khác subnet | Warning | 1 |
 | IP thành viên nằm ngoài dải của nhóm | Warning | 1 |
 | Thiết bị không có link; link chưa gán cổng; có IP nhưng chưa chọn interface quản trị; dải IP đã đầy (*dải đầy: để P1-24 dashboard*) | Info | 1 |
@@ -408,19 +408,19 @@ PostgreSQL 16
 
 **Checklist nghiệm thu MVP**
 - [ ] Tạo 2 tổ chức; user tổ chức A không thấy bất kỳ dữ liệu nào của tổ chức B (test tự động + kiểm tra tay)
-- [ ] Owner/admin bật MFA; viewer không sửa được gì (kiểm tra ở API, không chỉ ở giao diện)
-- [ ] Tạo site → location → rack; thêm thiết bị đủ Site, Location, Hostname, Part Number, S/N
-- [ ] Import file Excel 500 thiết bị, có báo lỗi từng dòng
-- [ ] Import file thiết bị mẫu dạng 'Site=công ty, Location=địa điểm' → tạo đúng Danh mục và Site, gộp được tên site viết khác nhau,
+- [x] Owner/admin bật MFA; viewer không sửa được gì (kiểm tra ở API, không chỉ ở giao diện)
+- [x] Tạo site → location → rack; thêm thiết bị đủ Site, Location, Hostname, Part Number, S/N
+- [x] Import file Excel 500 thiết bị, có báo lỗi từng dòng
+- [x] Import file thiết bị mẫu dạng 'Site=công ty, Location=địa điểm' → tạo đúng Danh mục và Site, gộp được tên site viết khác nhau,
   nhận ra cặp HA chung IP mà không báo lỗi trùng IP
-- [ ] Vẽ lại được sơ đồ mẫu văn phòng (FortiGate, VPN tới 3 site đối tác, 5 switch, nhóm IP Phone 3/20, chú thích)
-- [ ] Sửa IP ở danh sách thiết bị → sơ đồ cập nhật; sửa trên sơ đồ → danh sách cập nhật
-- [ ] Phát hiện trùng IP, trùng hostname/S/N, gateway sai subnet, sai loại cổng, IP ngoài dải
-- [ ] Sơ đồ 500 thiết bị + 1.000 link: kéo ≥ 50 FPS, mở < 2 s
-- [ ] Mọi thao tác ghi có trong audit log
-- [ ] Export PNG/SVG có legend; export Excel danh sách thiết bị; export/import `.ntb.json` không mất dữ liệu
-- [ ] Ctrl+K tìm được theo IP, S/N, hostname
-- [ ] Dark/Light đạt WCAG AA
+- [x] Vẽ lại được sơ đồ mẫu văn phòng (FortiGate, VPN tới 3 site đối tác, 5 switch, nhóm IP Phone 3/20, chú thích)
+- [x] Sửa IP ở danh sách thiết bị → sơ đồ cập nhật; sửa trên sơ đồ → danh sách cập nhật
+- [x] Phát hiện trùng IP, trùng hostname/S/N, gateway sai subnet, sai loại cổng, IP ngoài dải
+- [x] Sơ đồ 500 thiết bị + 1.000 link: kéo ≥ 50 FPS, mở < 2 s
+- [x] Mọi thao tác ghi có trong audit log
+- [x] Export PNG/SVG có legend; export Excel danh sách thiết bị; export/import `.ntb.json` không mất dữ liệu
+- [x] Ctrl+K tìm được theo IP, S/N, hostname
+- [x] Dark/Light đạt WCAG AA
 
 **Câu hỏi còn mở:** quy mô sơ đồ lớn nhất; số tổ chức/thiết bị dự kiến; hãng/model ưu tiên cho model library;
 SSO doanh nghiệp nào cần trước; team và deadline MVP; có cần đa ngôn ngữ ngoài Việt/Anh.

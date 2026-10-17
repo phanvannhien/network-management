@@ -158,6 +158,33 @@ describe('runChecks', () => {
     expect(out[1]!.severity).toBe('warning')
   })
 
+  it('a mask that leaves out the IPAM gateway of the subnet is a warning (gateway outside subnet)', () => {
+    const ip = (address: string, interfaceId = 'p1') => ({
+      deviceId: D1,
+      interfaceId,
+      address,
+      vrf: '',
+      role: 'primary',
+    })
+    const c = ctx({
+      ips: [
+        ip('10.0.1.5/24'),
+        ip('10.0.0.9/23'),
+        ip('10.0.0.1/24'),
+        ip('10.0.1.6/32'),
+        ip('10.9.0.5/24'),
+      ],
+      subnets: [
+        { id: 's', cidr: '10.0.0.0/23', vrf: '', gateway: '10.0.0.1' },
+        { id: 't', cidr: '10.9.0.0/24', vrf: '', gateway: '' },
+      ],
+    })
+    const out = runChecks(input({ ctx: c })).filter((p) => p.rule === 'gateway-mask')
+    // /24 in the /23 cannot reach .0.1; the right mask, the gateway itself, a host route and a subnet without gateway pass.
+    expect(out.map((p) => `${p.params.ip}>${p.params.gateway}`)).toEqual(['10.0.1.5/24>10.0.0.1'])
+    expect(out[0]!.severity).toBe('warning')
+  })
+
   it('more than one exclusive cable on a port is an error on each cable; PON and wireless share', () => {
     const i = input({
       edgeOf: { L1: 'e1', L2: 'e2' },
