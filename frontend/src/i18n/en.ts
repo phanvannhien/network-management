@@ -1095,6 +1095,12 @@ export const en: Strings = {
     title: 'Properties',
     minimize: 'Fold the property panel (to a rail on the right)',
     expand: 'Unfold the property panel',
+    mgmtIpHint:
+      'Type the IP and Save (Enter) — written to the inventory right away. No mask: the IPAM subnet gives it.',
+    mgmtIpPending:
+      'The device has an unsaved edit on this diagram — save the diagram first, then set the IP.',
+    mgmtIpSave: 'Save IP',
+    mgmtIpSaved: 'Management IP {{ip}} saved on {{iface}}',
     close: 'Close the property panel',
     diagram: 'Diagram',
     device: 'Device',

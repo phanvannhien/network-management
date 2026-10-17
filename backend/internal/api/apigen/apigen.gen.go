@@ -2784,6 +2784,13 @@ type MfaVerifyRequest struct {
 	RecoveryCode *string `json:"recoveryCode,omitempty"`
 }
 
+// MgmtIpResult defines model for MgmtIpResult.
+type MgmtIpResult struct {
+	InterfaceName string   `json:"interfaceName"`
+	MgmtIp        string   `json:"mgmtIp"`
+	Warnings      []string `json:"warnings"`
+}
+
 // MyOrganizations defines model for MyOrganizations.
 type MyOrganizations struct {
 	Organizations []OrganizationSummary `json:"organizations"`
@@ -3692,6 +3699,16 @@ type UpdateDeviceIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// SetDeviceMgmtIpJSONBody defines parameters for SetDeviceMgmtIp.
+type SetDeviceMgmtIpJSONBody struct {
+	Address string `json:"address"`
+}
+
+// SetDeviceMgmtIpParams defines parameters for SetDeviceMgmtIp.
+type SetDeviceMgmtIpParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // CreateDiagramParams defines parameters for CreateDiagram.
 type CreateDiagramParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4010,6 +4027,9 @@ type CreateDeviceIpJSONRequestBody = IpAddressInput
 // UpdateDeviceIpJSONRequestBody defines body for UpdateDeviceIp for application/json ContentType.
 type UpdateDeviceIpJSONRequestBody = IpAddressUpdate
 
+// SetDeviceMgmtIpJSONRequestBody defines body for SetDeviceMgmtIp for application/json ContentType.
+type SetDeviceMgmtIpJSONRequestBody SetDeviceMgmtIpJSONBody
+
 // CreateDiagramJSONRequestBody defines body for CreateDiagram for application/json ContentType.
 type CreateDiagramJSONRequestBody = DiagramInput
 
@@ -4282,6 +4302,9 @@ type ServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams)
+	// SetDeviceMgmtIp Set the management IP in one step (property panel) — on the management interface, created if missing
+	// (PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip)
+	SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceMgmtIpParams)
 	// ListDiagrams Diagrams the caller may see (no view data)
 	// (GET /orgs/{orgId}/diagrams)
 	ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -4834,6 +4857,12 @@ func (_ Unimplemented) DeleteDeviceIp(w http.ResponseWriter, r *http.Request, or
 // UpdateDeviceIp Update an IP address (optimistic lock on version)
 // (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 func (_ Unimplemented) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, ipId IpId, params UpdateDeviceIpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetDeviceMgmtIp Set the management IP in one step (property panel) — on the management interface, created if missing
+// (PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip)
+func (_ Unimplemented) SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceMgmtIpParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8511,6 +8540,69 @@ func (siw *ServerInterfaceWrapper) UpdateDeviceIp(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// SetDeviceMgmtIp operation middleware
+func (siw *ServerInterfaceWrapper) SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetDeviceMgmtIpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetDeviceMgmtIp(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListDiagrams operation middleware
 func (siw *ServerInterfaceWrapper) ListDiagrams(w http.ResponseWriter, r *http.Request) {
 
@@ -11811,6 +11903,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/interfaces/{interfaceId}", wrapper.UpdateInterface)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/mgmt-ip", wrapper.SetDeviceMgmtIp)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/apply-template", wrapper.ApplyDeviceTemplate)
@@ -16629,6 +16724,87 @@ func (response UpdateDeviceIp409JSONResponse) VisitUpdateDeviceIpResponse(w http
 	return err
 }
 
+type SetDeviceMgmtIpRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   SetDeviceMgmtIpParams
+	Body     *SetDeviceMgmtIpJSONRequestBody
+}
+
+type SetDeviceMgmtIpResponseObject interface {
+	VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error
+}
+
+type SetDeviceMgmtIp200JSONResponse MgmtIpResult
+
+func (response SetDeviceMgmtIp200JSONResponse) VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceMgmtIp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SetDeviceMgmtIp400JSONResponse) VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceMgmtIp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SetDeviceMgmtIp401JSONResponse) VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceMgmtIp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SetDeviceMgmtIp403JSONResponse) VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceMgmtIp404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SetDeviceMgmtIp404JSONResponse) VisitSetDeviceMgmtIpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListDiagramsRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -21232,6 +21408,9 @@ type StrictServerInterface interface {
 	// UpdateDeviceIp Update an IP address (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId}/ips/{ipId})
 	UpdateDeviceIp(ctx context.Context, request UpdateDeviceIpRequestObject) (UpdateDeviceIpResponseObject, error)
+	// SetDeviceMgmtIp Set the management IP in one step (property panel) — on the management interface, created if missing
+	// (PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip)
+	SetDeviceMgmtIp(ctx context.Context, request SetDeviceMgmtIpRequestObject) (SetDeviceMgmtIpResponseObject, error)
 	// ListDiagrams Diagrams the caller may see (no view data)
 	// (GET /orgs/{orgId}/diagrams)
 	ListDiagrams(ctx context.Context, request ListDiagramsRequestObject) (ListDiagramsResponseObject, error)
@@ -23366,6 +23545,41 @@ func (sh *strictHandler) UpdateDeviceIp(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateDeviceIpResponseObject); ok {
 		if err := validResponse.VisitUpdateDeviceIpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetDeviceMgmtIp operation middleware
+func (sh *strictHandler) SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceMgmtIpParams) {
+	var request SetDeviceMgmtIpRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body SetDeviceMgmtIpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetDeviceMgmtIp(ctx, request.(SetDeviceMgmtIpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetDeviceMgmtIp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetDeviceMgmtIpResponseObject); ok {
+		if err := validResponse.VisitSetDeviceMgmtIpResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

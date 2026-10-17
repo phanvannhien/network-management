@@ -40,6 +40,7 @@ import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId } from './flow'
 import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
 import { AddPorts } from './AddPorts'
+import { MgmtIpField } from './MgmtIpField'
 import { PortIpam } from './PortIpam'
 import { sortPorts, takenPorts } from './wiring'
 
@@ -486,6 +487,9 @@ function DevicePanel({
               </span>
               <FieldHelp term="managed" />
             </label>
+            {!card.draft && card.type !== 'provider_cloud' && (
+              <MgmtIpField orgId={orgId} deviceId={deviceId} current={card.mgmtIp ?? ''} />
+            )}
             {!card.draft && (
               <MgmtInterfaceField
                 orgId={orgId}

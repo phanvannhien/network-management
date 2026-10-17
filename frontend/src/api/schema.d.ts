@@ -861,6 +861,30 @@ export interface paths {
         patch: operations["updateInterface"];
         trace?: never;
     };
+    "/orgs/{orgId}/devices/{deviceId}/mgmt-ip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the management IP in one step (property panel) — on the management interface, created if missing
+         * @description The address goes on the device's management interface (replacing its primary address of that family); with none, on a "Vlan1" SVI for switches / a "mgmt" interface otherwise, which becomes the management interface. A bare address takes the prefix of the IPAM subnet holding it, else /32. The same address elsewhere is a warning (ADR-034), not a refusal.
+         */
+        put: operations["setDeviceMgmtIp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/{deviceId}/apply-template": {
         parameters: {
             query?: never;
@@ -2657,6 +2681,11 @@ export interface components {
             verified: boolean;
             source: string;
             notes: string;
+        };
+        MgmtIpResult: {
+            mgmtIp: string;
+            interfaceName: string;
+            warnings: string[];
         };
         /** @description an organization template, a system template (catalogId) or port groups typed on the spot — exactly one */
         ApplyTemplate: {
@@ -5345,6 +5374,42 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    setDeviceMgmtIp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    address: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MgmtIpResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     applyDeviceTemplate: {

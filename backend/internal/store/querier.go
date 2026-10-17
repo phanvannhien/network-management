@@ -137,6 +137,9 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
 	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
+	// Other holders of an address in a VRF (devices, cluster VIPs, group members), members of the device's own cluster
+	// left out (ADR-027): shown as a warning when a management IP is set.
+	IPHolders(ctx context.Context, arg IPHoldersParams) ([]string, error)
 	ImportClusterByName(ctx context.Context, arg ImportClusterByNameParams) (ImportClusterByNameRow, error)
 	ImportDeviceHasIP(ctx context.Context, arg ImportDeviceHasIPParams) (int64, error)
 	// Device import (P1-21): lookups that place each spreadsheet row. Every query takes organization_id.

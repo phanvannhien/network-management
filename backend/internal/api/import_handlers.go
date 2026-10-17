@@ -414,3 +414,116 @@ func ptrUUID(u pgtype.UUID) *uuid.UUID {
 	id := uuid.UUID(u.Bytes)
 	return &id
 }
+
+// SetDeviceMgmtIp sets the management address from the property panel in one step (ADR-034: written right away).
+func (s *Server) SetDeviceMgmtIp(ctx context.Context, req apigen.SetDeviceMgmtIpRequestObject) (apigen.SetDeviceMgmtIpResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	if req.Body == nil {
+		return apigen.SetDeviceMgmtIp400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu dữ liệu"}}, nil
+	}
+	var (
+		code int
+		bad  string
+		out  apigen.MgmtIpResult
+	)
+	err = s.withTx(ctx, func(q store.Querier) error {
+		dev, c, err := editableDevice(ctx, q, m, req.DeviceId)
+		if code = c; err != nil || c != 0 {
+			return orRollback(err)
+		}
+		addr, ok := parseCIDR(req.Body.Address)
+		if !ok {
+			bad = "Địa chỉ IP không hợp lệ, vd 192.168.1.1 hoặc 192.168.1.1/24"
+			return errRollback
+		}
+		out.Warnings = []string{}
+		addr, known, err := withSubnetPrefix(ctx, q, m, addr)
+		if err != nil {
+			return err
+		}
+		if !known {
+			out.Warnings = append(out.Warnings, fmt.Sprintf("Chưa có subnet IPAM chứa %s: lưu %s, nhớ sửa lại mask", addr.Addr(), addr))
+		}
+		holders, err := q.IPHolders(ctx, store.IPHoldersParams{OrganizationID: m.OrgID, Vrf: "", Ip: addr.Addr(), DeviceID: dev.ID, ClusterID: dev.ClusterID})
+		if err != nil {
+			return fmt.Errorf("ip holders: %w", err)
+		}
+		if len(holders) > 0 {
+			out.Warnings = append(out.Warnings, fmt.Sprintf("IP %s đang được dùng ở %s", addr.Addr(), strings.Join(holders, ", ")))
+		}
+		// The management interface, else the usual one for the kind of device (found by name or created).
+		iface := dev.MgmtInterfaceID
+		name := dev.MgmtInterfaceName
+		if !iface.Valid {
+			n, kind := mgmtInterfaceFor(dev.Type, "")
+			name = n
+			found, err := q.ImportInterfaceByName(ctx, store.ImportInterfaceByNameParams{OrganizationID: m.OrgID, DeviceID: dev.ID, Name: n})
+			switch {
+			case errors.Is(err, pgx.ErrNoRows):
+				sort, err := q.MaxInterfaceSort(ctx, store.MaxInterfaceSortParams{OrganizationID: m.OrgID, DeviceID: dev.ID})
+				if err != nil {
+					return fmt.Errorf("interface sort: %w", err)
+				}
+				created, err := q.CreateInterface(ctx, store.CreateInterfaceParams{
+					OrganizationID: m.OrgID, DeviceID: dev.ID, Name: n, Kind: kind, Duplex: "auto", AdminUp: true, SortOrder: sort + 1,
+					Description: "Interface quản trị",
+				})
+				if err != nil {
+					return fmt.Errorf("create mgmt interface: %w", err)
+				}
+				found = created.ID
+			case err != nil:
+				return fmt.Errorf("find mgmt interface: %w", err)
+			}
+			iface = found
+			if err := q.SetDeviceMgmtInterface(ctx, store.SetDeviceMgmtInterfaceParams{InterfaceID: iface, ID: dev.ID, OrganizationID: m.OrgID}); err != nil {
+				return fmt.Errorf("set mgmt interface: %w", err)
+			}
+		}
+		// Replace the primary address of that family on the interface, or add one.
+		ips, err := q.ListDeviceIPs(ctx, store.ListDeviceIPsParams{OrganizationID: m.OrgID, DeviceID: dev.ID})
+		if err != nil {
+			return fmt.Errorf("device ips: %w", err)
+		}
+		for _, ip := range ips {
+			if ip.InterfaceID == iface && ip.Role == "primary" && ip.Address.Addr().Is4() == addr.Addr().Is4() {
+				if ip.Address == addr {
+					out.MgmtIp, out.InterfaceName = addr.String(), name
+					return nil
+				}
+				if _, err := q.UpdateIP(ctx, store.UpdateIPParams{
+					InterfaceID: iface, Address: addr, Vrf: ip.Vrf, Role: "primary", Description: ip.Description,
+					ID: ip.ID, OrganizationID: m.OrgID, DeviceID: dev.ID, Version: ip.Version,
+				}); err != nil {
+					return fmt.Errorf("update mgmt ip: %w", err)
+				}
+				out.MgmtIp, out.InterfaceName = addr.String(), name
+				return deviceAudit(ctx, q, m, dev.ID, "ip.update", ipSnapshot{ip.Address.String(), name, ip.Vrf, "primary", ""}, ipSnapshot{addr.String(), name, ip.Vrf, "primary", ""})
+			}
+		}
+		if _, err := q.CreateIP(ctx, store.CreateIPParams{
+			OrganizationID: m.OrgID, DeviceID: dev.ID, InterfaceID: iface, Address: addr, Vrf: "", Role: "primary",
+		}); isUniqueViolation(err) {
+			bad = fmt.Sprintf("Interface %s đã có địa chỉ này", name)
+			return errRollback
+		} else if err != nil {
+			return fmt.Errorf("create mgmt ip: %w", err)
+		}
+		out.MgmtIp, out.InterfaceName = addr.String(), name
+		return deviceAudit(ctx, q, m, dev.ID, "ip.create", nil, ipSnapshot{addr.String(), name, "", "primary", ""})
+	})
+	switch {
+	case err != nil:
+		return nil, err
+	case code == 404:
+		return apigen.SetDeviceMgmtIp404JSONResponse{NotFoundJSONResponse: notFoundBody(msgDeviceNotFound)}, nil
+	case code == 403:
+		return apigen.SetDeviceMgmtIp403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msgCannotEdit}}, nil
+	case bad != "":
+		return apigen.SetDeviceMgmtIp400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: bad}}, nil
+	}
+	return apigen.SetDeviceMgmtIp200JSONResponse(out), nil
+}

@@ -1089,6 +1089,11 @@ export const vi = {
     title: 'Thuộc tính',
     minimize: 'Thu nhỏ panel thuộc tính (thành dải bên phải)',
     expand: 'Mở rộng panel thuộc tính',
+    mgmtIpHint:
+      'Gõ IP rồi Lưu (Enter) — ghi thẳng vào kho. Không ghi mask thì lấy theo subnet IPAM.',
+    mgmtIpPending: 'Thiết bị đang có sửa chưa lưu trên sơ đồ — lưu sơ đồ trước rồi nhập IP.',
+    mgmtIpSave: 'Lưu IP',
+    mgmtIpSaved: 'Đã lưu IP quản trị {{ip}} trên {{iface}}',
     close: 'Đóng panel thuộc tính',
     diagram: 'Sơ đồ',
     device: 'Thiết bị',

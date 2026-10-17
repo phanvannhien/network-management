@@ -5,6 +5,20 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Panel thuộc tính: nhập IP quản trị trực tiếp
+- Đã làm: ô **IP quản trị** trong phần Sửa nhanh của panel thiết bị (gõ IP → Lưu/Enter), ghi thẳng vào kho (ADR-034). Endpoint mới
+  `PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip`: đặt IP lên interface quản trị (thay IP chính cùng họ địa chỉ); chưa có interface quản
+  trị thì tạo `Vlan1` (switch) / `mgmt` (thiết bị khác) và đặt làm interface quản trị; không ghi mask → lấy theo subnet IPAM, không có
+  thì /32 + cảnh báo; IP đang dùng ở thiết bị khác cùng VRF → cảnh báo (bỏ qua thành viên cùng cụm). Audit `ip.create`/`ip.update`.
+  Ô bị khóa khi thiết bị có sửa chưa lưu trên sơ đồ (tránh lần lưu sơ đồ ghi đè interface quản trị).
+- Test / cách kiểm tra: `make check` pass (Go `TestSetDeviceMgmtIP`: tạo interface `mgmt`, /32 + cảnh báo, lấy mask từ subnet khi có,
+  thay chứ không thêm IP, switch dùng Vlan1, cảnh báo trùng, IP sai 400, chặn chéo tổ chức). Chromium: modem chưa có cổng → gõ
+  192.168.1.1 + Enter → nút trên sơ đồ hiện IP ngay.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor, hoặc P1-22 Export.
+
 ## 2026-10-17 — Hộp nối dây: đầu không cần cổng nói rõ, khung "chưa có cổng" không còn giống lỗi
 - Bối cảnh: nối Internet → modem, người dùng tưởng bị báo lỗi "không có cổng Internet" (ô cổng bị khóa + khung vàng). Thực ra nối được.
 - Đã làm: đầu không có cổng (mạng nhà cung cấp, nhóm đầu cuối, dây nguồn ở đầu thiết bị…) hiện "Không cần cổng ở đầu này" thay cho ô

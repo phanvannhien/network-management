@@ -1609,6 +1609,47 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/devices/{deviceId}/mgmt-ip:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DeviceId'
+    put:
+      operationId: setDeviceMgmtIp
+      summary: Set the management IP in one step (property panel) — on the management interface, created if missing
+      description: >-
+        The address goes on the device's management interface (replacing its primary address of that family); with none,
+        on a "Vlan1" SVI for switches / a "mgmt" interface otherwise, which becomes the management interface. A bare
+        address takes the prefix of the IPAM subnet holding it, else /32. The same address elsewhere is a warning
+        (ADR-034), not a refusal.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  maxLength: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MgmtIpResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/{deviceId}/apply-template:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5465,6 +5506,19 @@ components:
           type: string
         notes:
           type: string
+
+    MgmtIpResult:
+      type: object
+      required: [mgmtIp, interfaceName, warnings]
+      properties:
+        mgmtIp:
+          type: string
+        interfaceName:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
 
     ApplyTemplate:
       type: object

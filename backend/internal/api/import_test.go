@@ -119,3 +119,40 @@ func TestDeviceImport(t *testing.T) {
 		t.Errorf("create-only on an existing hostname: %v", got)
 	}
 }
+
+// Management IP from the property panel: interface created when missing, address replaced, duplicates warned.
+func TestSetDeviceMgmtIP(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "HCM"}))
+	modem := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "MDM01", "type": "modem", "siteId": site}))
+	sw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW01", "type": "l2_switch", "siteId": site}))
+	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HN01", "name": "B"}))
+	modemB := idOf(t, mustCreate(t, fx.B, devicesPath(fx.OrgB), map[string]any{"hostname": "B-MDM", "type": "modem", "siteId": siteB}))
+	fx.AssertCrossTenantDenied(t, "PUT", func(o uuid.UUID) string { return devicePath(o, modemB) + "/mgmt-ip" }, map[string]any{"address": "10.9.9.9"})
+	path := func(o uuid.UUID) string { return devicePath(o, modem) + "/mgmt-ip" }
+
+	status, got := fx.A.Do("PUT", path(org), map[string]any{"address": "192.168.1.1"})
+	if status != http.StatusOK || got["mgmtIp"] != "192.168.1.1/32" || got["interfaceName"] != "mgmt" || len(got["warnings"].([]any)) != 1 {
+		t.Fatalf("first set: %d %v", status, got)
+	}
+	// The mask comes from IPAM once a subnet holds the address; the address on the interface is replaced, not added.
+	mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "192.168.1.0/24", "siteId": site})
+	if _, got = fx.A.Do("PUT", path(org), map[string]any{"address": "192.168.1.2"}); got["mgmtIp"] != "192.168.1.2/24" {
+		t.Errorf("replace: %v", got)
+	}
+	if _, ips := fx.A.Do("GET", devicePath(org, modem)+"/ips", nil); len(ips["ips"].([]any)) != 1 {
+		t.Errorf("one management address: %v", ips)
+	}
+	if _, dev := fx.A.Do("GET", devicePath(org, modem), nil); dev["mgmtIp"] != "192.168.1.2/24" {
+		t.Errorf("device mgmt ip: %v", dev["mgmtIp"])
+	}
+	// A switch gets it on Vlan1; the same address as the modem is a warning, not a refusal.
+	status, got = fx.A.Do("PUT", devicePath(org, sw)+"/mgmt-ip", map[string]any{"address": "192.168.1.2"})
+	if status != http.StatusOK || got["interfaceName"] != "Vlan1" || len(got["warnings"].([]any)) != 1 {
+		t.Errorf("switch: %d %v", status, got)
+	}
+	if status, _ := fx.A.Do("PUT", path(org), map[string]any{"address": "nope"}); status != http.StatusBadRequest {
+		t.Errorf("bad address: %d", status)
+	}
+}
