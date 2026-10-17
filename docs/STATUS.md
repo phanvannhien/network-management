@@ -10,6 +10,8 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
   màn vẽ, không thiết bị nào bị kéo theo. **Giữ Space + kéo chuột trái** luôn di chuyển màn vẽ (không cần bật bàn tay); con trỏ đổi
   thành bàn tay; Space không còn "bấm" nhầm nút đang focus hay cuộn trang (trừ khi đang gõ trong ô nhập / hộp thoại). Chuột giữa vẫn
   kéo được như cũ. SRS §6 cập nhật.
+  - Bổ sung theo phản hồi: nút **Con trỏ** (phím **V**) cạnh Bàn tay — luôn đúng một công cụ được bật (con trỏ / bàn tay / nối dây);
+    bấm Con trỏ là thoát bàn tay và chế độ nối dây.
 - Test / cách kiểm tra: `make check` pass (vitest: phím H). Chromium: Space + kéo đổi viewport khi nút Lưu đang focus (không lưu);
   bật bàn tay, kéo bắt đầu trên VPN_CJIDC → viewport đổi, thiết bị đứng yên, sơ đồ vẫn "Đã lưu".
 - Còn dở / lỗi đã biết: không.

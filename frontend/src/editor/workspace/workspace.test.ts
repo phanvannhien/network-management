@@ -127,6 +127,7 @@ describe('editor shortcuts (SRS §6.4)', () => {
   })
   it('maps keys to actions, Cmd like Ctrl, Shift+digit by physical key', () => {
     expect(actionFor(key('h'))).toBe('hand')
+    expect(actionFor(key('v'))).toBe('pointer')
     expect(actionFor(key('z', { ctrlKey: true }))).toBe('undo')
     expect(actionFor(key('Z', { metaKey: true, shiftKey: true }))).toBe('redo')
     expect(actionFor(key('y', { ctrlKey: true }))).toBe('redo')

@@ -891,6 +891,7 @@ export const vi = {
     empty: 'Sơ đồ trống.',
   },
   editorCanvas: {
+    pointer: 'Con trỏ — chọn và kéo thiết bị (V)',
     hand: 'Bàn tay — kéo để di chuyển màn vẽ (H; hoặc giữ Space + kéo)',
     canvas: 'Màn vẽ sơ đồ',
     toolbar: 'Thanh công cụ sơ đồ',
@@ -944,6 +945,7 @@ export const vi = {
       quickAdd: 'Thêm nhanh thiết bị',
       library: 'Ẩn/hiện thư viện',
       connect: 'Nối dây (bấm 2 thiết bị)',
+      pointer: 'Con trỏ: chọn, kéo thiết bị (thoát bàn tay / nối dây)',
       hand: 'Bật/tắt bàn tay: kéo chuột trái để di chuyển màn vẽ',
       search: 'Tìm kiếm toàn cục',
       help: 'Bảng phím tắt này',

@@ -427,10 +427,16 @@ function Workspace({
           break
         case 'connect':
           if (!canEdit) return
+          setHand(false)
           wiring.toggle()
           break
         case 'hand':
+          wiring.cancel()
           setHand((h) => !h)
+          break
+        case 'pointer':
+          wiring.cancel()
+          setHand(false)
           break
         case 'remove':
           edit.remove()
@@ -639,9 +645,19 @@ function Workspace({
         onAddText={annotate.text}
         onAddArrow={annotate.arrow}
         connecting={wiring.mode !== null}
-        onConnect={() => wiring.toggle()}
+        onConnect={() => {
+          setHand(false)
+          wiring.toggle()
+        }}
         hand={hand}
-        onHand={() => setHand((h) => !h)}
+        onHand={() => {
+          wiring.cancel()
+          setHand((h) => !h)
+        }}
+        onPointer={() => {
+          wiring.cancel()
+          setHand(false)
+        }}
         problems={problemCounts}
         problemsOpen={problemsOpen}
         onProblems={() => setProblemsOpen((o) => !o)}

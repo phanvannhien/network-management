@@ -4,6 +4,7 @@ import {
   CircleCheck,
   Cable,
   Hand,
+  MousePointer2,
   Keyboard,
   LibraryBig,
   Lightbulb,
@@ -119,6 +120,8 @@ export interface ToolbarProps {
   /** Hand tool: dragging anywhere moves the view (Space + drag does it any time). */
   hand: boolean
   onHand: () => void
+  /** Back to the pointer: hand tool and connect mode off. */
+  onPointer: () => void
   onAddFrame: () => void
   onAddText: () => void
   onAddArrow: () => void
@@ -171,6 +174,15 @@ export function Toolbar(p: ToolbarProps) {
         disabled={!p.canRedo}
       >
         <Redo2 aria-hidden />
+      </ToolButton>
+      {/* Tools: exactly one is on — pointer (select / move), hand (move the view), or connect mode below. */}
+      <ToolButton
+        label={t('editorCanvas.pointer')}
+        shortcut="pointer"
+        onClick={p.onPointer}
+        pressed={!p.hand && !p.connecting}
+      >
+        <MousePointer2 aria-hidden />
       </ToolButton>
       <ToolButton
         label={t('editorCanvas.hand')}
