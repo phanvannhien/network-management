@@ -85,3 +85,10 @@ DELETE FROM ip_addresses WHERE id = @id AND organization_id = @organization_id A
 
 -- name: CountInterfaceIPs :one
 SELECT count(*) FROM ip_addresses WHERE organization_id = @organization_id AND interface_id = @interface_id;
+
+-- name: CopyInterfaces :copyfrom
+-- Many ports of one device in one round trip (a .ntb.json import of a new device); the caller reads the ids back.
+INSERT INTO interfaces (organization_id, device_id, name, kind, media, speed, duplex, mode, access_vlan, native_vlan,
+                        allowed_vlans, poe, description, admin_up, sort_order, mac, vlan_tag)
+VALUES (@organization_id, @device_id, @name, @kind, @media, @speed, @duplex, @mode, @access_vlan, @native_vlan,
+        @allowed_vlans, @poe, @description, @admin_up, @sort_order, @mac, @vlan_tag);

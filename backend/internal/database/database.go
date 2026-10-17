@@ -16,11 +16,29 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/db"
 )
 
-// Open connects a pgx pool and verifies the connection with a ping.
-func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, databaseURL)
+// NewPool configures the pool without connecting. JIT is off for every session: the API runs short queries, and
+// Postgres JIT-compiles any whose estimated cost is high (the device list's facet counts, a UNION of five scans) —
+// measured at 110 ms of compilation for a 15 ms query on 2,000 devices (P1-25).
+func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	cfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse database url: %w", err)
+	}
+	if _, set := cfg.ConnConfig.RuntimeParams["jit"]; !set {
+		cfg.ConnConfig.RuntimeParams["jit"] = "off"
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("open pool: %w", err)
+	}
+	return pool, nil
+}
+
+// Open connects a pgx pool and verifies the connection with a ping.
+func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	pool, err := NewPool(ctx, databaseURL)
+	if err != nil {
+		return nil, err
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()

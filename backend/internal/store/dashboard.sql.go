@@ -458,16 +458,23 @@ func (q *Queries) DashboardMissingInfo(ctx context.Context, arg DashboardMissing
 }
 
 const dashboardPortsMultiLink = `-- name: DashboardPortsMultiLink :many
-SELECT d.id AS device_id, d.hostname, i.name AS interface_name, count(*)::bigint AS links
-FROM interfaces i
+WITH ends AS (
+  SELECT a_interface_id AS iface FROM links
+  WHERE organization_id = $1 AND a_interface_id IS NOT NULL
+    AND kind IN ('ethernet', 'fiber', 'serial', 'console', 'power', 'stack', 'dsl')
+  UNION ALL
+  SELECT b_interface_id FROM links
+  WHERE organization_id = $1 AND b_interface_id IS NOT NULL
+    AND kind IN ('ethernet', 'fiber', 'serial', 'console', 'power', 'stack', 'dsl')
+), busy AS (
+  SELECT iface, count(*) AS n FROM ends GROUP BY iface HAVING count(*) > 1
+)
+SELECT d.id AS device_id, d.hostname, i.name AS interface_name, busy.n::bigint AS links
+FROM busy
+JOIN interfaces i ON i.id = busy.iface AND i.organization_id = $1 AND i.kind = 'physical' AND i.media <> 'PON'
 JOIN devices d ON d.id = i.device_id AND d.deleted_at IS NULL
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-JOIN links l ON l.organization_id = i.organization_id AND (l.a_interface_id = i.id OR l.b_interface_id = i.id)
-  AND l.kind IN ('ethernet', 'fiber', 'serial', 'console', 'power', 'stack', 'dsl')
-WHERE i.organization_id = $1 AND i.kind = 'physical' AND i.media <> 'PON'
-  AND ($2::uuid IS NULL OR s.category_id IN (SELECT category_subtree($2::uuid)))
-GROUP BY d.id, d.hostname, i.name
-HAVING count(*) > 1
+WHERE $2::uuid IS NULL OR s.category_id IN (SELECT category_subtree($2::uuid))
 ORDER BY lower(d.hostname), i.name
 LIMIT 100
 `
@@ -485,6 +492,7 @@ type DashboardPortsMultiLinkRow struct {
 }
 
 // Physical ports with more than one cable of a kind that occupies the port (link rules; a PON port feeds a splitter).
+// Cable ends are counted first (a few thousand links), then joined to their ports — not every port scanned for an OR.
 func (q *Queries) DashboardPortsMultiLink(ctx context.Context, arg DashboardPortsMultiLinkParams) ([]DashboardPortsMultiLinkRow, error) {
 	rows, err := q.db.Query(ctx, dashboardPortsMultiLink, arg.OrganizationID, arg.CategoryFilter)
 	if err != nil {

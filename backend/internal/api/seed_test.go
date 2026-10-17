@@ -32,7 +32,7 @@ func TestSeedDemoAndBench(t *testing.T) {
 		t.Fatalf("seed demo: %v", err)
 	}
 	// IDC: Internet + 2 FortiGates; Food: 2 + 4; Agri: 6 routers; Văn phòng mẫu: Internet + FW + core + 3 switches.
-	if res.Devices != 3+6+6+6 || len(res.Diagrams) != 2 {
+	if res.Devices != 3+6+6+6 || len(res.Diagrams) != 2 || len(res.Warnings) != 0 {
 		t.Errorf("demo: %+v", res)
 	}
 	if _, err := srv.SeedDemo(ctx, "seed@example.vn"); err == nil {
@@ -49,6 +49,17 @@ func TestSeedDemoAndBench(t *testing.T) {
 	if sites := d["bySite"].([]any); len(sites) != 10 {
 		t.Errorf("demo sites: %d", len(sites))
 	}
+	// Every port, address and cable end made it: ports of the catalog models, management IPs on them.
+	var ports, ips, unported int
+	if err := fx.Pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM interfaces WHERE organization_id = $1),
+		(SELECT count(*) FROM ip_addresses WHERE organization_id = $1),
+		(SELECT count(*) FROM links WHERE organization_id = $1 AND a_kind = 'device' AND a_interface_id IS NULL AND kind <> 'logical'
+		   AND a_id NOT IN (SELECT id FROM devices WHERE type = 'provider_cloud'))`, org).Scan(&ports, &ips, &unported); err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if ports < 300 || ips < 30 || unported != 0 {
+		t.Errorf("ports %d, addresses %d, cables without a port %d", ports, ips, unported)
+	}
 	_, hits := admin.Do("GET", searchPath(org, "10.136.4.101"), nil)
 	if ips := hits["ips"].([]any); len(ips) != 1 || ips[0].(map[string]any)["name"] != "FW-IDC" {
 		t.Errorf("cluster VIP: %v", ips)
@@ -63,7 +74,7 @@ func TestSeedDemoAndBench(t *testing.T) {
 		t.Fatalf("seed bench: %v", err)
 	}
 	// Sites of 40: 3 links for router/cores + 2 per access switch.
-	if bench.Devices != 100 || bench.Links != 3*3+2*(100-9) {
+	if bench.Devices != 100 || bench.Links != 3*3+2*(100-9) || len(bench.Warnings) != 0 {
 		t.Errorf("bench: %+v", bench)
 	}
 	if bench.OrgID == uuid.Nil || bench.OrgID == org {

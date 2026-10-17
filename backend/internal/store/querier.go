@@ -21,6 +21,8 @@ type Querier interface {
 	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
+	// Many ports of one device in one round trip (a .ntb.json import of a new device); the caller reads the ids back.
+	CopyInterfaces(ctx context.Context, arg []CopyInterfacesParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
 	CountEndpointGroupsInSite(ctx context.Context, arg CountEndpointGroupsInSiteParams) (int64, error)
@@ -85,6 +87,7 @@ type Querier interface {
 	// rows = the first @lim.
 	DashboardMissingInfo(ctx context.Context, arg DashboardMissingInfoParams) ([]DashboardMissingInfoRow, error)
 	// Physical ports with more than one cable of a kind that occupies the port (link rules; a PON port feeds a splitter).
+	// Cable ends are counted first (a few thousand links), then joined to their ports — not every port scanned for an OR.
 	DashboardPortsMultiLink(ctx context.Context, arg DashboardPortsMultiLinkParams) ([]DashboardPortsMultiLinkRow, error)
 	// IPv4 subnets with the addresses taken: documented hosts outside DHCP / reserved pools, plus those pools whole (a
 	// DHCP pool hands its addresses out, they are not free). The API keeps those ≥ 90 % full.

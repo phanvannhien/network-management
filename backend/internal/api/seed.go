@@ -28,6 +28,8 @@ type SeedResult struct {
 	Devices  int
 	Links    int
 	Diagrams []string
+	// Warnings of the imports (a port or address skipped…): a seed is expected to have none.
+	Warnings []string
 }
 
 // seedSession is the context of a CLI seed acting as the given system administrator.
@@ -415,6 +417,7 @@ func (s *Server) SeedDemo(ctx context.Context, ownerEmail string) (SeedResult, e
 	out.Devices += res.Created.Devices
 	out.Links += res.Created.Links
 	out.Diagrams = append(out.Diagrams, b.f.Diagram.Name)
+	out.Warnings = append(out.Warnings, res.Warnings...)
 
 	// Văn phòng mẫu — the older sample office (FortiGate 60F, core, three PoE switches, APs and cameras).
 	serial := b.serial // made-up serials stay unique across the two files
@@ -450,6 +453,7 @@ func (s *Server) SeedDemo(ctx context.Context, ownerEmail string) (SeedResult, e
 	out.Devices += res.Created.Devices
 	out.Links += res.Created.Links
 	out.Diagrams = append(out.Diagrams, b.f.Diagram.Name)
+	out.Warnings = append(out.Warnings, res.Warnings...)
 	return out, nil
 }
 
@@ -462,8 +466,9 @@ const benchSiteSize = 40
 // access switches with two uplinks: about two cables per device, as SRS §14's "500 devices + 1000 links") on one
 // physical diagram.
 func (s *Server) SeedBench(ctx context.Context, ownerEmail string, n int) (SeedResult, error) {
-	if n < benchSiteSize || n > 5000 {
-		return SeedResult{}, fmt.Errorf("devices: %d to 5000", benchSiteSize)
+	// SRS §14: a diagram holds at most 2,000 devices; run it several times for a bigger inventory.
+	if n < benchSiteSize || n > 2000 {
+		return SeedResult{}, fmt.Errorf("devices: %d to 2000 (run again for more organizations)", benchSiteSize)
 	}
 	ctx, u, err := s.seedSession(ctx, ownerEmail)
 	if err != nil {
@@ -520,5 +525,6 @@ func (s *Server) SeedBench(ctx context.Context, ownerEmail string, n int) (SeedR
 	}
 	out.Devices, out.Links = res.Created.Devices, res.Created.Links
 	out.Diagrams = []string{b.f.Diagram.Name}
+	out.Warnings = res.Warnings
 	return out, nil
 }

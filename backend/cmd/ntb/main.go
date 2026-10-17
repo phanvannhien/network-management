@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/term"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
@@ -65,7 +64,7 @@ func serve(logger *slog.Logger) error {
 	}
 
 	// The pool connects lazily: the API starts even when Postgres is down and /api/healthz reports it.
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("configure database pool: %w", err)
 	}
@@ -217,6 +216,9 @@ func seed(logger *slog.Logger, what string, args []string, stderr io.Writer) err
 	}
 	if err != nil {
 		return err
+	}
+	for _, w := range res.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", w)
 	}
 	_, _ = fmt.Fprintf(stderr, "Created %s (%s): %d devices, %d links, diagrams %s — %s\n",
 		res.OrgName, res.OrgID, res.Devices, res.Links, strings.Join(res.Diagrams, ", "), time.Since(started).Round(time.Millisecond))

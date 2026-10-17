@@ -13,6 +13,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CopyInterfacesParams struct {
+	OrganizationID pgtype.UUID
+	DeviceID       pgtype.UUID
+	Name           string
+	Kind           string
+	Media          string
+	Speed          string
+	Duplex         string
+	Mode           string
+	AccessVlan     pgtype.Int4
+	NativeVlan     pgtype.Int4
+	AllowedVlans   string
+	Poe            bool
+	Description    string
+	AdminUp        bool
+	SortOrder      int32
+	Mac            net.HardwareAddr
+	VlanTag        pgtype.Int4
+}
+
 const countInterfaceIPs = `-- name: CountInterfaceIPs :one
 SELECT count(*) FROM ip_addresses WHERE organization_id = $1 AND interface_id = $2
 `

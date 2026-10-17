@@ -168,3 +168,20 @@ func expectSQLState(t *testing.T, err error, code string) {
 		t.Fatalf("expected SQLSTATE %s, got %s (%s)", code, pgErr.Code, pgErr.Message)
 	}
 }
+
+// The API pool runs with JIT off (short OLTP queries; JIT compilation cost 110 ms on the device list, P1-25).
+func TestPoolDisablesJIT(t *testing.T) {
+	_, dbURL := testdb.New(t)
+	pool, err := database.Open(context.Background(), dbURL)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer pool.Close()
+	var jit string
+	if err := pool.QueryRow(context.Background(), "SHOW jit").Scan(&jit); err != nil {
+		t.Fatalf("show jit: %v", err)
+	}
+	if jit != "off" {
+		t.Errorf("jit = %s", jit)
+	}
+}

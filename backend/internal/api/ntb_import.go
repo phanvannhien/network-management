@@ -429,21 +429,18 @@ func (im *ntbImporter) mapInterfaces(device pgtype.UUID, ifs []ntbInterface, cre
 		return fmt.Errorf("device interfaces: %w", err)
 	}
 	byName := map[string]pgtype.UUID{}
+	sort := int32(0)
 	for _, i := range have {
 		byName[strings.ToLower(i.Name)] = i.ID
+		sort = max(sort, i.SortOrder)
 	}
-	ordered := make([]ntbInterface, 0, len(ifs))
+	type pending struct {
+		in ntbInterface
+		f  ifaceFields
+	}
+	var batch []pending
+	var members []ntbInterface // LAG members: created one by one once their LAG has an id
 	for _, i := range ifs {
-		if i.LagRef == nil {
-			ordered = append(ordered, i)
-		}
-	}
-	for _, i := range ifs {
-		if i.LagRef != nil {
-			ordered = append(ordered, i)
-		}
-	}
-	for _, i := range ordered {
 		if id, ok := byName[strings.ToLower(i.Name)]; ok {
 			im.ifaces[i.Ref] = id
 			continue
@@ -451,53 +448,143 @@ func (im *ntbImporter) mapInterfaces(device pgtype.UUID, ifs []ntbInterface, cre
 		if !create {
 			continue
 		}
-		var lag *uuid.UUID
 		if i.LagRef != nil {
-			if l, ok := im.ifaces[*i.LagRef]; ok {
-				u := uuid.UUID(l.Bytes)
-				lag = &u
-			}
-		}
-		media := apigen.InterfaceMedia(i.Media)
-		mode := apigen.InterfaceMode(i.Mode)
-		duplex := i.Duplex
-		fields, msg := validateInterface(i.Name, apigen.InterfaceKind(i.Kind), &media, &i.Speed, &duplex, &mode, i.AccessVlan, i.NativeVlan,
-			&i.AllowedVlans, &i.Poe, lag, &i.Description, i.AdminUp, i.MAC, i.VlanTag)
-		if msg != "" {
-			im.warn("Cổng %s: %s — bỏ qua", i.Name, msg)
+			members = append(members, i)
 			continue
 		}
-		var created store.Interface
+		f, ok := im.interfaceFields(i, nil)
+		if !ok {
+			continue
+		}
+		byName[strings.ToLower(f.name)] = pgtype.UUID{} // a name twice in the file: the first one wins
+		batch = append(batch, pending{i, f})
+	}
+
+	// The ports of a device in one COPY and one audit entry (like applying a template), instead of a savepoint, a
+	// sort query, an insert and an audit row each: a 2,000-device file has some 60,000 ports.
+	if len(batch) > 0 {
 		ok, err := im.savepoint(func(q store.Querier) error {
-			sort, err := q.MaxInterfaceSort(im.ctx, store.MaxInterfaceSortParams{OrganizationID: im.m.OrgID, DeviceID: device})
-			if err != nil {
-				return fmt.Errorf("interface sort: %w", err)
+			rows := make([]store.CopyInterfacesParams, len(batch))
+			names := make([]string, len(batch))
+			for k, p := range batch {
+				f := p.f
+				rows[k] = store.CopyInterfacesParams{
+					OrganizationID: im.m.OrgID, DeviceID: device, Name: f.name, Kind: f.kind, Media: f.media, Speed: f.speed,
+					Duplex: f.duplex, Mode: f.mode, AccessVlan: f.accessVlan, NativeVlan: f.nativeVlan, AllowedVlans: f.allowed,
+					Poe: f.poe, Description: f.description, AdminUp: f.adminUp, SortOrder: sort + int32(k) + 1, Mac: f.mac, VlanTag: f.vlanTag,
+				}
+				names[k] = f.name
 			}
-			lagID := pgtype.UUID{}
-			if fields.lag != nil {
-				lagID = pgUUID(*fields.lag)
-			}
-			created, err = q.CreateInterface(im.ctx, store.CreateInterfaceParams{
-				OrganizationID: im.m.OrgID, DeviceID: device, Name: fields.name, Kind: fields.kind, Media: fields.media, Speed: fields.speed,
-				Duplex: fields.duplex, Mode: fields.mode, AccessVlan: fields.accessVlan, NativeVlan: fields.nativeVlan,
-				AllowedVlans: fields.allowed, Poe: fields.poe, LagID: lagID, Description: fields.description, AdminUp: fields.adminUp,
-				SortOrder: sort + 1, Mac: fields.mac, VlanTag: fields.vlanTag,
-			})
-			if err != nil {
+			if _, err := q.CopyInterfaces(im.ctx, rows); err != nil {
 				return err
 			}
-			return deviceAudit(im.ctx, q, im.m, device, "interface.create", nil, snapInterface(created))
+			return deviceAudit(im.ctx, q, im.m, device, "interface.create", nil, map[string]any{"count": len(names), "names": names})
 		})
 		if err != nil {
 			return err
 		}
+		if ok {
+			sort += int32(len(batch))
+			created, err := im.q.ListInterfaces(im.ctx, store.ListInterfacesParams{OrganizationID: im.m.OrgID, DeviceID: device})
+			if err != nil {
+				return fmt.Errorf("device interfaces: %w", err)
+			}
+			for _, c := range created {
+				byName[strings.ToLower(c.Name)] = c.ID
+			}
+			// Every ref by name, including a name the file repeats.
+			for _, i := range ifs {
+				if id := byName[strings.ToLower(i.Name)]; id.Valid {
+					im.ifaces[i.Ref] = id
+				}
+			}
+		} else {
+			// The database refused the batch (a name clash): one by one, skipping the ones it refuses.
+			for _, p := range batch {
+				delete(byName, strings.ToLower(p.f.name))
+			}
+			for _, p := range batch {
+				if err := im.createInterface(device, p.in, p.f, &sort, byName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	for _, i := range members {
+		var lag *uuid.UUID
+		if l, ok := im.ifaces[*i.LagRef]; ok {
+			u := uuid.UUID(l.Bytes)
+			lag = &u
+		}
+		f, ok := im.interfaceFields(i, lag)
 		if !ok {
-			im.warn("Cổng %s không tạo được — bỏ qua", i.Name)
 			continue
 		}
-		im.ifaces[i.Ref] = created.ID
-		byName[strings.ToLower(i.Name)] = created.ID
+		if err := im.createInterface(device, i, f, &sort, byName); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+// interfaceFields checks a port of the file; fields it leaves out (all optional in the schema) take the API defaults.
+func (im *ntbImporter) interfaceFields(i ntbInterface, lag *uuid.UUID) (ifaceFields, bool) {
+	var media *apigen.InterfaceMedia
+	if i.Media != "" {
+		m := apigen.InterfaceMedia(i.Media)
+		media = &m
+	}
+	var mode *apigen.InterfaceMode
+	if i.Mode != "" {
+		md := apigen.InterfaceMode(i.Mode)
+		mode = &md
+	}
+	var duplex *string
+	if i.Duplex != "" {
+		duplex = &i.Duplex
+	}
+	f, msg := validateInterface(i.Name, apigen.InterfaceKind(i.Kind), media, &i.Speed, duplex, mode, i.AccessVlan, i.NativeVlan,
+		&i.AllowedVlans, &i.Poe, lag, &i.Description, i.AdminUp, i.MAC, i.VlanTag)
+	if msg != "" {
+		im.warn("Cổng %s: %s — bỏ qua", i.Name, msg)
+		return f, false
+	}
+	return f, true
+}
+
+// createInterface writes one port in its own savepoint (LAG members, or after a refused batch).
+func (im *ntbImporter) createInterface(device pgtype.UUID, i ntbInterface, f ifaceFields, sort *int32, byName map[string]pgtype.UUID) error {
+	if _, ok := byName[strings.ToLower(f.name)]; ok {
+		return nil
+	}
+	var created store.Interface
+	ok, err := im.savepoint(func(q store.Querier) error {
+		lagID := pgtype.UUID{}
+		if f.lag != nil {
+			lagID = pgUUID(*f.lag)
+		}
+		var err error
+		created, err = q.CreateInterface(im.ctx, store.CreateInterfaceParams{
+			OrganizationID: im.m.OrgID, DeviceID: device, Name: f.name, Kind: f.kind, Media: f.media, Speed: f.speed,
+			Duplex: f.duplex, Mode: f.mode, AccessVlan: f.accessVlan, NativeVlan: f.nativeVlan,
+			AllowedVlans: f.allowed, Poe: f.poe, LagID: lagID, Description: f.description, AdminUp: f.adminUp,
+			SortOrder: *sort + 1, Mac: f.mac, VlanTag: f.vlanTag,
+		})
+		if err != nil {
+			return err
+		}
+		return deviceAudit(im.ctx, q, im.m, device, "interface.create", nil, snapInterface(created))
+	})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		im.warn("Cổng %s không tạo được — bỏ qua", i.Name)
+		return nil
+	}
+	*sort++
+	im.ifaces[i.Ref] = created.ID
+	byName[strings.ToLower(i.Name)] = created.ID
 	return nil
 }
 

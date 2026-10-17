@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -47,6 +48,14 @@ func TestDashboard(t *testing.T) {
 	mustCreate(t, fx.A, devicePath(org, fw)+"/ips", map[string]any{"interfaceId": fwIf3, "address": "100.64.1.2/30", "role": "secondary"})
 	mustCreate(t, fx.A, subnetsPath(org), map[string]any{"cidr": "100.64.1.0/30", "siteId": bd})
 	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw1, ""), "b": devEnd(sw2, ""), "kind": "ethernet"})
+	// A port with two cables only comes from old data / outside writes (the API refuses it): insert the second directly.
+	p1 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw1)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical"}))
+	p2 := idOf(t, mustCreate(t, fx.A, devicePath(org, sw2)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical"}))
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw1, p1), "b": devEnd(sw2, p2), "kind": "ethernet"})
+	if _, err := fx.Pool.Exec(context.Background(), `INSERT INTO links (organization_id, a_kind, a_id, a_interface_id, b_kind, b_id, kind)
+		VALUES ($1, 'device', $2, $3, 'device', $4, 'ethernet')`, org, sw1, p1, fw); err != nil {
+		t.Fatalf("second cable: %v", err)
+	}
 	// B's inventory never shows in A's figures; A's dashboard path is closed to B.
 	unitB := mustCategory(t, fx.B, fx.OrgB, "FOOD")
 	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "HCM01", "name": "B", "categoryId": unitB}))
@@ -58,7 +67,7 @@ func TestDashboard(t *testing.T) {
 		t.Fatalf("dashboard: %d %v", status, d)
 	}
 	tot := d["totals"].(map[string]any)
-	want := map[string]float64{"devices": 4, "active": 3, "planned": 1, "retired": 1, "expiring": 1, "expired": 1, "subnetsFull": 1, "errors": 2, "warnings": 1}
+	want := map[string]float64{"devices": 4, "active": 3, "planned": 1, "retired": 1, "expiring": 1, "expired": 1, "subnetsFull": 1, "errors": 3, "warnings": 1}
 	for k, v := range want {
 		if tot[k] != v {
 			t.Errorf("totals.%s = %v, want %v (%v)", k, tot[k], v, tot)
@@ -88,8 +97,8 @@ func TestDashboard(t *testing.T) {
 	if p := kinds["subnet_full"]; p == nil || p["subject"] != "100.64.0.0/29" || p["detail"] != "6/6" || p["subnetId"] == nil {
 		t.Errorf("subnet out of addresses: %v", p)
 	}
-	if p := kinds["no_link"]; p == nil || p["count"] != 1.0 {
-		t.Errorf("active devices without a cable (FW1): %v", p)
+	if p := kinds["port_multi_link"]; p == nil || p["subject"] != "SW1 Gi1" || p["count"] != 2.0 {
+		t.Errorf("port with two cables: %v", p)
 	}
 	exp := d["expiring"].([]any)
 	if len(exp) != 2 || exp[0].(map[string]any)["kind"] != "warranty" || exp[0].(map[string]any)["days"] != 10.0 ||

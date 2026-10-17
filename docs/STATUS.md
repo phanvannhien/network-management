@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Tối ưu query trên dữ liệu lớn (tiếp P1-25)
+- Đã làm (đo trên DB riêng: ~10.000 thiết bị, ~300.000 cổng, ~19.000 dây, 6 tổ chức):
+  - **Sửa lỗi importer .ntb.json:** file không ghi `duplex`/`mode`/`media` (các trường này không bắt buộc trong schema) thì toàn bộ cổng bị bỏ qua,
+    kéo theo mất IP và mất cổng ở đầu dây. Nay trường bị thiếu sẽ nhận giá trị mặc định.
+    Lệnh seed giờ in cảnh báo của lần nhập, và test bắt buộc seed không có cảnh báo nào.
+  - **Nhập .ntb.json nhanh hơn 7 lần:** cổng của thiết bị mới trước đây ghi từng cổng (savepoint + truy vấn thứ tự + insert + audit, ~5 lượt gọi DB mỗi cổng).
+    Nay ghi bằng một lệnh COPY và một dòng audit cho mỗi thiết bị, giống cách "áp template".
+    Nhập 2.000 thiết bị / 60.000 cổng / 3.850 dây: 3 phút 45 giây → 32 giây.
+  - **Tắt JIT của PostgreSQL cho kết nối của ứng dụng:** query đếm facet của danh sách thiết bị bị Postgres JIT-compile mất ~110 ms, trong khi chạy thật chỉ 15 ms.
+    Lọc danh sách thiết bị theo chữ: 132 → 25 ms. Có test kiểm tra `SHOW jit = off`.
+  - **Query "cổng cắm nhiều dây" của dashboard:** nay đếm đầu dây trước rồi mới join sang cổng, không còn quét 60.000 cổng với điều kiện OR.
+    Dashboard: 42 → 23 ms. Test có thêm trường hợp này.
+- Thời gian API hiện tại (một tổ chức 2.000 thiết bị, trong DB 10.000 thiết bị): danh sách thiết bị 11 ms, lọc 25–30 ms, tìm kiếm 4–7 ms,
+  dashboard 23 ms, mở sơ đồ 2.000 thiết bị 99 ms (gồm tải 2.000 thiết bị và 3.850 dây), dây của một thiết bị 2 ms.
+- Còn dở / lỗi đã biết:
+  - Tìm theo chữ dùng `ILIKE '%…%'`, không dùng được index. Với 2.000 thiết bị mỗi tổ chức thì vẫn nhanh.
+    Nếu cần tới quy mô 50.000 thiết bị trong một tổ chức, đề xuất dùng `pg_trgm`; việc này cần ADR.
+  - Nhập Excel (P1-21) vẫn ghi từng cổng. Nên áp cùng cách COPY khi làm task kế tiếp liên quan.
+- Câu hỏi cho người dùng: không có.
+- Đề xuất quyết định cần chốt: có dùng `pg_trgm` cho tìm kiếm khi dữ liệu lớn không (chưa cần ngay).
+- Task tiếp theo đề xuất: P1-26 Gate MVP.
+
 ## 2026-10-17 — P1-25 Dữ liệu mẫu & benchmark
 - Đã làm:
   - **`make seed-demo OWNER=<email system admin>`** (lệnh `ntb seed demo`): tạo tổ chức "Tập đoàn Mẫu". Dữ liệu đi qua đúng các handler của API
