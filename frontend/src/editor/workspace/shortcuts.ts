@@ -15,6 +15,8 @@ export type ShortcutId =
   | 'pan'
   | 'multiSelect'
   | 'search'
+  | 'quickAdd'
+  | 'library'
   | 'help'
 
 export interface Shortcut {
@@ -38,6 +40,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'deselect', keys: ['Esc'] },
   { id: 'pan', keys: ['Space'] },
   { id: 'multiSelect', keys: ['Shift'] },
+  { id: 'quickAdd', keys: ['/'], aria: '/' },
+  { id: 'library', keys: ['B'], aria: 'B' },
   { id: 'search', keys: ['Ctrl', 'K'] },
   { id: 'help', keys: ['?'], aria: '?' },
 ]
@@ -46,10 +50,22 @@ export function shortcutOf(id: ShortcutId): Shortcut {
   return SHORTCUTS.find((s) => s.id === id)!
 }
 
-/** "Ctrl+Shift+Z" for tooltips. */
-export function keysLabel(id: ShortcutId): string {
-  return shortcutOf(id).keys.join('+')
+const IS_MAC =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+
+/** Keys as printed on this keyboard: Ctrl is ⌘ on macOS. */
+export function displayKeys(id: ShortcutId, mac = IS_MAC): string[] {
+  return shortcutOf(id).keys.map((k) => (mac && k === 'Ctrl' ? '⌘' : k))
 }
+
+/** "Ctrl+Shift+Z" (or "⌘+Shift+Z") for tooltips. */
+export function keysLabel(id: ShortcutId, mac = IS_MAC): string {
+  return displayKeys(id, mac).join('+')
+}
+
+/** Actions that change or select what is on the canvas: only when the canvas (or nothing) has the focus. */
+export const CANVAS_ONLY: ReadonlySet<ShortcutId> = new Set(['remove', 'selectAll', 'deselect'])
 
 /** Keys typed into a field belong to the field, not the canvas. */
 export function isTyping(target: EventTarget | null): boolean {
@@ -79,9 +95,12 @@ export function actionFor(
   if (e.shiftKey && (e.code === 'Digit1' || e.key === '1' || e.key === '!')) return 'fit'
   if (e.shiftKey && (e.code === 'Digit0' || e.key === '0' || e.key === ')')) return 'zoomReset'
   if (e.key === '?' || (e.shiftKey && e.code === 'Slash')) return 'help'
+  if (e.key === '/') return 'quickAdd'
+  if (e.key.toLowerCase() === 'b' && !e.shiftKey) return 'library'
   if (e.key === '+' || e.key === '=') return 'zoomIn'
   if (e.key === '-' || e.key === '_') return 'zoomOut'
-  if (e.key === 'Delete' || e.key === 'Backspace') return 'remove'
+  // Shift+Delete will delete from the inventory (P1-16, with confirmation): never a plain remove.
+  if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? null : 'remove'
   if (e.key === 'Escape') return 'deselect'
   return null
 }

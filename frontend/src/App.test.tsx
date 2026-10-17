@@ -2230,6 +2230,19 @@ describe('diagrams (P1-13)', () => {
     siteId: AGRI_SITE.id,
     siteCode: 'VPM-AGRI-BD01',
   }
+  const FGT = {
+    id: 'tpl-1',
+    name: 'FortiGate 100F',
+    type: 'firewall',
+    vendor: 'Fortinet',
+    model: 'FortiGate 100F',
+    partNumber: 'FG-100F',
+    uHeight: 1,
+    ports: [],
+    portCount: 22,
+    notes: '',
+    version: 1,
+  }
   const DETAIL = {
     diagram: DIAGRAM,
     view: {
@@ -2249,9 +2262,14 @@ describe('diagrams (P1-13)', () => {
       [`GET /api/orgs/${ORG_ID}/diagrams`]: () => json({ diagrams: [DIAGRAM] }),
       [`GET /api/orgs/${ORG_ID}/diagrams/dg-1`]: () => json(DETAIL),
       [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [FW, SW], total: 2, facets: {} }),
+      [`GET /api/orgs/${ORG_ID}/device-templates`]: () => json({ templates: [FGT] }),
       ...extra,
     })
-  beforeEach(() => setDraftStore(memoryDraftStore()))
+  beforeEach(() => {
+    setDraftStore(memoryDraftStore())
+    localStorage.removeItem('ntb-editor-prefs-v1')
+    localStorage.removeItem('ntb-viewport:dg-1')
+  })
 
   it('lists diagrams and creates one owned by the organization', async () => {
     const calls = fakeApi(
@@ -2280,8 +2298,7 @@ describe('diagrams (P1-13)', () => {
     })
   })
 
-  it('editor adds a device on the canvas, undoes / redoes, and saves view + version in one request', async () => {
-    localStorage.removeItem('ntb-editor-prefs-v1')
+  it('library places an inventory device on the canvas; undo / redo; Ctrl+S saves view + version', async () => {
     const calls = fakeApi(
       routes({
         [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () =>
@@ -2295,20 +2312,23 @@ describe('diagrams (P1-13)', () => {
     expect(await screen.findByRole('heading', { name: 'LAN Bình Định' })).toBeInTheDocument()
     // P1-14: the side menu folds while drawing; the canvas shows the drawn device.
     expect(screen.getByRole('button', { name: 'Mở rộng menu' })).toBeInTheDocument()
-    expect(within(screen.getByRole('application')).getByText('AGRI-BD-FW01')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Lưu/ })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm thiết bị từ kho' }))
-    const pick = await screen.findByLabelText('Thêm thiết bị từ kho…')
-    await waitFor(() => expect(pick).toContainHTML('AGRI-BD-SW01'))
-    // Already drawn devices are not offered again.
-    expect(within(pick).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument()
-    fireEvent.change(pick, { target: { value: 'dev-2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm' }))
     const canvas = screen.getByRole('application')
+    expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Lưu/ })).toBeDisabled()
+    // P1-15: the library is open; its inventory tab offers what is not drawn yet.
+    const library = screen.getByRole('complementary', { name: 'Thư viện' })
+    fireEvent.click(within(library).getByRole('tab', { name: /Trong kho/ }))
+    const place = await within(library).findByRole('button', { name: 'Đặt AGRI-BD-SW01 lên sơ đồ' })
+    expect(
+      within(library).queryByRole('button', { name: 'Đặt AGRI-BD-FW01 lên sơ đồ' }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(place)
     expect(await within(canvas).findByText('AGRI-BD-SW01')).toBeInTheDocument()
     expect(screen.getByText(/Có thay đổi chưa lưu/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Hoàn tác' }))
     await waitFor(() => expect(within(canvas).queryByText('AGRI-BD-SW01')).not.toBeInTheDocument())
+    // Back at the saved state: nothing to save.
+    expect(screen.getByRole('button', { name: /^Lưu/ })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
     const isSave = (r: Request) => r.url.endsWith('/save')
@@ -2320,8 +2340,79 @@ describe('diagrams (P1-13)', () => {
     expect(await screen.findByText(/Đã lưu/, { selector: 'p' })).toBeInTheDocument()
   })
 
+  it('a new device from a template gets the shared site and a suggested hostname, saved as a pending create', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const library = await screen.findByRole('complementary', { name: 'Thư viện' })
+    // Each type has a one-line description; templates come first.
+    expect(
+      within(library).getByText('Cấp nguồn qua dây mạng cho camera, AP, điện thoại IP'),
+    ).toBeInTheDocument()
+    fireEvent.change(within(library).getByLabelText('Tìm loại, model, hostname…'), {
+      target: { value: 'fortigate' },
+    })
+    fireEvent.click(await within(library).findByRole('button', { name: 'Thêm FortiGate 100F mới' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thiết bị mới' })
+    // The diagram shows devices of one site only: that site is offered.
+    await waitFor(() => expect(within(dialog).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
+    expect(within(dialog).getByLabelText(/^Template thiết bị|^Template/)).toHaveValue('tpl-1')
+    const host = within(dialog).getByLabelText(/^Hostname/)
+    await waitFor(() => expect(host).toHaveValue('AGRI-BD01-FW01'))
+    fireEvent.change(host, { target: { value: 'Tường lửa 2' } })
+    expect(within(dialog).getByText(/Chỉ dùng chữ A–Z không dấu/)).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Đặt lên sơ đồ' })).toBeDisabled()
+    fireEvent.change(host, { target: { value: 'AGRI-BD01-FW02' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Đặt lên sơ đồ' }))
+    const canvas = screen.getByRole('application')
+    expect(await within(canvas).findByText('AGRI-BD01-FW02')).toBeInTheDocument()
+    expect(within(canvas).getByText('chưa lưu')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.changes).toEqual([
+      {
+        op: 'createDevice',
+        tempId: expect.any(String),
+        device: {
+          hostname: 'AGRI-BD01-FW02',
+          type: 'firewall',
+          siteId: AGRI_SITE.id,
+          templateId: 'tpl-1',
+        },
+      },
+    ])
+  })
+
+  it('"/" quick add finds an inventory device; B hides the library; keys in the library do not touch the canvas', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    const library = screen.getByRole('complementary', { name: 'Thư viện' })
+    // Delete / select all pressed while the library has the focus are ignored.
+    const entry = within(library).getAllByRole('button', { name: /^Thêm .* mới$/ })[0]!
+    fireEvent.keyDown(entry, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(entry, { key: 'Delete' })
+    expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: '/' })
+    const quick = await screen.findByRole('dialog', { name: 'Thêm nhanh' })
+    fireEvent.click(await within(quick).findByText('AGRI-BD-SW01'))
+    expect(await within(canvas).findByText('AGRI-BD-SW01')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'b' })
+    expect(screen.queryByRole('complementary', { name: 'Thư viện' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thư viện' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
   it('canvas keys: select all + Delete removes from the diagram only; ? lists shortcuts; hints can be hidden', async () => {
-    localStorage.removeItem('ntb-editor-prefs-v1')
     const calls = fakeApi(routes())
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
     const canvas = await screen.findByRole('application')
@@ -2405,7 +2496,7 @@ describe('diagrams (P1-13)', () => {
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
     expect(await screen.findByText(/Chỉ xem/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Lưu/ })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Thêm thiết bị từ kho' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Thư viện' })).not.toBeInTheDocument()
     // Delete does nothing for a viewer.
     fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
     fireEvent.keyDown(window, { key: 'Delete' })

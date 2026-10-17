@@ -61,11 +61,18 @@ export function toFlowEdges(doc: DocState): Edge[] {
 export const MIN_ZOOM = 0.1
 export const MAX_ZOOM = 4
 
-/** Fit keeps the drawing clear of the floating toolbar on top. */
-export const FIT_OPTIONS = {
-  padding: { top: '72px', bottom: '32px', left: '32px', right: '32px' },
-  maxZoom: 1.5,
-} as const
+/** Fit keeps the drawing clear of the floating toolbar on top and of the library on the left when it is open. */
+export function fitOptions(libraryOpen: boolean) {
+  return {
+    padding: {
+      top: '72px',
+      bottom: '32px',
+      left: libraryOpen ? '312px' : '32px',
+      right: '32px',
+    },
+    maxZoom: 1.5,
+  } as const
+}
 
 export const GRID_SIZES = [10, 20, 40] as const
 export type GridSize = (typeof GRID_SIZES)[number]

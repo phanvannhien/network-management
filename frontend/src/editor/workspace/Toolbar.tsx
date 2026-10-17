@@ -2,6 +2,7 @@ import { useStore as useFlowStore } from '@xyflow/react'
 import {
   ArrowLeft,
   Keyboard,
+  LibraryBig,
   Lightbulb,
   Magnet,
   Map as MapIcon,
@@ -13,14 +14,12 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { NativeSelect } from '@/components/NativeSelect'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
 import type { SaveStatus } from '../doc/store'
 import { GRID_SIZES, type GridSize } from './flow'
 import type { EditorPrefs } from './prefs'
@@ -105,9 +104,7 @@ export interface ToolbarProps {
   onZoomReset: () => void
   onFit: () => void
   onHelp: () => void
-  /** Devices from the inventory not yet on the diagram. */
-  addable: { id: string; hostname: string }[]
-  onAdd: (deviceId: string) => void
+  onQuickAdd: () => void
 }
 
 /** Floating toolbar over the canvas (P1-14). */
@@ -154,7 +151,21 @@ export function Toolbar(p: ToolbarProps) {
       >
         <Redo2 aria-hidden />
       </ToolButton>
-      {p.canEdit && <AddFromInventory addable={p.addable} onAdd={p.onAdd} />}
+      {p.canEdit && (
+        <>
+          <ToolButton
+            label={t('library.title')}
+            shortcut="library"
+            onClick={() => p.onPrefs({ library: !p.prefs.library })}
+            pressed={p.prefs.library}
+          >
+            <LibraryBig aria-hidden />
+          </ToolButton>
+          <ToolButton label={t('library.quickTitle')} shortcut="quickAdd" onClick={p.onQuickAdd}>
+            <Plus aria-hidden />
+          </ToolButton>
+        </>
+      )}
       <Divider />
       <ToolButton label={t('editorCanvas.zoomOut')} shortcut="zoomOut" onClick={p.onZoomOut}>
         <ZoomOut aria-hidden />
@@ -232,65 +243,5 @@ export function Toolbar(p: ToolbarProps) {
         </Tip>
       )}
     </div>
-  )
-}
-
-/** Stop-gap until the library panel (P1-15): place an inventory device in the middle of the view. */
-function AddFromInventory({
-  addable,
-  onAdd,
-}: {
-  addable: { id: string; hostname: string }[]
-  onAdd: (deviceId: string) => void
-}) {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const [pick, setPick] = useState('')
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <Tip label={t('editorCanvas.addFromInventory')}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn('size-8', open && 'bg-muted')}
-              aria-label={t('editorCanvas.addFromInventory')}
-            />
-          }
-        >
-          <Plus aria-hidden />
-        </PopoverTrigger>
-      </Tip>
-      <PopoverContent align="start" className="w-72 space-y-2 p-3">
-        <form
-          className="space-y-2"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!pick) return
-            onAdd(pick)
-            setPick('')
-            setOpen(false)
-          }}
-        >
-          <NativeSelect
-            aria-label={t('editorDoc.addFromInventory')}
-            value={pick}
-            onChange={(e) => setPick(e.target.value)}
-          >
-            <option value="">{t('editorDoc.addFromInventory')}</option>
-            {addable.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.hostname}
-              </option>
-            ))}
-          </NativeSelect>
-          <p className="text-xs text-muted-foreground">{t('editorCanvas.addHint')}</p>
-          <Button type="submit" size="sm" disabled={!pick}>
-            <Plus aria-hidden /> {t('editorDoc.add')}
-          </Button>
-        </form>
-      </PopoverContent>
-    </Popover>
   )
 }

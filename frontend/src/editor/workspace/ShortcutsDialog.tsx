@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { SHORTCUTS } from './shortcuts'
+import { displayKeys, SHORTCUTS } from './shortcuts'
 
 /** The "?" sheet: every editor shortcut with what it does (SRS §6.4). */
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
@@ -15,7 +15,7 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
           {SHORTCUTS.map((s) => (
             <div key={s.id} className="contents">
               <dt className="flex gap-1">
-                {s.keys.map((k) => (
+                {displayKeys(s.id).map((k) => (
                   <kbd
                     key={k}
                     className="rounded-sm border border-border bg-muted px-1.5 font-mono text-[11px]"

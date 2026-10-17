@@ -4134,7 +4134,7 @@ components:
         clusterId:
           type: [string, 'null']
           format: uuid
-          description: Cluster of the device (same site and unit, ADR-027)
+          description: Cluster of the device (same site, ADR-027)
         clusterRole:
           oneOf:
             - $ref: '#/components/schemas/ClusterRole'
@@ -4269,7 +4269,7 @@ components:
         clusterId:
           type: [string, 'null']
           format: uuid
-          description: Cluster of the device (same site and unit, ADR-027)
+          description: Cluster of the device (same site, ADR-027)
         clusterRole:
           oneOf:
             - $ref: '#/components/schemas/ClusterRole'

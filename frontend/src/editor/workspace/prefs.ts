@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { GRID_SIZES, type GridSize } from './flow'
 
-// Canvas preferences kept per browser (like the form-guide toggle): grid, snapping, minimap, first-run tips.
+// Canvas preferences kept per browser (like the form-guide toggle): grid, snapping, minimap, first-run tips, library.
 
 export interface EditorPrefs {
   snap: boolean
   grid: GridSize
   minimap: boolean
   tips: boolean
+  library: boolean
 }
 
 const KEY = 'ntb-editor-prefs-v1'
-const DEFAULTS: EditorPrefs = { snap: true, grid: 20, minimap: true, tips: true }
+const DEFAULTS: EditorPrefs = { snap: true, grid: 20, minimap: true, tips: true, library: true }
 
 export function readPrefs(): EditorPrefs {
   try {
@@ -21,6 +22,7 @@ export function readPrefs(): EditorPrefs {
       grid: GRID_SIZES.includes(raw.grid as GridSize) ? (raw.grid as GridSize) : DEFAULTS.grid,
       minimap: typeof raw.minimap === 'boolean' ? raw.minimap : DEFAULTS.minimap,
       tips: typeof raw.tips === 'boolean' ? raw.tips : DEFAULTS.tips,
+      library: typeof raw.library === 'boolean' ? raw.library : DEFAULTS.library,
     }
   } catch {
     return DEFAULTS

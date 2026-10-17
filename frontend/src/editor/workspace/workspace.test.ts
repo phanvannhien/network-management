@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createLink, moveNodes } from '../doc/commands'
+import { addNode, createLink, moveNodes, removeNodes } from '../doc/commands'
+import { defaultSiteFor } from '../library/placement'
 import { createDocStore } from '../doc/store'
 import type { DiagramDetail } from '../doc/types'
 import { toFlowEdges, toFlowNodes } from './flow'
-import { actionFor, isTyping, SHORTCUTS } from './shortcuts'
+import { actionFor, isTyping, keysLabel, SHORTCUTS } from './shortcuts'
 
 const SITE = '66666666-6666-4666-8666-666666666666'
 const FW = 'aaaaaaaa-0000-4000-8000-000000000001'
@@ -134,13 +135,59 @@ describe('editor shortcuts (SRS §6.4)', () => {
     expect(actionFor(key('Delete'))).toBe('remove')
     expect(actionFor(key('?', { shiftKey: true }))).toBe('help')
     expect(actionFor(key('/', { shiftKey: true, code: 'Slash' }))).toBe('help')
+    expect(actionFor(key('Backspace'))).toBe('remove')
+    expect(actionFor(key('Delete', { shiftKey: true }))).toBeNull()
+    expect(actionFor(key('/'))).toBe('quickAdd')
+    expect(actionFor(key('b'))).toBe('library')
     expect(actionFor(key('1'))).toBeNull()
     expect(actionFor(key('s', { ctrlKey: true, altKey: true }))).toBeNull()
+  })
+  it('shows ⌘ instead of Ctrl on macOS', () => {
+    expect(keysLabel('redo', true)).toBe('⌘+Shift+Z')
+    expect(keysLabel('redo', false)).toBe('Ctrl+Shift+Z')
   })
   it('every shortcut has keys; typing in a field is not a shortcut', () => {
     expect(SHORTCUTS.every((s) => s.keys.length > 0)).toBe(true)
     const input = document.createElement('input')
     expect(isTyping(input)).toBe(true)
     expect(isTyping(document.createElement('div'))).toBe(false)
+  })
+})
+
+describe('P1-14 review fixes', () => {
+  it('undoing back to the saved document is clean again; selection drops removed nodes', () => {
+    const s = loaded()
+    s.getState().dispatch(
+      addNode('device', AP, 400, 0, {
+        id: 'n-ap',
+        device: { id: AP, hostname: 'AP01', type: 'access_point', siteId: SITE },
+      }),
+    )
+    s.getState().setSelection(['n-ap', 'n-fw'])
+    expect(s.getState().status).toBe('dirty')
+    s.getState().undo()
+    expect(s.getState().status).toBe('clean')
+    expect(s.getState().selection).toEqual(['n-fw'])
+    s.getState().redo()
+    expect(s.getState().status).toBe('dirty')
+  })
+
+  it('Delete keeps locked nodes; a move to the same place is not an undo step', () => {
+    const s = loaded()
+    s.getState().dispatch(removeNodes(['n-sw']))
+    expect(s.getState().past).toHaveLength(0)
+    s.getState().dispatch(moveNodes([{ id: 'n-fw', x: 0, y: 0 }]))
+    expect(s.getState().past).toHaveLength(0)
+  })
+
+  it('offers the one site the diagram shows, else the last used one', () => {
+    const doc = loaded().getState().doc!
+    expect(defaultSiteFor(doc, null)).toBe(SITE)
+    const mixed = {
+      ...doc,
+      devices: { ...doc.devices, [SW]: { ...doc.devices[SW]!, siteId: 'other-site' } },
+    }
+    expect(defaultSiteFor(mixed, null)).toBeNull()
+    expect(defaultSiteFor(mixed, 'last')).toBe('last')
   })
 })

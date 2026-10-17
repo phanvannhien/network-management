@@ -11,17 +11,21 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
-import { useDeviceList } from '@/modules/inventory/devices'
 import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
-import { addNode, removeNodes } from './doc/commands'
+import { addNode, createDevice, removeNodes } from './doc/commands'
 import { draftStore, type Draft } from './doc/drafts'
 import { createDocStore, type DocStoreApi } from './doc/store'
 import { changesOf } from './doc/types'
+import type { DeviceType, LibraryItem } from './library/items'
+import { LibraryPanel } from './library/LibraryPanel'
+import { defaultSiteFor } from './library/placement'
+import { NewDeviceDialog, type NewDeviceInput } from './library/NewDeviceDialog'
+import { QuickAdd } from './library/QuickAdd'
 import { Canvas } from './workspace/Canvas'
-import { FIT_OPTIONS } from './workspace/flow'
+import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { useEditorPrefs } from './workspace/prefs'
-import { actionFor, isTyping } from './workspace/shortcuts'
+import { actionFor, CANVAS_ONLY, isTyping } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
 import { Toolbar } from './workspace/Toolbar'
@@ -41,6 +45,7 @@ export function DiagramEditorPage() {
   const meta = useStore(store, (s) => s.meta)
   const doc = useStore(store, (s) => s.doc)
   const status = useStore(store, (s) => s.status)
+  const loadId = useStore(store, (s) => s.loadId)
   const { save } = useDiagramMutations(orgId)
   const [offer, setOffer] = useState<Draft | null>(null)
   const loadedFor = useRef<string | null>(null)
@@ -62,6 +67,7 @@ export function DiagramEditorPage() {
   // Unsent work goes to IndexedDB shortly after each change.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
+    let pending: Draft | null = null
     const unsub = store.subscribe((s, prev) => {
       if (s.doc === prev.doc || s.status === 'clean' || !s.doc || !s.meta) return
       clearTimeout(timer)
@@ -71,10 +77,16 @@ export function DiagramEditorPage() {
         doc: s.doc,
         savedAt: new Date().toISOString(),
       }
-      timer = setTimeout(() => void draftStore().put(draft), DRAFT_DELAY_MS)
+      pending = draft
+      timer = setTimeout(() => {
+        pending = null
+        void draftStore().put(draft)
+      }, DRAFT_DELAY_MS)
     })
     return () => {
+      // Leaving the editor right after a change (Back, a menu link) must not lose it: write the draft now.
       clearTimeout(timer)
+      if (pending) void draftStore().put(pending)
       unsub()
     }
   }, [store, diagramId])
@@ -131,12 +143,14 @@ export function DiagramEditorPage() {
       <ReactFlowProvider>
         <div className="relative h-full min-h-96 overflow-hidden">
           <Workspace
+            key={loadId}
             orgId={orgId}
+            diagramId={diagramId}
             store={store}
             canEdit={canEdit}
             onSave={() => saveRef.current()}
           />
-          <div className="absolute top-16 left-3 z-10 w-96 max-w-[calc(100%-1.5rem)] space-y-2">
+          <div className="absolute top-16 right-3 z-20 w-96 max-w-[calc(100%-1.5rem)] space-y-2">
             {offer && (
               <Alert className="shadow-md">
                 <AlertTitle>
@@ -196,14 +210,26 @@ export function DiagramEditorPage() {
 
 const ZOOM_MS = 150
 
-/** Canvas, toolbar, keys and hints; lives inside the React Flow provider so it can drive the viewport. */
+/** Size of a device node on the canvas, to place it centred on a point. */
+const NODE_W = 144
+const NODE_H = 80
+
+interface PendingNew {
+  type: DeviceType
+  templateId: string | null
+  at: { x: number; y: number }
+}
+
+/** Canvas, toolbar, library, keys and hints; lives inside the React Flow provider so it can drive the viewport. */
 function Workspace({
   orgId,
+  diagramId,
   store,
   canEdit,
   onSave,
 }: {
   orgId: string
+  diagramId: string
   store: DocStoreApi
   canEdit: boolean
   onSave: () => void
@@ -219,42 +245,81 @@ function Workspace({
   const height = useFlowStore((s) => s.height)
   const [prefs, setPrefs] = useEditorPrefs()
   const [help, setHelp] = useState(false)
-  const devices = useDeviceList(orgId, {
-    q: '',
-    facets: {},
-    categoryId: null,
-    sort: { id: 'hostname', desc: false },
-    pageIndex: 0,
-    pageSize: 200,
-  })
+  const [quick, setQuick] = useState(false)
+  const [creating, setCreating] = useState<PendingNew | null>(null)
+  const [lastSite, setLastSite] = useState<string | null>(null)
   const onView = useMemo(() => new Set(doc.view.nodes.map((n) => n.refId)), [doc.view.nodes])
-  const addable = (devices.data?.devices ?? []).filter((d) => !onView.has(d.id))
+  const hostnames = useMemo(
+    () => new Set(Object.values(doc.devices).map((d) => d.hostname)),
+    [doc.devices],
+  )
+  const libraryOpen = canEdit && prefs.library
 
-  const fit = () => void flow.fitView({ ...FIT_OPTIONS, duration: ZOOM_MS })
-  const add = (deviceId: string) => {
-    const d = devices.data?.devices.find((x) => x.id === deviceId)
-    if (!d) return
-    // Middle of what is on screen, nudged so repeated adds do not stack exactly; on the grid when snapping.
-    const vp = flow.getViewport()
+  const fit = () => void flow.fitView({ ...fitOptions(libraryOpen), duration: ZOOM_MS })
+  /** Top-left for a node centred on `at`, on the grid when snapping. */
+  const place = (at: { x: number; y: number }) => {
     const step = prefs.snap ? prefs.grid : 1
-    const nudge = (doc.view.nodes.length % 5) * 2 * prefs.grid
     const snap = (v: number) => Math.round(v / step) * step
-    const x = snap((width / 2 - vp.x) / vp.zoom - 72 + nudge)
-    const y = snap((height / 2 - vp.y) / vp.zoom - 40 + nudge)
+    return { x: snap(at.x - NODE_W / 2), y: snap(at.y - NODE_H / 2) }
+  }
+  /** Middle of the view, nudged so repeated adds do not stack exactly. */
+  const centre = () => {
+    const vp = flow.getViewport()
+    const nudge = (doc.view.nodes.length % 5) * 2 * prefs.grid
+    return {
+      x: (width / 2 - vp.x) / vp.zoom + nudge,
+      y: (height / 2 - vp.y) / vp.zoom + nudge,
+    }
+  }
+  const pick = (item: LibraryItem, at = centre()) => {
+    if (!canEdit) return
+    if (item.kind === 'device') {
+      const { x, y } = place(at)
+      store.getState().dispatch(addNode('device', item.device.id, x, y, { device: item.device }))
+      return
+    }
+    setCreating({
+      type: item.type,
+      templateId: item.kind === 'template' ? item.templateId : null,
+      at,
+    })
+  }
+  const create = (input: NewDeviceInput) => {
+    if (!creating) return
+    const { x, y } = place(creating.at)
     store.getState().dispatch(
-      addNode('device', d.id, x, y, {
-        device: { id: d.id, hostname: d.hostname, type: d.type, siteId: d.siteId },
-      }),
+      createDevice(
+        {
+          hostname: input.hostname,
+          type: input.type,
+          siteId: input.siteId,
+          templateId: input.templateId,
+        },
+        x,
+        y,
+      ),
     )
+    setLastSite(input.siteId)
+    setCreating(null)
   }
 
+  const root = useRef<HTMLDivElement>(null)
   const run = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
     run.current = (e: KeyboardEvent) => {
       const action = actionFor(e)
       if (!action) return
-      // Save works from anywhere; the rest belongs to the canvas, not to a field or a dialog.
-      if (action !== 'save' && isTyping(e.target)) return
+      const target = e.target instanceof Element ? e.target : null
+      // Save works from anywhere; the rest only from the editor (not the app menu, a field or a dialog), and
+      // Delete / select all only when the canvas itself has the focus.
+      if (action !== 'save') {
+        if (isTyping(target)) return
+        const inEditor = !target || target === document.body || root.current?.contains(target)
+        if (!inEditor) return
+        const onCanvas =
+          !target || target === document.body || target.closest('.react-flow') !== null
+        if (CANVAS_ONLY.has(action) && !onCanvas) return
+      }
       const s = store.getState()
       switch (action) {
         case 'save':
@@ -287,7 +352,14 @@ function Workspace({
         case 'remove':
           if (!canEdit || s.selection.length === 0) return
           s.dispatch(removeNodes(s.selection))
-          s.setSelection([])
+          break
+        case 'quickAdd':
+          if (!canEdit) return
+          setQuick(true)
+          break
+        case 'library':
+          if (!canEdit) return
+          setPrefs({ library: !prefs.library })
           break
         case 'help':
           setHelp(true)
@@ -305,8 +377,14 @@ function Workspace({
   }, [])
 
   return (
-    <>
-      <Canvas canEdit={canEdit} prefs={prefs} />
+    <div ref={root} className="contents">
+      <Canvas
+        diagramId={diagramId}
+        canEdit={canEdit}
+        prefs={prefs}
+        libraryOpen={libraryOpen}
+        onDropItem={pick}
+      />
       <Toolbar
         orgId={orgId}
         name={meta.name}
@@ -326,9 +404,16 @@ function Workspace({
         onZoomReset={() => void flow.zoomTo(1, { duration: ZOOM_MS })}
         onFit={fit}
         onHelp={() => setHelp(true)}
-        addable={addable}
-        onAdd={add}
+        onQuickAdd={() => setQuick(true)}
       />
+      {libraryOpen && (
+        <LibraryPanel
+          orgId={orgId}
+          onView={onView}
+          onPick={(item) => pick(item)}
+          onClose={() => setPrefs({ library: false })}
+        />
+      )}
       {doc.view.nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <p className="max-w-sm text-center text-muted-foreground">
@@ -338,6 +423,25 @@ function Workspace({
       )}
       {prefs.tips && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
-    </>
+      {quick && (
+        <QuickAdd
+          orgId={orgId}
+          onView={onView}
+          onPick={(item) => pick(item)}
+          onClose={() => setQuick(false)}
+        />
+      )}
+      {creating && (
+        <NewDeviceDialog
+          orgId={orgId}
+          type={creating.type}
+          templateId={creating.templateId}
+          defaultSiteId={defaultSiteFor(doc, lastSite)}
+          takenHostnames={hostnames}
+          onCreate={create}
+          onClose={() => setCreating(null)}
+        />
+      )}
+    </div>
   )
 }

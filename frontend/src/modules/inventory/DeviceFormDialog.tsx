@@ -303,7 +303,7 @@ export function DeviceFormDialog({
                   onChange={(e) => setF({ ...f, type: e.target.value as DeviceType })}
                 >
                   {DEVICE_TYPE_GROUPS.map((g) => (
-                    <optgroup key={g.group} label={t(`devices.typeGroups.${g.group as 'other'}`)}>
+                    <optgroup key={g.group} label={t(`devices.typeGroups.${g.group}`)}>
                       {g.types.map((ty) => (
                         <option key={ty} value={ty}>
                           {t(`devices.types.${ty}`)}

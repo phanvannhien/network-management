@@ -9,7 +9,7 @@ export function Tips({ onHide }: { onHide: () => void }) {
   return (
     <section
       aria-labelledby="editor-tips"
-      className="absolute bottom-3 left-3 z-10 w-80 space-y-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-md"
+      className="absolute bottom-3 left-1/2 z-10 w-80 -translate-x-1/2 space-y-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-md"
     >
       <div className="flex items-center gap-2">
         <Lightbulb aria-hidden className="size-4 text-primary" />

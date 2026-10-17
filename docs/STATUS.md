@@ -5,6 +5,43 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-15 Thư viện & thêm nhanh (+ sửa lỗi P1-14 từ rà soát)
+- Đã làm:
+  - **Thư viện nổi** bên trái màn vẽ (phím B, nút trên toolbar): tìm kiếm không dấu; tab "Thêm mới" = template của tổ chức +
+    34 loại thiết bị chia 7 nhóm (Internet & WAN, Switch & Wi-Fi, Bảo mật, Máy chủ, Người dùng & văn phòng, Camera/tòa nhà/IoT,
+    Nguồn điện) — mỗi loại có mô tả 1 dòng cho người không chuyên; tab "Trong kho" = thiết bị chưa có trên sơ đồ (tìm trên
+    server). Kéo thả vào canvas (đặt đúng chỗ thả) hoặc bấm (đặt giữa màn hình).
+  - **Thêm nhanh `/`**: tìm thiết bị trong kho → template → loại; Enter để đặt.
+  - **Thiết bị mới**: dialog chỉ hỏi loại, template (tùy chọn), site, hostname; tạo như thay đổi chờ lưu (command, hoàn tác
+    được); khi lưu backend điền hãng/model và **sinh cổng theo template** (đã kiểm tra thật: FortiGate 100F → 18 cổng).
+    Site mặc định: site duy nhất của các thiết bị trên sơ đồ, nếu không thì site vừa dùng, nếu không thì bắt chọn (không tự lấy
+    site đầu danh sách). Hostname gợi ý `<mã site bỏ mã tổ chức>-<TIỀN TỐ><NN>` (vd `AGRI-BD01-FW01`), số = lớn nhất đang
+    dùng + 1 (tra cả kho); kiểm tra chữ/số/“-”, ≤ 63; cảnh báo > 15 ký tự với máy chủ/PC (Windows cắt tên).
+  - Nhóm loại thiết bị và mô tả dùng chung cho form thiết bị, trang template và thư viện (`DEVICE_TYPE_GROUPS`, `typeInfo`).
+    Nhãn "ONT/OLT" → "ONT (quang nhà mạng)"; hướng dẫn hostname bỏ chữ "đối tác"; glossary cập nhật Hostname, ONT/Modem.
+  - **Sửa lỗi P1-14** (agent rà soát chạy song song): nháp ghi ngay khi rời màn vẽ (trước đây rời trong 0,6 s là mất);
+    phím Delete / Ctrl+A chỉ tác động khi canvas có focus (không còn xóa node khi đang ở thư viện/menu); Delete bỏ qua node đã
+    khóa, Shift+Delete không còn là "gỡ" (dành cho xóa khỏi kho ở P1-16); trackpad: cuộn = di chuyển, Ctrl/chụm = phóng;
+    hoàn tác về đúng bản đã lưu → "Đã lưu"; vùng chọn bỏ node không còn; vị trí nhìn nhớ theo từng người (trình duyệt) và
+    reset khi tải lại sau xung đột; viền nét đứt trả lại cho thiết bị không quản lý (thiết bị chưa lưu dùng nhãn "chưa lưu");
+    kéo nhiều node không quét danh sách mỗi node; tooltip hiện ⌘ trên macOS; "vừa màn hình" chừa chỗ thư viện.
+- Test / cách kiểm tra: `make check` pass (vitest 210). Chạy thật trên môi trường riêng (Chromium + API + Postgres): kéo template
+  vào canvas → chọn site → hostname gợi ý → Ctrl+S → API trả thiết bị có model + 18 cổng; axe WCAG A/AA không lỗi (màn vẽ và
+  dialog); ảnh sáng/tối.
+- Còn dở / lỗi đã biết: chưa chặn điều hướng trong app khi có thay đổi (router hiện không phải data router nên không dùng
+  `useBlocker`; đã bù bằng ghi nháp ngay). Cổng theo template chỉ có sau khi lưu — P1-17 (chọn cổng khi nối dây) cần sinh
+  cổng ngay lúc tạo. Nút chính ở trạng thái tắt khó phân biệt ở nền tối (component Button chung). Prototype `/editor` vẫn còn.
+- Câu hỏi cho người dùng: xem "Đề xuất" dưới — các điểm mô hình dữ liệu, chưa làm khi chưa chốt.
+- Đề xuất quyết định cần chốt (từ rà soát nghiệp vụ):
+  1. Loại thiết bị thêm: `wireless_bridge` (cầu Wi-Fi điểm–điểm giữa các nhà xưởng), `console_server`, nút "Internet/nhà mạng"
+     (đám mây ISP — hình vẽ hay dùng nhất), tùy chọn `olt`.
+  2. Loại dây: DAC là cáp **đồng** (đang xếp vào Fiber), LAG là bó dây vật lý (không phải logical), MPLS là dịch vụ WAN (thuộc
+     tính đường truyền hơn là kiểu nét); thiếu dây nguồn (UPS/PDU → thiết bị), stacking/HA heartbeat, DSL/coax, 4G/5G.
+     Fiber nên ghi đầu nối (LC/SC) và SM/MM để bắt lỗi lệch.
+  3. Quy ước hostname thành cài đặt của tổ chức (mẫu + tiền tố sửa được), hiện đang cố định trong code.
+  4. Xóa khỏi kho: thay Shift+Delete bằng lệnh trong menu có xác nhận gõ tên (an toàn hơn, Mac không có phím Delete thật).
+- Task tiếp theo đề xuất: P1-16 Thao tác chọn & sửa (sau khi chốt mục 4), rồi P1-17 Nối dây (sau khi chốt mục 2).
+
 ## 2026-10-17 — P1-14 Canvas & toolbar nổi
 - Đã làm:
   - **Màn vẽ** (`/o/:orgId/diagrams/:id`) thay danh sách tạm của P1-13 bằng canvas React Flow chiếm toàn bộ vùng nội dung,

@@ -68,9 +68,11 @@ export function moveNodes(
     label: 'moveNodes',
     mergeKey,
     apply(d) {
+      // Index once: a drag of many selected nodes must not scan the view per node.
+      const byId = new Map(d.view.nodes.map((n) => [n.id, n]))
       for (const m of moves) {
-        const n = d.view.nodes.find((x) => x.id === m.id)
-        if (n && !n.locked) {
+        const n = byId.get(m.id)
+        if (n && !n.locked && (n.x !== m.x || n.y !== m.y)) {
           n.x = m.x
           n.y = m.y
         }
@@ -79,12 +81,14 @@ export function moveNodes(
   }
 }
 
-/** Remove nodes from the diagram only (the inventory keeps them, SRS §6.4 Delete). */
+/** Remove nodes from the diagram only (the inventory keeps them, SRS §6.4 Delete); locked nodes stay. */
 export function removeNodes(nodeIds: string[]): DocCommand {
   return {
     label: 'removeNodes',
     apply(d) {
       const drop = new Set(nodeIds)
+      for (const n of d.view.nodes) if (n.locked) drop.delete(n.id)
+      if (drop.size === 0) return
       d.view.nodes = d.view.nodes.filter((n) => !drop.has(n.id))
       pruneEdges(d)
     },

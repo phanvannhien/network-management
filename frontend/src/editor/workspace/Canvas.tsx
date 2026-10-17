@@ -4,6 +4,7 @@ import {
   MiniMap,
   ReactFlow,
   SelectionMode,
+  useReactFlow,
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
@@ -11,22 +12,51 @@ import '@xyflow/react/dist/style.css'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { moveNodes } from '../doc/commands'
+import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { useDoc, useDocStoreApi } from './context'
-import { FIT_OPTIONS, MAX_ZOOM, MIN_ZOOM, toFlowEdges, toFlowNodes, type RefData } from './flow'
-import { NODE_TYPES } from './nodes'
+import { fitOptions, MAX_ZOOM, MIN_ZOOM, toFlowEdges, toFlowNodes, type RefData } from './flow'
+import { NODE_TYPES } from './nodeTypes'
 import type { EditorPrefs } from './prefs'
+
+const VIEWPORT_KEY = (diagramId: string) => `ntb-viewport:${diagramId}`
+
+/** Where this user last looked at this diagram (per browser), else the view saved with the diagram. */
+function startViewport(diagramId: string, saved: Viewport | null): Viewport | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEWPORT_KEY(diagramId)) ?? 'null') as Viewport | null
+    if (v && [v.x, v.y, v.zoom].every(Number.isFinite)) return v
+  } catch {
+    // ignore broken entries
+  }
+  return saved
+}
 
 /**
  * The diagram canvas (P1-14, SRS §6.1): React Flow over the document store. Dragging sends move commands (one undo
- * step per drag); selection and viewport are editor state, not history. Panning: Space + drag or the middle button;
- * dragging on the background draws a selection box.
+ * step per drag); selection and viewport are editor state, not history. Scrolling (two fingers on a trackpad) moves
+ * the view, Ctrl + scroll or pinching zooms; Space + drag or the middle button pans too; dragging on the background
+ * draws a selection box. Library items dropped here are placed where they land (P1-15).
  */
-export function Canvas({ canEdit, prefs }: { canEdit: boolean; prefs: EditorPrefs }) {
+export function Canvas({
+  diagramId,
+  canEdit,
+  prefs,
+  libraryOpen,
+  onDropItem,
+}: {
+  diagramId: string
+  canEdit: boolean
+  prefs: EditorPrefs
+  /** The library covers the left of the canvas. */
+  libraryOpen: boolean
+  onDropItem: (item: LibraryItem, at: { x: number; y: number }) => void
+}) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
+  const flow = useReactFlow()
   const doc = useDoc((s) => s.doc)
   const selection = useDoc((s) => s.selection)
-  const [initialViewport] = useState(() => store.getState().viewport)
+  const [initialViewport] = useState(() => startViewport(diagramId, store.getState().viewport))
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
   const [dataCache] = useState(() => new Map<string, RefData>())
   const dragKey = useRef<string | null>(null)
@@ -34,7 +64,8 @@ export function Canvas({ canEdit, prefs }: { canEdit: boolean; prefs: EditorPref
   const nodes = useMemo(() => {
     if (!doc) return []
     const selected = new Set(selection)
-    return toFlowNodes(doc, selected).map((n) => {
+    const live = new Set<string>()
+    const out = toFlowNodes(doc, selected).map((n) => {
       // Stable data objects keep memoized nodes from re-rendering when another node moves.
       const cached = dataCache.get(n.id)
       const data =
@@ -42,8 +73,12 @@ export function Canvas({ canEdit, prefs }: { canEdit: boolean; prefs: EditorPref
           ? cached
           : n.data
       dataCache.set(n.id, data)
+      live.add(n.id)
       return { ...n, data, draggable: canEdit && n.draggable, measured: measured[n.id] }
     })
+    // Only nodes still on the view are kept.
+    for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
+    return out
   }, [doc, selection, measured, canEdit, dataCache])
   const edges = useMemo(() => (doc ? toFlowEdges(doc) : []), [doc])
 
@@ -104,10 +139,29 @@ export function Canvas({ canEdit, prefs }: { canEdit: boolean; prefs: EditorPref
       onNodeDragStop={() => {
         dragKey.current = null
       }}
-      onMoveEnd={(_e, vp: Viewport) => store.getState().setViewport(vp)}
+      onMoveEnd={(_e, vp: Viewport) => {
+        store.getState().setViewport(vp)
+        try {
+          localStorage.setItem(VIEWPORT_KEY(diagramId), JSON.stringify(vp))
+        } catch {
+          // storage full or blocked
+        }
+      }}
+      onDragOver={(e) => {
+        if (!canEdit || !e.dataTransfer.types.includes(LIBRARY_MIME)) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'copy'
+      }}
+      onDrop={(e) => {
+        if (!canEdit) return
+        const item = decodeItem(e.dataTransfer.getData(LIBRARY_MIME))
+        if (!item) return
+        e.preventDefault()
+        onDropItem(item, flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }))
+      }}
       defaultViewport={initialViewport ?? undefined}
       fitView={!initialViewport}
-      fitViewOptions={FIT_OPTIONS}
+      fitViewOptions={fitOptions(libraryOpen)}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       snapToGrid={prefs.snap}
@@ -118,6 +172,8 @@ export function Canvas({ canEdit, prefs }: { canEdit: boolean; prefs: EditorPref
       selectionOnDrag
       selectionMode={SelectionMode.Partial}
       panOnDrag={[1]}
+      panOnScroll
+      zoomOnPinch
       panActivationKeyCode="Space"
       multiSelectionKeyCode="Shift"
       selectionKeyCode={null}

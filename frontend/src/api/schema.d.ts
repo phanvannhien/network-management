@@ -1939,7 +1939,7 @@ export interface components {
             pollAddress?: string | null;
             /**
              * Format: uuid
-             * @description Cluster of the device (same site and unit, ADR-027)
+             * @description Cluster of the device (same site, ADR-027)
              */
             clusterId?: string | null;
             clusterRole?: components["schemas"]["ClusterRole"] | null;
@@ -2018,7 +2018,7 @@ export interface components {
             pollAddress: string | null;
             /**
              * Format: uuid
-             * @description Cluster of the device (same site and unit, ADR-027)
+             * @description Cluster of the device (same site, ADR-027)
              */
             clusterId: string | null;
             clusterRole: components["schemas"]["ClusterRole"] | null;

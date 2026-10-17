@@ -34,12 +34,12 @@ export const GLOSSARY: GlossaryEntry[] = [
     'device',
     ['Hostname', 'Hostname'],
     [
-      'Tên của thiết bị trên mạng, do kỹ sư đặt; nên theo quy ước để nhìn tên biết thiết bị ở đâu, làm gì.',
-      'The device name on the network, set by the engineers; a naming convention tells where it is and what it does.',
+      'Tên của thiết bị trên mạng, do kỹ sư đặt; nên theo quy ước để nhìn tên biết thiết bị ở đâu, làm gì. Chỉ dùng chữ không dấu, số và "-", tối đa 63 ký tự; máy chủ/PC chạy Windows chỉ giữ 15 ký tự đầu.',
+      'The device name on the network, set by the engineers; a naming convention tells where it is and what it does. Unaccented letters, digits and "-" only, at most 63 characters; Windows servers/PCs keep only the first 15.',
     ],
     [
-      'AGRI-BD-FW01 = firewall số 1 của AGRI tại Bình Định.',
-      "AGRI-BD-FW01 = AGRI's firewall 1 in Binh Dinh.",
+      'AGRI-BD01-FW01 = firewall số 1 tại site AGRI-BD01 (mã site bỏ mã tổ chức – loại – số). Khi thêm thiết bị trên sơ đồ, hệ thống gợi ý tên theo quy ước này.',
+      'AGRI-BD01-FW01 = firewall 1 at site AGRI-BD01 (site code without the organization code – type – number). The editor suggests names this way.',
     ],
   ),
   e(

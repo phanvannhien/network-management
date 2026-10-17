@@ -34,6 +34,10 @@ export interface DocStore {
   viewport: DiagramViewport | null
   /** Selected view node ids: editor state, not part of the document or its history. */
   selection: string[]
+  /** The document as last loaded or saved: undoing back to it is "clean" again. */
+  savedDoc: DocState | null
+  /** Bumped by every load, so views can reset (e.g. the viewport after reloading on a conflict). */
+  loadId: number
   setViewport(viewport: DiagramViewport): void
   setSelection(ids: string[]): void
   load(detail: DiagramDetail): void
@@ -47,6 +51,20 @@ export interface DocStore {
   saved(detail: DiagramDetail): void
 }
 
+/** Selected ids that still exist after a change. */
+function liveSelection(selection: string[], doc: DocState): string[] {
+  if (selection.length === 0) return selection
+  const ids = new Set(doc.view.nodes.map((n) => n.id))
+  const live = selection.filter((id) => ids.has(id))
+  return live.length === selection.length ? selection : live
+}
+
+/** Undo / redo landing exactly on the saved document is clean again; a conflict stays a conflict. */
+function statusAfterHistory(s: DocStore, doc: DocState): SaveStatus {
+  if (s.status === 'conflict') return 'conflict'
+  return doc === s.savedDoc ? 'clean' : 'dirty'
+}
+
 export function createDocStore() {
   return create<DocStore>()((set, get) => ({
     meta: null,
@@ -57,24 +75,38 @@ export function createDocStore() {
     error: null,
     viewport: null,
     selection: [],
+    savedDoc: null,
+    loadId: 0,
     setViewport: (viewport) => set({ viewport }),
     setSelection: (ids) => {
       const cur = get().selection
       if (ids.length === cur.length && ids.every((id, i) => id === cur[i])) return
       set({ selection: ids })
     },
-    load: (detail) =>
-      set({
+    load: (detail) => {
+      const doc = docFromDetail(detail)
+      set((s) => ({
         meta: detail.diagram,
-        doc: docFromDetail(detail),
+        doc,
+        savedDoc: doc,
         past: [],
         future: [],
         status: 'clean',
         error: null,
         viewport: detail.view.viewport ?? null,
         selection: [],
-      }),
-    restore: (doc) => set({ doc, past: [], future: [], status: 'dirty', error: null }),
+        loadId: s.loadId + 1,
+      }))
+    },
+    restore: (doc) =>
+      set((s) => ({
+        doc,
+        past: [],
+        future: [],
+        status: 'dirty',
+        error: null,
+        selection: liveSelection(s.selection, doc),
+      })),
     dispatch: (command) => {
       const { doc, past, status } = get()
       if (!doc) return
@@ -87,13 +119,20 @@ export function createDocStore() {
         past: merged ? past : [...past, { doc, mergeKey: command.mergeKey }].slice(-DOC_UNDO_LIMIT),
         future: [],
         status: status === 'conflict' ? 'conflict' : 'dirty',
+        selection: liveSelection(get().selection, next),
       })
     },
     undo: () => {
       const { doc, past, future } = get()
       const prev = past.at(-1)
       if (!doc || !prev) return
-      set({ doc: prev.doc, past: past.slice(0, -1), future: [doc, ...future], status: 'dirty' })
+      set({
+        doc: prev.doc,
+        past: past.slice(0, -1),
+        future: [doc, ...future],
+        status: statusAfterHistory(get(), prev.doc),
+        selection: liveSelection(get().selection, prev.doc),
+      })
     },
     redo: () => {
       const { doc, past, future } = get()
@@ -103,7 +142,8 @@ export function createDocStore() {
         doc: next,
         past: [...past, { doc }].slice(-DOC_UNDO_LIMIT),
         future: rest,
-        status: 'dirty',
+        status: statusAfterHistory(get(), next),
+        selection: liveSelection(get().selection, next),
       })
     },
     saveRequest: () => {
@@ -113,15 +153,19 @@ export function createDocStore() {
       return { version: meta.version, view, changes: changesOf(doc) }
     },
     setStatus: (status, error = null) => set({ status, error }),
-    saved: (detail) =>
-      set({
+    saved: (detail) => {
+      const doc = docFromDetail(detail)
+      set((s) => ({
         meta: detail.diagram,
-        doc: docFromDetail(detail),
+        doc,
+        savedDoc: doc,
         past: [],
         future: [],
         status: 'clean',
         error: null,
-      }),
+        selection: liveSelection(s.selection, doc),
+      }))
+    },
   }))
 }
 

@@ -12,7 +12,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **Danh mục** | Nhánh chia việc quản lý trong tổ chức (công ty con, khách hàng, chi nhánh, bộ phận…), chia bao nhiêu cấp cũng được; mỗi danh mục có tên tự do và mã viết tắt | Tổ chức CJ → danh mục CJ Feed (`CJFEED`) | Danh mục & Sites → cây bên trái |
 | **Site** | Một địa điểm thật (văn phòng, nhà máy, kho, IDC); gắn vào danh mục bất kỳ hoặc thẳng vào tổ chức | Văn phòng HCM | Danh mục & Sites |
 | **Mã site đầy đủ** | Ghép tự động: mã tổ chức – mã các danh mục – mã riêng của site. Đổi mã danh mục/tổ chức thì mã các site bên dưới đổi theo, hệ thống liệt kê để xác nhận trước | `CJ-CJFEED-HCM` | Form site, cây danh mục |
-| **Hostname** | Tên của thiết bị trên mạng, do kỹ sư đặt | `AGRI-BD-FW01` | Thiết bị → Hostname (không trùng trong tổ chức, trừ thành viên cùng cụm) |
+| **Hostname** | Tên của thiết bị trên mạng, do kỹ sư đặt; chỉ chữ không dấu, số, "-", tối đa 63 ký tự (Windows chỉ giữ 15) | `AGRI-BD01-FW01` = mã site bỏ mã tổ chức – loại – số | Thiết bị → Hostname; sơ đồ gợi ý theo quy ước này (không trùng trong tổ chức, trừ thành viên cùng cụm) |
 | **S/N (Serial Number)** | Số seri in trên thiết bị, dùng để bảo hành | `FGT60F0000123` | Thiết bị → S/N |
 | **Part Number** | Mã sản phẩm của hãng (đặt hàng, tra EOL) | `FG-100F`, `C9200-24P-E` | Thiết bị → Part number |
 | **Firmware / OS** | Phần mềm chạy trên thiết bị | `FortiOS 7.4.5`, `IOS-XE 17.9` | Thiết bị → Firmware |
@@ -108,7 +108,7 @@ vPC/VSS cho switch L2/L3; kiểu "Khác" không giới hạn. Thành viên cùng
 | **Access Point (AP) / Wireless controller** | Phát Wi-Fi / quản lý tập trung các AP |
 | **Load balancer** | Chia tải cho nhiều server |
 | **SD-WAN edge** | Thiết bị WAN thông minh nối nhiều đường truyền |
-| **ONT / Modem** | Thiết bị đầu cuối của nhà mạng (thường "bên ngoài") |
+| **ONT / Modem** | Thiết bị đầu cuối của nhà mạng (thường "bên ngoài"): ONT nhận cáp quang (GPON), modem nhận cáp đồng/cáp truyền hình. Khác OLT — thiết bị phía nhà mạng gom nhiều ONT |
 | **NVR** | Đầu ghi camera |
 | **UPS / PDU** | Bộ lưu điện / thanh nguồn trong rack |
 

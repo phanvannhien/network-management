@@ -17,7 +17,7 @@ import type { RefData } from './flow'
 // Canvas nodes (P1-14). Each node subscribes to its own card only, so editing one device re-renders one node
 // (CLAUDE.md editor rule). Links attach to the hidden handles; picking ports comes with wiring (P1-17).
 
-type RefNode = Node<RefData>
+type RefFlowNode = Node<RefData>
 
 /** Secondary labels hide below 50 % zoom (SRS §6.3). */
 const useShowDetails = () => useFlowStore((s) => s.transform[2] >= 0.5)
@@ -47,7 +47,6 @@ function Frame({
       className={cn(
         'relative flex w-36 flex-col items-center gap-1 rounded-md border bg-card px-2 py-2 text-card-foreground shadow-sm',
         selected ? 'border-primary ring-2 ring-primary' : 'border-border-control',
-        draft && 'border-dashed',
       )}
     >
       <Handle type="target" position={Position.Top} isConnectable={false} className="ntb-handle" />
@@ -64,7 +63,12 @@ function Frame({
           className="absolute top-1 right-1 size-3 text-muted-foreground"
         />
       )}
-      {draft && <span className="sr-only">{t('editorDoc.unsaved')}</span>}
+      {/* Dashed borders are for unmanaged devices (SRS §6.3); a new, unsaved device gets a badge. */}
+      {draft && (
+        <span className="absolute -top-2 left-2 rounded-sm border border-status-warning bg-card px-1 text-[10px] leading-4 text-status-warning">
+          {t('editorDoc.unsaved')}
+        </span>
+      )}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -75,7 +79,7 @@ function Frame({
   )
 }
 
-function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefNode>) {
+function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const card = useDoc((s) => s.doc?.devices[data.refId])
   if (!card) return <HiddenFrame selected={selected} />
@@ -93,7 +97,7 @@ function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefNode>) {
   )
 }
 
-function GroupNodeImpl({ data, selected, draggable }: NodeProps<RefNode>) {
+function GroupNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const group = useDoc((s) => s.doc?.groups[data.refId])
   if (!group) return <HiddenFrame selected={selected} />
@@ -125,12 +129,10 @@ function HiddenFrame({ selected }: { selected: boolean }) {
   )
 }
 
-function RefNodeImpl({ selected }: NodeProps<RefNode>) {
+function RefNodeImpl({ selected }: NodeProps<RefFlowNode>) {
   return <HiddenFrame selected={selected} />
 }
 
-export const NODE_TYPES = {
-  device: memo(DeviceNodeImpl),
-  group: memo(GroupNodeImpl),
-  ref: memo(RefNodeImpl),
-}
+export const DeviceNode = memo(DeviceNodeImpl)
+export const GroupNode = memo(GroupNodeImpl)
+export const RefNode = memo(RefNodeImpl)

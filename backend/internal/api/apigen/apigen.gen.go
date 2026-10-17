@@ -1358,7 +1358,7 @@ type Device struct {
 	// CategoryPath category names from the root, e.g. "CJ Feed › Nhà máy Deheus" (empty at the organization level)
 	CategoryPath string `json:"categoryPath"`
 
-	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	// ClusterId Cluster of the device (same site, ADR-027)
 	ClusterId       *openapi_types.UUID `json:"clusterId"`
 	ClusterKind     string              `json:"clusterKind"`
 	ClusterMemberNo *int32              `json:"clusterMemberNo"`
@@ -1455,7 +1455,7 @@ type DeviceIds struct {
 type DeviceInput struct {
 	AssetTag *string `json:"assetTag,omitempty"`
 
-	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	// ClusterId Cluster of the device (same site, ADR-027)
 	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`
 	ClusterMemberNo *int32              `json:"clusterMemberNo,omitempty"`
 	ClusterRole     *ClusterRole        `json:"clusterRole,omitempty"`
@@ -1570,7 +1570,7 @@ type DeviceType string
 type DeviceUpdate struct {
 	AssetTag *string `json:"assetTag,omitempty"`
 
-	// ClusterId Cluster of the device (same site and unit, ADR-027)
+	// ClusterId Cluster of the device (same site, ADR-027)
 	ClusterId       *openapi_types.UUID `json:"clusterId,omitempty"`
 	ClusterMemberNo *int32              `json:"clusterMemberNo,omitempty"`
 	ClusterRole     *ClusterRole        `json:"clusterRole,omitempty"`

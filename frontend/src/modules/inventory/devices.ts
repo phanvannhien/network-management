@@ -14,37 +14,32 @@ export type CustomField = components['schemas']['CustomField']
 export type CustomFieldKind = components['schemas']['CustomFieldKind']
 export type HistoryEntry = components['schemas']['DeviceHistory']['entries'][number]
 
-/** Grouped like the template library (SRS §4.3) for selects and filters. */
-export const DEVICE_TYPE_GROUPS: { group: string; types: DeviceType[] }[] = [
+export type DeviceTypeGroup =
+  'wan' | 'lan' | 'security' | 'servers' | 'office' | 'building' | 'power'
+
+/**
+ * Device types grouped the way the network is laid out, from the Internet edge inward (SRS §4.3, P1-15 review):
+ * used by selects, filters and the editor library. Labels: `devices.typeGroups`, one-line help: `devices.typeInfo`.
+ */
+export const DEVICE_TYPE_GROUPS: { group: DeviceTypeGroup; types: DeviceType[] }[] = [
+  { group: 'wan', types: ['router', 'modem', 'ont', 'sdwan_edge', 'vpn_gateway'] },
   {
-    group: 'routing',
-    types: ['router', 'l3_switch', 'load_balancer', 'wireless_controller', 'sdwan_edge'],
-  },
-  {
-    group: 'switching',
-    types: ['l2_switch', 'poe_switch', 'access_point', 'media_converter', 'patch_panel'],
-  },
-  { group: 'security', types: ['firewall', 'ids_ips', 'vpn_gateway', 'waf', 'nac', 'proxy'] },
-  {
-    group: 'endpoints',
+    group: 'lan',
     types: [
-      'server',
-      'vm',
-      'nas',
-      'pc',
-      'laptop',
-      'printer',
-      'ip_camera',
-      'nvr',
-      'ip_phone',
-      'pbx',
-      'access_control',
-      'video_conference',
-      'iot',
+      'l3_switch',
+      'l2_switch',
+      'poe_switch',
+      'wireless_controller',
+      'access_point',
+      'media_converter',
+      'patch_panel',
     ],
   },
-  { group: 'wan', types: ['modem', 'ont'] },
-  { group: 'other', types: ['ups', 'pdu', 'other'] },
+  { group: 'security', types: ['firewall', 'ids_ips', 'waf', 'nac', 'proxy'] },
+  { group: 'servers', types: ['server', 'vm', 'nas', 'load_balancer'] },
+  { group: 'office', types: ['pc', 'laptop', 'printer', 'ip_phone', 'pbx', 'video_conference'] },
+  { group: 'building', types: ['ip_camera', 'nvr', 'access_control', 'iot'] },
+  { group: 'power', types: ['ups', 'pdu', 'other'] },
 ]
 export const DEVICE_TYPES: DeviceType[] = DEVICE_TYPE_GROUPS.flatMap((g) => g.types)
 export const DEVICE_ROLES: DeviceRole[] = [
