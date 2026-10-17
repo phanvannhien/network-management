@@ -418,3 +418,22 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   sách thiết bị.
 - **Đánh đổi:** nhiều link cho một nhóm (mỗi cổng một link) — chấp nhận để giữ đúng trạng thái cổng; sửa thuộc tính dây của cả nhóm
   dây một lần để sau.
+
+### ADR-037 — File .ntb.json v2: một sơ đồ cùng mọi thứ nó dùng; nhập luôn tạo id mới
+- **Bối cảnh:** P1-22 cần xuất/nhập sơ đồ kèm dữ liệu kho để chuyển sang tổ chức hoặc máy khác. `schema/ntb.schema.json` cũ là mô hình
+  thời prototype (project/pages), lệch xa dữ liệu hiện tại. Người dùng chốt 2026-10-17.
+- **Quyết định:**
+  - **Schema v2** (`schemaVersion` "2.0.0") ở `schema/ntb.schema.json`, tên trường theo `api/openapi.yaml`: sơ đồ (view: node, cạnh,
+    khung/chữ/mũi tên, portStyle, labelTemplate), site (mã + tên), cụm, thiết bị, cổng, IP, subnet, dải IP, nhóm đầu cuối, dây.
+    **Không có bí mật.** Schema cũ chuyển sang `schema/legacy/` (chỉ prototype `/editor` dùng). Backend nhúng một bản sao, có test bảo
+    đảm trùng bản gốc; file nhập được kiểm tra bằng santhosh-tekuri/jsonschema (đã có trong Stack).
+  - **Phạm vi:** một sơ đồ và mọi đối tượng trên nó (cùng cổng, IP, dây giữa chúng, cụm, nhóm, dải IP của nhóm, subnet chứa IP).
+  - **Xuất** do backend dựng (`GET …/diagrams/{id}/ntb`), audit `export.diagram_ntb`.
+  - **Nhập** (`POST …/ntb-imports/preview` rồi `POST …/ntb-imports`): một transaction, **luôn tạo id mới**, tổ chức lấy từ route.
+    Người dùng ghép từng site trong file với site đích (cùng mã/tên được chọn sẵn). Thiết bị cùng hostname đã có ở site đích: **mặc
+    định dùng thiết bị có sẵn**, có thể chọn cập nhật theo file / tạo mới / bỏ qua; thành viên cụm ghép theo hostname + số thứ tự.
+    Cụm/nhóm cùng tên, dây cùng hai đầu đã có thì dùng lại (nhập lần 2 không nhân bản). Mọi đối tượng ghi qua cùng hàm ghi của form
+    (luật + audit); thêm một mục audit `import.ntb`.
+  - Dải IP của nhóm chỉ gắn khi đã có dải y hệt trong IPAM của tổ chức đích (không tự tạo subnet/dải) — có cảnh báo để gắn lại.
+- **Lý do:** dữ liệu chuyển đi đầy đủ mà không lộ bí mật; nhập an toàn với tenant (không id nào từ file được dùng để ghi đè).
+- **Đánh đổi:** location/rack của thiết bị không đi theo file; subnet/dải IP không tự tạo khi nhập.

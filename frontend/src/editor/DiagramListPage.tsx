@@ -1,4 +1,4 @@
-import { Network, Plus, Trash2 } from 'lucide-react'
+import { FileUp, Network, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -27,6 +27,7 @@ import { formatDate } from '@/lib/format'
 import { atLeast, useOrgAccess } from '@/modules/sites/access'
 import { DIAGRAM_LAYERS, useDiagramMutations, useDiagrams, type DiagramLayer } from './doc/api'
 import type { DiagramMeta } from './doc/types'
+import { NtbImportDialog } from './NtbImportDialog'
 
 function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   const { t } = useTranslation()
@@ -109,6 +110,7 @@ export function DiagramListPage() {
   const diagrams = useDiagrams(orgId)
   const access = useOrgAccess(orgId)
   const { remove } = useDiagramMutations(orgId)
+  const [importing, setImporting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<DiagramMeta | null>(null)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
@@ -200,9 +202,14 @@ export function DiagramListPage() {
         description={t('diagrams.subtitle')}
         actions={
           access.canAddSites && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus aria-hidden /> {t('diagrams.add')}
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <FileUp aria-hidden /> {t('ntbImport.open')}
+              </Button>
+              <Button onClick={() => setCreating(true)}>
+                <Plus aria-hidden /> {t('diagrams.add')}
+              </Button>
+            </>
           )
         }
       />
@@ -250,6 +257,7 @@ export function DiagramListPage() {
         }
       />
       {creating && <CreateDiagramDialog orgId={orgId} onClose={() => setCreating(false)} />}
+      {importing && <NtbImportDialog orgId={orgId} onClose={() => setImporting(false)} />}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}

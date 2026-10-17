@@ -220,6 +220,16 @@ type Querier interface {
 	LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([]LookupSubnetsRow, error)
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	MaxInterfaceSort(ctx context.Context, arg MaxInterfaceSortParams) (int32, error)
+	// Members of a cluster share a hostname: their member number tells them apart.
+	NtbDeviceInSite(ctx context.Context, arg NtbDeviceInSiteParams) (pgtype.UUID, error)
+	NtbGroupInSite(ctx context.Context, arg NtbGroupInSiteParams) (pgtype.UUID, error)
+	// A cable already joining the same two ends (same ports), so a second import does not duplicate it.
+	NtbLinkBetween(ctx context.Context, arg NtbLinkBetweenParams) (pgtype.UUID, error)
+	// The same range (same VRF, first and last address) already planned in the organization.
+	NtbRangeMatch(ctx context.Context, arg NtbRangeMatchParams) (pgtype.UUID, error)
+	// .ntb.json import (P1-22, ADR-037): where the file's objects land. Every query takes organization_id.
+	// A live site of the organization with this code (full or own part) or, failing that, this name.
+	NtbSiteMatch(ctx context.Context, arg NtbSiteMatchParams) (pgtype.UUID, error)
 	// Round-trip through sqlc + pgx; used by GET /api/healthz.
 	Ping(ctx context.Context) (int32, error)
 	// Live devices placed in a rack (for U overlap checks and the rack view).

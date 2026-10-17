@@ -5,6 +5,27 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-22 Export (phần 2): file .ntb.json v2 xuất / nhập (ADR-037)
+- Đã làm:
+  - **Schema v2** `schema/ntb.schema.json` (theo tên trường của API); schema cũ + file mẫu cũ chuyển sang `schema/legacy/`, `testdata/legacy/`
+    (prototype `/editor` vẫn chạy). Backend nhúng bản sao (`internal/ntbschema`, test bảo đảm trùng bản gốc) và kiểm tra file nhập.
+  - **Xuất** (hộp "Xuất ảnh sơ đồ" → định dạng "Dữ liệu .ntb.json"): backend dựng file gồm sơ đồ, thiết bị (cổng, IP), dây, cụm, nhóm
+    đầu cuối, dải IP của nhóm, subnet chứa IP, site (mã + tên); không có mật khẩu; audit `export.diagram_ntb`.
+  - **Nhập** (Sơ đồ → "Nhập .ntb.json"): chọn file → máy chủ kiểm tra + đề xuất site đích (cùng mã/tên) → người dùng ghép site, chọn cách
+    xử lý thiết bị trùng hostname (mặc định dùng thiết bị có sẵn / cập nhật / tạo mới / bỏ qua) → nhập trong một transaction, id mới,
+    mở sơ đồ mới. Nhập lần 2 không nhân bản thiết bị, cụm, nhóm, dây. Cổng/IP tạo theo file cho thiết bị mới; khung gắn site đích.
+  - Nginx: `client_max_body_size 25m` cho `/api` (file sơ đồ và lô nhập Excel lớn hơn mặc định 1 MB).
+- Test / cách kiểm tra: `make check` pass (Go `TestNtbExportImport`: file xuất đúng schema; tổ chức B không xuất được sơ đồ của A; nhập
+  thiếu site đích / site của tổ chức khác bị từ chối; nhập vào B tạo 3 thiết bị (2 thành viên cụm cùng hostname), 3 dây, 1 nhóm, 1
+  cụm; cổng + IP của switch giữ nguyên; trùng tên sơ đồ 409; nhập lần 2 dùng lại hết, sơ đồ thứ hai trỏ đúng 2 thành viên cụm;
+  `TestEmbeddedCopyIsTheSource`, `TestValidate`). Chromium: xuất sơ đồ mẫu (10 thiết bị, 9 dây, không có chữ "password") → nhập lại
+  → sơ đồ mới 10 thiết bị, 9 dây, dùng lại thiết bị có sẵn.
+- Còn dở / lỗi đã biết: location/rack không đi theo file; subnet/dải IP không tự tạo khi nhập (nhóm được cảnh báo để gắn lại dải);
+  API chưa tự giới hạn dung lượng body (dựa vào Nginx) — để P2-01.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: ADR-037 (đã theo lựa chọn của người dùng).
+- Task tiếp theo đề xuất: P1-23 Tìm kiếm toàn cục.
+
 ## 2026-10-17 — P1-22 Export (phần 1): ảnh PNG/SVG có chú giải, Excel thiết bị, audit export; sửa lỗi từ rà soát
 - Đã làm:
   - **Xuất ảnh sơ đồ** (nút trên toolbar): PNG 1x–4x hoặc SVG; có tiêu đề + ngày xuất phía trên, **chú giải** các loại dây / trạng

@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
 import type { NtbProjectFile } from '../types/ntb'
 
 const repoRoot = path.resolve(__dirname, '../../..')
-const schemaPath = path.join(repoRoot, 'schema/ntb.schema.json')
-const samplePath = path.join(repoRoot, 'testdata/sample-small.ntb.json')
+const schemaPath = path.join(repoRoot, 'schema/legacy/ntb-v1.schema.json')
+const samplePath = path.join(repoRoot, 'testdata/legacy/sample-small.ntb.json')
 
 function compile() {
   const ajv = new Ajv2020({ strict: true, allErrors: true })
@@ -18,7 +18,7 @@ function compile() {
 }
 
 describe('ntb.schema.json', () => {
-  it('validates testdata/sample-small.ntb.json', () => {
+  it('validates testdata/legacy/sample-small.ntb.json', () => {
     const validate = compile()
     const doc = JSON.parse(fs.readFileSync(samplePath, 'utf8')) as NtbProjectFile
     expect(validate(doc)).toBe(true)

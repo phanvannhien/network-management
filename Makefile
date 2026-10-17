@@ -47,7 +47,7 @@ migrate-down:
 
 # Generate TypeScript types from schema/ntb.schema.json (export/import format)
 types:
-	cd frontend && npx json2ts --input ../schema/ntb.schema.json --output src/types/ntb.ts
+	cd frontend && npx json2ts --input ../schema/legacy/ntb-v1.schema.json --output src/types/ntb.ts
 
 # Lint + typecheck + test for frontend and backend (needs `make db-up` for DB tests)
 check:

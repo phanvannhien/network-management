@@ -4,10 +4,10 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { fromNtbProjectFile, toNtbProjectFile } from './io'
 
-const samplePath = path.resolve(__dirname, '../../../../testdata/sample-small.ntb.json')
+const samplePath = path.resolve(__dirname, '../../../../testdata/legacy/sample-small.ntb.json')
 
 describe('io: NtbData <-> .ntb.json', () => {
-  it('round-trips testdata/sample-small.ntb.json exactly', () => {
+  it('round-trips testdata/legacy/sample-small.ntb.json exactly', () => {
     const file = JSON.parse(fs.readFileSync(samplePath, 'utf8'))
     const data = fromNtbProjectFile(file)
     expect(toNtbProjectFile(data)).toEqual(file)

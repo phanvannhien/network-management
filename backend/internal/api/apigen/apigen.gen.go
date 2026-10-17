@@ -587,6 +587,7 @@ func (e EndpointKind) Valid() bool {
 // Defines values for ExportEventKind.
 const (
 	DevicesXlsx ExportEventKind = "devices_xlsx"
+	DiagramNtb  ExportEventKind = "diagram_ntb"
 	DiagramPng  ExportEventKind = "diagram_png"
 	DiagramSvg  ExportEventKind = "diagram_svg"
 )
@@ -595,6 +596,8 @@ const (
 func (e ExportEventKind) Valid() bool {
 	switch e {
 	case DevicesXlsx:
+		return true
+	case DiagramNtb:
 		return true
 	case DiagramPng:
 		return true
@@ -1034,6 +1037,30 @@ func (e LocationKind) Valid() bool {
 	case Floor:
 		return true
 	case Room:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NtbImportDeviceActions.
+const (
+	NtbImportDeviceActionsCreate NtbImportDeviceActions = "create"
+	NtbImportDeviceActionsReuse  NtbImportDeviceActions = "reuse"
+	NtbImportDeviceActionsSkip   NtbImportDeviceActions = "skip"
+	NtbImportDeviceActionsUpdate NtbImportDeviceActions = "update"
+)
+
+// Valid indicates whether the value is a known member of the NtbImportDeviceActions enum.
+func (e NtbImportDeviceActions) Valid() bool {
+	switch e {
+	case NtbImportDeviceActionsCreate:
+		return true
+	case NtbImportDeviceActionsReuse:
+		return true
+	case NtbImportDeviceActionsSkip:
+		return true
+	case NtbImportDeviceActionsUpdate:
 		return true
 	default:
 		return false
@@ -2875,6 +2902,66 @@ type NextFreeIp struct {
 	Host    *string `json:"host"`
 }
 
+// NtbFile a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
+type NtbFile map[string]interface{}
+
+// NtbImport defines model for NtbImport.
+type NtbImport struct {
+	// DeviceActions device ref → what to do when a device of that hostname exists in the target site (default reuse)
+	DeviceActions map[string]NtbImportDeviceActions `json:"deviceActions"`
+	DiagramName   string                            `json:"diagramName"`
+
+	// File a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
+	File NtbFile `json:"file"`
+
+	// SiteMap file site ref → target site id
+	SiteMap map[string]openapi_types.UUID `json:"siteMap"`
+}
+
+// NtbImportDeviceActions defines model for NtbImport.DeviceActions.
+type NtbImportDeviceActions string
+
+// NtbImportResult defines model for NtbImportResult.
+type NtbImportResult struct {
+	Created struct {
+		Clusters       int `json:"clusters"`
+		Devices        int `json:"devices"`
+		EndpointGroups int `json:"endpointGroups"`
+		Links          int `json:"links"`
+	} `json:"created"`
+	DiagramId openapi_types.UUID `json:"diagramId"`
+
+	// Reused devices / groups / clusters already there and used as they are
+	Reused   int      `json:"reused"`
+	Warnings []string `json:"warnings"`
+}
+
+// NtbPreview defines model for NtbPreview.
+type NtbPreview struct {
+	Counts struct {
+		Clusters       int `json:"clusters"`
+		Devices        int `json:"devices"`
+		EndpointGroups int `json:"endpointGroups"`
+		Links          int `json:"links"`
+	} `json:"counts"`
+	Devices []struct {
+		// ExistingId a device of that hostname already in the proposed site
+		ExistingId *openapi_types.UUID `json:"existingId,omitempty"`
+		Hostname   string              `json:"hostname"`
+		Ref        string              `json:"ref"`
+		SiteRef    string              `json:"siteRef"`
+	} `json:"devices"`
+	DiagramName string `json:"diagramName"`
+	Sites       []struct {
+		Code string `json:"code"`
+		Name string `json:"name"`
+		Ref  string `json:"ref"`
+
+		// SiteId proposed target site (same code or name in this organization)
+		SiteId *openapi_types.UUID `json:"siteId,omitempty"`
+	} `json:"sites"`
+}
+
 // Organization defines model for Organization.
 type Organization struct {
 	// Code prefix of every site code (A-Z, 0-9, 2-12, starting with a letter)
@@ -3893,6 +3980,22 @@ type RegenerateInviteParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ImportNtbParams defines parameters for ImportNtb.
+type ImportNtbParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// PreviewNtbImportJSONBody defines parameters for PreviewNtbImport.
+type PreviewNtbImportJSONBody struct {
+	// File a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
+	File NtbFile `json:"file"`
+}
+
+// PreviewNtbImportParams defines parameters for PreviewNtbImport.
+type PreviewNtbImportParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListSitesParams defines parameters for ListSites.
 type ListSitesParams struct {
 	// CategoryId Only sites of this category and the categories below it
@@ -4145,6 +4248,12 @@ type AddMemberJSONRequestBody = AddMemberRequest
 
 // UpdateMemberJSONRequestBody defines body for UpdateMember for application/json ContentType.
 type UpdateMemberJSONRequestBody = UpdateMemberRequest
+
+// ImportNtbJSONRequestBody defines body for ImportNtb for application/json ContentType.
+type ImportNtbJSONRequestBody = NtbImport
+
+// PreviewNtbImportJSONRequestBody defines body for PreviewNtbImport for application/json ContentType.
+type PreviewNtbImportJSONRequestBody PreviewNtbImportJSONBody
 
 // CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
 type CreateSiteJSONRequestBody = SiteInput
@@ -4400,6 +4509,9 @@ type ServerInterface interface {
 	// UpdateDiagram Rename / describe a diagram (optimistic lock)
 	// (PATCH /orgs/{orgId}/diagrams/{diagramId})
 	UpdateDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params UpdateDiagramParams)
+	// ExportDiagramNtb The diagram and everything it uses as a .ntb.json file (schema/ntb.schema.json v2, ADR-037) — never secrets
+	// (GET /orgs/{orgId}/diagrams/{diagramId}/ntb)
+	ExportDiagramNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId)
 	// SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
 	// (POST /orgs/{orgId}/diagrams/{diagramId}/save)
 	SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams)
@@ -4463,6 +4575,12 @@ type ServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
+	// ImportNtb Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
+	// (POST /orgs/{orgId}/ntb-imports)
+	ImportNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportNtbParams)
+	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
+	// (POST /orgs/{orgId}/ntb-imports/preview)
+	PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListSitesParams)
@@ -4979,6 +5097,12 @@ func (_ Unimplemented) UpdateDiagram(w http.ResponseWriter, r *http.Request, org
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ExportDiagramNtb The diagram and everything it uses as a .ntb.json file (schema/ntb.schema.json v2, ADR-037) — never secrets
+// (GET /orgs/{orgId}/diagrams/{diagramId}/ntb)
+func (_ Unimplemented) ExportDiagramNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
 // (POST /orgs/{orgId}/diagrams/{diagramId}/save)
 func (_ Unimplemented) SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams) {
@@ -5102,6 +5226,18 @@ func (_ Unimplemented) UpdateMember(w http.ResponseWriter, r *http.Request, orgI
 // RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 // (POST /orgs/{orgId}/members/{userId}/invite)
 func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ImportNtb Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
+// (POST /orgs/{orgId}/ntb-imports)
+func (_ Unimplemented) ImportNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportNtbParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
+// (POST /orgs/{orgId}/ntb-imports/preview)
+func (_ Unimplemented) PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8933,6 +9069,41 @@ func (siw *ServerInterfaceWrapper) UpdateDiagram(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ExportDiagramNtb operation middleware
+func (siw *ServerInterfaceWrapper) ExportDiagramNtb(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "diagramId" -------------
+	var diagramId DiagramId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "diagramId", chi.URLParam(r, "diagramId"), &diagramId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "diagramId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ExportDiagramNtb(w, r, orgId, diagramId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SaveDiagram operation middleware
 func (siw *ServerInterfaceWrapper) SaveDiagram(w http.ResponseWriter, r *http.Request) {
 
@@ -10123,6 +10294,114 @@ func (siw *ServerInterfaceWrapper) RegenerateInvite(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RegenerateInvite(w, r, orgId, userId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportNtb operation middleware
+func (siw *ServerInterfaceWrapper) ImportNtb(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ImportNtbParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportNtb(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewNtbImport operation middleware
+func (siw *ServerInterfaceWrapper) PreviewNtbImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewNtbImportParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewNtbImport(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12001,6 +12280,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/export-events", wrapper.RecordExport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/diagrams/{diagramId}/ntb", wrapper.ExportDiagramNtb)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/ntb-imports/preview", wrapper.PreviewNtbImport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/ntb-imports", wrapper.ImportNtb)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
@@ -17301,6 +17589,71 @@ func (response UpdateDiagram409JSONResponse) VisitUpdateDiagramResponse(w http.R
 	return err
 }
 
+type ExportDiagramNtbRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	DiagramId DiagramId `json:"diagramId"`
+}
+
+type ExportDiagramNtbResponseObject interface {
+	VisitExportDiagramNtbResponse(w http.ResponseWriter) error
+}
+
+type ExportDiagramNtb200JSONResponse NtbFile
+
+func (response ExportDiagramNtb200JSONResponse) VisitExportDiagramNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExportDiagramNtb401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ExportDiagramNtb401JSONResponse) VisitExportDiagramNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExportDiagramNtb403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ExportDiagramNtb403JSONResponse) VisitExportDiagramNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExportDiagramNtb404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ExportDiagramNtb404JSONResponse) VisitExportDiagramNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SaveDiagramRequestObject struct {
 	OrgId     OrgId     `json:"orgId"`
 	DiagramId DiagramId `json:"diagramId"`
@@ -18951,6 +19304,180 @@ func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtbRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ImportNtbParams
+	Body   *ImportNtbJSONRequestBody
+}
+
+type ImportNtbResponseObject interface {
+	VisitImportNtbResponse(w http.ResponseWriter) error
+}
+
+type ImportNtb200JSONResponse NtbImportResult
+
+func (response ImportNtb200JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtb400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ImportNtb400JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtb401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ImportNtb401JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtb403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ImportNtb403JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtb404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ImportNtb404JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportNtb409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ImportNtb409JSONResponse) VisitImportNtbResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewNtbImportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params PreviewNtbImportParams
+	Body   *PreviewNtbImportJSONRequestBody
+}
+
+type PreviewNtbImportResponseObject interface {
+	VisitPreviewNtbImportResponse(w http.ResponseWriter) error
+}
+
+type PreviewNtbImport200JSONResponse NtbPreview
+
+func (response PreviewNtbImport200JSONResponse) VisitPreviewNtbImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewNtbImport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response PreviewNtbImport400JSONResponse) VisitPreviewNtbImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewNtbImport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response PreviewNtbImport401JSONResponse) VisitPreviewNtbImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewNtbImport403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response PreviewNtbImport403JSONResponse) VisitPreviewNtbImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewNtbImport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response PreviewNtbImport404JSONResponse) VisitPreviewNtbImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -21646,6 +22173,9 @@ type StrictServerInterface interface {
 	// UpdateDiagram Rename / describe a diagram (optimistic lock)
 	// (PATCH /orgs/{orgId}/diagrams/{diagramId})
 	UpdateDiagram(ctx context.Context, request UpdateDiagramRequestObject) (UpdateDiagramResponseObject, error)
+	// ExportDiagramNtb The diagram and everything it uses as a .ntb.json file (schema/ntb.schema.json v2, ADR-037) — never secrets
+	// (GET /orgs/{orgId}/diagrams/{diagramId}/ntb)
+	ExportDiagramNtb(ctx context.Context, request ExportDiagramNtbRequestObject) (ExportDiagramNtbResponseObject, error)
 	// SaveDiagram Save the view and the inventory changes made in the editor in one transaction (409 when stale)
 	// (POST /orgs/{orgId}/diagrams/{diagramId}/save)
 	SaveDiagram(ctx context.Context, request SaveDiagramRequestObject) (SaveDiagramResponseObject, error)
@@ -21709,6 +22239,12 @@ type StrictServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(ctx context.Context, request RegenerateInviteRequestObject) (RegenerateInviteResponseObject, error)
+	// ImportNtb Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
+	// (POST /orgs/{orgId}/ntb-imports)
+	ImportNtb(ctx context.Context, request ImportNtbRequestObject) (ImportNtbResponseObject, error)
+	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
+	// (POST /orgs/{orgId}/ntb-imports/preview)
+	PreviewNtbImport(ctx context.Context, request PreviewNtbImportRequestObject) (PreviewNtbImportResponseObject, error)
 	// ListSites Sites of the organization
 	// (GET /orgs/{orgId}/sites)
 	ListSites(ctx context.Context, request ListSitesRequestObject) (ListSitesResponseObject, error)
@@ -23960,6 +24496,33 @@ func (sh *strictHandler) UpdateDiagram(w http.ResponseWriter, r *http.Request, o
 	}
 }
 
+// ExportDiagramNtb operation middleware
+func (sh *strictHandler) ExportDiagramNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId) {
+	var request ExportDiagramNtbRequestObject
+
+	request.OrgId = orgId
+	request.DiagramId = diagramId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ExportDiagramNtb(ctx, request.(ExportDiagramNtbRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ExportDiagramNtb")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ExportDiagramNtbResponseObject); ok {
+		if err := validResponse.VisitExportDiagramNtbResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SaveDiagram operation middleware
 func (sh *strictHandler) SaveDiagram(w http.ResponseWriter, r *http.Request, orgId OrgId, diagramId DiagramId, params SaveDiagramParams) {
 	var request SaveDiagramRequestObject
@@ -24611,6 +25174,74 @@ func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegenerateInviteResponseObject); ok {
 		if err := validResponse.VisitRegenerateInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportNtb operation middleware
+func (sh *strictHandler) ImportNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportNtbParams) {
+	var request ImportNtbRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body ImportNtbJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportNtb(ctx, request.(ImportNtbRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportNtb")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportNtbResponseObject); ok {
+		if err := validResponse.VisitImportNtbResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewNtbImport operation middleware
+func (sh *strictHandler) PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams) {
+	var request PreviewNtbImportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body PreviewNtbImportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewNtbImport(ctx, request.(PreviewNtbImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewNtbImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewNtbImportResponseObject); ok {
+		if err := validResponse.VisitPreviewNtbImportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

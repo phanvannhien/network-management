@@ -1,236 +1,1071 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://networktopologybuilder.local/ntb.schema.json",
-  "title": "NtbProjectFile",
-  "description": "Định dạng file dự án .ntb.json — nguồn duy nhất cho FE + BE (xem SRS §7).",
+  "title": "NtbDiagramFile",
+  "description": "File .ntb.json v2 (P1-22, ADR-037): one diagram and everything it uses (devices, ports, IPs, cables, endpoint groups, clusters, subnets, ranges). Ids are local to the file (import always makes new ones). Never contains secrets. Field names follow api/openapi.yaml.",
   "type": "object",
-  "required": ["schemaVersion", "project", "devices", "links", "pages"],
   "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "exportedAt",
+    "diagram",
+    "sites",
+    "devices",
+    "interfaces",
+    "ips",
+    "links",
+    "clusters",
+    "endpointGroups",
+    "subnets",
+    "ranges"
+  ],
   "properties": {
-    "schemaVersion": { "const": "1.0.0" },
-    "project": { "$ref": "#/$defs/project" },
-    "vlans": { "type": "array", "items": { "$ref": "#/$defs/vlan" } },
-    "subnets": { "type": "array", "items": { "$ref": "#/$defs/subnet" } },
-    "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } },
-    "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
-    "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
-    "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
-    "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } }
-  },
-  "$defs": {
-    "uuid": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
-    "ipv4Cidr": { "type": "string", "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$" },
-    "ipv4": { "type": "string", "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$" },
-    "project": {
+    "schemaVersion": {
+      "const": "2.0.0"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
       "type": "object",
-      "required": ["id", "name", "createdAt", "updatedAt"],
+      "required": [],
       "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "name": { "type": "string", "minLength": 1 },
-        "author": { "type": "string" },
-        "createdAt": { "$ref": "#/$defs/iso8601" },
-        "updatedAt": { "$ref": "#/$defs/iso8601" }
-      }
-    },
-    "iso8601": { "type": "string", "format": "date-time" },
-    "vlan": {
-      "type": "object",
-      "required": ["id", "vlanId", "name"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "vlanId": { "type": "integer", "minimum": 1, "maximum": 4094 },
-        "name": { "type": "string", "minLength": 1 },
-        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
-        "subnetIds": { "type": "array", "items": { "$ref": "#/$defs/uuid" } }
-      }
-    },
-    "subnet": {
-      "type": "object",
-      "required": ["id", "cidr"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "cidr": { "$ref": "#/$defs/ipv4Cidr" },
-        "gateway": { "$ref": "#/$defs/ipv4" },
-        "vrf": { "type": "string" }
-      }
-    },
-    "deviceType": {
-      "enum": [
-        "router", "l3_switch", "load_balancer", "wireless_controller",
-        "l2_switch", "poe_switch", "hub", "access_point", "media_converter", "patch_panel",
-        "firewall", "ids_ips", "vpn_gateway", "waf", "nac", "proxy",
-        "pc", "laptop", "server", "ip_camera", "nvr_dvr", "printer", "nas", "ip_phone", "iot", "vm",
-        "cloud", "internet_gateway", "modem", "isp", "mpls_cloud", "sdwan_edge", "ont_olt",
-        "text_note", "zone", "rack", "ups_pdu"
-      ]
-    },
-    "deviceRole": { "enum": ["core", "distribution", "access", "edge", "dmz", "oob", "none"] },
-    "lifecycle": { "enum": ["existing", "planned", "to_be_removed"] },
-    "device": {
-      "type": "object",
-      "required": ["id", "type", "hostname", "interfaces"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "type": { "$ref": "#/$defs/deviceType" },
-        "hostname": { "type": "string", "minLength": 1 },
-        "vendor": { "type": "string" },
-        "model": { "type": "string" },
-        "role": { "$ref": "#/$defs/deviceRole" },
-        "lifecycle": { "$ref": "#/$defs/lifecycle" },
-        "mgmtIp": { "$ref": "#/$defs/ipv4Cidr" },
-        "site": { "type": "string" },
-        "rack": {
-          "type": "object",
-          "required": ["rackId", "unit"],
-          "additionalProperties": false,
-          "properties": {
-            "rackId": { "$ref": "#/$defs/uuid" },
-            "unit": { "type": "integer", "minimum": 1, "maximum": 42 },
-            "height": { "type": "integer", "minimum": 1 }
-          }
+        "app": {
+          "type": "string",
+          "maxLength": 100
         },
-        "customFields": { "type": "object" },
-        "monitoring": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": { "type": "boolean" },
-            "snmpProfileId": { "type": ["string", "null"] },
-            "pollerId": { "type": "string", "default": "central" },
-            "dependsOnDeviceId": { "anyOf": [ { "type": "null" }, { "$ref": "#/$defs/uuid" } ] }
-          }
+        "version": {
+          "type": "string",
+          "maxLength": 50
         },
-        "interfaces": { "type": "array", "items": { "$ref": "#/$defs/interface" } }
+        "organization": {
+          "type": "string",
+          "maxLength": 200
+        }
       }
     },
-    "media": { "enum": ["rj45", "sfp", "sfp_plus", "sfp28", "qsfp", "fiber_sm", "fiber_mm", "serial", "console", "radio", "logical"] },
-    "ifMode": { "enum": ["access", "trunk", "routed", "lag_member"] },
-    "ifSpeed": { "enum": ["10M", "100M", "1G", "2.5G", "5G", "10G", "25G", "40G", "100G", "auto"] },
-    "interface": {
+    "diagram": {
       "type": "object",
-      "required": ["id", "name", "media", "speed"],
+      "required": [
+        "name",
+        "layer",
+        "view"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "name": { "type": "string", "minLength": 1 },
-        "media": { "$ref": "#/$defs/media" },
-        "speed": { "$ref": "#/$defs/ifSpeed" },
-        "mode": { "$ref": "#/$defs/ifMode" },
-        "accessVlan": { "type": "integer", "minimum": 1, "maximum": 4094 },
-        "allowedVlans": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 4094 } },
-        "ipAddresses": { "type": "array", "items": { "$ref": "#/$defs/ipv4Cidr" } },
-        "poe": { "type": "boolean" },
-        "lagId": { "type": ["string", "null"] },
-        "adminUp": { "type": "boolean" },
-        "ifIndex": { "type": ["integer", "null"], "minimum": 0 }
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "overview",
+            "physical",
+            "l2",
+            "l3"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "view": {
+          "$ref": "#/$defs/view"
+        }
       }
     },
-    "linkKind": { "enum": ["ethernet", "fiber", "wireless", "serial", "logical", "console"] },
-    "linkMedium": { "enum": ["cat5e", "cat6", "cat6a", "sm", "mm_om3", "mm_om4", "dac", "wifi5", "wifi6", "wifi7", "p2p_bridge", "v35", "rs232", "vpn_ipsec", "gre", "mpls", "lag", "console"] },
-    "linkStatus": { "enum": ["up", "down", "admin_down", "planned"] },
-    "endpoint": {
-      "type": "object",
-      "required": ["deviceId", "interfaceId"],
-      "additionalProperties": false,
-      "properties": {
-        "deviceId": { "$ref": "#/$defs/uuid" },
-        "interfaceId": { "$ref": "#/$defs/uuid" }
-      }
-    },
-    "link": {
-      "type": "object",
-      "required": ["id", "kind", "a", "b"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "kind": { "$ref": "#/$defs/linkKind" },
-        "medium": { "$ref": "#/$defs/linkMedium" },
-        "speed": { "$ref": "#/$defs/ifSpeed" },
-        "status": { "$ref": "#/$defs/linkStatus" },
-        "a": { "$ref": "#/$defs/endpoint" },
-        "b": { "$ref": "#/$defs/endpoint" },
-        "lengthM": { "type": "number", "minimum": 0 },
-        "cableId": { "type": "string" },
-        "notes": { "type": "string" }
-      }
-    },
-    "groupKind": { "enum": ["zone", "subnet", "rack"] },
-    "group": {
-      "type": "object",
-      "required": ["id", "kind", "name", "memberIds"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "kind": { "$ref": "#/$defs/groupKind" },
-        "name": { "type": "string", "minLength": 1 },
-        "memberIds": { "type": "array", "items": { "$ref": "#/$defs/uuid" } },
-        "parentId": { "type": ["string", "null"] }
-      }
-    },
-    "asset": {
-      "type": "object",
-      "required": ["id", "kind", "mime", "data"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "kind": { "enum": ["icon", "image"] },
-        "mime": { "type": "string" },
-        "data": { "type": "string", "contentEncoding": "base64" }
-      }
-    },
-    "pageLayer": { "enum": ["physical", "l2", "l3"] },
-    "edgeRouting": { "enum": ["straight", "orthogonal", "curved", "manual"] },
-    "node": {
-      "type": "object",
-      "required": ["refId", "x", "y"],
-      "additionalProperties": false,
-      "properties": {
-        "refId": { "$ref": "#/$defs/uuid" },
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "iconAssetId": { "type": ["string", "null"] },
-        "locked": { "type": "boolean" }
-      }
-    },
-    "edge": {
-      "type": "object",
-      "required": ["refId", "routing"],
-      "additionalProperties": false,
-      "properties": {
-        "refId": { "$ref": "#/$defs/uuid" },
-        "routing": { "$ref": "#/$defs/edgeRouting" },
-        "waypoints": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["x", "y"],
-            "additionalProperties": false,
-            "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+    "sites": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "code",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
           }
         }
       }
     },
-    "page": {
+    "clusters": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "siteRef",
+          "kind",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "siteRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ha_active_passive",
+              "ha_active_active",
+              "stack",
+              "vpc",
+              "vss",
+              "other"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "hostname": {
+            "type": "string",
+            "maxLength": 253
+          },
+          "mgmtIp": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "siteRef",
+          "hostname",
+          "type"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "siteRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "hostname": {
+            "type": "string",
+            "maxLength": 253
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "router",
+              "l3_switch",
+              "l2_switch",
+              "poe_switch",
+              "firewall",
+              "load_balancer",
+              "wireless_controller",
+              "access_point",
+              "vpn_gateway",
+              "ids_ips",
+              "waf",
+              "nac",
+              "proxy",
+              "media_converter",
+              "patch_panel",
+              "modem",
+              "ont",
+              "olt",
+              "provider_cloud",
+              "wireless_bridge",
+              "console_server",
+              "sdwan_edge",
+              "server",
+              "vm",
+              "nas",
+              "pc",
+              "laptop",
+              "printer",
+              "ip_camera",
+              "nvr",
+              "ip_phone",
+              "pbx",
+              "access_control",
+              "video_conference",
+              "iot",
+              "ups",
+              "pdu",
+              "other"
+            ]
+          },
+          "vendor": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "partNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "serialNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "assetTag": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "firmware": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "none",
+              "core",
+              "distribution",
+              "access",
+              "edge",
+              "dmz",
+              "oob"
+            ]
+          },
+          "lifecycle": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "active",
+              "spare",
+              "rma",
+              "retired"
+            ]
+          },
+          "managed": {
+            "type": "boolean"
+          },
+          "ownerName": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          "uHeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "catalogId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "clusterRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clusterRole": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "primary",
+                  "secondary",
+                  "member"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clusterMemberNo": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mgmtInterfaceRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "deviceRef",
+          "name",
+          "kind"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "deviceRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "physical",
+              "svi",
+              "loopback",
+              "tunnel",
+              "subinterface",
+              "lag"
+            ]
+          },
+          "media": {
+            "type": "string",
+            "enum": [
+              "",
+              "RJ45",
+              "SFP",
+              "SFP+",
+              "SFP28",
+              "QSFP",
+              "PON",
+              "xDSL",
+              "Serial",
+              "Radio",
+              "Console",
+              "Cellular"
+            ]
+          },
+          "speed": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "duplex": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "full",
+              "half"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "",
+              "access",
+              "trunk",
+              "routed",
+              "hybrid"
+            ]
+          },
+          "accessVlan": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4094
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nativeVlan": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4094
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allowedVlans": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "poe": {
+            "type": "boolean"
+          },
+          "lagRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adminUp": {
+            "type": "boolean"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 17
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vlanTag": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4094
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "ips": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "required": [
+          "deviceRef",
+          "address",
+          "role"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "interfaceRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "vrf": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "nat",
+              "public"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "subnets": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "cidr"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "siteRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cidr": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "vrf": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "gateway": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "ranges": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "subnetRef",
+          "startIp",
+          "endIp",
+          "kind"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "subnetRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "startIp": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "endIp": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "dhcp",
+              "static",
+              "reserved"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "endpointGroups": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "siteRef",
+          "kind",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "siteRef": {
+            "$ref": "#/$defs/ref"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pc",
+              "laptop",
+              "printer",
+              "ip_camera",
+              "ip_phone",
+              "access_point",
+              "access_control",
+              "video_conference",
+              "iot",
+              "server",
+              "vm",
+              "nas",
+              "other"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "expectedCount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rangeRef": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "kind",
+          "a",
+          "b"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ethernet",
+              "fiber",
+              "wireless",
+              "serial",
+              "console",
+              "power",
+              "stack",
+              "dsl",
+              "cellular",
+              "logical"
+            ]
+          },
+          "a": {
+            "$ref": "#/$defs/end"
+          },
+          "b": {
+            "$ref": "#/$defs/end"
+          },
+          "medium": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "speed": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "lengthM": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cableId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "planned"
+            ]
+          },
+          "fiberMode": {
+            "type": "string",
+            "enum": [
+              "",
+              "sm",
+              "mm"
+            ]
+          },
+          "connector": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "service": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "circuitId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "bandwidth": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "end": {
       "type": "object",
-      "required": ["id", "name", "layer", "nodes", "edges"],
+      "required": [
+        "kind",
+        "ref"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "name": { "type": "string", "minLength": 1 },
-        "layer": { "$ref": "#/$defs/pageLayer" },
-        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
-        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "device",
+            "endpoint_group"
+          ]
+        },
+        "ref": {
+          "$ref": "#/$defs/ref"
+        },
+        "interfaceRef": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "required": [
+        "nodes",
+        "edges",
+        "annotations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "refKind",
+              "refId",
+              "x",
+              "y"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "refKind": {
+                "type": "string",
+                "enum": [
+                  "device",
+                  "endpoint_group"
+                ]
+              },
+              "refId": {
+                "$ref": "#/$defs/ref"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "locked": {
+                "type": "boolean"
+              },
+              "labelStyle": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "linkRef"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "linkRef": {
+                "$ref": "#/$defs/ref"
+              },
+              "routing": {
+                "type": "string",
+                "enum": [
+                  "straight",
+                  "orthogonal",
+                  "curved"
+                ]
+              },
+              "waypoints": {
+                "type": "array",
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "annotations": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "kind",
+              "x",
+              "y"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "arrow",
+                  "zone",
+                  "ipPlan",
+                  "legend"
+                ]
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "color": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "fontSize": {
+                "type": "number"
+              },
+              "points": {
+                "type": "array",
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "siteRef": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/ref"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "lineStyle": {
+                "type": "string",
+                "enum": [
+                  "solid",
+                  "dashed"
+                ]
+              }
+            }
+          }
+        },
         "viewport": {
           "type": "object",
-          "required": ["x", "y", "zoom"],
+          "required": [
+            "x",
+            "y",
+            "zoom"
+          ],
           "additionalProperties": false,
-          "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "zoom": { "type": "number", "minimum": 0.1, "maximum": 4 } }
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "zoom": {
+              "type": "number"
+            }
+          }
         },
-        "labelTemplate": { "type": "string" }
+        "labelTemplate": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "portStyle": {
+          "type": "string",
+          "enum": [
+            "compact",
+            "cisco",
+            "full"
+          ]
+        }
       }
     }
   }

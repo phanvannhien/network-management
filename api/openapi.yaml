@@ -1238,6 +1238,93 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/diagrams/{diagramId}/ntb:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DiagramId'
+    get:
+      operationId: exportDiagramNtb
+      summary: The diagram and everything it uses as a .ntb.json file (schema/ntb.schema.json v2, ADR-037) — never secrets
+      responses:
+        '200':
+          description: The file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NtbFile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/ntb-imports/preview:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: previewNtbImport
+      summary: Check a .ntb.json file and propose where its sites and devices go (nothing written)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  $ref: '#/components/schemas/NtbFile'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NtbPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/ntb-imports:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: importNtb
+      summary: Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NtbImport'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NtbImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/devices/delete-impact:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5552,7 +5639,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [diagram_png, diagram_svg, devices_xlsx]
+          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb]
         diagramId:
           type: string
           format: uuid
@@ -5566,6 +5653,111 @@ components:
           type: integer
           minimum: 1
           maximum: 4
+
+    NtbFile:
+      type: object
+      additionalProperties: true
+      description: a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
+
+    NtbPreview:
+      type: object
+      required: [diagramName, sites, devices, counts]
+      properties:
+        diagramName:
+          type: string
+        sites:
+          type: array
+          items:
+            type: object
+            required: [ref, code, name]
+            properties:
+              ref:
+                type: string
+              code:
+                type: string
+              name:
+                type: string
+              siteId:
+                type: string
+                format: uuid
+                description: proposed target site (same code or name in this organization)
+        devices:
+          type: array
+          items:
+            type: object
+            required: [ref, hostname, siteRef]
+            properties:
+              ref:
+                type: string
+              hostname:
+                type: string
+              siteRef:
+                type: string
+              existingId:
+                type: string
+                format: uuid
+                description: a device of that hostname already in the proposed site
+        counts:
+          type: object
+          required: [devices, links, endpointGroups, clusters]
+          properties:
+            devices:
+              type: integer
+            links:
+              type: integer
+            endpointGroups:
+              type: integer
+            clusters:
+              type: integer
+
+    NtbImport:
+      type: object
+      required: [file, siteMap, deviceActions, diagramName]
+      properties:
+        file:
+          $ref: '#/components/schemas/NtbFile'
+        siteMap:
+          type: object
+          description: file site ref → target site id
+          additionalProperties:
+            type: string
+            format: uuid
+        deviceActions:
+          type: object
+          description: device ref → what to do when a device of that hostname exists in the target site (default reuse)
+          additionalProperties:
+            type: string
+            enum: [reuse, update, create, skip]
+        diagramName:
+          type: string
+          maxLength: 120
+
+    NtbImportResult:
+      type: object
+      required: [diagramId, created, reused, warnings]
+      properties:
+        diagramId:
+          type: string
+          format: uuid
+        created:
+          type: object
+          required: [devices, links, endpointGroups, clusters]
+          properties:
+            devices:
+              type: integer
+            links:
+              type: integer
+            endpointGroups:
+              type: integer
+            clusters:
+              type: integer
+        reused:
+          type: integer
+          description: devices / groups / clusters already there and used as they are
+        warnings:
+          type: array
+          items:
+            type: string
 
     ApplyTemplate:
       type: object

@@ -682,6 +682,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/diagrams/{diagramId}/ntb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        /** The diagram and everything it uses as a .ntb.json file (schema/ntb.schema.json v2, ADR-037) — never secrets */
+        get: operations["exportDiagramNtb"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/ntb-imports/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a .ntb.json file and propose where its sites and devices go (nothing written) */
+        post: operations["previewNtbImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/ntb-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped) */
+        post: operations["importNtb"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/delete-impact": {
         parameters: {
             query?: never;
@@ -2709,7 +2770,7 @@ export interface components {
         };
         ExportEvent: {
             /** @enum {string} */
-            kind: "diagram_png" | "diagram_svg" | "devices_xlsx";
+            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb";
             /**
              * Format: uuid
              * @description the exported diagram (diagram_png / diagram_svg)
@@ -2718,6 +2779,64 @@ export interface components {
             /** @description rows exported (devices_xlsx) */
             count?: number;
             scale?: number;
+        };
+        /** @description a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server */
+        NtbFile: {
+            [key: string]: unknown;
+        };
+        NtbPreview: {
+            diagramName: string;
+            sites: {
+                ref: string;
+                code: string;
+                name: string;
+                /**
+                 * Format: uuid
+                 * @description proposed target site (same code or name in this organization)
+                 */
+                siteId?: string;
+            }[];
+            devices: {
+                ref: string;
+                hostname: string;
+                siteRef: string;
+                /**
+                 * Format: uuid
+                 * @description a device of that hostname already in the proposed site
+                 */
+                existingId?: string;
+            }[];
+            counts: {
+                devices: number;
+                links: number;
+                endpointGroups: number;
+                clusters: number;
+            };
+        };
+        NtbImport: {
+            file: components["schemas"]["NtbFile"];
+            /** @description file site ref → target site id */
+            siteMap: {
+                [key: string]: string;
+            };
+            /** @description device ref → what to do when a device of that hostname exists in the target site (default reuse) */
+            deviceActions: {
+                [key: string]: "reuse" | "update" | "create" | "skip";
+            };
+            diagramName: string;
+        };
+        NtbImportResult: {
+            /** Format: uuid */
+            diagramId: string;
+            created: {
+                devices: number;
+                links: number;
+                endpointGroups: number;
+                clusters: number;
+            };
+            /** @description devices / groups / clusters already there and used as they are */
+            reused: number;
+            warnings: string[];
         };
         /** @description an organization template, a system template (catalogId) or port groups typed on the spot — exactly one */
         ApplyTemplate: {
@@ -4951,6 +5070,102 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    exportDiagramNtb: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                diagramId: components["parameters"]["DiagramId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NtbFile"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    previewNtbImport: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    file: components["schemas"]["NtbFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NtbPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    importNtb: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NtbImport"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NtbImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     deviceDeleteImpact: {

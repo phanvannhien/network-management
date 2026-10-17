@@ -7,7 +7,7 @@ import { readProjectFile } from './file'
 import { validateProjectFile } from './schemaValidate'
 
 // .ntb.json is an export/import format only (ADR-015); these tests back P1-22.
-const samplePath = path.resolve(__dirname, '../../../../testdata/sample-small.ntb.json')
+const samplePath = path.resolve(__dirname, '../../../../testdata/legacy/sample-small.ntb.json')
 const sampleFile = () => JSON.parse(fs.readFileSync(samplePath, 'utf8'))
 
 describe('io: .ntb.json export → import', () => {

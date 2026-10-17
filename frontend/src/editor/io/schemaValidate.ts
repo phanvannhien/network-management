@@ -1,6 +1,6 @@
 import Ajv2020 from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
-import schemaJson from '@schema/ntb.schema.json'
+import schemaJson from '@schema/legacy/ntb-v1.schema.json'
 
 const ajv = new Ajv2020({ strict: true, allErrors: true })
 addFormats(ajv)

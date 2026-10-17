@@ -37,7 +37,7 @@ export function ExportImageDialog({
   const flow = useReactFlow()
   const doc = useDoc((s) => s.doc)!
   const store = useDocStoreApi()
-  const [format, setFormat] = useState<'png' | 'svg'>('png')
+  const [format, setFormat] = useState<'png' | 'svg' | 'ntb'>('png')
   const [scale, setScale] = useState(2)
   const [withLegend, setWithLegend] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -63,7 +63,28 @@ export function ExportImageDialog({
     ]
   }
 
+  /** The diagram and everything it uses as data (.ntb.json, ADR-037), built by the server (audited there). */
+  const runNtb = async () => {
+    setBusy(true)
+    try {
+      const r = await api.GET('/orgs/{orgId}/diagrams/{diagramId}/ntb', {
+        params: { path: { orgId, diagramId } },
+      })
+      if (!r.data) throw new Error(t('exportImage.failed'))
+      const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      downloadDataUrl(url, fileNameOf(name, 'ntb.json'))
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('exportImage.failed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const run = async () => {
+    if (format === 'ntb') return runNtb()
     const viewport = document.querySelector<HTMLElement>('.react-flow__viewport')
     // Every drawn thing counts for the picture's bounds: devices, groups, frames, texts, arrows, cluster boxes.
     const nodes = flow.getNodes().filter((n) => !n.hidden)
@@ -85,7 +106,7 @@ export function ExportImageDialog({
         getComputedStyle(document.documentElement).getPropertyValue('--background').trim() ||
         '#ffffff'
       const url = await exportDiagramImage(viewport, {
-        format,
+        format: format as 'png' | 'svg',
         scale,
         title: name,
         subtitle: t('exportImage.subtitle', { date: new Date().toLocaleString() }),
@@ -126,10 +147,11 @@ export function ExportImageDialog({
             <NativeSelect
               {...p}
               value={format}
-              onChange={(e) => setFormat(e.target.value as 'png' | 'svg')}
+              onChange={(e) => setFormat(e.target.value as 'png' | 'svg' | 'ntb')}
             >
               <option value="png">{t('exportImage.png')}</option>
               <option value="svg">{t('exportImage.svg')}</option>
+              <option value="ntb">{t('exportImage.ntb')}</option>
             </NativeSelect>
           )}
         </FormField>
@@ -146,10 +168,15 @@ export function ExportImageDialog({
             )}
           </FormField>
         )}
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={withLegend} onCheckedChange={(v) => setWithLegend(v === true)} />
-          {t('exportImage.withLegend')}
-        </label>
+        {format === 'ntb' && (
+          <p className="text-sm text-muted-foreground">{t('exportImage.ntbGuide')}</p>
+        )}
+        {format !== 'ntb' && (
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={withLegend} onCheckedChange={(v) => setWithLegend(v === true)} />
+            {t('exportImage.withLegend')}
+          </label>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
