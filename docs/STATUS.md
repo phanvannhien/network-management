@@ -9,7 +9,7 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 - Kết quả từng mục (kiểm tra trên môi trường riêng và trên bản build production):
   | # | Mục | Kết quả |
   | --- | --- | --- |
-  | 1 | Tổ chức A không thấy dữ liệu tổ chức B | Test tự động cho mọi endpoint: đạt. **Còn phần kiểm tra tay: chờ người dùng** |
+  | 1 | Tổ chức A không thấy dữ liệu tổ chức B | Test tự động cho mọi endpoint: đạt. Kiểm tra tay: người dùng xác nhận đạt (2026-10-17) |
   | 2 | Owner/admin bật MFA; viewer không sửa được (ở API) | Đạt. Agent rà cả 84 endpoint ghi; thêm `viewer_test.go` (29 endpoint chưa có test riêng) |
   | 3 | Site → location → rack; thiết bị đủ thông tin | Đạt (FW đặt ở rack U40, đủ PN, S/N; tự có 11 cổng theo model) |
   | 4 | Nhập Excel 500 dòng, báo lỗi từng dòng | Đạt: 4,1 s; trùng S/N / trùng IP trong file chặn ở bước xem trước; IP sai và hostname sai báo đúng từng dòng |
@@ -32,7 +32,7 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
   riêng script axe được lưu vào repo.
 - Còn dở / lỗi đã biết:
   - **Mục 1 (kiểm tra tay):** đăng nhập bằng hai tài khoản thuộc hai tổ chức khác nhau; với tài khoản B, thử mở URL thiết bị / sơ đồ của tổ chức A
-    (phải ra "Không tìm thấy") và thử Ctrl+K tìm hostname của A (không ra gì). Vì mục này chưa xong nên P1-26 chưa tick.
+    (phải ra "Không tìm thấy") và thử Ctrl+K tìm hostname của A (không ra gì). Người dùng đã kiểm tra, đạt → P1-26 đã tick, Phase 1 xong.
   - Audit của đăng nhập / MFA ghi kiểu best-effort ngoài giao dịch (theo thiết kế); nên ghi thành ADR khi review bảo mật (P2-01).
 - Câu hỏi cho người dùng: làm phần kiểm tra tay của mục 1 giúp; xong thì tick P1-26 và chuyển sang Phase 2.
 - Đề xuất quyết định cần chốt: không có.

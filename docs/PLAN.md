@@ -92,7 +92,7 @@ Phase hiện tại: **Phase 0**
   Giữ cả dữ liệu "Văn phòng mẫu" cũ như một danh mục thứ ba. Kèm file testdata/import-sample.xlsx đúng định dạng file khách
   (cột Site, Location, Category, Hostname, Ip Address mgmt, PartNumber, S/N, Person in charge) có tên viết lệch để test gộp.
   Script sinh 500/2.000 thiết bị; đo FPS, thời gian mở, thời gian lọc bảng.
-- [ ] **P1-26 Gate MVP**: chạy checklist SRS §16, sửa tới khi đạt.
+- [x] **P1-26 Gate MVP**: chạy checklist SRS §16, sửa tới khi đạt.
 
 ## Phase 2 — Enterprise
 

@@ -407,7 +407,7 @@ PostgreSQL 16
 | 4 | Backup cấu hình qua SSH (chỉ đọc), remote poller, cộng tác realtime, API token công khai, import draw.io, desktop | — |
 
 **Checklist nghiệm thu MVP**
-- [ ] Tạo 2 tổ chức; user tổ chức A không thấy bất kỳ dữ liệu nào của tổ chức B (test tự động + kiểm tra tay)
+- [x] Tạo 2 tổ chức; user tổ chức A không thấy bất kỳ dữ liệu nào của tổ chức B (test tự động + kiểm tra tay)
 - [x] Owner/admin bật MFA; viewer không sửa được gì (kiểm tra ở API, không chỉ ở giao diện)
 - [x] Tạo site → location → rack; thêm thiết bị đủ Site, Location, Hostname, Part Number, S/N
 - [x] Import file Excel 500 thiết bị, có báo lỗi từng dòng
