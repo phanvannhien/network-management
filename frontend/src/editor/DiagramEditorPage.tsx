@@ -50,6 +50,7 @@ import { CableDialog } from './workspace/CableDialog'
 import { PropertiesPanel } from './workspace/PropertiesPanel'
 import { useWiring } from './workspace/useWiring'
 import { PanelRail } from './workspace/PanelRail'
+import { FrameDrawLayer } from './workspace/FrameDrawLayer'
 import { ProblemsPanel } from './checks/ProblemsPanel'
 import { countProblems } from './checks/types'
 import { useChecks } from './checks/useChecks'
@@ -314,6 +315,12 @@ function Workspace({
   const [problemsOpen, setProblemsOpen] = useState(false)
   /** Hand tool: the left button pans the view (Space + drag does it any time). */
   const [hand, setHand] = useState(false)
+  /** Frame tool: the next drag on the canvas draws a frame. */
+  const [drawingFrame, setDrawingFrame] = useState(false)
+  const startFrameTool = () => {
+    setHand(false)
+    setDrawingFrame(true)
+  }
   const [menu, setMenu] = useState<{
     x: number
     y: number
@@ -453,6 +460,7 @@ function Workspace({
           s.setEdgeSelection([])
           setMenu(null)
           wiring.cancel()
+          setDrawingFrame(false)
           break
         case 'connect':
           if (!canEdit) return
@@ -461,11 +469,13 @@ function Workspace({
           break
         case 'hand':
           wiring.cancel()
+          setDrawingFrame(false)
           setHand((h) => !h)
           break
         case 'pointer':
           wiring.cancel()
           setHand(false)
+          setDrawingFrame(false)
           break
         case 'remove':
           edit.remove()
@@ -486,7 +496,9 @@ function Workspace({
           edit.toggleLock()
           break
         case 'group':
-          annotate.frame()
+          // With devices selected: a frame around them. Otherwise: the frame tool (drag to draw).
+          if (store.getState().selection.length > 0) annotate.frame()
+          else if (canEdit) startFrameTool()
           break
         case 'ungroup':
           annotate.ungroup()
@@ -670,22 +682,26 @@ function Workspace({
         onFit={fit}
         onHelp={() => setHelp(true)}
         onQuickAdd={() => setQuick(true)}
-        onAddFrame={annotate.frame}
+        onAddFrame={() => (drawingFrame ? setDrawingFrame(false) : startFrameTool())}
+        drawingFrame={drawingFrame}
         onAddText={annotate.text}
         onAddArrow={annotate.arrow}
         connecting={wiring.mode !== null}
         onConnect={() => {
           setHand(false)
+          setDrawingFrame(false)
           wiring.toggle()
         }}
         hand={hand}
         onHand={() => {
           wiring.cancel()
+          setDrawingFrame(false)
           setHand((h) => !h)
         }}
         onPointer={() => {
           wiring.cancel()
           setHand(false)
+          setDrawingFrame(false)
         }}
         problems={problemCounts}
         problemsOpen={problemsOpen}
@@ -698,6 +714,23 @@ function Workspace({
           fitPadding={fitOptions(libraryOpen, panelOpen)}
           onClose={() => setProblemsOpen(false)}
         />
+      )}
+      {drawingFrame && (
+        <>
+          <FrameDrawLayer
+            onDone={(r) => {
+              annotate.frameAt(r)
+              setDrawingFrame(false)
+            }}
+          />
+          <div
+            role="status"
+            className="absolute top-16 left-1/2 z-10 -translate-x-1/2 rounded-md border border-primary bg-popover px-3 py-1.5 shadow-md"
+          >
+            {t('frames.drawHint')}{' '}
+            <span className="text-muted-foreground">{t('cable.escToCancel')}</span>
+          </div>
+        </>
       )}
       {wiring.mode && (
         <div

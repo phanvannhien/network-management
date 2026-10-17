@@ -1061,10 +1061,11 @@ export const vi = {
     outside: 'IP không nằm trong subnet {{cidr}} đã chọn.',
   },
   frames: {
+    drawHint: 'Kéo chuột trên màn vẽ để vẽ khung.',
     dragHint:
       'Kéo để di chuyển cả site (khung + thiết bị bên trong). Shift + bấm để chọn thêm site rồi kéo cả nhóm; giữ Alt khi kéo để chỉ dời khung.',
     kinds: { zone: 'Khung', text: 'Chữ', arrow: 'Mũi tên', ipPlan: 'Bảng IP', legend: 'Chú giải' },
-    addFrame: 'Khung (quanh vùng chọn)',
+    addFrame: 'Khung — kéo trên màn vẽ để vẽ (Ctrl+G khi đang chọn: bao quanh vùng chọn)',
     addText: 'Thêm chữ',
     addArrow: 'Thêm mũi tên',
     untitled: 'Khung',

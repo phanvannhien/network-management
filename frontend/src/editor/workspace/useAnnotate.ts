@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { addAnnotation, newId, removeAnnotations } from '../doc/commands'
 import type { DocStoreApi } from '../doc/store'
 import { ANN, isAnnotationId } from './flow'
-import { rectAround, sharedSite, type Sizes } from './frames'
+import { NODE_H, NODE_W, rectAround, sharedSite, type Sizes } from './frames'
 
 /**
  * Adding annotations (P1-19): a frame (around the selected devices — bound to their site when they share one — or an
@@ -43,6 +43,32 @@ export function useAnnotate({
     })
     if (picked.length > 0 && !site) toast.info(t('frames.mixedSites'))
   }
+  /** A frame drawn by dragging (frame tool): bound to the site its devices share, nothing else gathered. */
+  const frameAt = (r: { x: number; y: number; w: number; h: number }) => {
+    const s = store.getState()
+    if (!canEdit || !s.doc) return
+    const z = sizes()
+    const inside = s.doc.view.nodes
+      .filter((n) => {
+        const w = z[n.id]?.width ?? NODE_W
+        const h = z[n.id]?.height ?? NODE_H
+        const cx = n.x + w / 2
+        const cy = n.y + h / 2
+        return cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h
+      })
+      .map((n) => n.id)
+    const site = inside.length > 0 ? sharedSite(s.doc, inside) : null
+    add({
+      id: newId(),
+      kind: 'zone',
+      x: r.x,
+      y: r.y,
+      width: r.w,
+      height: r.h,
+      ...(site ? { siteId: site } : {}),
+    })
+    if (inside.length > 0 && !site) toast.info(t('frames.mixedSites'))
+  }
   const text = () => {
     if (!canEdit) return
     const c = centre()
@@ -75,5 +101,5 @@ export function useAnnotate({
       .filter((id) => s.doc!.view.annotations.some((a) => a.id === id && a.kind === 'zone'))
     if (frames.length > 0) s.dispatch(removeAnnotations(frames))
   }
-  return { frame, text, arrow, ungroup }
+  return { frame, frameAt, text, arrow, ungroup }
 }

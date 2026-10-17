@@ -5,6 +5,20 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Editor: công cụ Khung vẽ bằng kéo chuột
+- Bối cảnh: bấm "Khung" trước đây tự vẽ một khung giữa màn hình (hoặc quanh vùng chọn), trùm lên thiết bị của khung khác và kéo theo
+  chúng khi di chuyển.
+- Đã làm: bấm **Khung** (hoặc Ctrl+G khi không chọn gì) → chế độ vẽ khung: con trỏ thành dấu +, kéo trên màn vẽ để vẽ khung đúng
+  chỗ/cỡ, thả chuột là tạo rồi quay về Con trỏ (kéo quá nhỏ = không tạo). Khung mới gắn site khi mọi thiết bị trong vùng vẽ cùng
+  site, không gom gì khác. Esc / nút Con trỏ / Bàn tay / Nối dây đều thoát chế độ vẽ; nút Khung thuộc nhóm công cụ (được tô khi đang
+  bật). **Ctrl+G khi đang chọn thiết bị** vẫn tạo khung bao quanh vùng chọn.
+- Test / cách kiểm tra: `make check` pass. Chromium: bấm Khung → không tạo khung nào, có lớp vẽ con trỏ crosshair; kéo quanh router +
+  switch HN → 1 khung, tự gắn site HN, lớp vẽ biến mất.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-22 Export.
+
 ## 2026-10-17 — Sơ đồ: ký hiệu cổng gọn g1/0/24
 - Đã làm: nhãn cổng ở hai đầu dây mặc định kiểu **gọn** (`g1/0/24`, `te1/1/1`, `po1`, `tu1`); cài đặt sơ đồ (panel khi không chọn gì) có
   ô **"Ký hiệu cổng"**: gọn / kiểu Cisco (`Gi1/0/24`) / đầy đủ (`GigabitEthernet1/0/24`), lưu theo sơ đồ (`view.portStyle`, backend kiểm

@@ -123,6 +123,8 @@ export interface ToolbarProps {
   /** Back to the pointer: hand tool and connect mode off. */
   onPointer: () => void
   onAddFrame: () => void
+  /** Frame tool on: the next drag draws a frame. */
+  drawingFrame: boolean
   onAddText: () => void
   onAddArrow: () => void
   /** Check results per level (P1-20). */
@@ -180,7 +182,7 @@ export function Toolbar(p: ToolbarProps) {
         label={t('editorCanvas.pointer')}
         shortcut="pointer"
         onClick={p.onPointer}
-        pressed={!p.hand && !p.connecting}
+        pressed={!p.hand && !p.connecting && !p.drawingFrame}
       >
         <MousePointer2 aria-hidden />
       </ToolButton>
@@ -213,7 +215,12 @@ export function Toolbar(p: ToolbarProps) {
           >
             <Cable aria-hidden />
           </ToolButton>
-          <ToolButton label={t('frames.addFrame')} shortcut="group" onClick={p.onAddFrame}>
+          <ToolButton
+            label={t('frames.addFrame')}
+            shortcut="group"
+            onClick={p.onAddFrame}
+            pressed={p.drawingFrame}
+          >
             <SquareDashed aria-hidden />
           </ToolButton>
           <ToolButton label={t('frames.addText')} onClick={p.onAddText}>

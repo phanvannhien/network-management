@@ -1066,10 +1066,11 @@ export const en: Strings = {
     outside: 'The IP is outside the chosen subnet {{cidr}}.',
   },
   frames: {
+    drawHint: 'Drag on the canvas to draw the frame.',
     dragHint:
       'Drag to move the whole site (frame + devices inside). Shift + click adds more sites to drag together; hold Alt to move the frame alone.',
     kinds: { zone: 'Frame', text: 'Text', arrow: 'Arrow', ipPlan: 'IP plan', legend: 'Legend' },
-    addFrame: 'Frame (around the selection)',
+    addFrame: 'Frame — drag on the canvas to draw it (Ctrl+G with a selection: around it)',
     addText: 'Add text',
     addArrow: 'Add arrow',
     untitled: 'Frame',
