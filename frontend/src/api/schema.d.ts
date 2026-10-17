@@ -662,6 +662,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/export-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22) */
+        post: operations["recordExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/delete-impact": {
         parameters: {
             query?: never;
@@ -2686,6 +2706,18 @@ export interface components {
             mgmtIp: string;
             interfaceName: string;
             warnings: string[];
+        };
+        ExportEvent: {
+            /** @enum {string} */
+            kind: "diagram_png" | "diagram_svg" | "devices_xlsx";
+            /**
+             * Format: uuid
+             * @description the exported diagram (diagram_png / diagram_svg)
+             */
+            diagramId?: string;
+            /** @description rows exported (devices_xlsx) */
+            count?: number;
+            scale?: number;
         };
         /** @description an organization template, a system template (catalogId) or port groups typed on the spot — exactly one */
         ApplyTemplate: {
@@ -4883,6 +4915,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DeviceTemplate"];
                 };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    recordExport: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportEvent"];
+            };
+        };
+        responses: {
+            /** @description Recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];

@@ -42,14 +42,25 @@ export function FrameDrawLayer({ onDone }: { onDone: (r: FlowRect) => void }) {
       h: Math.abs(p.y - s.y),
     })
   }
-  const up = (e: PointerEvent) => {
-    if (!start.current || !box) return
+  const cancel = () => {
     start.current = null
     setBox(null)
+  }
+  const up = (e: PointerEvent) => {
+    const s = start.current
+    if (!s) return
+    cancel()
+    // The release point itself (the last move may not have been rendered yet).
+    const p = local(e)
     const r = layer.current!.getBoundingClientRect()
-    const a = flow.screenToFlowPosition({ x: r.left + box.x, y: r.top + box.y })
-    const b = flow.screenToFlowPosition({ x: r.left + box.x + box.w, y: r.top + box.y + box.h })
-    void e
+    const a = flow.screenToFlowPosition({
+      x: r.left + Math.min(s.x, p.x),
+      y: r.top + Math.min(s.y, p.y),
+    })
+    const b = flow.screenToFlowPosition({
+      x: r.left + Math.max(s.x, p.x),
+      y: r.top + Math.max(s.y, p.y),
+    })
     if (b.x - a.x < MIN || b.y - a.y < MIN) return
     onDone({
       x: Math.round(a.x),
@@ -67,6 +78,8 @@ export function FrameDrawLayer({ onDone }: { onDone: (r: FlowRect) => void }) {
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
+      onPointerCancel={cancel}
+      onLostPointerCapture={() => start.current && cancel()}
     >
       {box && (
         <div

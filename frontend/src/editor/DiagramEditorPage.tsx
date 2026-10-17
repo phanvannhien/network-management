@@ -50,6 +50,7 @@ import { CableDialog } from './workspace/CableDialog'
 import { PropertiesPanel } from './workspace/PropertiesPanel'
 import { useWiring } from './workspace/useWiring'
 import { PanelRail } from './workspace/PanelRail'
+import { ExportImageDialog } from './workspace/ExportImageDialog'
 import { FrameDrawLayer } from './workspace/FrameDrawLayer'
 import { ProblemsPanel } from './checks/ProblemsPanel'
 import { countProblems } from './checks/types'
@@ -317,6 +318,7 @@ function Workspace({
   const [hand, setHand] = useState(false)
   /** Frame tool: the next drag on the canvas draws a frame. */
   const [drawingFrame, setDrawingFrame] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const startFrameTool = () => {
     setHand(false)
     setDrawingFrame(true)
@@ -681,6 +683,7 @@ function Workspace({
         onZoomReset={() => void flow.zoomTo(1, { duration: ZOOM_MS })}
         onFit={fit}
         onHelp={() => setHelp(true)}
+        onExport={() => setExporting(true)}
         onQuickAdd={() => setQuick(true)}
         onAddFrame={() => (drawingFrame ? setDrawingFrame(false) : startFrameTool())}
         drawingFrame={drawingFrame}
@@ -787,6 +790,14 @@ function Workspace({
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      {exporting && (
+        <ExportImageDialog
+          orgId={orgId}
+          diagramId={diagramId}
+          name={meta.name}
+          onClose={() => setExporting(false)}
+        />
+      )}
       {quick && (
         <QuickAdd
           orgId={orgId}

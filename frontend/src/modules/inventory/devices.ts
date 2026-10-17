@@ -91,36 +91,39 @@ const keys = {
   fields: (orgId: string) => ['orgs', orgId, 'custom-fields'] as const,
 }
 
+/** One page of the device list with the list's filters (also used to export every page). */
+export async function fetchDevicePage(orgId: string, p: ListParams) {
+  const f = p.facets
+  const r = await api.GET('/orgs/{orgId}/devices', {
+    params: {
+      path: { orgId },
+      query: {
+        q: p.q.trim() || undefined,
+        categoryId: p.categoryId ?? undefined,
+        siteId: f.site?.length ? f.site : undefined,
+        type: f.type?.length ? (f.type as DeviceType[]) : undefined,
+        vendor: f.vendor?.length ? f.vendor : undefined,
+        lifecycle: f.lifecycle?.length ? (f.lifecycle as DeviceLifecycle[]) : undefined,
+        role: f.role?.length ? (f.role as DeviceRole[]) : undefined,
+        tag: f.tag?.length ? f.tag : undefined,
+        clusterId: f.cluster?.length ? f.cluster : undefined,
+        sort: p.sort?.id,
+        desc: p.sort?.desc || undefined,
+        page: p.pageIndex + 1,
+        pageSize: p.pageSize,
+      },
+    },
+  })
+  if (r.data) return r.data
+  return fail(r.error, r.response.status, i18n.t('errors.devicesLoad'))
+}
+
 export function useDeviceList(orgId: string, p: ListParams, enabled = true) {
   return useQuery({
     queryKey: keys.list(orgId, p),
     enabled: enabled && orgId !== '',
     placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const f = p.facets
-      const r = await api.GET('/orgs/{orgId}/devices', {
-        params: {
-          path: { orgId },
-          query: {
-            q: p.q.trim() || undefined,
-            categoryId: p.categoryId ?? undefined,
-            siteId: f.site?.length ? f.site : undefined,
-            type: f.type?.length ? (f.type as DeviceType[]) : undefined,
-            vendor: f.vendor?.length ? f.vendor : undefined,
-            lifecycle: f.lifecycle?.length ? (f.lifecycle as DeviceLifecycle[]) : undefined,
-            role: f.role?.length ? (f.role as DeviceRole[]) : undefined,
-            tag: f.tag?.length ? f.tag : undefined,
-            clusterId: f.cluster?.length ? f.cluster : undefined,
-            sort: p.sort?.id,
-            desc: p.sort?.desc || undefined,
-            page: p.pageIndex + 1,
-            pageSize: p.pageSize,
-          },
-        },
-      })
-      if (r.data) return r.data
-      fail(r.error, r.response.status, i18n.t('errors.devicesLoad'))
-    },
+    queryFn: () => fetchDevicePage(orgId, p),
   })
 }
 

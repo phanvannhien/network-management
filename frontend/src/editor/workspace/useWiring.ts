@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { LinkInput } from '@/modules/inventory/links'
 import { fetchLinks } from '../doc/api'
+import { toFlowEdges } from './flow'
 import { compound, createLink, newId, updateLink, type PortNames } from '../doc/commands'
 import type { DocStoreApi } from '../doc/store'
 import type { CableEnd, CableValue } from './CableDialog'
@@ -80,6 +81,12 @@ export function useWiring({
     const e = doc?.view.edges.find((x) => x.id === edgeId)
     const card = e && doc?.links[e.linkId]
     if (!doc || !card || !canEdit) return
+    // A bundled edge (ADR-036) is many cables: it is shown in the panel, not edited as one.
+    const bundle = toFlowEdges(doc).find((x) => x.id === edgeId)?.data?.bundle
+    if (bundle && bundle.length > 1) {
+      toast.info(t('panel.bundleGuide'))
+      return
+    }
     const nodeOf = (refId: string) => doc.view.nodes.find((n) => n.refId === refId)?.id ?? ''
     const a = endOf(nodeOf(card.aId))
     const b = endOf(nodeOf(card.bId))

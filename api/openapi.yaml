@@ -1212,6 +1212,32 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/export-events:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: recordExport
+      summary: Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportEvent'
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/delete-impact:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5519,6 +5545,27 @@ components:
           type: array
           items:
             type: string
+
+    ExportEvent:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [diagram_png, diagram_svg, devices_xlsx]
+        diagramId:
+          type: string
+          format: uuid
+          description: the exported diagram (diagram_png / diagram_svg)
+        count:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          description: rows exported (devices_xlsx)
+        scale:
+          type: integer
+          minimum: 1
+          maximum: 4
 
     ApplyTemplate:
       type: object

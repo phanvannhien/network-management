@@ -126,8 +126,16 @@ export function CableDialog({
     portFits(v.kind, p.kind, p.media) && (!devPorts.taken.has(p.id) || sharesPort(v.kind, p.media))
   const endIdx = physicalOrder.findIndex((p) => p.id === rangeTo)
   const span = startIdx >= 0 && endIdx > startIdx ? physicalOrder.slice(startIdx, endIdx + 1) : []
-  const rangePorts = span.filter(usable)
-  const skipped = span.length - rangePorts.length
+  // The start port is the cable being drawn; the extra ports are the usable ones after it.
+  const extraPorts = span.slice(1).filter(usable)
+  const rangePorts = span.length > 0 ? [span[0]!, ...extraPorts] : []
+  const skipped = Math.max(0, span.length - 1 - extraPorts.length)
+  // A new start port starts a new range.
+  const [rangeFrom, setRangeFrom] = useState(rangeStart)
+  if (rangeFrom !== rangeStart) {
+    setRangeFrom(rangeStart)
+    setRangeTo('')
+  }
   const endField = (
     e: CableEnd,
     ports: ReturnType<typeof usePorts>,
@@ -209,8 +217,8 @@ export function CableDialog({
                 status: v.status,
               },
               { aPort: nameOf(portsA.list, aPort), bPort: nameOf(portsB.list, bPort) },
-              rangePorts.length > 1
-                ? rangePorts.slice(1).map((p) => ({ id: p.id, name: p.name }))
+              extraPorts.length > 0
+                ? extraPorts.map((p) => ({ id: p.id, name: p.name }))
                 : undefined,
             )
           }}

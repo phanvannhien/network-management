@@ -5,6 +5,30 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-22 Export (phần 1): ảnh PNG/SVG có chú giải, Excel thiết bị, audit export; sửa lỗi từ rà soát
+- Đã làm:
+  - **Xuất ảnh sơ đồ** (nút trên toolbar): PNG 1x–4x hoặc SVG; có tiêu đề + ngày xuất phía trên, **chú giải** các loại dây / trạng
+    thái đang dùng phía dưới (mẫu nét lấy đúng CSS của sơ đồ). Toàn bộ sơ đồ được chụp kể cả phần ngoài màn hình (tạm vừa màn hình,
+    bỏ chọn, chờ phông chữ, rồi trả lại khung nhìn và vùng chọn); ảnh quá lớn tự hạ độ nét trong giới hạn trình duyệt. html-to-image
+    (đã có trong Stack) — ghi tạm nét SVG trực tiếp lên từng đường khi chụp vì thư viện không chép kiểu nét của SVG.
+  - **Xuất Excel danh sách thiết bị** (nút "Xuất Excel" ở Kho → Thiết bị): mọi trang theo bộ lọc đang chọn, đúng cột của file nhập
+    (Site = công ty, Location = mã site, Category = mã loại…) + vài cột tham khảo; **không có cột mật khẩu**. Bộ nhập nhận mã loại
+    (l2_switch, vpn_gateway…) để vòng xuất → nhập khớp.
+  - **Audit export**: `POST /orgs/{orgId}/export-events` ghi `export.diagram_png|svg`, `export.devices_xlsx` (sơ đồ phải là sơ đồ người
+    dùng xem được).
+  - Sửa lỗi từ rà soát: nhóm đầu cuối sửa lần 2 sau khi lưu không còn báo xung đột (làm mới version sau lưu, chưa có version thì chưa
+    cho Áp dụng); **dây gộp** hiện panel "Nhóm dây" (số dây, dải cổng) thay vì sửa nhầm 1 dây, nhấp đúp không mở hộp sửa 1 dây; dải
+    cổng không còn lệch 1 cổng và tự xóa khi đổi cổng đầu; công cụ vẽ khung xử lý kéo bị hủy và lấy đúng điểm thả; ô IP quản trị ghi
+    audit khi tạo interface quản trị và khi đặt interface quản trị.
+- Test / cách kiểm tra: `make check` pass (Go `TestRecordExport`: ghi audit, sơ đồ tổ chức khác 404, chặn chéo tổ chức; vitest: vòng
+  xuất Excel → bộ nhập đọc đúng, không có cột bí mật). Chromium: PNG/SVG tải về có dây + chú giải; xuất khi đang phóng to vẫn đủ sơ đồ
+  và trả lại khung nhìn; Excel 10 dòng đúng cột.
+- Còn dở / lỗi đã biết: SVG là ảnh "bọc HTML" (foreignObject), phóng to nét nhưng không sửa được bằng Illustrator như vector thuần;
+  phần 2 của P1-22 (file `.ntb.json` xuất/nhập, schema mới) chưa làm.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-22 phần 2 — `.ntb.json`.
+
 ## 2026-10-17 — Editor: công cụ Khung vẽ bằng kéo chuột
 - Bối cảnh: bấm "Khung" trước đây tự vẽ một khung giữa màn hình (hoặc quanh vùng chọn), trùm lên thiết bị của khung khác và kéo theo
   chúng khi di chuyển.

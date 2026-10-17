@@ -1,5 +1,13 @@
 import type { PaginationState, RowSelectionState, SortingState } from '@tanstack/react-table'
-import { FileSpreadsheet, MoreHorizontal, Plus, SearchX, Server, TriangleAlert } from 'lucide-react'
+import {
+  FileDown,
+  FileSpreadsheet,
+  MoreHorizontal,
+  Plus,
+  SearchX,
+  Server,
+  TriangleAlert,
+} from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -30,6 +38,7 @@ import { DeviceFormDialog } from './DeviceFormDialog'
 import { EndpointGroupDialog, EndpointGroupsTable } from './EndpointGroups'
 import {
   DEVICE_TYPES,
+  fetchDevicePage,
   LIFECYCLES,
   useClusters,
   useDeleteDevices,
@@ -37,6 +46,8 @@ import {
   type Device,
   type DeviceSort,
 } from './devices'
+import { downloadDevicesXlsx } from './exportDevices'
+import { api, csrfParam } from '@/api/client'
 
 /** Warranty date; amber icon within 90 days, red text once expired. */
 export function WarrantyText({ date }: { date: string | null }) {
@@ -137,6 +148,39 @@ export function DeviceListPage() {
   })
   const rows = list.data?.devices
   const byId = useMemo(() => new Map((rows ?? []).map((d) => [d.id, d])), [rows])
+
+  const [exporting, setExporting] = useState(false)
+  /** Every device matching the list's filters (all pages), as an Excel file the importer reads back (P1-22). */
+  const exportAll = async () => {
+    setExporting(true)
+    try {
+      const params = {
+        q,
+        facets: filter.facets,
+        categoryId: scope.categoryId,
+        sort: sorting[0] ? { id: sorting[0].id as DeviceSort, desc: sorting[0].desc } : null,
+        pageIndex: 0,
+        pageSize: 200,
+      }
+      const all: Device[] = []
+      for (;;) {
+        const page = await fetchDevicePage(orgId, params)
+        all.push(...page.devices)
+        if (page.devices.length === 0 || all.length >= page.total) break
+        params.pageIndex++
+      }
+      downloadDevicesXlsx(all, `thiet-bi-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      await api.POST('/orgs/{orgId}/export-events', {
+        params: { ...csrfParam, path: { orgId } },
+        body: { kind: 'devices_xlsx', count: all.length },
+      })
+      toast.success(t('deviceExport.done', { count: all.length }))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('deviceExport.failed'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const changeFilter = (f: FilterState) => {
     setFilter(f)
@@ -390,6 +434,9 @@ export function DeviceListPage() {
                 onClick={() => setCreatingGroup(true)}
               >
                 <Plus aria-hidden /> {t('endpoints.add')}
+              </Button>
+              <Button variant="outline" disabled={exporting} onClick={() => void exportAll()}>
+                <FileDown aria-hidden /> {t('deviceExport.button')}
               </Button>
               <Link
                 className={buttonVariants({ variant: 'outline' })}

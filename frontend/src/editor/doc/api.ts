@@ -98,6 +98,8 @@ export function useDiagramMutations(orgId: string) {
         // Saves may create / delete devices and links.
         qc.invalidateQueries({ queryKey: ['orgs', orgId, 'devices'] }),
         qc.invalidateQueries({ queryKey: ['orgs', orgId, 'links'] }),
+        // …and endpoint groups (ADR-036): the panel takes the group's version from there.
+        qc.invalidateQueries({ queryKey: ['orgs', orgId, 'endpoint-groups'] }),
       ]),
   })
   return { create, remove, save }

@@ -475,12 +475,18 @@ func (s *Server) SetDeviceMgmtIp(ctx context.Context, req apigen.SetDeviceMgmtIp
 					return fmt.Errorf("create mgmt interface: %w", err)
 				}
 				found = created.ID
+				if err := deviceAudit(ctx, q, m, dev.ID, "interface.create", nil, map[string]string{"name": n, "kind": kind}); err != nil {
+					return err
+				}
 			case err != nil:
 				return fmt.Errorf("find mgmt interface: %w", err)
 			}
 			iface = found
 			if err := q.SetDeviceMgmtInterface(ctx, store.SetDeviceMgmtInterfaceParams{InterfaceID: iface, ID: dev.ID, OrganizationID: m.OrgID}); err != nil {
 				return fmt.Errorf("set mgmt interface: %w", err)
+			}
+			if err := deviceAudit(ctx, q, m, dev.ID, "device.update", map[string]string{"mgmtInterface": ""}, map[string]string{"mgmtInterface": n}); err != nil {
+				return err
 			}
 		}
 		// Replace the primary address of that family on the interface, or add one.

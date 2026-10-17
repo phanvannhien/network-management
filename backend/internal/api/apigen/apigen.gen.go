@@ -584,6 +584,27 @@ func (e EndpointKind) Valid() bool {
 	}
 }
 
+// Defines values for ExportEventKind.
+const (
+	DevicesXlsx ExportEventKind = "devices_xlsx"
+	DiagramPng  ExportEventKind = "diagram_png"
+	DiagramSvg  ExportEventKind = "diagram_svg"
+)
+
+// Valid indicates whether the value is a known member of the ExportEventKind enum.
+func (e ExportEventKind) Valid() bool {
+	switch e {
+	case DevicesXlsx:
+		return true
+	case DiagramPng:
+		return true
+	case DiagramSvg:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthDatabase.
 const (
 	HealthDatabaseOk          HealthDatabase = "ok"
@@ -2312,6 +2333,20 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// ExportEvent defines model for ExportEvent.
+type ExportEvent struct {
+	// Count rows exported (devices_xlsx)
+	Count *int `json:"count,omitempty"`
+
+	// DiagramId the exported diagram (diagram_png / diagram_svg)
+	DiagramId *openapi_types.UUID `json:"diagramId,omitempty"`
+	Kind      ExportEventKind     `json:"kind"`
+	Scale     *int                `json:"scale,omitempty"`
+}
+
+// ExportEventKind defines model for ExportEvent.Kind.
+type ExportEventKind string
+
 // Health defines model for Health.
 type Health struct {
 	Database HealthDatabase `json:"database"`
@@ -3806,6 +3841,11 @@ type PromoteEndpointMemberParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// RecordExportParams defines parameters for RecordExport.
+type RecordExportParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // LookupIpParams defines parameters for LookupIp.
 type LookupIpParams struct {
 	Ip string `form:"ip" json:"ip"`
@@ -4090,6 +4130,9 @@ type UpdateEndpointMemberJSONRequestBody = EndpointMemberUpdate
 
 // PromoteEndpointMemberJSONRequestBody defines body for PromoteEndpointMember for application/json ContentType.
 type PromoteEndpointMemberJSONRequestBody = PromoteMemberInput
+
+// RecordExportJSONRequestBody defines body for RecordExport for application/json ContentType.
+type RecordExportJSONRequestBody = ExportEvent
 
 // CreateLinkJSONRequestBody defines body for CreateLink for application/json ContentType.
 type CreateLinkJSONRequestBody = LinkInput
@@ -4387,6 +4430,9 @@ type ServerInterface interface {
 	// PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
 	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
 	PromoteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params PromoteEndpointMemberParams)
+	// RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
+	// (POST /orgs/{orgId}/export-events)
+	RecordExport(w http.ResponseWriter, r *http.Request, orgId OrgId, params RecordExportParams)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
@@ -4990,6 +5036,12 @@ func (_ Unimplemented) UpdateEndpointMember(w http.ResponseWriter, r *http.Reque
 // PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
 // (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
 func (_ Unimplemented) PromoteEndpointMember(w http.ResponseWriter, r *http.Request, orgId OrgId, groupId GroupId, memberId MemberId, params PromoteEndpointMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
+// (POST /orgs/{orgId}/export-events)
+func (_ Unimplemented) RecordExport(w http.ResponseWriter, r *http.Request, orgId OrgId, params RecordExportParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -9480,6 +9532,60 @@ func (siw *ServerInterfaceWrapper) PromoteEndpointMember(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// RecordExport operation middleware
+func (siw *ServerInterfaceWrapper) RecordExport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RecordExportParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordExport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LookupIp operation middleware
 func (siw *ServerInterfaceWrapper) LookupIp(w http.ResponseWriter, r *http.Request) {
 
@@ -11892,6 +11998,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/device-templates/from-catalog", wrapper.CreateTemplateFromCatalog)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/export-events", wrapper.RecordExport)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
@@ -17986,6 +18095,80 @@ func (response PromoteEndpointMember409JSONResponse) VisitPromoteEndpointMemberR
 	return err
 }
 
+type RecordExportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params RecordExportParams
+	Body   *RecordExportJSONRequestBody
+}
+
+type RecordExportResponseObject interface {
+	VisitRecordExportResponse(w http.ResponseWriter) error
+}
+
+type RecordExport204Response struct {
+}
+
+func (response RecordExport204Response) VisitRecordExportResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RecordExport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response RecordExport400JSONResponse) VisitRecordExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordExport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RecordExport401JSONResponse) VisitRecordExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordExport403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RecordExport403JSONResponse) VisitRecordExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordExport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RecordExport404JSONResponse) VisitRecordExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LookupIpRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params LookupIpParams
@@ -21493,6 +21676,9 @@ type StrictServerInterface interface {
 	// PromoteEndpointMember Turn a member into a device (interface, MAC and IP carried over; member removed)
 	// (POST /orgs/{orgId}/endpoint-groups/{groupId}/members/{memberId}/promote)
 	PromoteEndpointMember(ctx context.Context, request PromoteEndpointMemberRequestObject) (PromoteEndpointMemberResponseObject, error)
+	// RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
+	// (POST /orgs/{orgId}/export-events)
+	RecordExport(ctx context.Context, request RecordExportRequestObject) (RecordExportResponseObject, error)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
@@ -24089,6 +24275,40 @@ func (sh *strictHandler) PromoteEndpointMember(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PromoteEndpointMemberResponseObject); ok {
 		if err := validResponse.VisitPromoteEndpointMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordExport operation middleware
+func (sh *strictHandler) RecordExport(w http.ResponseWriter, r *http.Request, orgId OrgId, params RecordExportParams) {
+	var request RecordExportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body RecordExportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordExport(ctx, request.(RecordExportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordExport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordExportResponseObject); ok {
+		if err := validResponse.VisitRecordExportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

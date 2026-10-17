@@ -38,14 +38,14 @@ import {
 } from '../doc/commands'
 import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
-import { ANN, isAnnotationId } from './flow'
+import { ANN, isAnnotationId, toFlowEdges } from './flow'
 import { LABEL_PRESETS, presetOf } from './labels'
 import { AddPorts } from './AddPorts'
 import { ColorChoice } from './ColorChoice'
 import { EndpointPanel } from './EndpointPanel'
 import { MgmtIpField } from './MgmtIpField'
 import { PortIpam } from './PortIpam'
-import { sortPorts, takenPorts } from './wiring'
+import { portRanges, sortPorts, takenPorts } from './wiring'
 
 /**
  * Property panel (P1-18, SRS §6.3): what is selected on the canvas, edited in place. Changes are commands (undo /
@@ -100,7 +100,13 @@ export function PropertiesPanel({
     body = <ManyPanel nodeIds={selection} canEdit={canEdit} />
   } else if (edgeSelection.length === 1) {
     const edge = doc.view.edges.find((e) => e.id === edgeSelection[0])
-    if (edge && doc.links[edge.linkId]) {
+    // A bundled edge (an endpoint group on a port range, ADR-036) stands for all its cables: show them, do not
+    // pretend that editing the first one edits the bundle.
+    const bundle = edge ? toFlowEdges(doc).find((e) => e.id === edge.id)?.data?.bundle : undefined
+    if (edge && bundle && bundle.length > 1) {
+      title = t('panel.bundle', { count: bundle.length })
+      body = <BundlePanel linkIds={bundle} />
+    } else if (edge && doc.links[edge.linkId]) {
       title = t('panel.cable')
       body = (
         <CablePanel
@@ -676,6 +682,33 @@ function GroupPanel({
           <LabelColorPicker nodeIds={[nodeId]} current={node?.labelStyle?.color ?? ''} />
         </Section>
       )}
+    </>
+  )
+}
+
+/** The cables of an endpoint group to one device, drawn as one edge (ADR-036). */
+function BundlePanel({ linkIds }: { linkIds: string[] }) {
+  const { t } = useTranslation()
+  const doc = useDoc((s) => s.doc)!
+  const links = linkIds.map((id) => doc.links[id]).filter(Boolean)
+  const first = links[0]
+  if (!first) return null
+  const groupAt = doc.groups[first.aId] ? 'a' : 'b'
+  const deviceId = groupAt === 'a' ? first.bId : first.aId
+  const groupId = groupAt === 'a' ? first.aId : first.bId
+  const ports = links.map((l) => (groupAt === 'a' ? l.bPort : l.aPort) ?? '').filter(Boolean)
+  return (
+    <>
+      <p>
+        <span className="font-mono">{doc.devices[deviceId]?.hostname ?? '?'}</span> ↔{' '}
+        <span className="font-medium">{doc.groups[groupId]?.name ?? '?'}</span>
+      </p>
+      <dl className="space-y-1">
+        <Row label={t('links.kind')} value={t(`links.kinds.${first.kind as 'ethernet'}`)} />
+        <Row label={t('panel.bundlePorts')} value={portRanges(ports) || '—'} mono />
+        <Row label={t('panel.bundleCount')} value={String(links.length)} />
+      </dl>
+      <p className="text-xs text-muted-foreground">{t('panel.bundleGuide')}</p>
     </>
   )
 }

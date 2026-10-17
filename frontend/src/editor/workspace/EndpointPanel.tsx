@@ -288,7 +288,12 @@ export function EndpointPanel({
         </FormField>
         {canEdit && (
           <div className="flex gap-2">
-            <Button size="sm" disabled={!dirty || badCount || !f.name.trim()} onClick={apply}>
+            <Button
+              size="sm"
+              // A saved group needs its current version (loaded from the server) before an edit can be applied.
+              disabled={!dirty || badCount || !f.name.trim() || (!g.draft && !saved.data)}
+              onClick={apply}
+            >
               {t('panel.apply')}
             </Button>
             {dirty && (

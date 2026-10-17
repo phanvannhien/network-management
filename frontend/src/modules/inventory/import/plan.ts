@@ -1,5 +1,8 @@
 import type { components } from '@/api/client'
+import { DEVICE_TYPES } from '../devices'
 import { norm } from './parse'
+
+const DEVICE_TYPE_IDS = new Set<string>(DEVICE_TYPES)
 
 // Device import plan (P1-21, SRS §12): find the header row, map columns to fields, map values (device kind → type,
 // "Location" → site), infer vendor / model / template from the part number, propose clusters for rows sharing an IP.
@@ -133,6 +136,9 @@ export function dataRows(
 
 /** Device kind text (and part number, for PoE) → device type; null = not recognised. */
 export function typeFromText(text: string, partNumber = ''): DeviceType | null {
+  // An exported file writes the type id itself (l2_switch, vpn_gateway…).
+  const id = text.trim().toLowerCase()
+  if (DEVICE_TYPE_IDS.has(id)) return id as DeviceType
   const t = norm(text)
   if (!t) return null
   const poe = /-\d+[a-z]*(fp|lp|mp|p)(-|$)/i.test(partNumber)

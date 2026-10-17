@@ -4,6 +4,7 @@ import {
   CircleCheck,
   Cable,
   Hand,
+  ImageDown,
   MousePointer2,
   Keyboard,
   LibraryBig,
@@ -114,6 +115,8 @@ export interface ToolbarProps {
   onZoomReset: () => void
   onFit: () => void
   onHelp: () => void
+  /** Export the diagram as a picture (P1-22). */
+  onExport: () => void
   onQuickAdd: () => void
   connecting: boolean
   onConnect: () => void
@@ -318,6 +321,9 @@ export function Toolbar(p: ToolbarProps) {
           {p.problems.error + p.problems.warning + p.problems.info}
         </Button>
       </Tip>
+      <ToolButton label={t('exportImage.title')} onClick={p.onExport}>
+        <ImageDown aria-hidden />
+      </ToolButton>
       <ToolButton label={t('editorCanvas.shortcuts')} shortcut="help" onClick={p.onHelp}>
         <Keyboard aria-hidden />
       </ToolButton>
