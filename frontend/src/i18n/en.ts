@@ -1133,6 +1133,7 @@ export const en: Strings = {
     },
     labelColor: 'Label colour',
     colors: {
+      custom: 'Custom colour',
       none: 'No colour',
       blue: 'Blue',
       green: 'Green',

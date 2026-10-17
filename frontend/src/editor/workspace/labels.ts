@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { DeviceCard } from '../doc/types'
 
 // Device labels on the canvas (SRS §6.3): a template per diagram ("{hostname}\n{mgmtIp}" by default) and an optional
@@ -51,3 +52,14 @@ export function renderLabel(
 /** Label background palette: names, mapped to theme-aware tints in index.css (.ntb-tag-*). */
 export const LABEL_COLORS = ['blue', 'green', 'amber', 'red', 'violet', 'slate'] as const
 export type LabelColor = (typeof LABEL_COLORS)[number]
+
+/** A colour picked freely (`#rrggbb`) rather than a palette name — the only free form drawn inline. */
+export const isHexColor = (c: string | undefined): c is string => !!c && /^#[0-9a-fA-F]{6}$/.test(c)
+
+/** Label background for a palette name (class) or a free colour (inline, same 18 % mix as the palette). */
+export function tagColor(c: string | undefined): { className?: string; style?: CSSProperties } {
+  if (!c) return {}
+  if (isHexColor(c))
+    return { style: { background: `color-mix(in srgb, ${c} 18%, var(--surface))` } }
+  return { className: `ntb-tag-${c}` }
+}

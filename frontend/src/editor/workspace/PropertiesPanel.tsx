@@ -38,8 +38,9 @@ import {
 import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId } from './flow'
-import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
+import { LABEL_PRESETS, presetOf } from './labels'
 import { AddPorts } from './AddPorts'
+import { ColorChoice } from './ColorChoice'
 import { EndpointPanel } from './EndpointPanel'
 import { MgmtIpField } from './MgmtIpField'
 import { PortIpam } from './PortIpam'
@@ -190,26 +191,11 @@ function LabelColorPicker({ nodeIds, current }: { nodeIds: string[]; current: st
   const { t } = useTranslation()
   const store = useDocStoreApi()
   return (
-    <div role="radiogroup" aria-label={t('panel.labelColor')} className="flex flex-wrap gap-1">
-      {(['', ...LABEL_COLORS] as const).map((c) => (
-        <button
-          key={c || 'none'}
-          type="button"
-          role="radio"
-          aria-checked={current === c}
-          aria-label={t(`panel.colors.${c || 'none'}`)}
-          title={t(`panel.colors.${c || 'none'}`)}
-          onClick={() => store.getState().dispatch(setLabelColor(nodeIds, c))}
-          className={cn(
-            'size-6 rounded-sm border border-border-control',
-            c ? `ntb-tag-${c}` : 'bg-card',
-            current === c && 'ring-2 ring-primary',
-          )}
-        >
-          {!c && <X aria-hidden className="m-auto size-3 text-muted-foreground" />}
-        </button>
-      ))}
-    </div>
+    <ColorChoice
+      label={t('panel.labelColor')}
+      current={current}
+      onPick={(c, merge) => store.getState().dispatch(setLabelColor(nodeIds, c, merge))}
+    />
   )
 }
 
@@ -1123,24 +1109,11 @@ function AnnotationPanel({
         }
       </FormField>
       <Section title={t('frames.color')}>
-        <div role="radiogroup" aria-label={t('frames.color')} className="flex flex-wrap gap-1">
-          {(['', ...LABEL_COLORS] as const).map((c) => (
-            <button
-              key={c || 'none'}
-              type="button"
-              role="radio"
-              aria-checked={(a.color ?? '') === c}
-              aria-label={t(`panel.colors.${c || 'none'}`)}
-              title={t(`panel.colors.${c || 'none'}`)}
-              onClick={() => set({ color: c || undefined })}
-              className={cn(
-                'size-6 rounded-sm border border-border-control',
-                c ? `ntb-tag-${c}` : 'bg-card',
-                (a.color ?? '') === c && 'ring-2 ring-primary',
-              )}
-            />
-          ))}
-        </div>
+        <ColorChoice
+          label={t('frames.color')}
+          current={a.color ?? ''}
+          onPick={(c, merge) => set({ color: c || undefined }, merge)}
+        />
       </Section>
       {a.kind === 'text' && (
         <FormField label={t('frames.size')}>

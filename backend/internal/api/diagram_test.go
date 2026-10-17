@@ -345,3 +345,36 @@ func TestDiagramSaveEndpointGroups(t *testing.T) {
 		t.Errorf("group in another organization's site accepted")
 	}
 }
+
+// Colours: palette names or #rrggbb (drawn inline), for node labels and annotations.
+func TestDiagramColours(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "HCM"}))
+	sw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW", "type": "l2_switch", "siteId": site}))
+	dg := idOf(t, mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "C", "layer": "physical"})["diagram"].(map[string]any))
+	version := float64(1)
+	save := func(label, ann string) int {
+		n := node("n1", "device", sw, 0)
+		n["labelStyle"] = map[string]any{"color": label}
+		v := view([]map[string]any{n})
+		v["annotations"] = []map[string]any{{"id": "t1", "kind": "text", "x": 0, "y": 0, "text": "x", "color": ann}}
+		status, res := fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{"version": version, "view": v})
+		if status == http.StatusOK {
+			version = res["detail"].(map[string]any)["diagram"].(map[string]any)["version"].(float64)
+		}
+		return status
+	}
+	if s := save("#12ab34", "#ABCDEF"); s != http.StatusOK {
+		t.Errorf("free colours: %d", s)
+	}
+	if s := save("blue", "violet"); s != http.StatusOK {
+		t.Errorf("palette: %d", s)
+	}
+	if s := save("red;background:url(x)", "blue"); s != http.StatusBadRequest {
+		t.Errorf("css in a label colour accepted: %d", s)
+	}
+	if s := save("blue", "#12345"); s != http.StatusBadRequest {
+		t.Errorf("short hex accepted: %d", s)
+	}
+}

@@ -6,7 +6,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import { GripVertical } from 'lucide-react'
-import { memo, useRef, useState, type PointerEvent } from 'react'
+import { memo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ import { atLeast } from '@/modules/sites/access'
 import { updateAnnotation } from '../doc/commands'
 import { useDoc, useDocStoreApi } from './context'
 import { ARROW_PAD } from './frames'
+import { isHexColor } from './labels'
 
 // Annotations on the canvas (P1-19): frames (zones bound to a site / location, ADR-032), text and arrows, plus the
 // cluster boxes derived from the inventory. Frames sit under devices and cables; only their title bar takes clicks
@@ -58,13 +59,14 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<AnnNode>) {
   const scale = zoom < 0.8 ? Math.min(2.5, 0.8 / zoom) : 1
   if (!a) return null
   const color = a.color || 'slate'
+  const free = isHexColor(color)
   return (
     <div
       className={cn(
         'ntb-frame h-full w-full rounded-md border-2 border-dashed',
-        `ntb-zone-${color}`,
+        free ? 'ntb-zone-slate' : `ntb-zone-${color}`,
       )}
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: 'none', ...(free ? ({ '--zone': color } as CSSProperties) : {}) }}
     >
       <NodeResizer
         isVisible={selected && canEdit}
@@ -128,10 +130,10 @@ function TextNodeImpl({ data, selected }: NodeProps<AnnNode>) {
     <div
       className={cn(
         'max-w-md rounded-sm px-1 whitespace-pre-wrap',
-        TEXT_COLORS[a.color ?? ''] ?? TEXT_COLORS[''],
+        isHexColor(a.color) ? '' : (TEXT_COLORS[a.color ?? ''] ?? TEXT_COLORS['']),
         selected && 'ring-2 ring-primary',
       )}
-      style={{ fontSize: a.fontSize ?? 14 }}
+      style={{ fontSize: a.fontSize ?? 14, ...(isHexColor(a.color) ? { color: a.color } : {}) }}
     >
       {a.text || <span className="text-muted-foreground italic">{t('frames.emptyText')}</span>}
     </div>
@@ -153,7 +155,7 @@ function ArrowNodeImpl({ data, selected }: NodeProps<AnnNode>) {
   const oy = Math.min(p.y1, p.y2) - ARROW_PAD
   const w = Math.abs(p.x2 - p.x1) + 2 * ARROW_PAD
   const h = Math.abs(p.y2 - p.y1) + 2 * ARROW_PAD
-  const color = TEXT_COLORS[a.color ?? ''] ?? TEXT_COLORS['']
+  const color = isHexColor(a.color) ? '' : (TEXT_COLORS[a.color ?? ''] ?? TEXT_COLORS[''])
   const marker = `arrow-${a.id}`
   const onDown = (which: 'start' | 'end') => (e: PointerEvent) => {
     e.stopPropagation()
@@ -183,7 +185,10 @@ function ArrowNodeImpl({ data, selected }: NodeProps<AnnNode>) {
     setLive(null)
   }
   return (
-    <div className={cn('relative', color)} style={{ width: w, height: h }}>
+    <div
+      className={cn('relative', color)}
+      style={{ width: w, height: h, ...(isHexColor(a.color) ? { color: a.color } : {}) }}
+    >
       <svg width={w} height={h} className="overflow-visible" aria-hidden>
         <defs>
           <marker

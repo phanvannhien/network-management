@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
@@ -438,6 +439,11 @@ func checkViewShape(v apigen.DiagramView) string {
 		if !unique(n.Id) || !n.RefKind.Valid() || !finite(n.X, n.Y) {
 			return "Node trên sơ đồ không hợp lệ (id trùng/trống, loại hoặc tọa độ sai)"
 		}
+		if n.LabelStyle != nil {
+			if c, ok := (*n.LabelStyle)["color"]; ok && !validColor(c) {
+				return "Màu nhãn không hợp lệ (màu có sẵn hoặc #rrggbb)"
+			}
+		}
 	}
 	for _, e := range v.Edges {
 		if !unique(e.Id) || (e.Routing != nil && !e.Routing.Valid()) || (e.Waypoints != nil && len(*e.Waypoints) > 50) {
@@ -459,7 +465,7 @@ func checkViewShape(v apigen.DiagramView) string {
 			return "Kích thước khung/chú thích không hợp lệ"
 		case a.FontSize != nil && (*a.FontSize < 8 || *a.FontSize > 96):
 			return "Cỡ chữ từ 8 đến 96"
-		case a.Color != nil && len(*a.Color) > 20:
+		case a.Color != nil && !validColor(*a.Color):
 			return "Màu chú thích không hợp lệ"
 		case a.LineStyle != nil && !a.LineStyle.Valid():
 			return "Kiểu nét mũi tên không hợp lệ"
@@ -861,4 +867,15 @@ func checkFrameRefs(ctx context.Context, q store.Querier, m tenant.Membership, v
 		}
 	}
 	return "", nil
+}
+
+var hexColor = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// validColor: no colour, a palette name, or a colour picked freely as #rrggbb (drawn inline, so nothing else).
+func validColor(c string) bool {
+	switch c {
+	case "", "blue", "green", "amber", "red", "violet", "slate":
+		return true
+	}
+	return hexColor.MatchString(c)
 }

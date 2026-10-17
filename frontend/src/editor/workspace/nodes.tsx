@@ -14,7 +14,7 @@ import { SeverityIcon } from '../checks/SeverityIcon'
 import type { Severity } from '../checks/types'
 import { useDoc } from './context'
 import type { RefData } from './flow'
-import { renderLabel, type LabelLine } from './labels'
+import { renderLabel, tagColor, type LabelLine } from './labels'
 
 // Canvas nodes (P1-14). Each node subscribes to its own card only, so editing one device re-renders one node
 // (CLAUDE.md editor rule). Links attach to the hidden handles; picking ports comes with wiring (P1-17).
@@ -88,8 +88,10 @@ function Frame({
       <span
         className={cn(
           'line-clamp-2 w-full rounded-sm text-center text-xs leading-tight font-medium [overflow-wrap:anywhere]',
-          color && `ntb-tag-${color} px-1`,
+          color && 'px-1',
+          tagColor(color).className,
         )}
+        style={tagColor(color).style}
       >
         {label}
       </span>

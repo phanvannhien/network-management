@@ -1126,6 +1126,7 @@ export const vi = {
     },
     labelColor: 'Màu nhãn',
     colors: {
+      custom: 'Màu tùy chọn',
       none: 'Không màu',
       blue: 'Xanh dương',
       green: 'Xanh lá',

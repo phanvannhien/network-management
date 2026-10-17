@@ -356,9 +356,10 @@ export function setLabelTemplate(template: string): DocCommand {
 }
 
 /** Background colour of the label of some nodes (a palette name; '' = none). */
-export function setLabelColor(nodeIds: string[], color: string): DocCommand {
+export function setLabelColor(nodeIds: string[], color: string, mergeKey?: string): DocCommand {
   return {
     label: 'setLabelColor',
+    mergeKey,
     apply(d) {
       const ids = new Set(nodeIds)
       for (const n of d.view.nodes) {

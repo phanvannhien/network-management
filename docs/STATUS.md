@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Panel thuộc tính: chọn màu tự do
+- Đã làm: mọi chỗ chọn màu trong panel (nhãn thiết bị/nhóm, nhiều đối tượng, khung, chữ, mũi tên) có thêm ô **"Màu tùy chọn"** (bảng
+  chọn màu của hệ điều hành) cạnh 6 màu có sẵn; kéo chọn liên tục = một bước hoàn tác. Màu tự do lưu dạng `#rrggbb`, vẽ inline (nhãn:
+  pha 18 % như màu có sẵn; khung: viền/nền theo màu; chữ, mũi tên: màu chữ). Backend chỉ nhận tên màu có sẵn hoặc `#rrggbb` cho
+  `labelStyle.color` và màu chú thích (chặn chuỗi CSS lạ).
+- Test / cách kiểm tra: `make check` pass (Go `TestDiagramColours`: hex/tên màu nhận, chuỗi CSS và hex thiếu ký tự bị từ chối).
+  Chromium: chọn #ff6600 cho nhãn ISR → nhãn đổi màu, lưu được.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: tiếp tục tối ưu editor, hoặc P1-22 Export.
+
 ## 2026-10-17 — Đầu cuối trên sơ đồ (ADR-036): nhóm đại diện, nối dải cổng, cấu hình trong panel
 - Đã làm:
   - Thư viện sơ đồ có mục **"Đầu cuối (không vào kho)"** (PC, laptop, máy in, điện thoại IP, họp trực tuyến, camera, chấm công, IoT,
