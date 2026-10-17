@@ -5,6 +5,17 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Sơ đồ: ký hiệu cổng gọn g1/0/24
+- Đã làm: nhãn cổng ở hai đầu dây mặc định kiểu **gọn** (`g1/0/24`, `te1/1/1`, `po1`, `tu1`); cài đặt sơ đồ (panel khi không chọn gì) có
+  ô **"Ký hiệu cổng"**: gọn / kiểu Cisco (`Gi1/0/24`) / đầy đủ (`GigabitEthernet1/0/24`), lưu theo sơ đồ (`view.portStyle`, backend kiểm
+  giá trị). Tên cổng hãng khác (port1, wan1, ether1, ge-0/0/1) giữ nguyên; nhãn dây gộp ("g1/0/1–10 (10)") cũng theo kiểu đã chọn.
+  Ghi chú: nhãn cổng ẩn khi thu nhỏ dưới 50 % (sơ đồ vẽ từ Excel mở ở ~44 % nên lúc đầu không thấy nhãn).
+- Test / cách kiểm tra: `make check` pass (vitest `portLabel`). Chromium: sơ đồ mẫu hiện g1/0/21…24, g0/0/0, tu1.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-22 Export.
+
 ## 2026-10-17 — Panel thuộc tính: chọn màu tự do
 - Đã làm: mọi chỗ chọn màu trong panel (nhãn thiết bị/nhóm, nhiều đối tượng, khung, chữ, mũi tên) có thêm ô **"Màu tùy chọn"** (bảng
   chọn màu của hệ điều hành) cạnh 6 màu có sẵn; kéo chọn liên tục = một bước hoàn tác. Màu tự do lưu dạng `#rrggbb`, vẽ inline (nhãn:

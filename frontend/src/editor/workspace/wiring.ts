@@ -89,21 +89,42 @@ export function takenPorts(
   return out
 }
 
-const LONG_NAMES: [RegExp, string][] = [
-  [/^HundredGigE/i, 'Hu'],
-  [/^FortyGigabitEthernet/i, 'Fo'],
-  [/^TwentyFiveGigE/i, 'Twe'],
-  [/^TenGigabitEthernet/i, 'Te'],
-  [/^GigabitEthernet/i, 'Gi'],
-  [/^FastEthernet/i, 'Fa'],
-  [/^Port-channel/i, 'Po'],
-  [/^Ethernet(?=\d)/i, 'Eth'],
+/** Port name prefixes: full name or Cisco short form, then the Cisco short and the compact (lowercase) forms. */
+const PORT_NAMES: [RegExp, string, string][] = [
+  [/^(HundredGigE|Hu(?=\d))/i, 'Hu', 'hu'],
+  [/^(FortyGigabitEthernet|Fo(?=\d))/i, 'Fo', 'fo'],
+  [/^(TwentyFiveGigE|Twe(?=\d))/i, 'Twe', 'twe'],
+  [/^(TenGigabitEthernet|Te(?=\d))/i, 'Te', 'te'],
+  [/^(GigabitEthernet|Gi(?=\d))/i, 'Gi', 'g'],
+  [/^(FastEthernet|Fa(?=\d))/i, 'Fa', 'f'],
+  [/^(Port-channel|Po(?=\d))/i, 'Po', 'po'],
+  [/^(Ethernet|Eth)(?=\d)/i, 'Eth', 'e'],
+  [/^(Vlan|Vl(?=\d))/i, 'Vl', 'vl'],
+  [/^(Loopback|Lo(?=\d))/i, 'Lo', 'lo'],
+  [/^(Tunnel|Tu(?=\d))/i, 'Tu', 'tu'],
 ]
 
-/** Short port name for cable-end labels (GigabitEthernet1/0/1 → Gi1/0/1); wan1, port1… stay as they are. */
-export function shortPort(name: string): string {
-  for (const [re, short] of LONG_NAMES) if (re.test(name)) return name.replace(re, short)
+export type PortStyle = 'compact' | 'cisco' | 'full'
+
+/**
+ * A port name as drawn at a cable end: compact g1/0/24 (default), Cisco Gi1/0/24, or the full name. Names of other
+ * vendors (port1, wan1, ether1, ge-0/0/1) stay as they are. A list ("Gi1/0/1–10, Gi1/0/12 (11)") is styled part by part.
+ */
+export function portLabel(name: string, style: PortStyle = 'compact'): string {
+  if (style === 'full') return name
   return name
+    .split(', ')
+    .map((part) => {
+      for (const [re, cisco, compact] of PORT_NAMES)
+        if (re.test(part)) return part.replace(re, style === 'cisco' ? cisco : compact)
+      return part
+    })
+    .join(', ')
+}
+
+/** Short port name (GigabitEthernet1/0/1 → Gi1/0/1); wan1, port1… stay as they are. */
+export function shortPort(name: string): string {
+  return portLabel(name, 'cisco')
 }
 
 /**

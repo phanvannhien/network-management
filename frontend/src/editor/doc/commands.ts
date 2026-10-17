@@ -355,6 +355,18 @@ export function setLabelTemplate(template: string): DocCommand {
   }
 }
 
+/** How port names are written at cable ends (compact g1/0/24 is the default and is not stored). */
+export function setPortStyle(style: 'compact' | 'cisco' | 'full'): DocCommand {
+  return {
+    label: 'setPortStyle',
+    apply(d) {
+      if ((d.view.portStyle ?? 'compact') === style) return
+      if (style === 'compact') delete d.view.portStyle
+      else d.view.portStyle = style
+    },
+  }
+}
+
 /** Background colour of the label of some nodes (a palette name; '' = none). */
 export function setLabelColor(nodeIds: string[], color: string, mergeKey?: string): DocCommand {
   return {

@@ -31,6 +31,7 @@ import { useLocations, useSites } from '@/modules/sites/sites'
 import {
   setLabelColor,
   setLabelTemplate,
+  setPortStyle,
   updateAnnotation,
   updateDevice,
   updateLink,
@@ -229,6 +230,24 @@ function DiagramPanel({ canEdit }: { canEdit: boolean }) {
                 {t(`panel.labels.${x.id}`)}
               </option>
             ))}
+          </NativeSelect>
+        )}
+      </FormField>
+      <FormField label={t('panel.portStyle')} guide={t('panel.portStyleGuide')}>
+        {(p) => (
+          <NativeSelect
+            {...p}
+            disabled={!canEdit}
+            value={doc.view.portStyle ?? 'compact'}
+            onChange={(e) =>
+              store
+                .getState()
+                .dispatch(setPortStyle(e.target.value as 'compact' | 'cisco' | 'full'))
+            }
+          >
+            <option value="compact">{t('panel.portStyles.compact')}</option>
+            <option value="cisco">{t('panel.portStyles.cisco')}</option>
+            <option value="full">{t('panel.portStyles.full')}</option>
           </NativeSelect>
         )}
       </FormField>

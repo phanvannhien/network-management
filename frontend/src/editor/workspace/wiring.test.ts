@@ -245,3 +245,20 @@ describe('endpoint groups on the diagram (ADR-036)', () => {
     expect(toFlowEdges(s.getState().doc!)).toHaveLength(0)
   })
 })
+
+describe('portLabel', () => {
+  it('compact by default, Cisco or full on request; other vendors untouched', async () => {
+    const { portLabel } = await import('./wiring')
+    expect(portLabel('GigabitEthernet1/0/24')).toBe('g1/0/24')
+    expect(portLabel('Gi1/0/24')).toBe('g1/0/24')
+    expect(portLabel('TenGigabitEthernet1/1/1')).toBe('te1/1/1')
+    expect(portLabel('Port-channel1')).toBe('po1')
+    expect(portLabel('GigabitEthernet1/0/24', 'cisco')).toBe('Gi1/0/24')
+    expect(portLabel('GigabitEthernet1/0/24', 'full')).toBe('GigabitEthernet1/0/24')
+    expect(portLabel('GigabitEthernet1/0/1–10, GigabitEthernet1/0/12 (11)')).toBe(
+      'g1/0/1–10, g1/0/12 (11)',
+    )
+    for (const other of ['wan1', 'port1', 'ether1', 'ge-0/0/1', 'internal3', 'GE5'])
+      expect(portLabel(other)).toBe(other)
+  })
+})

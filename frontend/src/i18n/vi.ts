@@ -1114,6 +1114,13 @@ export const vi = {
       'Bấm một thiết bị hoặc dây để xem và sửa nhanh. Không chọn gì thì đây là cài đặt của sơ đồ.',
     devices: 'Đối tượng',
     cables: 'Dây',
+    portStyle: 'Ký hiệu cổng',
+    portStyleGuide: 'Cách ghi tên cổng ở hai đầu dây trên sơ đồ.',
+    portStyles: {
+      compact: 'Gọn — g1/0/24, te1/1/1, po1',
+      cisco: 'Kiểu Cisco — Gi1/0/24, Te1/1/1, Po1',
+      full: 'Đầy đủ — GigabitEthernet1/0/24',
+    },
     labelTemplate: 'Nhãn dưới thiết bị',
     labelTemplateGuide: 'Dòng đầu luôn là hostname; dòng phụ ẩn khi thu nhỏ dưới 50 %.',
     labels: {

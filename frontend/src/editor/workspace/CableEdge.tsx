@@ -11,7 +11,8 @@ import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { borderPoint, parallelOffset, type Pt } from './flow'
-import { shortPort } from './wiring'
+import { useDoc } from './context'
+import { portLabel } from './wiring'
 
 // A cable on the canvas (P1-17): a straight line between the borders of the two nodes (not fixed handles), parallel
 // cables between the same pair spread apart, port names near each end (hidden below 50 % zoom, SRS §6.3).
@@ -48,6 +49,7 @@ function CableEdgeImpl({
   const a = useInternalNode(source)
   const b = useInternalNode(target)
   const showLabels = useFlowStore((s) => s.transform[2] >= 0.5)
+  const portStyle = useDoc((s) => s.doc?.view.portStyle) ?? 'compact'
   if (!a || !b) return null
   const ra = rectOf(a)
   const rb = rectOf(b)
@@ -84,10 +86,10 @@ function CableEdgeImpl({
       {(showLabels || data?.status === 'down') && (
         <EdgeLabelRenderer>
           {showLabels && data?.aPort && (
-            <PortLabel text={shortPort(data.aPort)} x={la.x} y={la.y} />
+            <PortLabel text={portLabel(data.aPort, portStyle)} x={la.x} y={la.y} />
           )}
           {showLabels && data?.bPort && (
-            <PortLabel text={shortPort(data.bPort)} x={lb.x} y={lb.y} />
+            <PortLabel text={portLabel(data.bPort, portStyle)} x={lb.x} y={lb.y} />
           )}
           {/* Colour is never the only signal (DESIGN.md): a down / planned cable says so in words. */}
           {data && data.status !== 'up' && (

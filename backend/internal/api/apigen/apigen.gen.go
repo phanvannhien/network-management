@@ -512,6 +512,27 @@ func (e DiagramNodeRefKind) Valid() bool {
 	}
 }
 
+// Defines values for DiagramViewPortStyle.
+const (
+	DiagramViewPortStyleCisco   DiagramViewPortStyle = "cisco"
+	DiagramViewPortStyleCompact DiagramViewPortStyle = "compact"
+	DiagramViewPortStyleFull    DiagramViewPortStyle = "full"
+)
+
+// Valid indicates whether the value is a known member of the DiagramViewPortStyle enum.
+func (e DiagramViewPortStyle) Valid() bool {
+	switch e {
+	case DiagramViewPortStyleCisco:
+		return true
+	case DiagramViewPortStyleCompact:
+		return true
+	case DiagramViewPortStyleFull:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EndpointKind.
 const (
 	EndpointKindAccessControl   EndpointKind = "access_control"
@@ -2127,8 +2148,14 @@ type DiagramView struct {
 	Edges         []DiagramEdge       `json:"edges"`
 	LabelTemplate *string             `json:"labelTemplate,omitempty"`
 	Nodes         []DiagramNode       `json:"nodes"`
-	Viewport      *DiagramViewport    `json:"viewport,omitempty"`
+
+	// PortStyle port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
+	PortStyle *DiagramViewPortStyle `json:"portStyle,omitempty"`
+	Viewport  *DiagramViewport      `json:"viewport,omitempty"`
 }
+
+// DiagramViewPortStyle port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
+type DiagramViewPortStyle string
 
 // DiagramViewport defines model for DiagramViewport.
 type DiagramViewport struct {

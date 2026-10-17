@@ -3188,6 +3188,11 @@ export interface components {
             annotations: components["schemas"]["DiagramAnnotation"][];
             viewport?: components["schemas"]["DiagramViewport"];
             labelTemplate?: string;
+            /**
+             * @description port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
+             * @enum {string}
+             */
+            portStyle?: "compact" | "cisco" | "full";
         };
         DiagramDetail: {
             diagram: components["schemas"]["Diagram"];

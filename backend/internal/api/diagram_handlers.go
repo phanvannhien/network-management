@@ -427,6 +427,9 @@ func checkViewShape(v apigen.DiagramView) string {
 	if len(v.Nodes) > maxNodes || len(v.Edges) > maxEdges || len(v.Annotations) > maxAnnotations {
 		return fmt.Sprintf("Sơ đồ tối đa %d node, %d cạnh, %d chú thích", maxNodes, maxEdges, maxAnnotations)
 	}
+	if v.PortStyle != nil && !v.PortStyle.Valid() {
+		return "Kiểu ký hiệu cổng không hợp lệ"
+	}
 	ids := map[string]bool{}
 	unique := func(id string) bool {
 		if id == "" || len(id) > 64 || ids[id] {

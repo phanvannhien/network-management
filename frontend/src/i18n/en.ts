@@ -1121,6 +1121,13 @@ export const en: Strings = {
       'Click a device or a cable to see and edit it. With nothing selected, these are the diagram settings.',
     devices: 'Objects',
     cables: 'Cables',
+    portStyle: 'Port names',
+    portStyleGuide: 'How port names are written at both ends of the cables.',
+    portStyles: {
+      compact: 'Compact — g1/0/24, te1/1/1, po1',
+      cisco: 'Cisco style — Gi1/0/24, Te1/1/1, Po1',
+      full: 'Full — GigabitEthernet1/0/24',
+    },
     labelTemplate: 'Label under devices',
     labelTemplateGuide: 'The first line is always the hostname; the others hide below 50 % zoom.',
     labels: {

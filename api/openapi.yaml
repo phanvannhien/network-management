@@ -6480,6 +6480,10 @@ components:
         labelTemplate:
           type: string
           maxLength: 200
+        portStyle:
+          type: string
+          enum: [compact, cisco, full]
+          description: port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
 
     DiagramDetail:
       type: object
