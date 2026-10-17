@@ -2267,6 +2267,19 @@ describe('diagrams (P1-13)', () => {
       [`GET /api/orgs/${ORG_ID}/diagrams/dg-1`]: () => json(DETAIL),
       [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [FW, SW], total: 2, facets: {} }),
       [`GET /api/orgs/${ORG_ID}/device-templates`]: () => json({ templates: [FGT] }),
+      [`GET /api/orgs/${ORG_ID}/devices/dev-1`]: () =>
+        json({
+          ...FW,
+          vendor: '',
+          model: '',
+          role: 'edge',
+          lifecycle: 'active',
+          managed: true,
+          notes: '',
+          tags: [],
+          customFields: {},
+          version: 3,
+        }),
       ...extra,
     })
   beforeEach(() => {
@@ -2706,6 +2719,49 @@ describe('diagrams (P1-13)', () => {
     expect(port2).toBe(farPort.value)
   })
 
+  it('P1-18: the property panel edits a device quickly; label template and colour are saved with the view', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () =>
+          json({
+            interfaces: [
+              { id: 'if-1', name: 'port1', kind: 'physical', media: 'RJ45', speed: '1G' },
+            ],
+          }),
+        [`GET /api/orgs/${ORG_ID}/links`]: () => json({ links: [] }),
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const panel = await screen.findByRole('complementary', { name: 'Thuộc tính' })
+    // Nothing selected: diagram settings.
+    fireEvent.change(within(panel).getByLabelText(/^Nhãn dưới thiết bị/), {
+      target: { value: 'model' },
+    })
+    const canvas = screen.getByRole('application')
+    fireEvent.click(within(canvas).getByText('AGRI-BD-FW01'))
+    const model = await within(panel).findByLabelText(/^Model/)
+    expect(within(panel).getByText(/Cổng \(0\/1 đang nối\)/)).toBeInTheDocument()
+    fireEvent.change(model, { target: { value: 'FortiGate 100F' } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Áp dụng' }))
+    // The label now shows the model (template "hostname + model").
+    expect(await within(canvas).findByText('FortiGate 100F')).toBeInTheDocument()
+    fireEvent.click(within(panel).getByRole('radio', { name: 'Xanh lá' }))
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.view.labelTemplate).toBe('{hostname}\n{model}')
+    expect(body.view.nodes[0].labelStyle).toEqual({ color: 'green' })
+    expect(body.changes).toEqual([
+      {
+        op: 'updateDevice',
+        id: 'dev-1',
+        deviceUpdate: expect.objectContaining({ model: 'FortiGate 100F', version: 3 }),
+      },
+    ])
+  })
+
   it('a viewer opens the diagram read-only', async () => {
     fakeApi(
       routes({
@@ -2720,7 +2776,10 @@ describe('diagrams (P1-13)', () => {
     // Delete does nothing for a viewer.
     fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
     fireEvent.keyDown(window, { key: 'Delete' })
-    expect(screen.getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    expect(within(screen.getByRole('application')).getByText('AGRI-BD-FW01')).toBeInTheDocument()
     expect(screen.queryByText(/Có thay đổi chưa lưu/)).not.toBeInTheDocument()
+    // The property panel shows the device read-only.
+    const panel = screen.getByRole('complementary', { name: 'Thuộc tính' })
+    expect(await within(panel).findByLabelText(/^Hostname/)).toBeDisabled()
   })
 })

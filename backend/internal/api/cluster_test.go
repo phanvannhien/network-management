@@ -210,7 +210,14 @@ func TestClusterMemberShowsClusterMgmtIP(t *testing.T) {
 	if fw["mgmtIp"] != "10.136.4.101/24" {
 		t.Errorf("member mgmtIp = %v, want the cluster's", fw["mgmtIp"])
 	}
+	// Searching the VIP finds the member; sorting by management IP puts it among devices with an IP.
+	if _, res := fx.A.Do("GET", devicesPath(org)+"?q=10.136.4.101", nil); len(res["devices"].([]any)) != 1 {
+		t.Errorf("search by cluster VIP: %v", res["devices"])
+	}
 	alone := mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "FW-B", "type": "firewall", "siteId": idc})
+	if _, res := fx.A.Do("GET", devicesPath(org)+"?sort=mgmtIp", nil); res["devices"].([]any)[0].(map[string]any)["hostname"] != "FW-A" {
+		t.Errorf("sort by mgmt IP: %v", res["devices"])
+	}
 	if alone["mgmtIp"] != "" {
 		t.Errorf("device without cluster or mgmt: %v", alone["mgmtIp"])
 	}

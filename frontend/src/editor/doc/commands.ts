@@ -146,7 +146,14 @@ export function updateDevice(id: string, update: DeviceUpdate): DocCommand {
       else d.deviceEdits[id] = update
       const card = d.devices[id]
       if (card)
-        Object.assign(card, { hostname: update.hostname, type: update.type, siteId: update.siteId })
+        Object.assign(card, {
+          hostname: update.hostname,
+          type: update.type,
+          siteId: update.siteId,
+          model: update.model ?? card.model,
+          managed: update.managed ?? card.managed,
+          ...(card.siteId !== update.siteId ? { siteCode: undefined } : {}),
+        })
     },
   }
 }
@@ -264,6 +271,36 @@ export function setLocked(nodeIds: string[], locked: boolean): DocCommand {
           if (locked) n.locked = true
           else delete n.locked
         }
+    },
+  }
+}
+
+/** The label under every device (SRS §6.3), e.g. "{hostname}\n{mgmtIp}"; empty = the default. */
+export function setLabelTemplate(template: string): DocCommand {
+  return {
+    label: 'setLabelTemplate',
+    apply(d) {
+      if ((d.view.labelTemplate ?? '') === template) return
+      if (template) d.view.labelTemplate = template
+      else delete d.view.labelTemplate
+    },
+  }
+}
+
+/** Background colour of the label of some nodes (a palette name; '' = none). */
+export function setLabelColor(nodeIds: string[], color: string): DocCommand {
+  return {
+    label: 'setLabelColor',
+    apply(d) {
+      const ids = new Set(nodeIds)
+      for (const n of d.view.nodes) {
+        if (!ids.has(n.id)) continue
+        const style = { ...(n.labelStyle ?? {}) }
+        if (color) style.color = color
+        else delete style.color
+        if (Object.keys(style).length > 0) n.labelStyle = style
+        else delete n.labelStyle
+      }
     },
   }
 }

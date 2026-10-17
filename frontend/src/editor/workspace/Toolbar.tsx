@@ -6,6 +6,7 @@ import {
   LibraryBig,
   Lightbulb,
   Magnet,
+  PanelRight,
   Map as MapIcon,
   Maximize,
   Plus,
@@ -222,6 +223,13 @@ export function Toolbar(p: ToolbarProps) {
           </NativeSelect>
         </span>
       </Tip>
+      <ToolButton
+        label={t('panel.title')}
+        onClick={() => p.onPrefs({ panel: !p.prefs.panel })}
+        pressed={p.prefs.panel}
+      >
+        <PanelRight aria-hidden />
+      </ToolButton>
       <ToolButton
         label={t('editorCanvas.minimap')}
         onClick={() => p.onPrefs({ minimap: !p.prefs.minimap })}

@@ -88,7 +88,8 @@ export function Canvas({
         cached &&
         cached.refId === n.data.refId &&
         cached.refKind === n.data.refKind &&
-        cached.locked === n.data.locked
+        cached.locked === n.data.locked &&
+        cached.labelColor === n.data.labelColor
           ? cached
           : n.data
       dataCache.set(n.id, data)
@@ -216,7 +217,7 @@ export function Canvas({
       }}
       defaultViewport={initialViewport ?? undefined}
       fitView={!initialViewport}
-      fitViewOptions={fitOptions(libraryOpen)}
+      fitViewOptions={fitOptions(libraryOpen, prefs.panel)}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       snapToGrid={prefs.snap}

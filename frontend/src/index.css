@@ -283,11 +283,12 @@
 .react-flow__edge.ntb-link-down .react-flow__edge-path {
   stroke: var(--status-down);
 }
-.react-flow__edge.ntb-link-planned .react-flow__edge-path {
-  opacity: 0.45;
-}
 .react-flow__edge.ntb-edge-draft .react-flow__edge-path {
   opacity: 0.7;
+}
+/* After the draft rule: a planned cable that is also unsaved (a duplicate) still looks planned. */
+.react-flow__edge.ntb-link-planned .react-flow__edge-path {
+  opacity: 0.45;
 }
 /* Cables attach to these (drawn border to border by CableEdge). */
 .react-flow__handle.ntb-handle {
@@ -308,6 +309,26 @@
 .react-flow.ntb-connecting .react-flow__handle.ntb-connect {
   opacity: 1;
 }
+/* Device label backgrounds picked in the property panel (P1-18): tints that keep text contrast in both themes. */
+.ntb-tag-blue {
+  background: color-mix(in srgb, #2563eb 18%, var(--surface));
+}
+.ntb-tag-green {
+  background: color-mix(in srgb, #16a34a 18%, var(--surface));
+}
+.ntb-tag-amber {
+  background: color-mix(in srgb, #d97706 22%, var(--surface));
+}
+.ntb-tag-red {
+  background: color-mix(in srgb, #dc2626 18%, var(--surface));
+}
+.ntb-tag-violet {
+  background: color-mix(in srgb, #7c3aed 18%, var(--surface));
+}
+.ntb-tag-slate {
+  background: color-mix(in srgb, #64748b 22%, var(--surface));
+}
+
 .react-flow__minimap,
 .react-flow__controls {
   border-radius: 6px;

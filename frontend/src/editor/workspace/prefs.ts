@@ -9,10 +9,19 @@ export interface EditorPrefs {
   minimap: boolean
   tips: boolean
   library: boolean
+  /** Property panel on the right (P1-18). */
+  panel: boolean
 }
 
 const KEY = 'ntb-editor-prefs-v1'
-const DEFAULTS: EditorPrefs = { snap: true, grid: 20, minimap: true, tips: true, library: true }
+const DEFAULTS: EditorPrefs = {
+  snap: true,
+  grid: 20,
+  minimap: true,
+  tips: true,
+  library: true,
+  panel: true,
+}
 
 export function readPrefs(): EditorPrefs {
   try {
@@ -23,6 +32,7 @@ export function readPrefs(): EditorPrefs {
       minimap: typeof raw.minimap === 'boolean' ? raw.minimap : DEFAULTS.minimap,
       tips: typeof raw.tips === 'boolean' ? raw.tips : DEFAULTS.tips,
       library: typeof raw.library === 'boolean' ? raw.library : DEFAULTS.library,
+      panel: typeof raw.panel === 'boolean' ? raw.panel : DEFAULTS.panel,
     }
   } catch {
     return DEFAULTS

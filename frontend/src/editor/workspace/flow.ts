@@ -10,6 +10,8 @@ export interface RefData extends Record<string, unknown> {
   refKind: DiagramNode['refKind']
   refId: string
   locked: boolean
+  /** Label background (palette name) or ''. */
+  labelColor: string
 }
 
 export const NODE_TYPES_BY_REF = {
@@ -24,7 +26,12 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
     id: n.id,
     type: NODE_TYPES_BY_REF[n.refKind],
     position: { x: n.x, y: n.y },
-    data: { refKind: n.refKind, refId: n.refId, locked: Boolean(n.locked) },
+    data: {
+      refKind: n.refKind,
+      refId: n.refId,
+      locked: Boolean(n.locked),
+      labelColor: n.labelStyle?.color ?? '',
+    },
     selected: selection.has(n.id),
     draggable: !n.locked,
   }))
@@ -108,14 +115,14 @@ export function parallelOffset(index: number, count: number): number {
 export const MIN_ZOOM = 0.1
 export const MAX_ZOOM = 4
 
-/** Fit keeps the drawing clear of the floating toolbar on top and of the library on the left when it is open. */
-export function fitOptions(libraryOpen: boolean) {
+/** Fit keeps the drawing clear of the floating toolbar, the library (left) and the property panel (right). */
+export function fitOptions(libraryOpen: boolean, panelOpen = false) {
   return {
     padding: {
       top: '72px',
       bottom: '32px',
       left: libraryOpen ? '312px' : '32px',
-      right: '32px',
+      right: panelOpen ? '352px' : '32px',
     },
     maxZoom: 1.5,
   } as const

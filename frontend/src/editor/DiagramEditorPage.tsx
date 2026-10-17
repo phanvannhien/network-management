@@ -40,6 +40,7 @@ import { DeleteFromInventoryDialog } from './workspace/DeleteFromInventoryDialog
 import { NodeMenu, type MenuItem } from './workspace/NodeMenu'
 import { useEditActions } from './workspace/useEditActions'
 import { CableDialog } from './workspace/CableDialog'
+import { PropertiesPanel } from './workspace/PropertiesPanel'
 import { useWiring } from './workspace/useWiring'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
@@ -285,7 +286,8 @@ function Workspace({
     id?: string
   } | null>(null)
 
-  const fit = () => void flow.fitView({ ...fitOptions(libraryOpen), duration: ZOOM_MS })
+  const fit = () =>
+    void flow.fitView({ ...fitOptions(libraryOpen, prefs.panel), duration: ZOOM_MS })
   /** Top-left for a node centred on `at`, on the grid when snapping. */
   const place = (at: { x: number; y: number }) => {
     const step = prefs.snap ? prefs.grid : 1
@@ -591,6 +593,14 @@ function Workspace({
           onView={onView}
           onPick={(item) => pick(item)}
           onClose={() => setPrefs({ library: false })}
+        />
+      )}
+      {prefs.panel && (
+        <PropertiesPanel
+          orgId={orgId}
+          canEdit={canEdit}
+          onEditCable={wiring.editCable}
+          onClose={() => setPrefs({ panel: false })}
         />
       )}
       {doc.view.nodes.length === 0 && (

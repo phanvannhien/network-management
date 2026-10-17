@@ -5,6 +5,27 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-18 bước 1: Panel thuộc tính & hiển thị
+- Đã làm:
+  - **Panel thuộc tính** bên phải màn vẽ (bật/tắt trên toolbar, mặc định mở). Chọn thiết bị: IP quản trị (kể cả IP cụm), site,
+    cụm, S/N, cổng và cổng nào đang nối tới đâu (tính cả dây chưa lưu), mở trang thiết bị; sửa nhanh hostname, loại, site, hãng,
+    model, vai trò, vòng đời, quản lý, ghi chú → "Áp dụng" thành một bước hoàn tác, lưu cùng sơ đồ. Chọn dây: hai đầu + cổng, nút
+    "Loại / cổng…", sửa trạng thái, biến thể cáp, tốc độ, mã cáp, chiều dài, SM/MM + đầu nối (chỉ dây quang), dịch vụ WAN/nhà
+    mạng/circuit/băng thông (khi có dịch vụ hoặc một đầu là Internet/nhà mạng). Nhóm đầu cuối: tên, loại, mở trang. Không chọn gì:
+    cài đặt sơ đồ — **mẫu nhãn** dưới thiết bị (Hostname + IP / model / mã site / IP + model / loại / chỉ hostname).
+  - **Màu nhãn** theo thiết bị (bảng 6 màu đổi theo sáng/tối), đổi cho nhiều thiết bị một lúc; **viền nét đứt** cho thiết bị
+    không quản lý (vd đám mây nhà mạng, modem ISP). "Vừa màn hình" chừa chỗ cho panel.
+  - **Sửa lỗi từ rà soát:** sắp xếp theo IP quản trị và tìm theo IP giờ tính cả IP của cụm; dây "Dự kiến" không còn bị kiểu "chưa
+    lưu" che mất.
+- Test / cách kiểm tra: `make check` pass (Go: tìm/sắp theo IP cụm; vitest 233: mẫu nhãn, App: sửa nhanh thiết bị + mẫu nhãn +
+  màu → lưu, panel chỉ đọc với người xem). Chromium: panel thiết bị/dây, axe không lỗi (đã sửa danh sách cổng cuộn bằng phím).
+- Còn dở / lỗi đã biết: bước 2 (IPAM trong panel: gán VLAN cho cổng, gán IP, lấy IP trống, tạo VLAN/subnet tại chỗ) **chờ người
+  dùng chốt cách lưu** (xem dưới). Rủi ro ghi lại: trạng thái "Down" tự đặt có thể chồng với trạng thái thật từ giám sát
+  (Phase 3); poller Phase 3 phải dùng IP riêng của từng máy, không dùng IP cụm.
+- Câu hỏi cho người dùng: IPAM trong panel ghi thẳng vào IPAM (không hoàn tác bằng Ctrl+Z) hay chờ lưu sơ đồ?
+- Đề xuất quyết định cần chốt: cách lưu thay đổi IPAM từ panel (ADR mới).
+- Task tiếp theo đề xuất: P1-18 bước 2 sau khi chốt.
+
 ## 2026-10-17 — Sơ đồ: IP trên thiết bị, trạng thái dây; dữ liệu mẫu CJ Foodville
 - Đã làm:
   - Mỗi thiết bị trên sơ đồ hiện **IP quản trị** dưới hostname (bỏ /mask cho gọn, tooltip có đủ); hostname dài **xuống 2 dòng**

@@ -65,7 +65,7 @@ describe('document → React Flow (P1-14)', () => {
       ['n-fw', 'device', false, true],
       ['n-sw', 'device', true, false],
     ])
-    expect(nodes[0]!.data).toEqual({ refKind: 'device', refId: FW, locked: false })
+    expect(nodes[0]!.data).toEqual({ refKind: 'device', refId: FW, locked: false, labelColor: '' })
     const edges = toFlowEdges(doc)
     expect(edges).toEqual([
       expect.objectContaining({

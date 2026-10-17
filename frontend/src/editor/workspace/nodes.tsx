@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { DeviceIcon } from '../catalog/icons'
 import { useDoc } from './context'
 import type { RefData } from './flow'
+import { renderLabel, type LabelLine } from './labels'
 
 // Canvas nodes (P1-14). Each node subscribes to its own card only, so editing one device re-renders one node
 // (CLAUDE.md editor rule). Links attach to the hidden handles; picking ports comes with wiring (P1-17).
@@ -33,6 +34,9 @@ function Frame({
   label,
   detail,
   mono = false,
+  lines,
+  unmanaged = false,
+  color = '',
 }: {
   selected: boolean
   connectable?: boolean
@@ -44,6 +48,11 @@ function Frame({
   detail?: string
   /** The detail is an address (monospace). */
   mono?: boolean
+  /** Detail lines from the label template (instead of `detail`). */
+  lines?: LabelLine[]
+  unmanaged?: boolean
+  /** Label background palette name. */
+  color?: string
 }) {
   const { t } = useTranslation()
   const showDetails = useShowDetails()
@@ -53,6 +62,7 @@ function Frame({
       className={cn(
         'relative flex w-36 flex-col items-center gap-1 rounded-md border bg-card px-2 py-2 text-card-foreground shadow-sm',
         selected ? 'border-primary ring-2 ring-primary' : 'border-border-control',
+        unmanaged && 'border-dashed',
       )}
     >
       {/* Cables are drawn border to border (CableEdge); these anchor them, and on hover start a new cable (P1-17). */}
@@ -70,10 +80,27 @@ function Frame({
         ))}
       {icon}
       {/* Long hostnames (c1300-vn-foodville-hcm-162-4) wrap to two lines instead of being cut. */}
-      <span className="line-clamp-2 w-full text-center text-xs leading-tight font-medium [overflow-wrap:anywhere]">
+      <span
+        className={cn(
+          'line-clamp-2 w-full rounded-sm text-center text-xs leading-tight font-medium [overflow-wrap:anywhere]',
+          color && `ntb-tag-${color} px-1`,
+        )}
+      >
         {label}
       </span>
-      {showDetails && detail && (
+      {showDetails &&
+        lines?.map((l, i) => (
+          <span
+            key={i}
+            className={cn(
+              'w-full truncate text-center text-[10px] text-muted-foreground',
+              l.mono && 'font-mono',
+            )}
+          >
+            {l.text}
+          </span>
+        ))}
+      {showDetails && !lines && detail && (
         <span
           className={cn(
             'w-full truncate text-center text-[10px] text-muted-foreground',
@@ -89,6 +116,7 @@ function Frame({
           className="absolute top-1 right-1 size-3 text-muted-foreground"
         />
       )}
+      {unmanaged && <span className="sr-only">{t('editorCanvas.unmanaged')}</span>}
       {/* Dashed borders are for unmanaged devices (SRS §6.3); a new, unsaved device gets a badge. */}
       {draft && (
         <span className="absolute -top-2 left-2 rounded-sm border border-status-warning bg-card px-1 text-[10px] leading-4 text-status-warning">
@@ -108,21 +136,24 @@ function Frame({
 function DeviceNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const card = useDoc((s) => s.doc?.devices[data.refId])
+  const template = useDoc((s) => s.doc?.view.labelTemplate)
   if (!card) return <HiddenFrame selected={selected} />
   const type = t(`devices.types.${card.type}`)
-  // The IP without its prefix length keeps the node compact; the tooltip shows it in full.
-  const ip = card.mgmtIp?.split('/')[0] ?? ''
+  const [, ...details] = renderLabel(card, type, template)
   return (
     <Frame
       selected={selected}
       connectable={isConnectable}
       locked={data.locked}
       draft={card.draft === true}
-      title={[card.hostname, type, card.mgmtIp].filter(Boolean).join(' · ')}
+      title={[card.hostname, type, card.mgmtIp, card.model, card.siteCode]
+        .filter(Boolean)
+        .join(' · ')}
       icon={<DeviceIcon typeId={card.type} size={32} />}
       label={card.hostname}
-      detail={ip || type}
-      mono={ip !== ''}
+      lines={details}
+      unmanaged={card.managed === false}
+      color={data.labelColor}
     />
   )
 }

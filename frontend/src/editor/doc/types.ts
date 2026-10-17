@@ -32,6 +32,10 @@ export interface DeviceCard {
   clusterId?: string | null
   /** Management IP (with prefix), shown under the hostname (SRS §6.3 label {hostname}\n{mgmtIp}). */
   mgmtIp?: string
+  model?: string
+  siteCode?: string
+  /** false = someone else's box on our site (ISP modem…): dashed border (SRS §6.3). */
+  managed?: boolean
   /** Created in the editor, not saved yet. */
   draft?: boolean
 }
@@ -94,6 +98,9 @@ export function docFromDetail(d: DiagramDetail): DocState {
       siteId: x.siteId,
       clusterId: x.clusterId ?? null,
       mgmtIp: x.mgmtIp,
+      model: x.model,
+      siteCode: x.siteCode,
+      managed: x.managed,
     }
   const groups: DocState['groups'] = {}
   for (const g of d.endpointGroups) groups[g.id] = { id: g.id, name: g.name, kind: g.kind }

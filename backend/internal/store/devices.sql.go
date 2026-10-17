@@ -20,7 +20,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -349,7 +350,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -367,7 +369,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -385,7 +388,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -403,7 +407,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -421,7 +426,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -440,7 +446,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -458,7 +465,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
   AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
@@ -790,7 +798,8 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::text = '' OR d.hostname ILIKE '%' || $2 || '%' OR d.serial_number ILIKE '%' || $2 || '%'
        OR d.part_number ILIKE '%' || $2 || '%' OR d.model ILIKE '%' || $2 || '%' OR d.asset_tag ILIKE '%' || $2 || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE $2 || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower($2) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
@@ -812,11 +821,13 @@ ORDER BY
   CASE WHEN $12::text = 'warranty_end' AND NOT $11::boolean THEN d.warranty_end END ASC NULLS LAST,
   CASE WHEN $12::text = 'warranty_end' AND $11::boolean THEN d.warranty_end END DESC NULLS LAST,
   CASE WHEN $12::text = 'mgmt_ip' AND NOT $11::boolean THEN
-    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-     ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
+    COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+              ORDER BY family(ip.address) LIMIT 1),
+             (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END ASC NULLS LAST,
   CASE WHEN $12::text = 'mgmt_ip' AND $11::boolean THEN
-    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-     ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
+    COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+              ORDER BY family(ip.address) LIMIT 1),
+             (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END DESC NULLS LAST,
   CASE WHEN $12::text = 'hostname' AND $11::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
 LIMIT $14 OFFSET $13

@@ -20,7 +20,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -42,11 +43,13 @@ ORDER BY
   CASE WHEN @sort_key::text = 'warranty_end' AND NOT @sort_desc::boolean THEN d.warranty_end END ASC NULLS LAST,
   CASE WHEN @sort_key::text = 'warranty_end' AND @sort_desc::boolean THEN d.warranty_end END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'mgmt_ip' AND NOT @sort_desc::boolean THEN
-    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-     ORDER BY family(ip.address) LIMIT 1) END ASC NULLS LAST,
+    COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+              ORDER BY family(ip.address) LIMIT 1),
+             (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END ASC NULLS LAST,
   CASE WHEN @sort_key::text = 'mgmt_ip' AND @sort_desc::boolean THEN
-    (SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-     ORDER BY family(ip.address) LIMIT 1) END DESC NULLS LAST,
+    COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
+              ORDER BY family(ip.address) LIMIT 1),
+             (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END DESC NULLS LAST,
   CASE WHEN @sort_key::text = 'hostname' AND @sort_desc::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
 LIMIT @page_limit OFFSET @page_offset;
@@ -59,7 +62,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -79,7 +83,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -97,7 +102,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -115,7 +121,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -133,7 +140,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -151,7 +159,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -170,7 +179,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (COALESCE(cardinality(@cluster_ids::uuid[]), 0) = 0 OR d.cluster_id = ANY (@cluster_ids::uuid[]))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
@@ -188,7 +198,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (@q::text = '' OR d.hostname ILIKE '%' || @q || '%' OR d.serial_number ILIKE '%' || @q || '%'
        OR d.part_number ILIKE '%' || @q || '%' OR d.model ILIKE '%' || @q || '%' OR d.asset_tag ILIKE '%' || @q || '%'
        OR EXISTS (SELECT 1 FROM ip_addresses ipq WHERE ipq.device_id = d.id AND host(ipq.address) LIKE @q || '%')
-       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%'))
+       OR EXISTS (SELECT 1 FROM interfaces ifq WHERE ifq.device_id = d.id AND ifq.mac::text LIKE lower(@q) || '%')
+       OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE @q || '%'))
   AND (sqlc.narg('category_filter')::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))

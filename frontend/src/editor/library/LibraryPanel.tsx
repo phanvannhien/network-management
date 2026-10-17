@@ -247,6 +247,9 @@ function InventoryDevices({
                 type: d.type,
                 siteId: d.siteId,
                 mgmtIp: d.mgmtIp,
+                model: d.model,
+                siteCode: d.siteCode,
+                managed: d.managed,
               },
             }}
             icon={icon(d.type)}

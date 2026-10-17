@@ -10,7 +10,16 @@ export type LibraryItem =
   | { kind: 'template'; templateId: string; type: DeviceType }
   | {
       kind: 'device'
-      device: { id: string; hostname: string; type: DeviceType; siteId: string; mgmtIp?: string }
+      device: {
+        id: string
+        hostname: string
+        type: DeviceType
+        siteId: string
+        mgmtIp?: string
+        model?: string
+        siteCode?: string
+        managed?: boolean
+      }
     }
 
 export const LIBRARY_MIME = 'application/x-ntb-library'
@@ -37,6 +46,9 @@ export function decodeItem(raw: string): LibraryItem | null {
           type: d.type as DeviceType,
           siteId: d.siteId as string,
           mgmtIp: typeof d.mgmtIp === 'string' ? d.mgmtIp : undefined,
+          model: typeof d.model === 'string' ? d.model : undefined,
+          siteCode: typeof d.siteCode === 'string' ? d.siteCode : undefined,
+          managed: typeof d.managed === 'boolean' ? d.managed : undefined,
         },
       }
   } catch {
