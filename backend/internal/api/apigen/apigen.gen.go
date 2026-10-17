@@ -1799,7 +1799,10 @@ type DiagramChange struct {
 	Link         *LinkInput          `json:"link,omitempty"`
 	LinkUpdate   *LinkUpdate         `json:"linkUpdate,omitempty"`
 	Op           DiagramChangeOp     `json:"op"`
-	TempId       *openapi_types.UUID `json:"tempId,omitempty"`
+
+	// PortTempIds createDevice with a template (P1-17): client temp ids of the ports the template will generate, by name, so cables drawn before saving can name them; the result maps them to the real interface ids.
+	PortTempIds *[]PortTempId       `json:"portTempIds,omitempty"`
+	TempId      *openapi_types.UUID `json:"tempId,omitempty"`
 }
 
 // DiagramChangeOp defines model for DiagramChange.Op.
@@ -2637,6 +2640,12 @@ type PortGroup struct {
 	Poe     *bool           `json:"poe,omitempty"`
 	Speed   *string         `json:"speed,omitempty"`
 	Start   int32           `json:"start"`
+}
+
+// PortTempId defines model for PortTempId.
+type PortTempId struct {
+	Name   string             `json:"name"`
+	TempId openapi_types.UUID `json:"tempId"`
 }
 
 // PromoteMemberInput defines model for PromoteMemberInput.

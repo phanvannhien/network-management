@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
-import type { DiagramEdge, DiagramNode, DocState } from '../doc/types'
+import type { CableData } from './CableEdge'
+import type { DiagramNode, DocState } from '../doc/types'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
 // ends of a link. Node components read their own card from the store, so a node's data only carries references:
@@ -29,34 +30,64 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
   }))
 }
 
-const EDGE_TYPE: Record<NonNullable<DiagramEdge['routing']>, string> = {
-  straight: 'straight',
-  orthogonal: 'smoothstep',
-  curved: 'default',
-}
-
-/** Edges whose link ends are both on the view; the line style follows the link kind (SRS §6.2, index.css). */
-export function toFlowEdges(doc: DocState, selection: ReadonlySet<string> = new Set()): Edge[] {
+/**
+ * Edges whose link ends are both on the view (P1-17: floating "cable" edges between node borders). The line style
+ * follows the link kind (SRS §6.2, index.css); cables between the same two nodes are numbered so they spread apart.
+ */
+export function toFlowEdges(
+  doc: DocState,
+  selection: ReadonlySet<string> = new Set(),
+): Edge<CableData>[] {
   const nodeOf = new Map<string, string>()
   for (const n of doc.view.nodes) if (!nodeOf.has(n.refId)) nodeOf.set(n.refId, n.id)
-  const out: Edge[] = []
+  const out: Edge<CableData>[] = []
+  const pairCount = new Map<string, number>()
   for (const e of doc.view.edges) {
     const l = doc.links[e.linkId]
     if (!l) continue
     const source = nodeOf.get(l.aId)
     const target = nodeOf.get(l.bId)
     if (!source || !target) continue
+    const pair = source < target ? `${source}|${target}` : `${target}|${source}`
+    const index = pairCount.get(pair) ?? 0
+    pairCount.set(pair, index + 1)
     out.push({
       id: e.id,
       source,
       target,
-      type: EDGE_TYPE[e.routing ?? 'straight'],
+      type: 'cable',
       className: `ntb-edge-${l.kind}${l.draft ? ' ntb-edge-draft' : ''}`,
-      data: { linkId: l.id },
+      data: { linkId: l.id, aPort: l.aPort, bPort: l.bPort, index, count: 0, pair },
       selected: selection.has(e.id),
     })
   }
+  for (const e of out) e.data!.count = pairCount.get(e.data!.pair as string) ?? 1
   return out
+}
+
+const GAP = 14
+
+export interface Pt {
+  x: number
+  y: number
+}
+
+/** Where the line from the node centre towards `to` leaves the node's rectangle. */
+export function borderPoint(rect: { x: number; y: number; w: number; h: number }, to: Pt): Pt {
+  const cx = rect.x + rect.w / 2
+  const cy = rect.y + rect.h / 2
+  const dx = to.x - cx
+  const dy = to.y - cy
+  if (dx === 0 && dy === 0) return { x: cx, y: cy }
+  const sx = rect.w / 2 / Math.abs(dx || 1e-9)
+  const sy = rect.h / 2 / Math.abs(dy || 1e-9)
+  const s = Math.min(sx, sy)
+  return { x: cx + dx * s, y: cy + dy * s }
+}
+
+/** Perpendicular offset for cable `index` of `count` between one pair, centred on the straight line. */
+export function parallelOffset(index: number, count: number): number {
+  return (index - (count - 1) / 2) * GAP
 }
 
 /** Viewport zoom limits (SRS §6.1: 10–400 %). */

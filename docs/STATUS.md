@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-17 Nối dây
+- Đã làm:
+  - **Kéo dây** từ điểm nối ở mép thiết bị (hiện khi rê chuột) sang thiết bị khác, hoặc **chế độ nối** (phím L, nút toolbar, menu
+    "Nối dây từ đây") rồi bấm hai thiết bị; Esc hủy.
+  - **Hộp nối dây**: loại dây gợi ý theo hai đầu (UPS/PDU → nguồn, trừ khi chọn cổng mạng RJ45 của UPS; modem ↔ Internet → DSL;
+    ONT/OLT → quang; hai cầu không dây / AP ↔ nhóm → không dây; cùng cụm → stack; hai cổng SFP → quang; còn lại Ethernet), tự
+    gợi ý lại khi chọn cổng cho tới khi người dùng tự chọn loại. Danh sách cổng sắp tự nhiên (Gi1/0/2 trước Gi1/0/10), cổng trống
+    cắm được lên đầu, cổng đã có dây ghi "đang nối X", cổng không cắm được bị mờ, không hiện LAG; tính cả dây chưa lưu/đã xóa
+    trong editor. Đầu là nhóm đầu cuối, Internet/nhà mạng, hoặc đầu thiết bị của dây nguồn thì không chọn cổng (có giải thích).
+  - **Thiết bị chưa lưu có cổng ngay**: thiết bị tạo từ template / nhân bản nhận danh sách cổng của template với id tạm; khi lưu
+    backend sinh cổng thật và ánh xạ id tạm (`DiagramChange.portTempIds`, dây dùng id tạm của cổng được map) — có test backend.
+  - **Nhấp đúp vào dây** (hoặc menu "Sửa dây") để đổi loại / gán cổng sau (ADR-013).
+  - **Dây trên canvas**: đường thẳng nối mép hai thiết bị (không còn cố định đáy → đỉnh), dây song song tự tách, tên cổng rút gọn
+    ở hai đầu (GigabitEthernet1/0/1 → Gi1/0/1), ẩn khi zoom < 50 %.
+  - **Sửa lỗi P1-16 từ rà soát:** menu dây không còn kéo theo thiết bị đang chọn (và ngược lại); dán thiết bị đang chờ xóa không
+    làm nó "sống lại"; dán nhóm đầu cuối hiện đúng tên và dây; thao tác trong lúc đang lưu báo "đang lưu" thay vì báo thành công
+    giả; lỗi tra hostname khi nhân bản không bị nuốt; dây logical nối nhóm đầu cuối được phép như ADR-033.
+- Test / cách kiểm tra: `make check` pass (Go: `TestDiagramSaveCablesNewDevicePorts`; vitest 230: gợi ý loại dây, sắp cổng, cổng
+  bận, nhãn rút gọn, hình học dây, portTempIds; App: L + 2 click → chọn cổng (gồm cổng tạm của thiết bị chưa lưu) → lưu). Chạy
+  thật trên Chromium + API: kéo từ điểm nối IDC-FW01 sang IDC-R01 → chọn Gi0/2 → lưu → dây song song tách, nhãn Gi0/2; nhấp đúp
+  mở "Sửa dây"; axe không lỗi.
+- Còn dở / lỗi đã biết: dây chỉ vẽ thẳng (orthogonal/cong và điểm uốn để sau); kéo lại đầu dây để đổi cổng chưa có (dùng nhấp đúp);
+  nhân bản chép cổng theo template, không chép cổng chỉnh tay của thiết bị gốc; thiết bị chưa lưu không có template thì chưa có
+  cổng tới khi lưu.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-18 Panel thuộc tính (bước 1: sửa nhanh thiết bị/dây, danh sách cổng).
+
 ## 2026-10-17 — P1-16 Thao tác chọn & sửa
 - Đã làm:
   - **Sao chép / dán / nhân bản** (Ctrl+C / Ctrl+V / Ctrl+D, menu chuột phải): một quyết định cho cả lần dán — sơ đồ đích chưa có các

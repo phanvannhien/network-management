@@ -2241,7 +2241,7 @@ describe('diagrams (P1-13)', () => {
     model: 'FortiGate 100F',
     partNumber: 'FG-100F',
     uHeight: 1,
-    ports: [],
+    ports: [{ pattern: 'port{n}', start: 1, count: 2, media: 'RJ45', speed: '1G' }],
     portCount: 22,
     notes: '',
     version: 1,
@@ -2393,6 +2393,11 @@ describe('diagrams (P1-13)', () => {
           siteId: AGRI_SITE.id,
           templateId: 'tpl-1',
         },
+        // P1-17: the template's ports, so cables drawn before saving can name them.
+        portTempIds: [
+          { name: 'port1', tempId: expect.any(String) },
+          { name: 'port2', tempId: expect.any(String) },
+        ],
       },
     ])
   })
@@ -2635,6 +2640,67 @@ describe('diagrams (P1-13)', () => {
     await waitFor(() => expect(calls.some(isSave)).toBe(true))
     const body = await calls.find(isSave)!.clone().json()
     expect(body.view.edges.map((e: { linkId: string }) => e.linkId)).toEqual(['lk-1'])
+  })
+
+  it('P1-17: L then two clicks draws a cable; ports of a device not saved yet come from its template', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1/interfaces`]: () =>
+          json({
+            interfaces: [
+              { id: 'if-1', name: 'port1', kind: 'physical', media: 'RJ45', speed: '1G' },
+              { id: 'if-2', name: 'x1', kind: 'physical', media: 'SFP+', speed: '10G' },
+              { id: 'if-3', name: 'console', kind: 'physical', media: 'Console', speed: '' },
+            ],
+          }),
+        [`GET /api/orgs/${ORG_ID}/links`]: () => json({ links: [] }),
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const library = await screen.findByRole('complementary', { name: 'Thư viện' })
+    fireEvent.change(within(library).getByLabelText('Tìm loại, model, hostname…'), {
+      target: { value: 'fortigate' },
+    })
+    fireEvent.click(await within(library).findByRole('button', { name: 'Thêm FortiGate 100F mới' }))
+    const add = await screen.findByRole('dialog', { name: 'Thiết bị mới' })
+    await waitFor(() => expect(within(add).getByLabelText(/^Site/)).toHaveValue(AGRI_SITE.id))
+    fireEvent.change(within(add).getByLabelText(/^Hostname/), {
+      target: { value: 'AGRI-BD01-FW02' },
+    })
+    fireEvent.click(within(add).getByRole('button', { name: 'Đặt lên sơ đồ' }))
+    const canvas = screen.getByRole('application')
+    await within(canvas).findByText('AGRI-BD01-FW02')
+
+    fireEvent.keyDown(window, { key: 'l' })
+    expect(screen.getByRole('status')).toHaveTextContent('bấm thiết bị thứ nhất')
+    fireEvent.click(within(canvas).getByText('AGRI-BD-FW01'))
+    fireEvent.click(within(canvas).getByText('AGRI-BD01-FW02'))
+    const dialog = await screen.findByRole('dialog', { name: 'Nối dây' })
+    const near = within(dialog).getByLabelText('Cổng ở AGRI-BD-FW01')
+    await waitFor(() => expect(near).toContainHTML('port1'))
+    // A console port cannot take an Ethernet cable (greyed out); SFP+ can (DAC, copper SFP).
+    expect(
+      within(near).getByRole('option', { name: /console · Console.*không cắm được/ }),
+    ).toBeDisabled()
+    expect(within(near).getByRole('option', { name: /^x1 · SFP\+ 10G$/ })).toBeEnabled()
+    fireEvent.change(near, { target: { value: 'if-1' } })
+    const far = within(dialog).getByLabelText('Cổng ở AGRI-BD01-FW02')
+    const farPort = within(far).getByRole('option', { name: /^port2/ }) as HTMLOptionElement
+    fireEvent.change(far, { target: { value: farPort.value } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Nối' }))
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    const create = body.changes.find((c: { op: string }) => c.op === 'createDevice')
+    const port2 = create.portTempIds.find((p: { name: string }) => p.name === 'port2').tempId
+    expect(body.changes.find((c: { op: string }) => c.op === 'createLink').link).toMatchObject({
+      a: { kind: 'device', id: 'dev-1', interfaceId: 'if-1' },
+      b: { kind: 'device', id: create.tempId, interfaceId: port2 },
+      kind: 'ethernet',
+    })
+    expect(port2).toBe(farPort.value)
   })
 
   it('a viewer opens the diagram read-only', async () => {

@@ -6012,12 +6012,31 @@ components:
           format: uuid
         device:
           $ref: '#/components/schemas/DeviceInput'
+        portTempIds:
+          type: array
+          maxItems: 1024
+          description: >-
+            createDevice with a template (P1-17): client temp ids of the ports the template will generate, by name, so
+            cables drawn before saving can name them; the result maps them to the real interface ids.
+          items:
+            $ref: '#/components/schemas/PortTempId'
         deviceUpdate:
           $ref: '#/components/schemas/DeviceUpdate'
         link:
           $ref: '#/components/schemas/LinkInput'
         linkUpdate:
           $ref: '#/components/schemas/LinkUpdate'
+
+    PortTempId:
+      type: object
+      required: [name, tempId]
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        tempId:
+          type: string
+          format: uuid
 
     DiagramSave:
       type: object

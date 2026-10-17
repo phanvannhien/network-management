@@ -282,10 +282,24 @@
 .react-flow__edge.ntb-edge-draft .react-flow__edge-path {
   opacity: 0.7;
 }
-/* Links attach to these; wiring by dragging comes with P1-17. */
+/* Cables attach to these (drawn border to border by CableEdge). */
 .react-flow__handle.ntb-handle {
   opacity: 0;
   pointer-events: none;
+}
+/* Connection points: shown on hover / focus of a node (and while connecting) to drag a new cable (P1-17). */
+.react-flow__handle.ntb-connect {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--brand);
+  background: var(--surface);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.react-flow__node:hover .react-flow__handle.ntb-connect,
+.react-flow__node:focus-visible .react-flow__handle.ntb-connect,
+.react-flow.ntb-connecting .react-flow__handle.ntb-connect {
+  opacity: 1;
 }
 .react-flow__minimap,
 .react-flow__controls {

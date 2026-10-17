@@ -147,5 +147,14 @@ export async function fetchHostnames(orgId: string, q: string): Promise<string[]
   const r = await api.GET('/orgs/{orgId}/devices', {
     params: { path: { orgId }, query: { q, pageSize: 200 } },
   })
-  return r.data?.devices.map((d) => d.hostname) ?? []
+  if (r.data) return r.data.devices.map((d) => d.hostname)
+  // A missed name would make the whole save fail on a duplicate hostname: stop here instead.
+  fail(r.error, r.response.status, i18n.t('errors.devicesLoad'))
+}
+
+/** Organization templates (port groups), to give clones the ports their template will generate. */
+export async function fetchTemplates(orgId: string) {
+  const r = await api.GET('/orgs/{orgId}/device-templates', { params: { path: { orgId } } })
+  if (r.data) return r.data.templates
+  fail(r.error, r.response.status, i18n.t('errors.templatesLoad'))
 }

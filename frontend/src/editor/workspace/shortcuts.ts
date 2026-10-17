@@ -21,6 +21,7 @@ export type ShortcutId =
   | 'multiSelect'
   | 'search'
   | 'quickAdd'
+  | 'connect'
   | 'library'
   | 'help'
 
@@ -51,6 +52,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'pan', keys: ['Space'] },
   { id: 'multiSelect', keys: ['Shift'] },
   { id: 'quickAdd', keys: ['/'], aria: '/' },
+  { id: 'connect', keys: ['L'], aria: 'L' },
   { id: 'library', keys: ['B'], aria: 'B' },
   { id: 'search', keys: ['Ctrl', 'K'] },
   { id: 'help', keys: ['?'], aria: '?' },
@@ -121,6 +123,7 @@ export function actionFor(
   if (e.key === '?' || (e.shiftKey && e.code === 'Slash')) return 'help'
   if (e.key === '/') return 'quickAdd'
   if (e.key.toLowerCase() === 'b' && !e.shiftKey) return 'library'
+  if (e.key.toLowerCase() === 'l' && !e.shiftKey) return 'connect'
   if (e.key === '+' || e.key === '=') return 'zoomIn'
   if (e.key === '-' || e.key === '_') return 'zoomOut'
   // Shift+Delete deletes from the inventory, always after a confirmation (ADR-033).

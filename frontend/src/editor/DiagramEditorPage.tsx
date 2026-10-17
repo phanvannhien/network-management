@@ -1,6 +1,8 @@
 import { ReactFlowProvider, useReactFlow, useStore as useFlowStore } from '@xyflow/react'
 import {
+  Cable,
   ClipboardPaste,
+  Pencil,
   Copy,
   CopyPlus,
   ExternalLink,
@@ -22,7 +24,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
-import { createDevice } from './doc/commands'
+import { useTemplates } from '@/modules/inventory/devices'
+import { createDevice, newId } from './doc/commands'
+import { expandTemplatePorts } from './library/ports'
 import { draftStore, type Draft } from './doc/drafts'
 import { createDocStore, type DocStoreApi } from './doc/store'
 import { changesOf } from './doc/types'
@@ -35,6 +39,8 @@ import { Canvas } from './workspace/Canvas'
 import { DeleteFromInventoryDialog } from './workspace/DeleteFromInventoryDialog'
 import { NodeMenu, type MenuItem } from './workspace/NodeMenu'
 import { useEditActions } from './workspace/useEditActions'
+import { CableDialog } from './workspace/CableDialog'
+import { useWiring } from './workspace/useWiring'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { useEditorPrefs } from './workspace/prefs'
@@ -269,7 +275,9 @@ function Workspace({
     [doc.devices],
   )
   const libraryOpen = canEdit && prefs.library
+  const templates = useTemplates(orgId, canEdit)
   const edit = useEditActions({ orgId, store, canEdit, grid: prefs.grid })
+  const wiring = useWiring({ orgId, store, canEdit })
   const [menu, setMenu] = useState<{
     x: number
     y: number
@@ -309,6 +317,8 @@ function Workspace({
   const create = (input: NewDeviceInput) => {
     if (!creating) return
     const { x, y } = place(creating.at)
+    // The template's ports exist right away (temp ids), so the new device can be cabled before saving (P1-17).
+    const groups = templates.data?.find((tp) => tp.id === input.templateId)?.ports
     store.getState().dispatch(
       createDevice(
         {
@@ -319,6 +329,9 @@ function Workspace({
         },
         x,
         y,
+        newId(),
+        newId(),
+        groups ? expandTemplatePorts(groups) : [],
       ),
     )
     setLastSite(input.siteId)
@@ -372,6 +385,11 @@ function Workspace({
           s.setSelection([])
           s.setEdgeSelection([])
           setMenu(null)
+          wiring.cancel()
+          break
+        case 'connect':
+          if (!canEdit) return
+          wiring.toggle()
           break
         case 'remove':
           edit.remove()
@@ -436,6 +454,13 @@ function Workspace({
     if (m.kind === 'edge')
       return [
         {
+          id: 'edit',
+          label: t('cable.editTitle'),
+          icon: <Pencil aria-hidden />,
+          disabled: !canEdit,
+          onSelect: () => m.id && wiring.editCable(m.id),
+        },
+        {
           id: 'delete',
           label: t('editorEdit.deleteCable'),
           icon: <Trash2 aria-hidden />,
@@ -475,6 +500,14 @@ function Workspace({
         onSelect: edit.toggleLock,
       },
       {
+        id: 'connect',
+        label: t('cable.fromHere'),
+        icon: <Cable aria-hidden />,
+        keys: keys('connect'),
+        disabled: !canEdit,
+        onSelect: () => m.id && wiring.toggle(m.id),
+      },
+      {
         id: 'open',
         label: t('editorEdit.openDevice'),
         icon: <ExternalLink aria-hidden />,
@@ -511,6 +544,10 @@ function Workspace({
         prefs={prefs}
         libraryOpen={libraryOpen}
         onDropItem={pick}
+        onWire={wiring.wire}
+        wiring={wiring.mode !== null}
+        onNodePick={wiring.pick}
+        onEditCable={wiring.editCable}
         onMenu={(target, x, y) => {
           const box = root.current?.parentElement?.getBoundingClientRect()
           setMenu({ ...target, x: x - (box?.left ?? 0), y: y - (box?.top ?? 0) })
@@ -536,7 +573,18 @@ function Workspace({
         onFit={fit}
         onHelp={() => setHelp(true)}
         onQuickAdd={() => setQuick(true)}
+        connecting={wiring.mode !== null}
+        onConnect={() => wiring.toggle()}
       />
+      {wiring.mode && (
+        <div
+          role="status"
+          className="absolute top-16 left-1/2 z-10 -translate-x-1/2 rounded-md border border-primary bg-popover px-3 py-1.5 shadow-md"
+        >
+          {wiring.mode.from ? t('cable.pickSecond') : t('cable.pickFirst')}{' '}
+          <span className="text-muted-foreground">{t('cable.escToCancel')}</span>
+        </div>
+      )}
       {libraryOpen && (
         <LibraryPanel
           orgId={orgId}
@@ -579,6 +627,18 @@ function Workspace({
           target={edit.deleting}
           onConfirm={edit.confirmDelete}
           onClose={edit.cancelDelete}
+        />
+      )}
+      {wiring.open && (
+        <CableDialog
+          orgId={orgId}
+          doc={doc}
+          a={wiring.open.a}
+          b={wiring.open.b}
+          initial={wiring.open.edit?.initial}
+          self={wiring.open.edit?.linkId}
+          onSave={wiring.save}
+          onClose={wiring.close}
         />
       )}
       {creating && (

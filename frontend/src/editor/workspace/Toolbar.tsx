@@ -1,6 +1,7 @@
 import { useStore as useFlowStore } from '@xyflow/react'
 import {
   ArrowLeft,
+  Cable,
   Keyboard,
   LibraryBig,
   Lightbulb,
@@ -105,6 +106,8 @@ export interface ToolbarProps {
   onFit: () => void
   onHelp: () => void
   onQuickAdd: () => void
+  connecting: boolean
+  onConnect: () => void
 }
 
 /** Floating toolbar over the canvas (P1-14). */
@@ -163,6 +166,14 @@ export function Toolbar(p: ToolbarProps) {
           </ToolButton>
           <ToolButton label={t('library.quickTitle')} shortcut="quickAdd" onClick={p.onQuickAdd}>
             <Plus aria-hidden />
+          </ToolButton>
+          <ToolButton
+            label={t('cable.connectTool')}
+            shortcut="connect"
+            onClick={p.onConnect}
+            pressed={p.connecting}
+          >
+            <Cable aria-hidden />
           </ToolButton>
         </>
       )}

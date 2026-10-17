@@ -271,7 +271,7 @@ var (
 		"stack":    {exclusive: true, media: set(append([]string{"RJ45"}, sfpFamily...)...)},
 		"dsl":      {exclusive: true, media: set("xDSL", "RJ45")},
 		"cellular": {media: set("Cellular")},
-		"logical":  {},
+		"logical":  {groups: true},
 	}
 	linkKindNames = map[string]string{
 		"ethernet": "Ethernet (đồng)", "fiber": "quang", "wireless": "không dây", "serial": "serial", "console": "console",

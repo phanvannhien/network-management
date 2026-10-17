@@ -8,6 +8,7 @@ import {
   type DocCommand,
 } from '../doc/commands'
 import type { DeviceCard, DeviceInput, DocState, LinkCard } from '../doc/types'
+import { expandTemplatePorts } from '../library/ports'
 
 // Copy / paste / duplicate on the diagram (P1-16, ADR-015: the inventory is the truth; P1-16 review). One decision per
 // paste: when none of the copied devices is on the target diagram, paste PLACES the same inventory objects (one device
@@ -17,6 +18,7 @@ import type { DeviceCard, DeviceInput, DocState, LinkCard } from '../doc/types'
 
 type Device = components['schemas']['Device']
 type Link = components['schemas']['Link']
+type PortGroup = components['schemas']['PortGroup']
 
 export interface ClipNode {
   refKind: 'device' | 'endpoint_group'
@@ -25,6 +27,8 @@ export interface ClipNode {
   dx: number
   dy: number
   card?: DeviceCard
+  /** An endpoint group: placed with its name so it draws at once. */
+  group?: { id: string; name: string; kind: string }
   /** A device created in the source diagram and not saved yet: it can only be cloned. */
   pending?: DeviceInput
 }
@@ -82,6 +86,7 @@ export function copySelection(doc: DocState, selection: string[], orgId: string)
       dx: n.x - x,
       dy: n.y - y,
       card: doc.devices[n.refId],
+      group: doc.groups[n.refId],
       pending: doc.newDevices[n.refId],
     })),
     links: Object.values(doc.links).filter((l) => ids.has(l.aId) && ids.has(l.bId)),
@@ -92,7 +97,12 @@ export function copySelection(doc: DocState, selection: string[], orgId: string)
 export function mustClone(doc: DocState, c: Clip, duplicate: boolean): boolean {
   if (duplicate) return true
   const onView = new Set(doc.view.nodes.map((n) => n.refId))
-  return c.nodes.some((n) => n.refKind === 'device' && (onView.has(n.refId) || n.pending))
+  return c.nodes.some(
+    (n) =>
+      n.refKind === 'device' &&
+      !doc.deletedDevices.includes(n.refId) &&
+      (onView.has(n.refId) || n.pending),
+  )
 }
 
 /**
@@ -156,6 +166,8 @@ export function planPaste(
     sources: Record<string, Device>
     links: Link[]
     taken: ReadonlySet<string>
+    /** Port groups by template id: a clone gets the ports its template will generate (P1-17). */
+    templates?: Record<string, PortGroup[]>
   },
 ): PastePlan {
   const onView = new Set(doc.view.nodes.map((n) => n.refId))
@@ -165,6 +177,8 @@ export function planPaste(
   const cloneOf = new Map<string, string>() // source device id → clone temp id
   let skippedGroups = 0
   for (const n of c.nodes) {
+    // A device marked for deletion here is not brought back (the save would delete it under the new node).
+    if (doc.deletedDevices.includes(n.refId)) continue
     const x = Math.round(at.x + n.dx)
     const y = Math.round(at.y + n.dy)
     if (opts.clone) {
@@ -181,7 +195,11 @@ export function planPaste(
       const tempId = newId()
       const nodeId = newId()
       cloneOf.set(n.refId, tempId)
-      commands.push(createDevice(cloneInput(src, hostname), x, y, tempId, nodeId))
+      const input = cloneInput(src, hostname)
+      const groups = input.templateId ? opts.templates?.[input.templateId] : undefined
+      commands.push(
+        createDevice(input, x, y, tempId, nodeId, groups ? expandTemplatePorts(groups) : []),
+      )
       nodeIds.push(nodeId)
     } else if (!onView.has(n.refId)) {
       const nodeId = newId()
@@ -190,6 +208,7 @@ export function planPaste(
         addNode(n.refKind, n.refId, x, y, {
           id: nodeId,
           device: n.card,
+          group: n.group as DocState['groups'][string] | undefined,
           links: linksOf.map((l) => ({
             id: l.id,
             aId: l.a.id,

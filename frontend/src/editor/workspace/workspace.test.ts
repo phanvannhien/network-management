@@ -72,7 +72,7 @@ describe('document → React Flow (P1-14)', () => {
         id: 'e1',
         source: 'n-fw',
         target: 'n-sw',
-        type: 'smoothstep',
+        type: 'cable',
         className: 'ntb-edge-fiber',
       }),
     ])
@@ -85,7 +85,7 @@ describe('document → React Flow (P1-14)', () => {
     )
     const edges = toFlowEdges(s.getState().doc!)
     expect(edges.at(-1)).toMatchObject({
-      type: 'straight',
+      type: 'cable',
       className: 'ntb-edge-logical ntb-edge-draft',
     })
   })

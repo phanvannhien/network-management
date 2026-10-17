@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
+import type { components } from '@/api/client'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { fetchDevice, fetchHostnames, fetchLinkCards, fetchLinks } from '../doc/api'
+import { fetchDevice, fetchHostnames, fetchLinkCards, fetchLinks, fetchTemplates } from '../doc/api'
 import {
   addNode,
   compound,
@@ -67,9 +68,16 @@ export function useEditActions({
     toast.success(t('editorEdit.copied', { count: c.nodes.length }))
   }
 
+  /** Edits wait while a save is on its way (the store ignores them): say so instead of pretending. */
+  const saving = () => {
+    if (store.getState().status !== 'saving') return false
+    toast.info(t('editorEdit.waitSave'))
+    return true
+  }
+
   const pasteClip = async (c: Clip, duplicate: boolean) => {
     const s = store.getState()
-    if (!canEdit || !s.doc || busy.current) return
+    if (!canEdit || !s.doc || busy.current || saving()) return
     if (c.orgId !== orgId) {
       toast.error(t('editorEdit.otherOrg'))
       return
@@ -80,16 +88,22 @@ export function useEditActions({
       const saved = c.nodes.filter((n) => n.refKind === 'device' && !n.pending)
       const links: Link[] = []
       const seen = new Set<string>()
-      for (const n of saved)
+      for (const n of c.nodes.filter((x) => !x.pending))
         for (const l of await fetchLinks(orgId, n.refId))
           if (!seen.has(l.id)) {
             seen.add(l.id)
             links.push(l)
           }
       const sources: Parameters<typeof planPaste>[3]['sources'] = {}
+      const templates: Record<string, components['schemas']['PortGroup'][]> = {}
       const taken = new Set(Object.values(s.doc.devices).map((d) => d.hostname))
       if (clone) {
         for (const n of saved) sources[n.refId] = await fetchDevice(orgId, n.refId)
+        // Clones get their template's ports right away, so they can be cabled before saving.
+        const usesTemplate = [...Object.values(sources), ...c.nodes.map((n) => n.pending)].some(
+          (d) => d?.templateId,
+        )
+        if (usesTemplate) for (const tp of await fetchTemplates(orgId)) templates[tp.id] = tp.ports
         // Names in the inventory that a renamed clone could hit.
         const stems = new Set<string>()
         for (const n of c.nodes)
@@ -98,11 +112,12 @@ export function useEditActions({
       }
       // A clone lands next to its source, a little further at each paste; placed objects keep their layout.
       const step = clone ? ++pastes.current * Math.max(2 * grid, 40) : 0
+      if (saving()) return
       const plan = planPaste(
         store.getState().doc!,
         c,
         { x: c.x + step, y: c.y + step },
-        { clone, sources, links, taken },
+        { clone, sources, links, taken, templates },
       )
       store.getState().dispatch(plan.command)
       store.getState().setSelection(plan.nodeIds)
@@ -135,7 +150,7 @@ export function useEditActions({
 
   const toggleLock = () => {
     const nodes = selectedNodes()
-    if (!canEdit || nodes.length === 0) return
+    if (!canEdit || nodes.length === 0 || saving()) return
     const lock = nodes.some((n) => !n.locked)
     store.getState().dispatch(
       setLocked(
@@ -147,7 +162,7 @@ export function useEditActions({
 
   const remove = () => {
     const nodes = selectedNodes()
-    if (!canEdit) return
+    if (!canEdit || saving()) return
     if (nodes.length === 0) {
       // Cables cannot leave the view while both ends are drawn (ADR-015): Delete on them deletes from the inventory.
       if (store.getState().edgeSelection.length > 0) requestDelete()
@@ -162,7 +177,8 @@ export function useEditActions({
     const s = store.getState()
     if (!canEdit || !s.doc) return
     const nodes = selectedNodes().filter((n) => n.refKind === 'device')
-    const edges = new Set(s.edgeSelection)
+    // Nodes win: cables count only when no node is selected (a stale cable pick never rides along).
+    const edges = new Set(selectedNodes().length > 0 ? [] : s.edgeSelection)
     const linkIds = s.doc.view.edges.filter((e) => edges.has(e.id)).map((e) => e.linkId)
     const deviceIds = nodes.filter((n) => !n.locked).map((n) => n.refId)
     const skippedLocked = nodes.length - deviceIds.length
@@ -174,7 +190,7 @@ export function useEditActions({
   }
 
   const confirmDelete = () => {
-    if (!deleting) return
+    if (!deleting || saving()) return
     const doc = store.getState().doc
     const devs = new Set(deleting.deviceIds)
     const commands: DocCommand[] = deleting.deviceIds.map((id) => deleteDevice(id))

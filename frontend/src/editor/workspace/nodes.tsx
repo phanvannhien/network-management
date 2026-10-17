@@ -18,11 +18,14 @@ import type { RefData } from './flow'
 
 type RefFlowNode = Node<RefData>
 
+const SIDES = [Position.Top, Position.Right, Position.Bottom, Position.Left]
+
 /** Secondary labels hide below 50 % zoom (SRS §6.3). */
 const useShowDetails = () => useFlowStore((s) => s.transform[2] >= 0.5)
 
 function Frame({
   selected,
+  connectable = false,
   locked,
   draft,
   title,
@@ -31,6 +34,7 @@ function Frame({
   detail,
 }: {
   selected: boolean
+  connectable?: boolean
   locked: boolean
   draft: boolean
   title: string
@@ -48,7 +52,19 @@ function Frame({
         selected ? 'border-primary ring-2 ring-primary' : 'border-border-control',
       )}
     >
+      {/* Cables are drawn border to border (CableEdge); these anchor them, and on hover start a new cable (P1-17). */}
       <Handle type="target" position={Position.Top} isConnectable={false} className="ntb-handle" />
+      {connectable &&
+        SIDES.map((side) => (
+          <Handle
+            key={side}
+            id={`c-${side}`}
+            type="source"
+            position={side}
+            isConnectable
+            className="ntb-connect"
+          />
+        ))}
       {icon}
       <span className="w-full truncate text-center text-xs font-medium">{label}</span>
       {showDetails && detail && (
@@ -78,7 +94,7 @@ function Frame({
   )
 }
 
-function DeviceNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
+function DeviceNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const card = useDoc((s) => s.doc?.devices[data.refId])
   if (!card) return <HiddenFrame selected={selected} />
@@ -86,6 +102,7 @@ function DeviceNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
   return (
     <Frame
       selected={selected}
+      connectable={isConnectable}
       locked={data.locked}
       draft={card.draft === true}
       title={`${card.hostname} · ${type}`}
@@ -96,13 +113,14 @@ function DeviceNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
   )
 }
 
-function GroupNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
+function GroupNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const group = useDoc((s) => s.doc?.groups[data.refId])
   if (!group) return <HiddenFrame selected={selected} />
   return (
     <Frame
       selected={selected}
+      connectable={isConnectable}
       locked={data.locked}
       draft={false}
       title={group.name}

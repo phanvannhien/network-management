@@ -647,6 +647,24 @@ func applyChange(ctx context.Context, q store.Querier, m tenant.Membership, c ap
 			return deviceRefusal(out, err)
 		}
 		idMap[*c.TempId] = uuid.UUID(out.device.ID.Bytes)
+		if c.PortTempIds != nil && len(*c.PortTempIds) > 0 {
+			// Ports drawn on before the save (generated from the template just now) get their real ids.
+			ports, err := q.ListInterfaces(ctx, store.ListInterfacesParams{OrganizationID: m.OrgID, DeviceID: out.device.ID})
+			if err != nil {
+				return "", "", 0, fmt.Errorf("new device ports: %w", err)
+			}
+			byName := map[string]uuid.UUID{}
+			for _, p := range ports {
+				byName[strings.ToLower(p.Name)] = uuid.UUID(p.ID.Bytes)
+			}
+			for _, pt := range *c.PortTempIds {
+				real, ok := byName[strings.ToLower(pt.Name)]
+				if !ok {
+					return fmt.Sprintf("cổng %s không có trong thiết bị mới %s", pt.Name, out.device.Hostname), "", 0, nil
+				}
+				idMap[pt.TempId] = real
+			}
+		}
 	case apigen.UpdateDevice:
 		id, bad := needID()
 		if bad != "" || c.DeviceUpdate == nil {
@@ -691,6 +709,12 @@ func applyChange(ctx context.Context, q store.Querier, m tenant.Membership, c ap
 			id, version = &lid, u.Version
 		}
 		in.A.Id, in.B.Id = mapID(in.A.Id), mapID(in.B.Id)
+		// A port of a device created in this save is named by its temp id.
+		for _, iface := range []*uuid.UUID{in.A.InterfaceId, in.B.InterfaceId} {
+			if iface != nil {
+				*iface = mapID(*iface)
+			}
+		}
 		var out writeOutcome
 		l, err := writeLink(ctx, q, m, in, id, version, &out)
 		if stop, err := refusal(err); err != nil || stop {

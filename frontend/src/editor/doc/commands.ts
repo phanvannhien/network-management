@@ -1,3 +1,4 @@
+import type { PendingPort } from '../library/ports'
 import type {
   DeviceCard,
   LinkCard,
@@ -41,7 +42,12 @@ export function addNode(
   refId: string,
   x: number,
   y: number,
-  opts: { id?: string; device?: DeviceCard; links?: LinkCard[] } = {},
+  opts: {
+    id?: string
+    device?: DeviceCard
+    group?: DocState['groups'][string]
+    links?: LinkCard[]
+  } = {},
 ): DocCommand {
   const id = opts.id ?? newId()
   return {
@@ -49,6 +55,7 @@ export function addNode(
     apply(d) {
       if (d.view.nodes.some((n) => n.refId === refId && n.refKind === refKind)) return
       if (opts.device && !d.devices[refId]) d.devices[refId] = opts.device
+      if (opts.group && !d.groups[refId]) d.groups[refId] = opts.group
       // Inventory links of the object (ADR-015): those to objects on the view get drawn below.
       for (const l of opts.links ?? [])
         if (!d.links[l.id] && !d.deletedLinks.includes(l.id)) d.links[l.id] = l
@@ -106,12 +113,17 @@ export function createDevice(
   y: number,
   tempId = newId(),
   nodeId = newId(),
+  ports: PendingPort[] = [],
 ): DocCommand {
   return {
     label: 'createDevice',
     apply(d) {
       d.newDevices[tempId] = input
       d.newDeviceOrder.push(tempId)
+      if (ports.length > 0) {
+        d.newPorts ??= {}
+        d.newPorts[tempId] = ports
+      }
       d.devices[tempId] = {
         id: tempId,
         hostname: input.hostname,
@@ -146,6 +158,7 @@ export function deleteDevice(id: string): DocCommand {
     apply(d) {
       if (d.newDevices[id]) {
         delete d.newDevices[id]
+        if (d.newPorts) delete d.newPorts[id]
         d.newDeviceOrder = d.newDeviceOrder.filter((x) => x !== id)
       } else if (!d.deletedDevices.includes(id)) d.deletedDevices.push(id)
       delete d.deviceEdits[id]
@@ -165,7 +178,17 @@ export function deleteDevice(id: string): DocCommand {
   }
 }
 
-export function createLink(input: LinkInput, tempId = newId()): DocCommand {
+/** Port names shown at the cable ends (the input only carries interface ids). */
+export interface PortNames {
+  aPort: string
+  bPort: string
+}
+
+export function createLink(
+  input: LinkInput,
+  tempId = newId(),
+  ports: PortNames = { aPort: '', bPort: '' },
+): DocCommand {
   return {
     label: 'createLink',
     apply(d) {
@@ -176,8 +199,7 @@ export function createLink(input: LinkInput, tempId = newId()): DocCommand {
         aId: input.a.id,
         bId: input.b.id,
         kind: input.kind,
-        aPort: '',
-        bPort: '',
+        ...ports,
         draft: true,
       }
       d.view.edges.push({ id: newId(), linkId: tempId })
@@ -185,7 +207,7 @@ export function createLink(input: LinkInput, tempId = newId()): DocCommand {
   }
 }
 
-export function updateLink(id: string, update: LinkUpdate): DocCommand {
+export function updateLink(id: string, update: LinkUpdate, ports?: PortNames): DocCommand {
   return {
     label: 'updateLink',
     apply(d) {
@@ -193,7 +215,8 @@ export function updateLink(id: string, update: LinkUpdate): DocCommand {
       if (d.newLinks[id]) d.newLinks[id] = input as LinkInput
       else d.linkEdits[id] = update
       const card = d.links[id]
-      if (card) Object.assign(card, { aId: update.a.id, bId: update.b.id, kind: update.kind })
+      if (card)
+        Object.assign(card, { aId: update.a.id, bId: update.b.id, kind: update.kind, ...ports })
     },
   }
 }

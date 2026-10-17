@@ -1,4 +1,5 @@
 import type { components } from '@/api/client'
+import type { PendingPort } from '../library/ports'
 
 // The diagram document the editor works on (P1-13, ADR-015): the stored view plus the inventory it shows, and the
 // inventory changes made in the editor that are not saved yet. Everything here is undoable; saving sends the view and
@@ -27,6 +28,8 @@ export interface DeviceCard {
   hostname: string
   type: Device['type']
   siteId: string
+  /** Cluster (stack / HA pair) of the device: a cable between members suggests "stack". */
+  clusterId?: string | null
   /** Created in the editor, not saved yet. */
   draft?: boolean
 }
@@ -51,6 +54,8 @@ export interface DocState {
   // Pending inventory changes, in creation order where order matters (create before link).
   newDevices: Record<string, DeviceInput>
   newDeviceOrder: string[]
+  /** Ports a pending device will get from its template (temp ids), so cables can name them before the save. */
+  newPorts?: Record<string, PendingPort[]>
   deviceEdits: Record<string, DeviceUpdate>
   deletedDevices: string[]
   newLinks: Record<string, LinkInput>
@@ -77,7 +82,13 @@ export function emptyView(): DiagramView {
 export function docFromDetail(d: DiagramDetail): DocState {
   const devices: DocState['devices'] = {}
   for (const x of d.devices)
-    devices[x.id] = { id: x.id, hostname: x.hostname, type: x.type, siteId: x.siteId }
+    devices[x.id] = {
+      id: x.id,
+      hostname: x.hostname,
+      type: x.type,
+      siteId: x.siteId,
+      clusterId: x.clusterId ?? null,
+    }
   const groups: DocState['groups'] = {}
   for (const g of d.endpointGroups) groups[g.id] = { id: g.id, name: g.name, kind: g.kind }
   const links: DocState['links'] = {}
@@ -109,6 +120,7 @@ export function docFromDetail(d: DiagramDetail): DocState {
     hidden: d.hiddenRefs,
     newDevices: {},
     newDeviceOrder: [],
+    newPorts: {},
     deviceEdits: {},
     deletedDevices: [],
     newLinks: {},
@@ -121,8 +133,22 @@ export function docFromDetail(d: DiagramDetail): DocState {
 /** Pending inventory changes in a safe order: creates, then updates, then link changes, then deletes. */
 export function changesOf(doc: DocState): DiagramChange[] {
   const out: DiagramChange[] = []
-  for (const id of doc.newDeviceOrder)
-    if (doc.newDevices[id]) out.push({ op: 'createDevice', tempId: id, device: doc.newDevices[id] })
+  for (const id of doc.newDeviceOrder) {
+    const device = doc.newDevices[id]
+    if (!device) continue
+    // Drafts from before P1-17 have no newPorts.
+    const ports = doc.newPorts?.[id] ?? []
+    out.push(
+      ports.length > 0 && device.templateId
+        ? {
+            op: 'createDevice',
+            tempId: id,
+            device,
+            portTempIds: ports.map((p) => ({ name: p.name, tempId: p.id })),
+          }
+        : { op: 'createDevice', tempId: id, device },
+    )
+  }
   for (const [id, u] of Object.entries(doc.deviceEdits))
     out.push({ op: 'updateDevice', id, deviceUpdate: u })
   for (const id of doc.deletedLinks) out.push({ op: 'deleteLink', id })

@@ -2897,9 +2897,16 @@ export interface components {
             /** Format: uuid */
             id?: string;
             device?: components["schemas"]["DeviceInput"];
+            /** @description createDevice with a template (P1-17): client temp ids of the ports the template will generate, by name, so cables drawn before saving can name them; the result maps them to the real interface ids. */
+            portTempIds?: components["schemas"]["PortTempId"][];
             deviceUpdate?: components["schemas"]["DeviceUpdate"];
             link?: components["schemas"]["LinkInput"];
             linkUpdate?: components["schemas"]["LinkUpdate"];
+        };
+        PortTempId: {
+            name: string;
+            /** Format: uuid */
+            tempId: string;
         };
         DiagramSave: {
             /** Format: int32 */

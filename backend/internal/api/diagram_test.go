@@ -184,3 +184,45 @@ func TestDiagramPermissions(t *testing.T) {
 		}
 	}
 }
+
+// P1-17: a cable drawn onto a port of a device created in the same save — the port comes from the template and is
+// named by a client temp id until the save maps it.
+func TestDiagramSaveCablesNewDevicePorts(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	bd := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BD01", "name": "BD"}))
+	fw := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "BD-FW01", "type": "firewall", "siteId": bd}))
+	fwPort := idOf(t, mustCreate(t, fx.A, devicePath(org, fw)+"/interfaces", map[string]any{"name": "port1", "kind": "physical", "media": "RJ45"}))
+	tpl := idOf(t, mustCreate(t, fx.A, orgPath(org)+"/device-templates", map[string]any{"name": "SW24", "type": "poe_switch",
+		"ports": []map[string]any{{"pattern": "Gi1/0/{n}", "start": 1, "count": 24, "media": "RJ45", "speed": "1G"}}}))
+	dg := idOf(t, mustCreate(t, fx.A, diagramsPath(org), map[string]any{"name": "LAN", "layer": "physical"})["diagram"].(map[string]any))
+	sw, ln, gi24 := uuid.NewString(), uuid.NewString(), uuid.NewString()
+	save := func(portName string) (int, map[string]any) {
+		return fx.A.Do("POST", diagramsPath(org)+"/"+dg+"/save", map[string]any{
+			"version": 1,
+			"view":    view([]map[string]any{node("n-fw", "device", fw, 0), node("n-sw", "device", sw, 200)}),
+			"changes": []map[string]any{
+				{"op": "createDevice", "tempId": sw, "device": map[string]any{"hostname": "BD-SW01", "type": "poe_switch", "siteId": bd, "templateId": tpl},
+					"portTempIds": []map[string]any{{"name": portName, "tempId": gi24}}},
+				{"op": "createLink", "tempId": ln, "link": map[string]any{"a": devEnd(fw, fwPort), "b": devEnd(sw, gi24), "kind": "ethernet"}},
+			},
+		})
+	}
+	// A name the template does not generate is refused, and nothing is kept.
+	if status, body := save("Gi1/0/99"); status != http.StatusBadRequest {
+		t.Fatalf("unknown port: %d %v", status, body)
+	}
+	status, res := save("gi1/0/24")
+	if status != http.StatusOK {
+		t.Fatalf("save: %d %v", status, res)
+	}
+	idMap := res["idMap"].(map[string]any)
+	if idMap[gi24] == nil || idMap[sw] == nil {
+		t.Fatalf("idMap: %v", idMap)
+	}
+	_, links := fx.A.Do("GET", linksPath(org)+"?endId="+fw, nil)
+	l := links["links"].([]any)[0].(map[string]any)
+	if l["b"].(map[string]any)["interfaceName"] != "Gi1/0/24" || l["b"].(map[string]any)["interfaceId"] != idMap[gi24] {
+		t.Errorf("cable on the new switch: %v", l["b"])
+	}
+}

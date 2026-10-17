@@ -69,7 +69,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P1-14 Canvas & toolbar nổi**: React Flow, zoom/pan/grid/minimap/fit, thanh công cụ nổi trên, menu trái thu gọn khi vào màn vẽ. Tooltip tên + phím tắt cho mọi nút; gợi ý thao tác lần đầu mở editor, tắt được (DESIGN.md §4a).
 - [x] **P1-15 Thư viện & thêm nhanh**: panel thư viện nổi (tab template / tab "trong kho chưa vẽ"), tìm kiếm, phím `/` thêm nhanh, kéo thả. Mỗi loại thiết bị / template có mô tả 1 dòng; panel thuộc tính dùng hint/guide/help (DESIGN.md §4a).
 - [x] **P1-16 Thao tác chọn & sửa**: multi-select, copy/paste giữ link, duplicate, lock, phím tắt SRS §6.4; Delete chỉ gỡ khỏi sơ đồ, Shift+Delete hoặc menu → xóa khỏi kho, **luôn có hộp xác nhận** liệt kê thiết bị và dây bị xóa theo (ADR-033).
-- [ ] **P1-17 Nối dây**: port → port hoặc device → device; popup chọn cổng; kiểu nét theo loại; link song song; gán cổng sau.
+- [x] **P1-17 Nối dây**: port → port hoặc device → device; popup chọn cổng; kiểu nét theo loại; link song song; gán cổng sau.
 - [ ] **P1-18 Panel thuộc tính & hiển thị**: sửa nhanh device/link/nhóm, mở trang chi tiết; **IPAM ngay trong panel** (chốt 2026-10-16): gán VLAN cho cổng (+ tạo VLAN mới tại chỗ), gán IP cho interface (+ lấy IP trống từ subnet, tạo subnet mới tại chỗ) — lưu vào IPAM chung, menu IPAM giữ để tra cứu nhanh; label template, màu nền label, label cổng, ẩn label khi zoom < 50%, tooltip, viền nét đứt cho managed=false.
 - [ ] **P1-19 Annotation & khung nhóm**: text màu, mũi tên, zone có nền; **khung nhóm gắn site/location** (ADR-032): tên lấy theo
   site/location, thiết bị mới thả vào khung nhận site/location của khung.

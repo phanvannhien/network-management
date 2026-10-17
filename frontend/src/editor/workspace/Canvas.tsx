@@ -3,6 +3,7 @@ import {
   BackgroundVariant,
   MiniMap,
   ReactFlow,
+  ConnectionMode,
   SelectionMode,
   useReactFlow,
   type NodeChange,
@@ -15,7 +16,7 @@ import { moveNodes } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { useDoc, useDocStoreApi } from './context'
 import { fitOptions, MAX_ZOOM, MIN_ZOOM, toFlowEdges, toFlowNodes, type RefData } from './flow'
-import { NODE_TYPES } from './nodeTypes'
+import { EDGE_TYPES, NODE_TYPES } from './nodeTypes'
 import type { EditorPrefs } from './prefs'
 
 const VIEWPORT_KEY = (diagramId: string) => `ntb-viewport:${diagramId}`
@@ -43,6 +44,10 @@ export function Canvas({
   prefs,
   libraryOpen,
   onDropItem,
+  onWire,
+  wiring,
+  onNodePick,
+  onEditCable,
   onMenu,
 }: {
   diagramId: string
@@ -51,6 +56,13 @@ export function Canvas({
   /** The library covers the left of the canvas. */
   libraryOpen: boolean
   onDropItem: (item: LibraryItem, at: { x: number; y: number }) => void
+  /** A cable drawn from one node to another (drag from a connection point, or connect mode). */
+  onWire: (sourceNodeId: string, targetNodeId: string) => void
+  /** Connect mode (L): clicks pick the two ends instead of selecting. */
+  wiring: boolean
+  onNodePick: (nodeId: string) => void
+  /** Double click on a cable: edit it. */
+  onEditCable: (edgeId: string) => void
   /** Right click on a node, a cable or the background (screen coordinates). */
   onMenu: (target: { kind: 'node' | 'edge' | 'pane'; id?: string }, x: number, y: number) => void
 }) {
@@ -63,6 +75,7 @@ export function Canvas({
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
   const [dataCache] = useState(() => new Map<string, RefData>())
   const dragKey = useRef<string | null>(null)
+  const wireFrom = useRef<string | null>(null)
 
   const nodes = useMemo(() => {
     if (!doc) return []
@@ -142,6 +155,7 @@ export function Canvas({
       nodes={nodes}
       edges={edges}
       nodeTypes={NODE_TYPES}
+      edgeTypes={EDGE_TYPES}
       onNodesChange={onNodesChange}
       onEdgesChange={(changes) => {
         const s = store.getState()
@@ -160,11 +174,14 @@ export function Canvas({
         // Right-clicking outside the selection selects that node, like file managers do.
         const s = store.getState()
         if (!s.selection.includes(node.id)) s.setSelection([node.id])
+        // Acting on nodes must not touch cables picked earlier (and the other way round).
+        s.setEdgeSelection([])
         onMenu({ kind: 'node', id: node.id }, e.clientX, e.clientY)
       }}
       onEdgeContextMenu={(e, edge) => {
         e.preventDefault()
         store.getState().setEdgeSelection([edge.id])
+        store.getState().setSelection([])
         onMenu({ kind: 'edge', id: edge.id }, e.clientX, e.clientY)
       }}
       onPaneContextMenu={(e) => {
@@ -205,7 +222,27 @@ export function Canvas({
       snapToGrid={prefs.snap}
       snapGrid={[prefs.grid, prefs.grid]}
       nodesDraggable={canEdit}
-      nodesConnectable={false}
+      nodesConnectable={canEdit}
+      connectionMode={ConnectionMode.Loose}
+      className={wiring ? 'ntb-connecting' : undefined}
+      onConnectStart={(_e, p) => {
+        wireFrom.current = p.nodeId ?? null
+      }}
+      onConnectEnd={(e) => {
+        // The cable ends on whatever node is under the pointer (not only on a connection point).
+        const from = wireFrom.current
+        wireFrom.current = null
+        if (!from) return
+        const pt = 'changedTouches' in e ? e.changedTouches[0] : e
+        if (!pt) return
+        const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__node')
+        const to = el?.getAttribute('data-id')
+        if (to && to !== from) onWire(from, to)
+      }}
+      onNodeClick={(_e, node) => {
+        if (wiring) onNodePick(node.id)
+      }}
+      onEdgeDoubleClick={(_e, edge) => onEditCable(edge.id)}
       elementsSelectable
       selectionOnDrag
       selectionMode={SelectionMode.Partial}
