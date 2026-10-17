@@ -61,7 +61,7 @@ Phase hiện tại: **Phase 0**
 
 ### Editor sơ đồ
 - [x] **P1-13 Diagram API & store**: bảng diagrams (view JSONB), lưu có optimistic lock (409 khi xung đột); store editor (Zustand + Immer), commands, undo/redo ≥ 100; lưu = một request gồm thay đổi view + thay đổi dữ liệu kho trong một transaction; nháp chưa gửi giữ ở IndexedDB; diagram có scope organization | business_unit | site *(bỏ phạm vi ở P1-29, ADR-032)*.
-- [ ] **P1-14 Canvas & toolbar nổi**: React Flow, zoom/pan/grid/minimap/fit, thanh công cụ nổi trên, menu trái thu gọn khi vào màn vẽ. Tooltip tên + phím tắt cho mọi nút; gợi ý thao tác lần đầu mở editor, tắt được (DESIGN.md §4a).
+- [x] **P1-14 Canvas & toolbar nổi**: React Flow, zoom/pan/grid/minimap/fit, thanh công cụ nổi trên, menu trái thu gọn khi vào màn vẽ. Tooltip tên + phím tắt cho mọi nút; gợi ý thao tác lần đầu mở editor, tắt được (DESIGN.md §4a).
 - [ ] **P1-15 Thư viện & thêm nhanh**: panel thư viện nổi (tab template / tab "trong kho chưa vẽ"), tìm kiếm, phím `/` thêm nhanh, kéo thả. Mỗi loại thiết bị / template có mô tả 1 dòng; panel thuộc tính dùng hint/guide/help (DESIGN.md §4a).
 - [ ] **P1-16 Thao tác chọn & sửa**: multi-select, copy/paste giữ link, duplicate, lock, phím tắt SRS §6.4; Delete chỉ gỡ khỏi sơ đồ, Shift+Delete xóa khỏi kho (xác nhận).
 - [ ] **P1-17 Nối dây**: port → port hoặc device → device; popup chọn cổng; kiểu nét theo loại; link song song; gán cổng sau.

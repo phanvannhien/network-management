@@ -7,6 +7,7 @@ import type { components } from '@/api/client'
 export type DiagramView = components['schemas']['DiagramView']
 export type DiagramNode = components['schemas']['DiagramNode']
 export type DiagramEdge = components['schemas']['DiagramEdge']
+export type DiagramViewport = components['schemas']['DiagramViewport']
 export type DiagramDetail = components['schemas']['DiagramDetail']
 export type DiagramMeta = components['schemas']['Diagram']
 export type DiagramSave = components['schemas']['DiagramSave']

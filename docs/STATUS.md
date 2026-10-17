@@ -5,6 +5,33 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-14 Canvas & toolbar nổi
+- Đã làm:
+  - **Màn vẽ** (`/o/:orgId/diagrams/:id`) thay danh sách tạm của P1-13 bằng canvas React Flow chiếm toàn bộ vùng nội dung,
+    đọc/ghi qua document store (mọi thay đổi vẫn là command có undo/redo; kéo một lần = một bước hoàn tác; node khóa không
+    kéo được). Vùng chọn và vị trí nhìn (viewport) là trạng thái editor, không vào lịch sử; viewport được lưu cùng sơ đồ.
+  - **Node** chỉ nhận id và tự đọc thẻ của mình từ store (đổi một thiết bị không vẽ lại các node khác); hiện icon, hostname, loại
+    (ẩn dòng phụ khi zoom < 50 %), viền nét đứt cho thiết bị chưa lưu. **Dây** nét theo loại (quang dày, logical/wireless
+    đứt, console chấm, serial gạch-chấm) — chọn cổng/kéo dây ở P1-17.
+  - **Toolbar nổi** phía trên: về danh sách, tên + lớp + trạng thái lưu, hoàn tác/làm lại, thêm thiết bị từ kho (tạm, thư viện ở
+    P1-15), thu nhỏ / % (bấm về 100 %) / phóng to / vừa màn hình, bắt lưới + cỡ lưới 10/20/40, minimap, gợi ý, phím tắt, Lưu.
+    Mọi nút có tooltip "tên + phím tắt" và `aria-keyshortcuts`.
+  - **Phím tắt** (SRS §6.4, phần đã có): Ctrl+Z / Ctrl+Shift+Z, Ctrl+S, Shift+1, + / −, Shift+0, Ctrl+A, Esc, Delete (chỉ gỡ khỏi
+    sơ đồ), Space+kéo / chuột giữa để di chuyển, kéo nền để khoanh chọn, `?` mở bảng phím tắt. Danh sách phím ở một chỗ
+    (`editor/workspace/shortcuts.ts`) để các task sau bổ sung.
+  - **Menu trái tự thu gọn** khi vào màn vẽ, mở lại khi rời đi. **Gợi ý lần đầu** (thẻ góc dưới) tắt được, bật lại từ toolbar;
+    tùy chọn lưới/minimap/gợi ý lưu theo trình duyệt.
+  - Dọn chữ cũ còn nhắc "đơn vị"/"phạm vi" ở sơ đồ và cụm.
+- Test / cách kiểm tra: `make check` pass (vitest 200 test: chuyển doc → React Flow, viewport/selection ngoài lịch sử, map phím;
+  App test: thêm từ kho trên canvas → undo/redo → Ctrl+S, Ctrl+A + Delete chỉ gỡ khỏi sơ đồ, `?`, ẩn gợi ý, viewer không sửa
+  được). Chụp màn hình Chromium sáng/tối trên môi trường riêng; axe WCAG A/AA không lỗi.
+- Còn dở / lỗi đã biết: dây nối tạm gắn cạnh trên/dưới của node (đường đi chưa đẹp với node ngang hàng) — P1-17 làm cổng và
+  đường đi. Thêm thiết bị tạm qua nút + (thư viện kéo thả ở P1-15). Màn `/editor` prototype Phase 0 vẫn còn, gỡ khi P1-15..20
+  chuyển xong palette, hộp thoại nối dây và validation.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-15 Thư viện & thêm nhanh.
+
 ## 2026-10-17 — P1-27 Cây Danh mục & mã site tự sinh + P1-29 Gỡ Đơn vị (ADR-032)
 - Đã làm:
   - **Migration 000020:** bảng `categories` (cây cha–con tự do, tối đa 8 cấp, mã `A-Z0-9` duy nhất giữa anh em),

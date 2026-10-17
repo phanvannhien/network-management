@@ -2280,7 +2280,8 @@ describe('diagrams (P1-13)', () => {
     })
   })
 
-  it('editor adds a device, undoes / redoes, and saves view + version in one request', async () => {
+  it('editor adds a device on the canvas, undoes / redoes, and saves view + version in one request', async () => {
+    localStorage.removeItem('ntb-editor-prefs-v1')
     const calls = fakeApi(
       routes({
         [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () =>
@@ -2292,18 +2293,22 @@ describe('diagrams (P1-13)', () => {
     )
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
     expect(await screen.findByRole('heading', { name: 'LAN Bình Định' })).toBeInTheDocument()
-    expect(screen.getByText('AGRI-BD-FW01')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Lưu/ })).toBeDisabled()
-    const pick = screen.getByLabelText('Thêm thiết bị từ kho…')
+    // P1-14: the side menu folds while drawing; the canvas shows the drawn device.
+    expect(screen.getByRole('button', { name: 'Mở rộng menu' })).toBeInTheDocument()
+    expect(within(screen.getByRole('application')).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Lưu/ })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm thiết bị từ kho' }))
+    const pick = await screen.findByLabelText('Thêm thiết bị từ kho…')
     await waitFor(() => expect(pick).toContainHTML('AGRI-BD-SW01'))
     // Already drawn devices are not offered again.
     expect(within(pick).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument()
     fireEvent.change(pick, { target: { value: 'dev-2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Thêm' }))
-    expect(await screen.findByText('AGRI-BD-SW01', { selector: 'span' })).toBeInTheDocument()
-    expect(screen.getByText('Có thay đổi chưa lưu')).toBeInTheDocument()
+    const canvas = screen.getByRole('application')
+    expect(await within(canvas).findByText('AGRI-BD-SW01')).toBeInTheDocument()
+    expect(screen.getByText(/Có thay đổi chưa lưu/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Hoàn tác' }))
-    expect(screen.queryByText('AGRI-BD-SW01', { selector: 'span' })).not.toBeInTheDocument()
+    await waitFor(() => expect(within(canvas).queryByText('AGRI-BD-SW01')).not.toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
     const isSave = (r: Request) => r.url.endsWith('/save')
@@ -2312,7 +2317,44 @@ describe('diagrams (P1-13)', () => {
     expect(body.version).toBe(3)
     expect(body.changes).toEqual([])
     expect(body.view.nodes.map((n: { refId: string }) => n.refId)).toEqual(['dev-1', 'dev-2'])
-    expect(await screen.findByText('Đã lưu')).toBeInTheDocument()
+    expect(await screen.findByText(/Đã lưu/, { selector: 'p' })).toBeInTheDocument()
+  })
+
+  it('canvas keys: select all + Delete removes from the diagram only; ? lists shortcuts; hints can be hidden', async () => {
+    localStorage.removeItem('ntb-editor-prefs-v1')
+    const calls = fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    // Every toolbar button names its shortcut for assistive tech too.
+    expect(screen.getByRole('button', { name: 'Vừa màn hình' })).toHaveAttribute(
+      'aria-keyshortcuts',
+      'Shift+1',
+    )
+    fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'Delete' })
+    await waitFor(() => expect(within(canvas).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument())
+    expect(calls.some((r) => r.method === 'DELETE')).toBe(false)
+    expect(screen.getByText(/Có thay đổi chưa lưu/)).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(await within(canvas).findByText('AGRI-BD-FW01')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: '?' })
+    const sheet = await screen.findByRole('dialog', { name: 'Phím tắt' })
+    expect(
+      within(sheet).getByText('Gỡ mục đang chọn khỏi sơ đồ (kho giữ nguyên)'),
+    ).toBeInTheDocument()
+    fireEvent.keyDown(sheet, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    expect(screen.getByRole('heading', { name: 'Mẹo dùng màn vẽ' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Đã hiểu, ẩn gợi ý' }))
+    expect(screen.queryByRole('heading', { name: 'Mẹo dùng màn vẽ' })).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('ntb-editor-prefs-v1')!)).toMatchObject({ tips: false })
+    expect(screen.getByRole('button', { name: 'Gợi ý thao tác' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('a stale save shows the conflict; a draft from an earlier session can be restored', async () => {
@@ -2347,8 +2389,8 @@ describe('diagrams (P1-13)', () => {
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
     expect(await screen.findByText(/Có bản nháp chưa lưu/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Khôi phục nháp' }))
-    expect(await screen.findByText('Sơ đồ trống.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Lưu/ }))
+    expect(await screen.findByText(/Sơ đồ trống/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /^Lưu/ }))
     expect(await screen.findByText('Sơ đồ đã được người khác lưu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Tải bản mới/ })).toBeInTheDocument()
   })
@@ -2361,8 +2403,13 @@ describe('diagrams (P1-13)', () => {
       }),
     )
     renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
-    expect(await screen.findByText('Bạn chỉ có quyền xem sơ đồ này.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Lưu/ })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Thêm thiết bị từ kho…')).not.toBeInTheDocument()
+    expect(await screen.findByText(/Chỉ xem/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Lưu/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Thêm thiết bị từ kho' })).not.toBeInTheDocument()
+    // Delete does nothing for a viewer.
+    fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'Delete' })
+    expect(screen.getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    expect(screen.queryByText(/Có thay đổi chưa lưu/)).not.toBeInTheDocument()
   })
 })

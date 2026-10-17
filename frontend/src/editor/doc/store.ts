@@ -7,6 +7,7 @@ import {
   type DiagramDetail,
   type DiagramMeta,
   type DiagramSave,
+  type DiagramViewport,
   type DocState,
 } from './types'
 
@@ -29,6 +30,12 @@ export interface DocStore {
   future: DocState[]
   status: SaveStatus
   error: string | null
+  /** Where the canvas looks: saved with the view, but panning is not an undo step. */
+  viewport: DiagramViewport | null
+  /** Selected view node ids: editor state, not part of the document or its history. */
+  selection: string[]
+  setViewport(viewport: DiagramViewport): void
+  setSelection(ids: string[]): void
   load(detail: DiagramDetail): void
   /** Restore a draft over the loaded diagram (same document shape). */
   restore(doc: DocState): void
@@ -48,6 +55,14 @@ export function createDocStore() {
     future: [],
     status: 'clean',
     error: null,
+    viewport: null,
+    selection: [],
+    setViewport: (viewport) => set({ viewport }),
+    setSelection: (ids) => {
+      const cur = get().selection
+      if (ids.length === cur.length && ids.every((id, i) => id === cur[i])) return
+      set({ selection: ids })
+    },
     load: (detail) =>
       set({
         meta: detail.diagram,
@@ -56,6 +71,8 @@ export function createDocStore() {
         future: [],
         status: 'clean',
         error: null,
+        viewport: detail.view.viewport ?? null,
+        selection: [],
       }),
     restore: (doc) => set({ doc, past: [], future: [], status: 'dirty', error: null }),
     dispatch: (command) => {
@@ -90,9 +107,10 @@ export function createDocStore() {
       })
     },
     saveRequest: () => {
-      const { doc, meta } = get()
+      const { doc, meta, viewport } = get()
       if (!doc || !meta) return null
-      return { version: meta.version, view: doc.view, changes: changesOf(doc) }
+      const view = viewport ? { ...doc.view, viewport } : doc.view
+      return { version: meta.version, view, changes: changesOf(doc) }
     },
     setStatus: (status, error = null) => set({ status, error }),
     saved: (detail) =>

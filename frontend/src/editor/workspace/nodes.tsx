@@ -1,0 +1,136 @@
+import {
+  Handle,
+  Position,
+  useStore as useFlowStore,
+  type NodeProps,
+  type Node,
+} from '@xyflow/react'
+import { Boxes, CircleHelp, Lock } from 'lucide-react'
+import { memo, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
+import type { DeviceType } from '@/types/ntb'
+import { DeviceIcon } from '../catalog/icons'
+import { useDoc } from './context'
+import type { RefData } from './flow'
+
+// Canvas nodes (P1-14). Each node subscribes to its own card only, so editing one device re-renders one node
+// (CLAUDE.md editor rule). Links attach to the hidden handles; picking ports comes with wiring (P1-17).
+
+type RefNode = Node<RefData>
+
+/** Secondary labels hide below 50 % zoom (SRS §6.3). */
+const useShowDetails = () => useFlowStore((s) => s.transform[2] >= 0.5)
+
+function Frame({
+  selected,
+  locked,
+  draft,
+  title,
+  icon,
+  label,
+  detail,
+}: {
+  selected: boolean
+  locked: boolean
+  draft: boolean
+  title: string
+  icon: ReactNode
+  label: string
+  detail?: string
+}) {
+  const { t } = useTranslation()
+  const showDetails = useShowDetails()
+  return (
+    <div
+      title={title}
+      className={cn(
+        'relative flex w-36 flex-col items-center gap-1 rounded-md border bg-card px-2 py-2 text-card-foreground shadow-sm',
+        selected ? 'border-primary ring-2 ring-primary' : 'border-border-control',
+        draft && 'border-dashed',
+      )}
+    >
+      <Handle type="target" position={Position.Top} isConnectable={false} className="ntb-handle" />
+      {icon}
+      <span className="w-full truncate text-center text-xs font-medium">{label}</span>
+      {showDetails && detail && (
+        <span className="w-full truncate text-center text-[10px] text-muted-foreground">
+          {detail}
+        </span>
+      )}
+      {locked && (
+        <Lock
+          aria-label={t('editorCanvas.locked')}
+          className="absolute top-1 right-1 size-3 text-muted-foreground"
+        />
+      )}
+      {draft && <span className="sr-only">{t('editorDoc.unsaved')}</span>}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        isConnectable={false}
+        className="ntb-handle"
+      />
+    </div>
+  )
+}
+
+function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefNode>) {
+  const { t } = useTranslation()
+  const card = useDoc((s) => s.doc?.devices[data.refId])
+  if (!card) return <HiddenFrame selected={selected} />
+  const type = t(`devices.types.${card.type}`)
+  return (
+    <Frame
+      selected={selected}
+      locked={!draggable}
+      draft={card.draft === true}
+      title={`${card.hostname} · ${type}`}
+      icon={<DeviceIcon typeId={card.type as DeviceType} size={32} />}
+      label={card.hostname}
+      detail={type}
+    />
+  )
+}
+
+function GroupNodeImpl({ data, selected, draggable }: NodeProps<RefNode>) {
+  const { t } = useTranslation()
+  const group = useDoc((s) => s.doc?.groups[data.refId])
+  if (!group) return <HiddenFrame selected={selected} />
+  return (
+    <Frame
+      selected={selected}
+      locked={!draggable}
+      draft={false}
+      title={group.name}
+      icon={<Boxes aria-hidden className="size-8 text-muted-foreground" />}
+      label={group.name}
+      detail={t('editorCanvas.group')}
+    />
+  )
+}
+
+/** Objects the editor does not draw yet (sites, other diagrams) or no longer knows. */
+function HiddenFrame({ selected }: { selected: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <Frame
+      selected={selected}
+      locked={false}
+      draft={false}
+      title={t('editorDoc.hidden')}
+      icon={<CircleHelp aria-hidden className="size-8 text-muted-foreground" />}
+      label={t('editorCanvas.unknown')}
+    />
+  )
+}
+
+function RefNodeImpl({ selected }: NodeProps<RefNode>) {
+  return <HiddenFrame selected={selected} />
+}
+
+export const NODE_TYPES = {
+  device: memo(DeviceNodeImpl),
+  group: memo(GroupNodeImpl),
+  ref: memo(RefNodeImpl),
+}

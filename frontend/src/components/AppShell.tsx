@@ -23,7 +23,7 @@ import {
 import { ScopeSelector } from '@/modules/sites/ScopeSelector'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, Outlet, useMatch, useNavigate, useParams } from 'react-router'
 import { useLogout, useSession } from '@/app/auth'
 import { activateOrganization, useMyOrganizations, useOrganization } from '@/app/orgs'
 import { Button } from '@/components/ui/button'
@@ -63,10 +63,19 @@ function PageSkeleton() {
 
 const WIDE_QUERY = '(min-width: 1440px)'
 
-/** Sidebar collapses to icons below 1440px; the user can still expand it until the width changes. */
+/**
+ * Sidebar collapses to icons below 1440px and while drawing a diagram (P1-14); the user can still expand it until
+ * the width or the screen changes.
+ */
 function useSidebarCollapsed() {
   const wide = () => globalThis.matchMedia?.(WIDE_QUERY).matches ?? true
-  const [collapsed, setCollapsed] = useState(() => !wide())
+  const drawing = useMatch('/o/:orgId/diagrams/:diagramId') !== null
+  const [collapsed, setCollapsed] = useState(() => drawing || !wide())
+  const [wasDrawing, setWasDrawing] = useState(drawing)
+  if (drawing !== wasDrawing) {
+    setWasDrawing(drawing)
+    setCollapsed(drawing || !wide())
+  }
   useEffect(() => {
     const mq = globalThis.matchMedia?.(WIDE_QUERY)
     if (!mq) return
