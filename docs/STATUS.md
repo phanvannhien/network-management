@@ -5,6 +5,48 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-21 Import Excel thiết bị
+- Đã làm:
+  - **Trang "Nhập Excel"** (Kho → Thiết bị → nút "Nhập Excel"), các bước trên một trang:
+    1. Chọn file (.xlsx/.csv); tải được file mẫu.
+    2. Tự nhận dòng tiêu đề (bỏ qua các dòng như "Person in charge: GVN" phía trên, lấy làm người phụ trách chung) và ánh xạ
+       cột: Site → Danh mục (công ty), Location → Site, Category → loại thiết bị. Ô gộp (merge) được điền xuống mọi dòng.
+    3. Xác nhận giá trị: công ty → danh mục; địa điểm → site có sẵn hoặc "Tạo site mới" (gợi ý mã); loại thiết bị.
+    4. Xem trước từng dòng: lỗi trong file (trùng hostname/S/N, trùng IP không cùng cụm) và nút "Kiểm tra" chạy thử trên máy chủ.
+    5. Nhập theo lô 200 dòng, có thanh tiến trình, kết quả từng dòng.
+    6. **"Vẽ sơ đồ từ kết quả"**: tạo sơ đồ mới, mỗi site một khung, thiết bị xếp sẵn bên trong.
+  - Ánh xạ thông minh:
+    - Tên gần giống được **đề xuất** (cần bấm xác nhận), không tự gộp. Ví dụ "HaNoi" → "Văn phòng Hà Nội", "Hochiminh" → "Văn
+      phòng Hồ Chí Minh (HQ)", không nhầm sang "FPT IDC HCM" (so phần lõi tên, bỏ các từ chung văn phòng/IDC/HQ…).
+    - Từ PartNumber đoán hãng/model ("FortiGate 80F" là model của Fortinet; "ISR4331/K9" → Cisco ISR4331); khớp template của tổ
+      chức → tự sinh cổng.
+    - Các dòng **cùng IP + cùng site + cùng loại** → đề xuất **cụm HA** (firewall/router) hoặc stack (switch hỗ trợ stack). IP
+      thành IP chung của cụm, không báo trùng. Máy chính tạm lấy dòng đầu (hostname có slave/backup xếp sau) — cần xác nhận.
+  - **Mật khẩu/tài khoản**: cột Password/User name bị bỏ qua, không đọc vào, không gửi lên máy chủ (kho mật khẩu ở P2-02);
+    giao diện nhắc xóa file sau khi nhập.
+  - **Backend** `POST /orgs/{orgId}/device-imports`: mỗi dòng đi qua đúng logic của form thiết bị (`writeDevice`) trong savepoint
+    riêng — dòng lỗi được báo, dòng khác vẫn vào; `dryRun` rollback toàn bộ (thấy cả trùng trong file). Chế độ cập nhật theo
+    hostname / S/N / chỉ tạo mới; ô trống không xóa dữ liệu cũ; S/N giả (N/A, -, 0…) không dùng để khớp. IP quản trị: thiếu mask
+    thì lấy theo subnet IPAM, không có subnet thì lưu /32 kèm cảnh báo; interface quản trị: cổng có sẵn cùng tên, nếu không có
+    thì tạo `Vlan1` (switch) hoặc `mgmt` (interface ảo tạm). Audit từng thiết bị + một mục `device.import` tổng.
+  - **Sửa lỗi P1-20 từ rà soát:** dây mới chưa lưu cắm vào cổng chưa dùng giờ được kiểm tra; lệch tốc độ chỉ xét dây ethernet/
+    quang, hiểu "1G" = "1000M", hạ xuống Ghi chú; RJ45↔SFP hạ xuống Ghi chú (có module SFP đồng); hai đầu L3 so cả hai chiều
+    (bắt lệch mask); loopback/tunnel không bị báo "địa chỉ mạng"; Worker lỗi thì tự chạy trực tiếp; thiết bị vẽ 2 lần không tự
+    báo trùng tên.
+  - Thư viện mới: SheetJS (`xlsx` 0.20.3 từ CDN chính thức — bản npm cũ có lỗ hổng), đã có trong Stack.
+- Test / cách kiểm tra: `make check` pass (Go `TestDeviceImport`: chạy thử không ghi gì, cụm + VIP lấy mask theo subnet, thành viên
+  cụm không có IP riêng, switch có Vlan1 + IP /32 + cảnh báo, nhập lại theo hostname cập nhật không xóa ghi chú/không nhân IP/cụm,
+  chỉ-tạo-mới báo lỗi, tổ chức B không ghi được vào site của A; `TestValidationContext` thêm cổng của dây chưa lưu; vitest 272 —
+  test đọc đúng file mẫu của khách, gộp ô, cột mật khẩu không lọt vào dữ liệu gửi đi).
+  Chromium (môi trường riêng, dựng giống máy dev: danh mục FOODVILLE + 3 site, chưa có thiết bị): nhập file 8 dòng giống ảnh
+  `docs/demo/devices.png` → tạo 8, lỗi 0, 1 cụm HA; "Vẽ sơ đồ" ra 3 khung đúng site; không request nào chứa mật khẩu.
+- Còn dở / lỗi đã biết: chưa tạo **danh mục mới** từ màn import (chỉ chọn danh mục có sẵn hoặc "thẳng dưới tổ chức"); nhập chạy
+  trong trang (phải để trang mở tới khi xong), chưa phải job nền; chưa có test App cho trang import (logic có unit test + e2e tay).
+- Câu hỏi cho người dùng: hai câu ở mục P1-20 (chặn trùng IP/serial khi ghi; vai trò IP `vip` cho VRRP/HSRP) vẫn chờ chốt.
+- Đề xuất quyết định cần chốt: interface quản trị tạo khi import (`Vlan1` cho switch, `mgmt` ảo cho thiết bị khác) và lưu /32 khi
+  chưa có subnet — đang làm như vậy, cần ghi ADR nếu đồng ý.
+- Task tiếp theo đề xuất: P1-22 Export (PNG/SVG, Excel, .ntb.json).
+
 ## 2026-10-17 — P1-20 Validation (kiểm tra sơ đồ)
 - Đã làm:
   - **Bộ rule chạy trong Web Worker** (`frontend/src/editor/checks/`), 300 ms sau thay đổi cuối, có fallback chạy trực tiếp khi

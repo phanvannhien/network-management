@@ -1116,6 +1116,41 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/device-imports:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: importDevices
+      summary: Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
+      description: >-
+        Rows are checked with the same rules as the device form. One transaction per request; a refused row is reported
+        and skipped (the others go in). dryRun rolls everything back so the preview sees in-file duplicates too. Clusters
+        proposed by the client (same IP + same site) are created or reused by name. Secrets never travel here: the client
+        drops password columns before sending (vault is P2-02).
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceImport'
+      responses:
+        '200':
+          description: One result per row, in order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/delete-impact:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4428,6 +4463,105 @@ components:
           items:
             $ref: '#/components/schemas/DiagramShowing'
 
+    DeviceImport:
+      type: object
+      required: [dryRun, matchBy, clusters, rows]
+      properties:
+        dryRun:
+          type: boolean
+        matchBy:
+          type: string
+          enum: [none, hostname, serial]
+          description: none = create only (an existing hostname is an error); hostname / serial = update the device found
+        clusters:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/DeviceImportCluster'
+        rows:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/DeviceImportRow'
+
+    DeviceImportCluster:
+      type: object
+      required: [key, kind, name, siteId]
+      properties:
+        key:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/ClusterKind'
+        name:
+          type: string
+          maxLength: 100
+        hostname:
+          type: string
+          maxLength: 253
+        mgmtIp:
+          type: string
+          maxLength: 50
+          description: the shared address (VIP); without a prefix length the IPAM subnet holding it gives one
+        siteId:
+          type: string
+          format: uuid
+
+    DeviceImportRow:
+      type: object
+      required: [row, device]
+      properties:
+        row:
+          type: integer
+          description: spreadsheet row number, echoed in the result
+        device:
+          $ref: '#/components/schemas/DeviceInput'
+        clusterKey:
+          type: string
+          maxLength: 100
+          description: member of the cluster with this key in the same request (role / member no. from device)
+        mgmtIp:
+          type: string
+          maxLength: 50
+          description: >-
+            management address; without a prefix length the IPAM subnet holding it gives one, else /32. Ignored for
+            cluster members (the cluster carries it).
+        mgmtInterface:
+          type: string
+          maxLength: 100
+          description: interface to hold the address (a template port name, or created); empty = Vlan1 for switches, mgmt otherwise
+
+    DeviceImportResult:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceImportRowResult'
+
+    DeviceImportRowResult:
+      type: object
+      required: [row, action, hostname, message, warnings]
+      properties:
+        row:
+          type: integer
+        action:
+          type: string
+          enum: [create, update, error]
+        deviceId:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        message:
+          type: string
+          description: why the row was refused (action error)
+        warnings:
+          type: array
+          items:
+            type: string
+
     ValidationRequest:
       type: object
       required: [deviceIds, groupIds]
@@ -4441,6 +4575,13 @@ components:
         groupIds:
           type: array
           maxItems: 5000
+          items:
+            type: string
+            format: uuid
+        interfaceIds:
+          type: array
+          maxItems: 5000
+          description: ports used by unsaved cables — returned even when nothing else would include them
           items:
             type: string
             format: uuid

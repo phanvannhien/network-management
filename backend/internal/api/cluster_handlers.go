@@ -233,93 +233,100 @@ func (s *Server) saveCluster(ctx context.Context, m tenant.Membership, f cluster
 		detail apigen.ClusterDetail
 	)
 	err := s.withTx(ctx, func(q store.Querier) error {
-		var before store.GetClusterRow
-		if id != nil {
-			var ok bool
-			var err error
-			if before, ok, err = loadCluster(ctx, q, m, *id); err != nil {
-				return err
-			}
-			if !ok {
-				out.gone = true
-				return errRollback
-			}
-			if level, err := clusterLevel(ctx, q, m, before); err != nil {
-				return err
-			} else if level < tenant.LevelEdit {
-				out.code = 403
-				return errRollback
-			}
-		}
-		p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
-		if err != nil || bad != "" {
-			out.bad = bad
-			return orRollback(err)
-		}
-		if !m.CanEdit() {
-			out.code = 403
-			return errRollback
-		}
-		if id != nil && f.kind != before.Kind && before.MemberCount > 0 {
-			members, err := q.ListClusterMembers(ctx, store.ListClusterMembersParams{OrganizationID: m.OrgID, ClusterID: before.ID})
-			if err != nil {
-				return fmt.Errorf("list members: %w", err)
-			}
-			for _, mb := range members {
-				if !clusterFits(f.kind, mb.Type) {
-					out.bad = fmt.Sprintf("Không đổi được sang kiểu %s: thành viên %s không phù hợp", clusterKindLabels[f.kind], mb.Hostname)
-					return errRollback
-				}
-			}
-		}
-		if id != nil && p.site.ID != before.SiteID && before.MemberCount > 0 {
-			out.bad = "Cụm còn thành viên: không đổi site được (thành viên phải cùng site với cụm)"
-			return errRollback
-		}
-		var cid pgtype.UUID
-		if id == nil {
-			cid, err = q.CreateCluster(ctx, store.CreateClusterParams{
-				OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
-				Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
-			})
-		} else {
-			cid = before.ID
-			var n int64
-			n, err = q.UpdateCluster(ctx, store.UpdateClusterParams{
-				ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
-				Kind: f.kind, Name: f.name, Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
-			})
-			if err == nil && n == 0 {
-				out.conf = msgStale
-				return errRollback
-			}
-		}
-		if isUniqueViolation(err) {
-			out.conf = "Tên cụm đã tồn tại trong tổ chức"
-			return errRollback
-		}
+		after, err := writeCluster(ctx, q, m, f, id, version, &out)
 		if err != nil {
-			return fmt.Errorf("save cluster: %w", err)
-		}
-		after, ok, err := loadCluster(ctx, q, m, uuid.UUID(cid.Bytes))
-		if err != nil || !ok {
-			out.code = 403
-			return orRollback(err)
-		}
-		entry := audit.Entry{
-			OrganizationID: m.OrgID, Actor: m.UserID, Action: "cluster.create", ObjectType: "device_cluster",
-			ObjectID: uuidStr(cid), After: snapCluster(after), Meta: infoFrom(ctx).meta,
-		}
-		if id != nil {
-			entry.Action, entry.Before = "cluster.update", snapCluster(before)
-		}
-		if err := audit.Write(ctx, q, entry); err != nil {
 			return err
 		}
 		detail, err = s.clusterDetail(ctx, q, m, after)
 		return err
 	})
 	return detail, out, err
+}
+
+// writeCluster creates (id nil) or updates a cluster inside the caller's transaction; a refusal is reported in out
+// with errRollback.
+func writeCluster(ctx context.Context, q store.Querier, m tenant.Membership, f clusterFields, id *uuid.UUID, version int32, out *writeOutcome) (store.GetClusterRow, error) {
+	var before store.GetClusterRow
+	if id != nil {
+		var ok bool
+		var err error
+		if before, ok, err = loadCluster(ctx, q, m, *id); err != nil {
+			return store.GetClusterRow{}, err
+		}
+		if !ok {
+			out.gone = true
+			return store.GetClusterRow{}, errRollback
+		}
+		if level, err := clusterLevel(ctx, q, m, before); err != nil {
+			return store.GetClusterRow{}, err
+		} else if level < tenant.LevelEdit {
+			out.code = 403
+			return store.GetClusterRow{}, errRollback
+		}
+	}
+	p, bad, err := resolvePlacement(ctx, q, m, deviceFields{site: f.site, uHeight: 1}, pgtype.UUID{})
+	if err != nil || bad != "" {
+		out.bad = bad
+		return store.GetClusterRow{}, orRollback(err)
+	}
+	if !m.CanEdit() {
+		out.code = 403
+		return store.GetClusterRow{}, errRollback
+	}
+	if id != nil && f.kind != before.Kind && before.MemberCount > 0 {
+		members, err := q.ListClusterMembers(ctx, store.ListClusterMembersParams{OrganizationID: m.OrgID, ClusterID: before.ID})
+		if err != nil {
+			return store.GetClusterRow{}, fmt.Errorf("list members: %w", err)
+		}
+		for _, mb := range members {
+			if !clusterFits(f.kind, mb.Type) {
+				out.bad = fmt.Sprintf("Không đổi được sang kiểu %s: thành viên %s không phù hợp", clusterKindLabels[f.kind], mb.Hostname)
+				return store.GetClusterRow{}, errRollback
+			}
+		}
+	}
+	if id != nil && p.site.ID != before.SiteID && before.MemberCount > 0 {
+		out.bad = "Cụm còn thành viên: không đổi site được (thành viên phải cùng site với cụm)"
+		return store.GetClusterRow{}, errRollback
+	}
+	var cid pgtype.UUID
+	if id == nil {
+		cid, err = q.CreateCluster(ctx, store.CreateClusterParams{
+			OrganizationID: m.OrgID, SiteID: p.site.ID, Kind: f.kind, Name: f.name,
+			Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
+		})
+	} else {
+		cid = before.ID
+		var n int64
+		n, err = q.UpdateCluster(ctx, store.UpdateClusterParams{
+			ID: before.ID, OrganizationID: m.OrgID, Version: version, SiteID: p.site.ID,
+			Kind: f.kind, Name: f.name, Hostname: f.hostname, MgmtIp: f.mgmt, Notes: f.notes,
+		})
+		if err == nil && n == 0 {
+			out.conf = msgStale
+			return store.GetClusterRow{}, errRollback
+		}
+	}
+	if isUniqueViolation(err) {
+		out.conf = "Tên cụm đã tồn tại trong tổ chức"
+		return store.GetClusterRow{}, errRollback
+	}
+	if err != nil {
+		return store.GetClusterRow{}, fmt.Errorf("save cluster: %w", err)
+	}
+	after, ok, err := loadCluster(ctx, q, m, uuid.UUID(cid.Bytes))
+	if err != nil || !ok {
+		out.code = 403
+		return store.GetClusterRow{}, orRollback(err)
+	}
+	entry := audit.Entry{
+		OrganizationID: m.OrgID, Actor: m.UserID, Action: "cluster.create", ObjectType: "device_cluster",
+		ObjectID: uuidStr(cid), After: snapCluster(after), Meta: infoFrom(ctx).meta,
+	}
+	if id != nil {
+		entry.Action, entry.Before = "cluster.update", snapCluster(before)
+	}
+	return after, audit.Write(ctx, q, entry)
 }
 
 func (s *Server) CreateCluster(ctx context.Context, req apigen.CreateClusterRequestObject) (apigen.CreateClusterResponseObject, error) {

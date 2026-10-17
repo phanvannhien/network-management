@@ -2930,7 +2930,11 @@ describe('diagrams (P1-13)', () => {
       { timeout: 3000 },
     )
     const ctxCall = calls.find((r) => r.url.endsWith('/validation-context'))!
-    expect(await ctxCall.clone().json()).toEqual({ deviceIds: ['dev-1'], groupIds: [] })
+    expect(await ctxCall.clone().json()).toEqual({
+      deviceIds: ['dev-1'],
+      groupIds: [],
+      interfaceIds: [],
+    })
     expect(within(canvas).getAllByText('Lỗi').length).toBeGreaterThan(0)
     fireEvent.click(button)
     const panel = screen.getByRole('region', { name: 'Vấn đề' })

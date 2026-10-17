@@ -24,7 +24,14 @@ func (s *Server) ValidationContext(ctx context.Context, req apigen.ValidationCon
 	}
 	ids := pgUUIDs(req.Body.DeviceIds)
 	gids := pgUUIDs(req.Body.GroupIds)
-	out, err := validationContext(ctx, s.q, m, ids, gids)
+	var extra []pgtype.UUID
+	if req.Body.InterfaceIds != nil {
+		if len(*req.Body.InterfaceIds) > 5000 {
+			return apigen.ValidationContext400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Tối đa 5000 đối tượng"}}, nil
+		}
+		extra = pgUUIDs(*req.Body.InterfaceIds)
+	}
+	out, err := validationContext(ctx, s.q, m, ids, gids, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +46,7 @@ func pgUUIDs(in []uuid.UUID) []pgtype.UUID {
 	return out
 }
 
-func validationContext(ctx context.Context, q store.Querier, m tenant.Membership, ids, gids []pgtype.UUID) (apigen.ValidationContext, error) {
+func validationContext(ctx context.Context, q store.Querier, m tenant.Membership, ids, gids, extra []pgtype.UUID) (apigen.ValidationContext, error) {
 	out := apigen.ValidationContext{Devices: []apigen.ValDevice{}, Interfaces: []apigen.ValInterface{}, Ips: []apigen.ValIp{},
 		Links: []apigen.ValLink{}, Subnets: []apigen.ValSubnet{}, Groups: []apigen.ValGroup{}, Conflicts: []apigen.ValConflict{}}
 	org := m.OrgID
@@ -52,7 +59,7 @@ func validationContext(ctx context.Context, q store.Querier, m tenant.Membership
 			SerialNumber: d.SerialNumber, Model: d.Model, Firmware: d.Firmware, Lifecycle: d.Lifecycle, ClusterId: optUUID(d.ClusterID),
 			SiteId: uuid.UUID(d.SiteID.Bytes), LocationId: optUUID(d.LocationID), MgmtInterfaceId: optUUID(d.MgmtInterfaceID)})
 	}
-	ifs, err := q.ValidationInterfaces(ctx, store.ValidationInterfacesParams{OrganizationID: org, Ids: ids})
+	ifs, err := q.ValidationInterfaces(ctx, store.ValidationInterfacesParams{OrganizationID: org, Ids: ids, Extra: append([]pgtype.UUID{}, extra...)})
 	if err != nil {
 		return out, fmt.Errorf("validation interfaces: %w", err)
 	}

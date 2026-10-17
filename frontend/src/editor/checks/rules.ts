@@ -215,6 +215,15 @@ export function edgeAddress(
   return null
 }
 
+/** "1G", "1000M", "1 Gbps", "10GE", "100" → Mbps; unknown → 0. */
+export function speedMbps(speed?: string): number {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*([kmgt]?)/i.exec(speed ?? '')
+  if (!m) return 0
+  const unit = m[2]!.toLowerCase()
+  const mult = unit === 'k' ? 0.001 : unit === 'g' ? 1000 : unit === 't' ? 1_000_000 : 1
+  return Number(m[1]) * mult
+}
+
 const family = (a: string) => (a.includes(':') ? 6 : 4)
 /** A host route (/32, /128: unnumbered, loopback-style) says nothing about the link's subnet. */
 const hostRoute = (a: string) => {
@@ -278,7 +287,8 @@ export function runChecks(input: CheckInput): Problem[] {
     if (!d || d.type === 'provider_cloud') continue
     const k = d.hostname.toLowerCase()
     const first = names.get(k)
-    if (first && (d.draft || input.devices[first]?.draft))
+    // The same device drawn twice is not a duplicate of itself.
+    if (first && first !== n.refId && (d.draft || input.devices[first]?.draft))
       push(
         'duplicate-hostname',
         'error',
@@ -304,7 +314,12 @@ export function runChecks(input: CheckInput): Problem[] {
       )
       continue
     }
-    const edge = edgeAddress(ip.address, ip.vrf, input.ctx.subnets)
+    // Loopbacks / tunnels carved out of a pool (10.255.255.0/32 in a /24) are not hosts of that subnet.
+    const kind = ip.interfaceId ? ifById.get(ip.interfaceId)?.kind : undefined
+    const edge =
+      kind === 'loopback' || kind === 'tunnel'
+        ? null
+        : edgeAddress(ip.address, ip.vrf, input.ctx.subnets)
     if (edge)
       push(
         'ip-edge',
@@ -352,16 +367,20 @@ export function runChecks(input: CheckInput): Problem[] {
       if ((a.media === 'RJ45' && sb) || (b.media === 'RJ45' && sa))
         push(
           'media-mismatch',
-          'warning',
+          'info',
           linkTarget(l),
           { a: `${host(a.deviceId)} ${a.name}`, b: `${host(b.deviceId)} ${b.name}` },
           l.id,
         )
     }
-    if (a && b && a.speed && b.speed && a.speed.toLowerCase() !== b.speed.toLowerCase())
+    // Speeds are free text ("1G", "1000M", "1 Gbps"); a 10G port on a 1G port is a normal uplink that runs at 1G, so
+    // only a note, and only for cables that have a line speed.
+    const sa = speedMbps(a?.speed)
+    const sb = speedMbps(b?.speed)
+    if (a && b && (l.kind === 'ethernet' || l.kind === 'fiber') && sa && sb && sa !== sb)
       push(
         'speed-mismatch',
-        'warning',
+        'info',
         linkTarget(l),
         {
           a: `${host(a.deviceId)} ${a.name} ${a.speed}`,
@@ -377,7 +396,9 @@ export function runChecks(input: CheckInput): Problem[] {
       for (const fam of [4, 6]) {
         const fa = ipsA.filter((x) => family(x) === fam)
         const fb = ipsB.filter((x) => family(x) === fam)
-        if (fa.length > 0 && fb.length > 0 && !fa.some((x) => fb.some((y) => sameNetwork(x, y)))) {
+        // Both ways: 10.0.0.5/30 and 10.0.0.1/24 do not agree whichever end is A.
+        const agree = fa.some((x) => fb.some((y) => sameNetwork(x, y) && sameNetwork(y, x)))
+        if (fa.length > 0 && fb.length > 0 && !agree) {
           push(
             'l3-subnet',
             'warning',

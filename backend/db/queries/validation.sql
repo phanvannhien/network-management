@@ -11,7 +11,7 @@ WHERE organization_id = @organization_id AND id = ANY (@ids::uuid[]) AND deleted
 SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id
 FROM interfaces i
 WHERE i.organization_id = @organization_id AND i.device_id = ANY (@ids::uuid[])
-  AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag'
+  AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag' OR i.id = ANY (@extra::uuid[])
     OR EXISTS (SELECT 1 FROM links l WHERE l.organization_id = i.organization_id AND (l.a_interface_id = i.id OR l.b_interface_id = i.id))
     OR EXISTS (SELECT 1 FROM ip_addresses ip WHERE ip.organization_id = i.organization_id AND ip.interface_id = i.id))
 ORDER BY i.sort_order, i.name;

@@ -599,6 +599,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/device-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
+         * @description Rows are checked with the same rules as the device form. One transaction per request; a refused row is reported and skipped (the others go in). dryRun rolls everything back so the preview sees in-file duplicates too. Clusters proposed by the client (same IP + same site) are created or reused by name. Secrets never travel here: the client drops password columns before sending (vault is P2-02).
+         */
+        post: operations["importDevices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/delete-impact": {
         parameters: {
             query?: never;
@@ -2111,9 +2134,56 @@ export interface components {
             links: components["schemas"]["Link"][];
             diagrams: components["schemas"]["DiagramShowing"][];
         };
+        DeviceImport: {
+            dryRun: boolean;
+            /**
+             * @description none = create only (an existing hostname is an error); hostname / serial = update the device found
+             * @enum {string}
+             */
+            matchBy: "none" | "hostname" | "serial";
+            clusters: components["schemas"]["DeviceImportCluster"][];
+            rows: components["schemas"]["DeviceImportRow"][];
+        };
+        DeviceImportCluster: {
+            key: string;
+            kind: components["schemas"]["ClusterKind"];
+            name: string;
+            hostname?: string;
+            /** @description the shared address (VIP); without a prefix length the IPAM subnet holding it gives one */
+            mgmtIp?: string;
+            /** Format: uuid */
+            siteId: string;
+        };
+        DeviceImportRow: {
+            /** @description spreadsheet row number, echoed in the result */
+            row: number;
+            device: components["schemas"]["DeviceInput"];
+            /** @description member of the cluster with this key in the same request (role / member no. from device) */
+            clusterKey?: string;
+            /** @description management address; without a prefix length the IPAM subnet holding it gives one, else /32. Ignored for cluster members (the cluster carries it). */
+            mgmtIp?: string;
+            /** @description interface to hold the address (a template port name, or created); empty = Vlan1 for switches, mgmt otherwise */
+            mgmtInterface?: string;
+        };
+        DeviceImportResult: {
+            results: components["schemas"]["DeviceImportRowResult"][];
+        };
+        DeviceImportRowResult: {
+            row: number;
+            /** @enum {string} */
+            action: "create" | "update" | "error";
+            /** Format: uuid */
+            deviceId?: string;
+            hostname: string;
+            /** @description why the row was refused (action error) */
+            message: string;
+            warnings: string[];
+        };
         ValidationRequest: {
             deviceIds: string[];
             groupIds: string[];
+            /** @description ports used by unsaved cables — returned even when nothing else would include them */
+            interfaceIds?: string[];
         };
         ValidationContext: {
             devices: components["schemas"]["ValDevice"][];
@@ -4610,6 +4680,39 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    importDevices: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceImport"];
+            };
+        };
+        responses: {
+            /** @description One result per row, in order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     deviceDeleteImpact: {

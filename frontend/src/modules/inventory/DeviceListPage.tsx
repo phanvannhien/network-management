@@ -1,5 +1,5 @@
 import type { PaginationState, RowSelectionState, SortingState } from '@tanstack/react-table'
-import { MoreHorizontal, Plus, SearchX, Server, TriangleAlert } from 'lucide-react'
+import { FileSpreadsheet, MoreHorizontal, Plus, SearchX, Server, TriangleAlert } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -13,7 +13,7 @@ import { FilterBar, type Facet } from '@/components/FilterBar'
 import { emptyFilter, type FilterState } from '@/components/filters'
 import { PageHeader } from '@/components/PageHeader'
 import { TechText } from '@/components/TechText'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DropdownMenu,
@@ -391,6 +391,12 @@ export function DeviceListPage() {
               >
                 <Plus aria-hidden /> {t('endpoints.add')}
               </Button>
+              <Link
+                className={buttonVariants({ variant: 'outline' })}
+                to={`/o/${orgId}/devices/import`}
+              >
+                <FileSpreadsheet aria-hidden /> {t('deviceImport.open')}
+              </Link>
             </>
           )
         }

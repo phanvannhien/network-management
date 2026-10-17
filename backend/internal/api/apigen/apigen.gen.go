@@ -134,6 +134,48 @@ func (e CustomFieldKind) Valid() bool {
 	}
 }
 
+// Defines values for DeviceImportMatchBy.
+const (
+	DeviceImportMatchByHostname DeviceImportMatchBy = "hostname"
+	DeviceImportMatchByNone     DeviceImportMatchBy = "none"
+	DeviceImportMatchBySerial   DeviceImportMatchBy = "serial"
+)
+
+// Valid indicates whether the value is a known member of the DeviceImportMatchBy enum.
+func (e DeviceImportMatchBy) Valid() bool {
+	switch e {
+	case DeviceImportMatchByHostname:
+		return true
+	case DeviceImportMatchByNone:
+		return true
+	case DeviceImportMatchBySerial:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeviceImportRowResultAction.
+const (
+	DeviceImportRowResultActionCreate DeviceImportRowResultAction = "create"
+	DeviceImportRowResultActionError  DeviceImportRowResultAction = "error"
+	DeviceImportRowResultActionUpdate DeviceImportRowResultAction = "update"
+)
+
+// Valid indicates whether the value is a known member of the DeviceImportRowResultAction enum.
+func (e DeviceImportRowResultAction) Valid() bool {
+	switch e {
+	case DeviceImportRowResultActionCreate:
+		return true
+	case DeviceImportRowResultActionError:
+		return true
+	case DeviceImportRowResultActionUpdate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeviceLifecycle.
 const (
 	DeviceLifecycleActive  DeviceLifecycle = "active"
@@ -1648,6 +1690,67 @@ type DeviceImpact struct {
 	SiteCode    string             `json:"siteCode"`
 }
 
+// DeviceImport defines model for DeviceImport.
+type DeviceImport struct {
+	Clusters []DeviceImportCluster `json:"clusters"`
+	DryRun   bool                  `json:"dryRun"`
+
+	// MatchBy none = create only (an existing hostname is an error); hostname / serial = update the device found
+	MatchBy DeviceImportMatchBy `json:"matchBy"`
+	Rows    []DeviceImportRow   `json:"rows"`
+}
+
+// DeviceImportMatchBy none = create only (an existing hostname is an error); hostname / serial = update the device found
+type DeviceImportMatchBy string
+
+// DeviceImportCluster defines model for DeviceImportCluster.
+type DeviceImportCluster struct {
+	Hostname *string     `json:"hostname,omitempty"`
+	Key      string      `json:"key"`
+	Kind     ClusterKind `json:"kind"`
+
+	// MgmtIp the shared address (VIP); without a prefix length the IPAM subnet holding it gives one
+	MgmtIp *string            `json:"mgmtIp,omitempty"`
+	Name   string             `json:"name"`
+	SiteId openapi_types.UUID `json:"siteId"`
+}
+
+// DeviceImportResult defines model for DeviceImportResult.
+type DeviceImportResult struct {
+	Results []DeviceImportRowResult `json:"results"`
+}
+
+// DeviceImportRow defines model for DeviceImportRow.
+type DeviceImportRow struct {
+	// ClusterKey member of the cluster with this key in the same request (role / member no. from device)
+	ClusterKey *string     `json:"clusterKey,omitempty"`
+	Device     DeviceInput `json:"device"`
+
+	// MgmtInterface interface to hold the address (a template port name, or created); empty = Vlan1 for switches, mgmt otherwise
+	MgmtInterface *string `json:"mgmtInterface,omitempty"`
+
+	// MgmtIp management address; without a prefix length the IPAM subnet holding it gives one, else /32. Ignored for cluster members (the cluster carries it).
+	MgmtIp *string `json:"mgmtIp,omitempty"`
+
+	// Row spreadsheet row number, echoed in the result
+	Row int `json:"row"`
+}
+
+// DeviceImportRowResult defines model for DeviceImportRowResult.
+type DeviceImportRowResult struct {
+	Action   DeviceImportRowResultAction `json:"action"`
+	DeviceId *openapi_types.UUID         `json:"deviceId,omitempty"`
+	Hostname string                      `json:"hostname"`
+
+	// Message why the row was refused (action error)
+	Message  string   `json:"message"`
+	Row      int      `json:"row"`
+	Warnings []string `json:"warnings"`
+}
+
+// DeviceImportRowResultAction defines model for DeviceImportRowResult.Action.
+type DeviceImportRowResultAction string
+
 // DeviceInput defines model for DeviceInput.
 type DeviceInput struct {
 	AssetTag *string `json:"assetTag,omitempty"`
@@ -3079,6 +3182,9 @@ type ValidationContext struct {
 type ValidationRequest struct {
 	DeviceIds []openapi_types.UUID `json:"deviceIds"`
 	GroupIds  []openapi_types.UUID `json:"groupIds"`
+
+	// InterfaceIds ports used by unsaved cables — returned even when nothing else would include them
+	InterfaceIds *[]openapi_types.UUID `json:"interfaceIds,omitempty"`
 }
 
 // Vlan defines model for Vlan.
@@ -3424,6 +3530,11 @@ type DeleteCustomFieldParams struct {
 
 // UpdateCustomFieldParams defines parameters for UpdateCustomField.
 type UpdateCustomFieldParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ImportDevicesParams defines parameters for ImportDevices.
+type ImportDevicesParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -3812,6 +3923,9 @@ type CreateCustomFieldJSONRequestBody = CustomFieldInput
 // UpdateCustomFieldJSONRequestBody defines body for UpdateCustomField for application/json ContentType.
 type UpdateCustomFieldJSONRequestBody = CustomFieldUpdate
 
+// ImportDevicesJSONRequestBody defines body for ImportDevices for application/json ContentType.
+type ImportDevicesJSONRequestBody = DeviceImport
+
 // CreateDeviceTemplateJSONRequestBody defines body for CreateDeviceTemplate for application/json ContentType.
 type CreateDeviceTemplateJSONRequestBody = DeviceTemplateInput
 
@@ -4042,6 +4156,9 @@ type ServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams)
+	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
+	// (POST /orgs/{orgId}/device-imports)
+	ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams)
 	// ListDeviceTemplates Device templates of the organization
 	// (GET /orgs/{orgId}/device-templates)
 	ListDeviceTemplates(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -4507,6 +4624,12 @@ func (_ Unimplemented) DeleteCustomField(w http.ResponseWriter, r *http.Request,
 // UpdateCustomField Change a custom field (key and kind are fixed)
 // (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 func (_ Unimplemented) UpdateCustomField(w http.ResponseWriter, r *http.Request, orgId OrgId, fieldId FieldId, params UpdateCustomFieldParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
+// (POST /orgs/{orgId}/device-imports)
+func (_ Unimplemented) ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6781,6 +6904,60 @@ func (siw *ServerInterfaceWrapper) UpdateCustomField(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCustomField(w, r, orgId, fieldId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportDevices operation middleware
+func (siw *ServerInterfaceWrapper) ImportDevices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ImportDevicesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportDevices(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11433,6 +11610,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-update", wrapper.BulkUpdateDevices)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/device-imports", wrapper.ImportDevices)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
 	})
 	r.Group(func(r chi.Router) {
@@ -14180,6 +14360,86 @@ func (response UpdateCustomField409JSONResponse) VisitUpdateCustomFieldResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportDevicesRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ImportDevicesParams
+	Body   *ImportDevicesJSONRequestBody
+}
+
+type ImportDevicesResponseObject interface {
+	VisitImportDevicesResponse(w http.ResponseWriter) error
+}
+
+type ImportDevices200JSONResponse DeviceImportResult
+
+func (response ImportDevices200JSONResponse) VisitImportDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportDevices400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ImportDevices400JSONResponse) VisitImportDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportDevices401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ImportDevices401JSONResponse) VisitImportDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportDevices403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ImportDevices403JSONResponse) VisitImportDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportDevices404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ImportDevices404JSONResponse) VisitImportDevicesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20584,6 +20844,9 @@ type StrictServerInterface interface {
 	// UpdateCustomField Change a custom field (key and kind are fixed)
 	// (PATCH /orgs/{orgId}/custom-fields/{fieldId})
 	UpdateCustomField(ctx context.Context, request UpdateCustomFieldRequestObject) (UpdateCustomFieldResponseObject, error)
+	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
+	// (POST /orgs/{orgId}/device-imports)
+	ImportDevices(ctx context.Context, request ImportDevicesRequestObject) (ImportDevicesResponseObject, error)
 	// ListDeviceTemplates Device templates of the organization
 	// (GET /orgs/{orgId}/device-templates)
 	ListDeviceTemplates(ctx context.Context, request ListDeviceTemplatesRequestObject) (ListDeviceTemplatesResponseObject, error)
@@ -21974,6 +22237,40 @@ func (sh *strictHandler) UpdateCustomField(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateCustomFieldResponseObject); ok {
 		if err := validResponse.VisitUpdateCustomFieldResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportDevices operation middleware
+func (sh *strictHandler) ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams) {
+	var request ImportDevicesRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body ImportDevicesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportDevices(ctx, request.(ImportDevicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportDevices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportDevicesResponseObject); ok {
+		if err := validResponse.VisitImportDevicesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

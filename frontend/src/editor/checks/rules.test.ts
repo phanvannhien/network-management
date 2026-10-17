@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { emptyView, type DocState } from '../doc/types'
 import {
   badHostAddress,
+  speedMbps,
   buildCheckInput,
   edgeAddress,
   runChecks,
@@ -180,7 +181,7 @@ describe('runChecks', () => {
 
   it('RJ45 into SFP and different speeds are warnings', () => {
     const i = input({ ifaces: [port('p1', D1), port('p2', D2, { media: 'SFP+', speed: '10G' })] })
-    expect(rules(i)).toEqual(['media-mismatch:warning:e1', 'speed-mismatch:warning:e1'])
+    expect(rules(i)).toEqual(['media-mismatch:info:e1', 'speed-mismatch:info:e1'])
   })
 
   it('routed ends in different subnets warn; host routes, L2 ports and LAG parents are handled', () => {
@@ -338,6 +339,59 @@ describe('runChecks', () => {
       }),
     })
     expect(rules(i)).toEqual(['cable-no-port:info:e1', 'no-cable:info:n3', 'no-mgmt:info:n1'])
+  })
+})
+
+describe('review fixes', () => {
+  const ip = (deviceId: string, interfaceId: string, address: string) => ({
+    deviceId,
+    interfaceId,
+    address,
+    vrf: '',
+    role: 'primary',
+  })
+  it('a mask mismatch warns whichever end is A', () => {
+    const ab = input({
+      ctx: ctx({ ips: [ip(D1, 'p1', '10.0.0.5/30'), ip(D2, 'p2', '10.0.0.1/24')] }),
+    })
+    const ba = input({
+      ctx: ctx({ ips: [ip(D1, 'p1', '10.0.0.1/24'), ip(D2, 'p2', '10.0.0.5/30')] }),
+    })
+    expect(rules(ab)).toEqual(['l3-subnet:warning:e1'])
+    expect(rules(ba)).toEqual(['l3-subnet:warning:e1'])
+  })
+  it('a loopback carved from a pool is not its network address', () => {
+    const i = input({
+      ifaces: [port('p1', D1), port('p2', D2), port('lo0', D1, { kind: 'loopback' })],
+      ctx: ctx({
+        ips: [ip(D1, 'lo0', '10.255.255.0/32')],
+        subnets: [{ id: 's', cidr: '10.255.255.0/24', vrf: '', gateway: '' }],
+      }),
+    })
+    expect(rules(i)).toEqual([])
+  })
+  it('speeds written differently are compared as numbers; logical cables have none', () => {
+    expect(speedMbps('1G')).toBe(1000)
+    expect(speedMbps('1000M')).toBe(1000)
+    expect(speedMbps('1 Gbps')).toBe(1000)
+    const same = input({
+      ifaces: [port('p1', D1, { speed: '1000M' }), port('p2', D2, { speed: '1 Gbps' })],
+    })
+    expect(rules(same)).toEqual([])
+    const logical = input({
+      links: [cable('L1', 'p1', 'p2', 'logical')],
+      ifaces: [
+        port('p1', D1, { kind: 'tunnel', speed: '' }),
+        port('p2', D2, { kind: 'tunnel', speed: '1G' }),
+      ],
+    })
+    expect(rules(logical)).toEqual([])
+  })
+  it('an unsaved device drawn twice is not a duplicate of itself', () => {
+    const i = input()
+    i.devices[D2] = { ...i.devices[D2]!, draft: true }
+    i.nodes.push({ id: 'n2b', refKind: 'device', refId: D2, x: 800, y: 0 })
+    expect(rules(i).filter((r) => r.startsWith('duplicate'))).toEqual([])
   })
 })
 

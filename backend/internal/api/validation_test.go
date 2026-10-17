@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -63,6 +64,17 @@ func TestValidationContext(t *testing.T) {
 	}
 	if len(kinds["hostname"]) != 0 {
 		t.Errorf("hostname conflicts within a cluster: %v", kinds["hostname"])
+	}
+	// A port only an unsaved cable uses comes back when asked for; a port of a device not sent stays out.
+	free := idOf(t, mustCreate(t, fx.A, devicePath(org, sw)+"/interfaces", map[string]any{"name": "Gi9", "kind": "physical"}))
+	otherPort := idOf(t, mustCreate(t, fx.A, devicePath(org, other)+"/interfaces", map[string]any{"name": "Gi9", "kind": "physical"}))
+	_, withPorts := fx.A.Do("POST", path(org), map[string]any{"deviceIds": []string{sw}, "groupIds": []string{}, "interfaceIds": []string{free, otherPort}})
+	names := []string{}
+	for _, i := range withPorts["interfaces"].([]any) {
+		names = append(names, i.(map[string]any)["id"].(string))
+	}
+	if !slices.Contains(names, free) || slices.Contains(names, otherPort) {
+		t.Errorf("extra ports: %v", names)
 	}
 	if len(kinds["serial"]) != 2 {
 		t.Errorf("serial conflicts (case-insensitive, both sides on the diagram, retired left out): %v", kinds["serial"])

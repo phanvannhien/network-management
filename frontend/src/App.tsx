@@ -54,6 +54,11 @@ const SubnetDetailPage = lazy(() =>
 const GlossaryPage = lazy(() =>
   import('./help/GlossaryPage').then((m) => ({ default: m.GlossaryPage })),
 )
+const DeviceImportPage = lazy(() =>
+  import('./modules/inventory/import/DeviceImportPage').then((m) => ({
+    default: m.DeviceImportPage,
+  })),
+)
 const TemplatesPage = lazy(() =>
   import('./modules/inventory/TemplatesPage').then((m) => ({ default: m.TemplatesPage })),
 )
@@ -96,6 +101,7 @@ export function AppRoutes() {
       <Route path="/o/:orgId" element={guard(<OrgShell />)}>
         <Route index element={<OrgHomePage />} />
         <Route path="devices" element={<DeviceListPage />} />
+        <Route path="devices/import" element={<DeviceImportPage />} />
         <Route path="devices/:deviceId" element={<DeviceDetailPage />} />
         <Route path="endpoint-groups/:groupId" element={<EndpointGroupPage />} />
         <Route path="diagrams" element={<DiagramListPage />} />

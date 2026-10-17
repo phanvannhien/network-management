@@ -135,6 +135,14 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
 	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
+	ImportClusterByName(ctx context.Context, arg ImportClusterByNameParams) (ImportClusterByNameRow, error)
+	ImportDeviceHasIP(ctx context.Context, arg ImportDeviceHasIPParams) (int64, error)
+	// Device import (P1-21): lookups that place each spreadsheet row. Every query takes organization_id.
+	ImportDevicesByHostname(ctx context.Context, arg ImportDevicesByHostnameParams) ([]pgtype.UUID, error)
+	ImportDevicesBySerial(ctx context.Context, arg ImportDevicesBySerialParams) ([]pgtype.UUID, error)
+	ImportInterfaceByName(ctx context.Context, arg ImportInterfaceByNameParams) (pgtype.UUID, error)
+	// Prefix length of the most specific subnet holding the address in the VRF (0 = none).
+	ImportSubnetPrefix(ctx context.Context, arg ImportSubnetPrefixParams) (int32, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.

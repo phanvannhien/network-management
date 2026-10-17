@@ -313,7 +313,7 @@ const validationInterfaces = `-- name: ValidationInterfaces :many
 SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id
 FROM interfaces i
 WHERE i.organization_id = $1 AND i.device_id = ANY ($2::uuid[])
-  AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag'
+  AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag' OR i.id = ANY ($3::uuid[])
     OR EXISTS (SELECT 1 FROM links l WHERE l.organization_id = i.organization_id AND (l.a_interface_id = i.id OR l.b_interface_id = i.id))
     OR EXISTS (SELECT 1 FROM ip_addresses ip WHERE ip.organization_id = i.organization_id AND ip.interface_id = i.id))
 ORDER BY i.sort_order, i.name
@@ -322,6 +322,7 @@ ORDER BY i.sort_order, i.name
 type ValidationInterfacesParams struct {
 	OrganizationID pgtype.UUID
 	Ids            []pgtype.UUID
+	Extra          []pgtype.UUID
 }
 
 type ValidationInterfacesRow struct {
@@ -340,7 +341,7 @@ type ValidationInterfacesRow struct {
 
 // Only the ports a rule can look at (cabled, addressed, LAG, VLAN mode): a 48-port switch rarely needs all 48.
 func (q *Queries) ValidationInterfaces(ctx context.Context, arg ValidationInterfacesParams) ([]ValidationInterfacesRow, error) {
-	rows, err := q.db.Query(ctx, validationInterfaces, arg.OrganizationID, arg.Ids)
+	rows, err := q.db.Query(ctx, validationInterfaces, arg.OrganizationID, arg.Ids, arg.Extra)
 	if err != nil {
 		return nil, err
 	}
