@@ -8,6 +8,7 @@ import type { DiagramEdge, DiagramNode, DocState } from '../doc/types'
 export interface RefData extends Record<string, unknown> {
   refKind: DiagramNode['refKind']
   refId: string
+  locked: boolean
 }
 
 export const NODE_TYPES_BY_REF = {
@@ -22,7 +23,7 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
     id: n.id,
     type: NODE_TYPES_BY_REF[n.refKind],
     position: { x: n.x, y: n.y },
-    data: { refKind: n.refKind, refId: n.refId },
+    data: { refKind: n.refKind, refId: n.refId, locked: Boolean(n.locked) },
     selected: selection.has(n.id),
     draggable: !n.locked,
   }))
@@ -35,7 +36,7 @@ const EDGE_TYPE: Record<NonNullable<DiagramEdge['routing']>, string> = {
 }
 
 /** Edges whose link ends are both on the view; the line style follows the link kind (SRS §6.2, index.css). */
-export function toFlowEdges(doc: DocState): Edge[] {
+export function toFlowEdges(doc: DocState, selection: ReadonlySet<string> = new Set()): Edge[] {
   const nodeOf = new Map<string, string>()
   for (const n of doc.view.nodes) if (!nodeOf.has(n.refId)) nodeOf.set(n.refId, n.id)
   const out: Edge[] = []
@@ -52,6 +53,7 @@ export function toFlowEdges(doc: DocState): Edge[] {
       type: EDGE_TYPE[e.routing ?? 'straight'],
       className: `ntb-edge-${l.kind}${l.draft ? ' ntb-edge-draft' : ''}`,
       data: { linkId: l.id },
+      selected: selection.has(e.id),
     })
   }
   return out

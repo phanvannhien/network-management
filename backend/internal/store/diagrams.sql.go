@@ -130,6 +130,47 @@ func (q *Queries) ListDiagrams(ctx context.Context, arg ListDiagramsParams) ([]L
 	return items, nil
 }
 
+const listDiagramsShowing = `-- name: ListDiagramsShowing :many
+SELECT dg.id, dg.name, array_agg(DISTINCT n.ref_id ORDER BY n.ref_id)::text[] AS ref_ids
+FROM diagrams dg
+CROSS JOIN LATERAL (SELECT e ->> 'refId' AS ref_id FROM jsonb_array_elements(COALESCE(dg.view -> 'nodes', '[]')) e) n
+WHERE dg.organization_id = $1 AND n.ref_id = ANY ($2::text[])
+GROUP BY dg.id, dg.name
+ORDER BY lower(dg.name)
+`
+
+type ListDiagramsShowingParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []string
+}
+
+type ListDiagramsShowingRow struct {
+	ID     pgtype.UUID
+	Name   string
+	RefIds []string
+}
+
+// Diagrams whose view places any of the given objects, with the ones it places.
+func (q *Queries) ListDiagramsShowing(ctx context.Context, arg ListDiagramsShowingParams) ([]ListDiagramsShowingRow, error) {
+	rows, err := q.db.Query(ctx, listDiagramsShowing, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDiagramsShowingRow
+	for rows.Next() {
+		var i ListDiagramsShowingRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.RefIds); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const saveDiagramView = `-- name: SaveDiagramView :one
 UPDATE diagrams SET view = $1, version = version + 1
 WHERE id = $2 AND organization_id = $3 AND version = $4

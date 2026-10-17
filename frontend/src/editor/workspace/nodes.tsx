@@ -78,7 +78,7 @@ function Frame({
   )
 }
 
-function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
+function DeviceNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const card = useDoc((s) => s.doc?.devices[data.refId])
   if (!card) return <HiddenFrame selected={selected} />
@@ -86,7 +86,7 @@ function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
   return (
     <Frame
       selected={selected}
-      locked={!draggable}
+      locked={data.locked}
       draft={card.draft === true}
       title={`${card.hostname} · ${type}`}
       icon={<DeviceIcon typeId={card.type} size={32} />}
@@ -96,14 +96,14 @@ function DeviceNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
   )
 }
 
-function GroupNodeImpl({ data, selected, draggable }: NodeProps<RefFlowNode>) {
+function GroupNodeImpl({ data, selected }: NodeProps<RefFlowNode>) {
   const { t } = useTranslation()
   const group = useDoc((s) => s.doc?.groups[data.refId])
   if (!group) return <HiddenFrame selected={selected} />
   return (
     <Frame
       selected={selected}
-      locked={!draggable}
+      locked={data.locked}
       draft={false}
       title={group.name}
       icon={<Boxes aria-hidden className="size-8 text-muted-foreground" />}

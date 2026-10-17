@@ -321,3 +321,16 @@ LEFT JOIN racks r ON r.id = d.rack_id
 LEFT JOIN interfaces mi ON mi.id = d.mgmt_interface_id
 LEFT JOIN device_clusters dc ON dc.id = d.cluster_id
 WHERE d.id = ANY (@ids::uuid[]) AND d.organization_id = @organization_id AND d.deleted_at IS NULL;
+
+-- name: DeviceDeleteImpact :many
+-- What deleting devices takes along (ADR-033): cluster left behind and IPs released, per device.
+SELECT d.id, d.hostname, COALESCE(s.code, '')::text AS site_code, COALESCE(c.name, '')::text AS cluster_name,
+       (SELECT count(*) FROM devices m
+        WHERE m.organization_id = d.organization_id AND m.cluster_id = d.cluster_id AND m.deleted_at IS NULL
+          AND NOT (m.id = ANY (@ids::uuid[])))::int AS cluster_members_left,
+       (SELECT count(*) FROM ip_addresses ip WHERE ip.organization_id = d.organization_id AND ip.device_id = d.id)::int AS ip_count
+FROM devices d
+LEFT JOIN sites s ON s.id = d.site_id
+LEFT JOIN device_clusters c ON c.id = d.cluster_id
+WHERE d.organization_id = @organization_id AND d.id = ANY (@ids::uuid[]) AND d.deleted_at IS NULL
+ORDER BY d.hostname;

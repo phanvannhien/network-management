@@ -1,5 +1,6 @@
 import type {
   DeviceCard,
+  LinkCard,
   DeviceInput,
   DeviceUpdate,
   DocState,
@@ -40,7 +41,7 @@ export function addNode(
   refId: string,
   x: number,
   y: number,
-  opts: { id?: string; device?: DeviceCard } = {},
+  opts: { id?: string; device?: DeviceCard; links?: LinkCard[] } = {},
 ): DocCommand {
   const id = opts.id ?? newId()
   return {
@@ -48,6 +49,9 @@ export function addNode(
     apply(d) {
       if (d.view.nodes.some((n) => n.refId === refId && n.refKind === refKind)) return
       if (opts.device && !d.devices[refId]) d.devices[refId] = opts.device
+      // Inventory links of the object (ADR-015): those to objects on the view get drawn below.
+      for (const l of opts.links ?? [])
+        if (!d.links[l.id] && !d.deletedLinks.includes(l.id)) d.links[l.id] = l
       d.view.nodes.push({ id, refKind, refId, x, y })
       // Known links between this object and others on the view get an edge.
       const onView = new Set(d.view.nodes.map((n) => n.refId))
@@ -101,6 +105,7 @@ export function createDevice(
   x: number,
   y: number,
   tempId = newId(),
+  nodeId = newId(),
 ): DocCommand {
   return {
     label: 'createDevice',
@@ -114,7 +119,7 @@ export function createDevice(
         siteId: input.siteId,
         draft: true,
       }
-      d.view.nodes.push({ id: newId(), refKind: 'device', refId: tempId, x, y })
+      d.view.nodes.push({ id: nodeId, refKind: 'device', refId: tempId, x, y })
     },
   }
 }
@@ -204,6 +209,31 @@ export function deleteLink(id: string): DocCommand {
       delete d.linkEdits[id]
       delete d.links[id]
       d.view.edges = d.view.edges.filter((e) => e.linkId !== id)
+    },
+  }
+}
+
+/** Several commands as one undo step (paste, duplicate, delete of a selection). */
+export function compound(label: string, commands: DocCommand[]): DocCommand {
+  return {
+    label,
+    apply(d) {
+      for (const c of commands) c.apply(d)
+    },
+  }
+}
+
+/** Lock or unlock nodes: a locked node does not move and is not removed by Delete. */
+export function setLocked(nodeIds: string[], locked: boolean): DocCommand {
+  return {
+    label: 'setLocked',
+    apply(d) {
+      const ids = new Set(nodeIds)
+      for (const n of d.view.nodes)
+        if (ids.has(n.id) && Boolean(n.locked) !== locked) {
+          if (locked) n.locked = true
+          else delete n.locked
+        }
     },
   }
 }

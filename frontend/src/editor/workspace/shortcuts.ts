@@ -10,6 +10,11 @@ export type ShortcutId =
   | 'zoomOut'
   | 'zoomReset'
   | 'remove'
+  | 'deleteInventory'
+  | 'copy'
+  | 'paste'
+  | 'duplicate'
+  | 'lock'
   | 'selectAll'
   | 'deselect'
   | 'pan'
@@ -36,6 +41,11 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'zoomOut', keys: ['-'], aria: '-' },
   { id: 'zoomReset', keys: ['Shift', '0'], aria: 'Shift+0' },
   { id: 'remove', keys: ['Delete'], aria: 'Delete' },
+  { id: 'deleteInventory', keys: ['Shift', 'Delete'], aria: 'Shift+Delete' },
+  { id: 'copy', keys: ['Ctrl', 'C'], aria: 'Control+C' },
+  { id: 'paste', keys: ['Ctrl', 'V'], aria: 'Control+V' },
+  { id: 'duplicate', keys: ['Ctrl', 'D'], aria: 'Control+D' },
+  { id: 'lock', keys: ['Ctrl', 'Shift', 'L'], aria: 'Control+Shift+L' },
   { id: 'selectAll', keys: ['Ctrl', 'A'], aria: 'Control+A' },
   { id: 'deselect', keys: ['Esc'] },
   { id: 'pan', keys: ['Space'] },
@@ -65,7 +75,16 @@ export function keysLabel(id: ShortcutId, mac = IS_MAC): string {
 }
 
 /** Actions that change or select what is on the canvas: only when the canvas (or nothing) has the focus. */
-export const CANVAS_ONLY: ReadonlySet<ShortcutId> = new Set(['remove', 'selectAll', 'deselect'])
+export const CANVAS_ONLY: ReadonlySet<ShortcutId> = new Set([
+  'remove',
+  'deleteInventory',
+  'selectAll',
+  'deselect',
+  'copy',
+  'paste',
+  'duplicate',
+  'lock',
+])
 
 /** Keys typed into a field belong to the field, not the canvas. */
 export function isTyping(target: EventTarget | null): boolean {
@@ -89,6 +108,11 @@ export function actionFor(
     if (k === 'z') return e.shiftKey ? 'redo' : 'undo'
     if (k === 'y') return 'redo'
     if (k === 'a') return 'selectAll'
+    if (k === 'c' && !e.shiftKey) return 'copy'
+    if (k === 'v' && !e.shiftKey) return 'paste'
+    if (k === 'd' && !e.shiftKey) return 'duplicate'
+    // Ctrl+L alone focuses the browser's address bar.
+    if (k === 'l' && e.shiftKey) return 'lock'
     return null
   }
   // Shift+digit gives "!" / ")" on most layouts: match on the physical key.
@@ -99,8 +123,8 @@ export function actionFor(
   if (e.key.toLowerCase() === 'b' && !e.shiftKey) return 'library'
   if (e.key === '+' || e.key === '=') return 'zoomIn'
   if (e.key === '-' || e.key === '_') return 'zoomOut'
-  // Shift+Delete will delete from the inventory (P1-16, with confirmation): never a plain remove.
-  if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? null : 'remove'
+  // Shift+Delete deletes from the inventory, always after a confirmation (ADR-033).
+  if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? 'deleteInventory' : 'remove'
   if (e.key === 'Escape') return 'deselect'
   return null
 }

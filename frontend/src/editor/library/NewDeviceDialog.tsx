@@ -74,7 +74,20 @@ export function NewDeviceDialog({
     return suggestHostname(site, type, taken)
   }, [site, type, takenHostnames, used.data])
   const value = hostname
-  const problem = value === '' ? null : hostnameProblem(value)
+  // Hostnames are unique in the inventory (clusters aside, a provider cloud may repeat): say so before saving.
+  const typed = useDeferredValue(value.trim())
+  const same = useDeviceList(
+    orgId,
+    { q: typed, facets: {}, categoryId: null, sort: null, pageIndex: 0, pageSize: 20 },
+    typed !== '' && type !== 'provider_cloud',
+  )
+  const lower = typed.toLowerCase()
+  const taken =
+    type !== 'provider_cloud' &&
+    lower !== '' &&
+    ([...takenHostnames].some((h) => h.toLowerCase() === lower) ||
+      (same.data?.devices ?? []).some((d) => d.hostname.toLowerCase() === lower))
+  const problem = value === '' ? null : (hostnameProblem(value) ?? (taken ? 'taken' : null))
   const warning = problem
     ? null
     : hostnameWarning(value, type)

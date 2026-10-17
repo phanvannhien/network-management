@@ -65,7 +65,7 @@ describe('document → React Flow (P1-14)', () => {
       ['n-fw', 'device', false, true],
       ['n-sw', 'device', true, false],
     ])
-    expect(nodes[0]!.data).toEqual({ refKind: 'device', refId: FW })
+    expect(nodes[0]!.data).toEqual({ refKind: 'device', refId: FW, locked: false })
     const edges = toFlowEdges(doc)
     expect(edges).toEqual([
       expect.objectContaining({
@@ -136,7 +136,10 @@ describe('editor shortcuts (SRS §6.4)', () => {
     expect(actionFor(key('?', { shiftKey: true }))).toBe('help')
     expect(actionFor(key('/', { shiftKey: true, code: 'Slash' }))).toBe('help')
     expect(actionFor(key('Backspace'))).toBe('remove')
-    expect(actionFor(key('Delete', { shiftKey: true }))).toBeNull()
+    expect(actionFor(key('Delete', { shiftKey: true }))).toBe('deleteInventory')
+    expect(actionFor(key('d', { ctrlKey: true }))).toBe('duplicate')
+    expect(actionFor(key('l', { ctrlKey: true }))).toBeNull()
+    expect(actionFor(key('L', { ctrlKey: true, shiftKey: true }))).toBe('lock')
     expect(actionFor(key('/'))).toBe('quickAdd')
     expect(actionFor(key('b'))).toBe('library')
     expect(actionFor(key('1'))).toBeNull()

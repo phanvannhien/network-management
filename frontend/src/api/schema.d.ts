@@ -599,6 +599,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/devices/delete-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What deleting these devices takes along (read only) — shown before deleting from the inventory
+         * @description Links (all of them, not only those on a diagram), the diagrams showing the devices, clusters losing a member and the IPs released (ADR-033). Missing ids are ignored.
+         */
+        post: operations["deviceDeleteImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/bulk-delete": {
         parameters: {
             query?: never;
@@ -1958,6 +1981,11 @@ export interface components {
         Device: {
             /**
              * Format: uuid
+             * @description Template the device was created from (its ports came from it); used when cloning
+             */
+            templateId: string | null;
+            /**
+             * Format: uuid
              * @description the site's category (null = attached straight to the organization)
              */
             categoryId: string | null;
@@ -2054,6 +2082,32 @@ export interface components {
         };
         DeviceIds: {
             ids: string[];
+        };
+        DeviceDeleteImpact: {
+            devices: components["schemas"]["DeviceImpact"][];
+            links: components["schemas"]["Link"][];
+            diagrams: components["schemas"]["DiagramShowing"][];
+        };
+        DeviceImpact: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            siteCode: string;
+            /** @description empty when the device is in no cluster */
+            clusterName: string;
+            /**
+             * Format: int32
+             * @description members the cluster keeps after the deletion
+             */
+            clusterMembersLeft: number;
+            /** Format: int32 */
+            ipCount: number;
+        };
+        DiagramShowing: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            deviceIds: string[];
         };
         /** @description Only the fields present are changed */
         DeviceBulkUpdate: {
@@ -4405,6 +4459,39 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    deviceDeleteImpact: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceIds"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceDeleteImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     bulkDeleteDevices: {

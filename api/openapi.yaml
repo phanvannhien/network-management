@@ -1116,6 +1116,39 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/devices/delete-impact:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: deviceDeleteImpact
+      summary: What deleting these devices takes along (read only) — shown before deleting from the inventory
+      description: >-
+        Links (all of them, not only those on a diagram), the diagrams showing the devices, clusters losing a member
+        and the IPs released (ADR-033). Missing ids are ignored.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceIds'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceDeleteImpact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/bulk-delete:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4161,8 +4194,12 @@ components:
 
     Device:
       type: object
-      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, clusterId, clusterName, clusterKind, clusterRole, clusterMemberNo, access, version, createdAt, updatedAt, categoryId, categoryPath]
+      required: [id, hostname, type, vendor, model, partNumber, serialNumber, assetTag, firmware, role, lifecycle, managed, ownerName, poNumber, purchaseDate, warrantyEnd, licenseEnd, eolDate, eosDate, notes, tags, customFields, siteId, siteCode, siteName, locationId, locationName, rackId, rackName, rackU, uHeight, mgmtInterfaceId, mgmtInterfaceName, mgmtIp, pollAddress, clusterId, clusterName, clusterKind, clusterRole, clusterMemberNo, access, version, createdAt, updatedAt, categoryId, categoryPath, templateId]
       properties:
+        templateId:
+          type: [string, 'null']
+          format: uuid
+          description: Template the device was created from (its ports came from it); used when cloning
         categoryId:
           type: [string, 'null']
           format: uuid
@@ -4336,6 +4373,60 @@ components:
           type: array
           minItems: 1
           maxItems: 500
+          items:
+            type: string
+            format: uuid
+
+    DeviceDeleteImpact:
+      type: object
+      required: [devices, links, diagrams]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceImpact'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagramShowing'
+
+    DeviceImpact:
+      type: object
+      required: [id, hostname, siteCode, clusterName, clusterMembersLeft, ipCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        clusterName:
+          type: string
+          description: empty when the device is in no cluster
+        clusterMembersLeft:
+          type: integer
+          format: int32
+          description: members the cluster keeps after the deletion
+        ipCount:
+          type: integer
+          format: int32
+
+    DiagramShowing:
+      type: object
+      required: [id, name, deviceIds]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        deviceIds:
+          type: array
           items:
             type: string
             format: uuid

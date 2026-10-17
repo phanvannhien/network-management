@@ -5,6 +5,32 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-16 Thao tác chọn & sửa
+- Đã làm:
+  - **Sao chép / dán / nhân bản** (Ctrl+C / Ctrl+V / Ctrl+D, menu chuột phải): một quyết định cho cả lần dán — sơ đồ đích chưa có các
+    thiết bị → đặt đúng thiết bị trong kho kèm dây có sẵn; đã có (hoặc Ctrl+D) → tạo thiết bị mới chưa lưu, hostname số kế tiếp
+    (tra cả kho), trạng thái "dự kiến", chỉ giữ thông tin model + template (không S/N, IP, rack, cụm); dây giữa các bản sao được
+    nhân bản (không giữ cable ID/circuit); nhóm đầu cuối không nhân bản; chặn dán dữ liệu tổ chức khác. Clipboard riêng của app
+    (dùng chung giữa các tab), không đưa dữ liệu kho ra clipboard hệ thống.
+  - **Khóa / mở khóa** (Ctrl+Shift+L, menu): node khóa không kéo được, Delete bỏ qua và báo.
+  - **Xóa khỏi kho** (Shift+Delete, menu; Delete trên dây): hộp xác nhận liệt kê mọi dây đi theo (kể cả dây không có trên sơ đồ
+    này), các sơ đồ khác đang có thiết bị, cụm còn mấy thành viên, số IP được giải phóng — endpoint mới
+    `POST /devices/delete-impact` (chỉ đọc, có test cách ly tổ chức). Xóa khi lưu, hoàn tác được trước đó.
+  - **Menu chuột phải** trên node / dây / nền (có phím tắt, điều khiển bằng bàn phím), mở trang thiết bị ở tab mới.
+  - **Sửa lỗi từ rà soát (agent chạy song song):** đặt thiết bị từ kho giờ hiện luôn dây sẵn có tới thiết bị trên sơ đồ; sửa trong
+    lúc đang lưu bị mất → chờ lưu xong; Ctrl+S hai lần → chỉ một lần lưu; người chỉ xem thấy biểu tượng khóa ở mọi node; dialog
+    thiết bị mới báo hostname đã có trong kho; node của thiết bị đã bị xóa khỏi kho không còn hiện "Không xác định" (bỏ khi tải).
+    Device trả thêm `templateId` (bản sao sinh lại cổng theo template). Nút chính lúc tắt chuyển xám (dễ thấy ở nền tối).
+- Test / cách kiểm tra: `make check` pass (Go: `TestDeviceDeleteImpact`; vitest 223: clipboard/nhân bản/khóa/chờ lưu, App: Ctrl+D,
+  menu + khóa, Shift+Delete với danh sách ảnh hưởng, đặt thiết bị kèm dây). Chạy thật trên Chromium + API: nhân bản SW02 → SW03
+  "dự kiến"; xóa CORE01 → hộp xác nhận liệt kê 3 dây, sau lưu kho còn 3 dây; axe không lỗi (menu, hộp xác nhận).
+- Còn dở / lỗi đã biết: bản sao sinh cổng theo template (không chép cổng đã chỉnh tay của thiết bị gốc) và dây giữa bản sao chưa
+  có cổng — làm cùng P1-17 (đề xuất: API tạo thiết bị `cloneOf` chép interface). Xóa thiết bị không tự dọn node trên sơ đồ khác
+  (tự bỏ khi sơ đồ đó được mở/lưu).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-17 Nối dây (kèm sinh cổng ngay khi tạo thiết bị / nhân bản).
+
 ## 2026-10-17 — P1-31 Mô hình dây & loại thiết bị theo thực tế (ADR-033)
 - Đã làm:
   - Người dùng chốt 4 đề xuất của rà soát P1-15; agent kỹ sư mạng rà lại bản nháp ADR-033 trước khi code, tinh chỉnh luật cổng.

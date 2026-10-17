@@ -184,7 +184,8 @@ Theo ADR-033. "Một dây/cổng" = cổng đó không cắm thêm dây khác.
 | --- | --- |
 | Undo / Redo | Ctrl+Z / Ctrl+Shift+Z |
 | Copy / Paste / Duplicate | Ctrl+C / Ctrl+V / Ctrl+D |
-| Xóa khỏi sơ đồ / xóa khỏi kho | Delete / Shift+Delete (có xác nhận) |
+| Xóa khỏi sơ đồ / xóa khỏi kho | Delete / Shift+Delete (luôn có hộp xác nhận liệt kê dây, sơ đồ khác, cụm, IP bị ảnh hưởng) |
+| Khóa / mở khóa vị trí | Ctrl+Shift+L (Ctrl+L là thanh địa chỉ trình duyệt) |
 | Chọn tất cả | Ctrl+A |
 | Group / Ungroup | Ctrl+G / Ctrl+Shift+G |
 | Fit to screen | Shift+1 |
@@ -195,7 +196,13 @@ Theo ADR-033. "Một dây/cổng" = cổng đó không cắm thêm dây khác.
 | Tìm trên sơ đồ / toàn cục | Ctrl+F / Ctrl+K |
 | Bảng phím tắt | ? |
 
-Lưu ý: xóa một node khỏi sơ đồ KHÔNG xóa thiết bị khỏi kho; xóa khỏi kho là thao tác riêng.
+Lưu ý: xóa một node khỏi sơ đồ KHÔNG xóa thiết bị khỏi kho; xóa khỏi kho là thao tác riêng. Dây không gỡ khỏi sơ đồ được khi
+hai đầu còn trên sơ đồ (ADR-015) — Delete trên dây là xóa dây khỏi kho (có xác nhận). Node đã khóa không bị Delete gỡ.
+
+**Sao chép / dán / nhân bản (P1-16):** dán lên sơ đồ chưa có các thiết bị đó → đặt đúng thiết bị trong kho (một thiết bị trên nhiều
+sơ đồ, dây đi theo kho); nếu sơ đồ đã có (hoặc Ctrl+D) → tạo thiết bị **mới** (bản sao chưa lưu, trạng thái "dự kiến", hostname số
+kế tiếp), chỉ giữ thông tin model (hãng, model, firmware, template, tag…), không giữ S/N, asset tag, IP, rack, cụm; dây giữa các
+bản sao được nhân bản (không giữ cable ID/circuit). Nhóm thiết bị đầu cuối không nhân bản. Không dán dữ liệu của tổ chức khác.
 
 ## §7. Validation
 

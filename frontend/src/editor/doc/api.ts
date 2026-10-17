@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type components } from '@/api/client'
 import i18n from '@/i18n'
-import type { DiagramSave } from './types'
+import { linkCard, type DiagramSave, type LinkCard } from './types'
 
 // Diagram API hooks (P1-13).
 
@@ -101,4 +101,51 @@ export function useDiagramMutations(orgId: string) {
       ]),
   })
   return { create, remove, save }
+}
+
+/** Inventory links of an object, so placing it on a diagram also draws its cables to what is already there. */
+export async function fetchLinkCards(orgId: string, endId: string): Promise<LinkCard[]> {
+  return (await fetchLinks(orgId, endId)).map(linkCard)
+}
+
+export type DeviceDeleteImpact = components['schemas']['DeviceDeleteImpact']
+
+/** What deleting saved devices takes along (ADR-033): all their cables, other diagrams, clusters, IPs. */
+export function useDeleteImpact(orgId: string, deviceIds: string[]) {
+  return useQuery({
+    queryKey: ['orgs', orgId, 'delete-impact', [...deviceIds].sort()],
+    enabled: orgId !== '' && deviceIds.length > 0,
+    queryFn: async () => {
+      const r = await api.POST('/orgs/{orgId}/devices/delete-impact', {
+        params: { ...csrfParam, path: { orgId } },
+        body: { ids: deviceIds },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+    },
+  })
+}
+
+/** Full inventory records of an object's cables (for cloning them). */
+export async function fetchLinks(orgId: string, endId: string) {
+  const r = await api.GET('/orgs/{orgId}/links', { params: { path: { orgId }, query: { endId } } })
+  if (r.data) return r.data.links
+  fail(r.error, r.response.status, i18n.t('errors.linksLoad'))
+}
+
+/** A saved device, to clone it. */
+export async function fetchDevice(orgId: string, deviceId: string) {
+  const r = await api.GET('/orgs/{orgId}/devices/{deviceId}', {
+    params: { path: { orgId, deviceId } },
+  })
+  if (r.data) return r.data
+  fail(r.error, r.response.status, i18n.t('errors.actionFailed'))
+}
+
+/** Hostnames in the inventory starting with a stem, for renaming clones. */
+export async function fetchHostnames(orgId: string, q: string): Promise<string[]> {
+  const r = await api.GET('/orgs/{orgId}/devices', {
+    params: { path: { orgId }, query: { q, pageSize: 200 } },
+  })
+  return r.data?.devices.map((d) => d.hostname) ?? []
 }

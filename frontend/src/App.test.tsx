@@ -2495,6 +2495,148 @@ describe('diagrams (P1-13)', () => {
     expect(screen.getByRole('button', { name: /Tải bản mới/ })).toBeInTheDocument()
   })
 
+  it('P1-16: Ctrl+D clones the selection as a new planned device with the next hostname', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/devices/dev-1`]: () =>
+          json({
+            ...FW,
+            vendor: 'Fortinet',
+            model: '100F',
+            serialNumber: 'FG-1',
+            templateId: null,
+          }),
+        [`GET /api/orgs/${ORG_ID}/links`]: () => json({ links: [] }),
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'd', ctrlKey: true })
+    expect(await within(canvas).findByText('AGRI-BD-FW02')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.changes).toEqual([
+      {
+        op: 'createDevice',
+        tempId: expect.any(String),
+        device: expect.objectContaining({
+          hostname: 'AGRI-BD-FW02',
+          type: 'firewall',
+          vendor: 'Fortinet',
+          model: '100F',
+          lifecycle: 'planned',
+        }),
+      },
+    ])
+    expect(body.changes[0].device).not.toHaveProperty('serialNumber')
+  })
+
+  it('P1-16: the right-click menu locks a node; Delete leaves a locked node', async () => {
+    fakeApi(routes())
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    fireEvent.contextMenu(within(canvas).getByText('AGRI-BD-FW01'))
+    const menu = await screen.findByRole('menu', { name: 'Thao tác' })
+    expect(within(menu).getByRole('menuitem', { name: /Xóa khỏi kho/ })).toBeInTheDocument()
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Khóa vị trí/ }))
+    expect(await within(canvas).findByLabelText('Đã khóa vị trí')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Delete' })
+    expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    // Undo the lock: the node is free again and Delete removes it from the diagram.
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'Delete' })
+    await waitFor(() => expect(within(canvas).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument())
+  })
+
+  it('P1-16: Shift+Delete lists every cable and other diagrams before deleting from the inventory', async () => {
+    const calls = fakeApi(
+      routes({
+        [`POST /api/orgs/${ORG_ID}/devices/delete-impact`]: () =>
+          json({
+            devices: [
+              {
+                id: 'dev-1',
+                hostname: 'AGRI-BD-FW01',
+                siteCode: 'VPM-AGRI-BD01',
+                clusterName: 'BD-HA',
+                clusterMembersLeft: 1,
+                ipCount: 3,
+              },
+            ],
+            links: [
+              {
+                id: 'lk-x',
+                kind: 'ethernet',
+                a: { kind: 'device', id: 'dev-1', name: 'AGRI-BD-FW01', interfaceName: 'wan1' },
+                b: { kind: 'device', id: 'dev-9', name: 'ISP-R1', interfaceName: '' },
+              },
+            ],
+            diagrams: [
+              { id: 'dg-1', name: 'LAN Bình Định', deviceIds: ['dev-1'] },
+              { id: 'dg-7', name: 'WAN tổng quan', deviceIds: ['dev-1'] },
+            ],
+          }),
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const canvas = await screen.findByRole('application')
+    fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'Delete', shiftKey: true })
+    const dialog = await screen.findByRole('dialog', { name: 'Xóa 1 thiết bị khỏi kho?' })
+    expect(await within(dialog).findByText(/AGRI-BD-FW01 wan1 ↔ ISP-R1/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/không có trên sơ đồ này/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Cũng đang có trên sơ đồ: WAN tổng quan/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/cụm BD-HA: cụm còn 1 thành viên/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/3 địa chỉ IP/)).toBeInTheDocument()
+    expect(calls.some((r) => r.method === 'DELETE')).toBe(false)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Xóa khỏi kho' }))
+    await waitFor(() => expect(within(canvas).queryByText('AGRI-BD-FW01')).not.toBeInTheDocument())
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    expect((await calls.find(isSave)!.clone().json()).changes).toEqual([
+      { op: 'deleteDevice', id: 'dev-1' },
+    ])
+  })
+
+  it('P1-16 review: an inventory device placed on the diagram brings its cables to what is drawn', async () => {
+    const calls = fakeApi(
+      routes({
+        [`GET /api/orgs/${ORG_ID}/links`]: () =>
+          json({
+            links: [
+              {
+                id: 'lk-1',
+                kind: 'ethernet',
+                a: { kind: 'device', id: 'dev-1', name: 'AGRI-BD-FW01', interfaceName: 'port1' },
+                b: { kind: 'device', id: 'dev-2', name: 'AGRI-BD-SW01', interfaceName: 'Gi1/0/1' },
+              },
+            ],
+          }),
+        [`POST /api/orgs/${ORG_ID}/diagrams/dg-1/save`]: () => json({ detail: DETAIL, idMap: {} }),
+      }),
+    )
+    renderAt(`/o/${ORG_ID}/diagrams/dg-1`)
+    const library = await screen.findByRole('complementary', { name: 'Thư viện' })
+    fireEvent.click(within(library).getByRole('tab', { name: /Trong kho/ }))
+    fireEvent.click(
+      await within(library).findByRole('button', { name: 'Đặt AGRI-BD-SW01 lên sơ đồ' }),
+    )
+    expect(
+      await within(screen.getByRole('application')).findByText('AGRI-BD-SW01'),
+    ).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const isSave = (r: Request) => r.url.endsWith('/save')
+    await waitFor(() => expect(calls.some(isSave)).toBe(true))
+    const body = await calls.find(isSave)!.clone().json()
+    expect(body.view.edges.map((e: { linkId: string }) => e.linkId)).toEqual(['lk-1'])
+  })
+
   it('a viewer opens the diagram read-only', async () => {
     fakeApi(
       routes({

@@ -87,6 +87,8 @@ type Querier interface {
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	DeleteVlan(ctx context.Context, arg DeleteVlanParams) (int64, error)
+	// What deleting devices takes along (ADR-033): cluster left behind and IPs released, per device.
+	DeviceDeleteImpact(ctx context.Context, arg DeviceDeleteImpactParams) ([]DeviceDeleteImpactRow, error)
 	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
@@ -147,6 +149,8 @@ type Querier interface {
 	ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error)
 	// Diagrams (P1-13, ADR-015/032). Every query takes organization_id; diagrams belong to the organization.
 	ListDiagrams(ctx context.Context, arg ListDiagramsParams) ([]ListDiagramsRow, error)
+	// Diagrams whose view places any of the given objects, with the ones it places.
+	ListDiagramsShowing(ctx context.Context, arg ListDiagramsShowingParams) ([]ListDiagramsShowingRow, error)
 	// Endpoint groups (P1-11, SRS §4.4). Every query takes organization_id.
 	ListEndpointGroups(ctx context.Context, arg ListEndpointGroupsParams) ([]ListEndpointGroupsRow, error)
 	ListEndpointMembers(ctx context.Context, arg ListEndpointMembersParams) ([]ListEndpointMembersRow, error)

@@ -28,3 +28,12 @@ RETURNING version;
 
 -- name: DeleteDiagram :execrows
 DELETE FROM diagrams WHERE id = @id AND organization_id = @organization_id;
+
+-- name: ListDiagramsShowing :many
+-- Diagrams whose view places any of the given objects, with the ones it places.
+SELECT dg.id, dg.name, array_agg(DISTINCT n.ref_id ORDER BY n.ref_id)::text[] AS ref_ids
+FROM diagrams dg
+CROSS JOIN LATERAL (SELECT e ->> 'refId' AS ref_id FROM jsonb_array_elements(COALESCE(dg.view -> 'nodes', '[]')) e) n
+WHERE dg.organization_id = @organization_id AND n.ref_id = ANY (@ids::text[])
+GROUP BY dg.id, dg.name
+ORDER BY lower(dg.name);

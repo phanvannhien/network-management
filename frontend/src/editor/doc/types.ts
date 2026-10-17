@@ -59,6 +59,17 @@ export interface DocState {
   deletedLinks: string[]
 }
 
+export function linkCard(l: Link): LinkCard {
+  return {
+    id: l.id,
+    aId: l.a.id,
+    bId: l.b.id,
+    kind: l.kind,
+    aPort: l.a.interfaceName,
+    bPort: l.b.interfaceName,
+  }
+}
+
 export function emptyView(): DiagramView {
   return { nodes: [], edges: [], annotations: [], viewport: { x: 0, y: 0, zoom: 1 } }
 }
@@ -70,28 +81,25 @@ export function docFromDetail(d: DiagramDetail): DocState {
   const groups: DocState['groups'] = {}
   for (const g of d.endpointGroups) groups[g.id] = { id: g.id, name: g.name, kind: g.kind }
   const links: DocState['links'] = {}
-  for (const l of d.links)
-    links[l.id] = {
-      id: l.id,
-      aId: l.a.id,
-      bId: l.b.id,
-      kind: l.kind,
-      aPort: l.a.interfaceName,
-      bPort: l.b.interfaceName,
-    }
+  for (const l of d.links) links[l.id] = linkCard(l)
   // The inventory is the source of truth (ADR-015): a link between two objects on the view is always drawn, even if
   // it was made outside this diagram; the view only adds routing for it.
   const onView = new Set((d.view.nodes ?? []).map((n) => n.refId))
-  const edges = [...(d.view.edges ?? [])]
+  // Edges of cables deleted since the last save are dropped too.
+  const known = new Set(d.links.map((l) => l.id))
+  const edges = (d.view.edges ?? []).filter((e) => known.has(e.linkId))
   const drawn = new Set(edges.map((e) => e.linkId))
   for (const l of d.links)
     if (!drawn.has(l.id) && onView.has(l.a.id) && onView.has(l.b.id))
       edges.push({ id: `e-${l.id}`, linkId: l.id })
+  // Objects deleted from the inventory since the diagram was saved are dropped from the view (ADR-032: hidden refs
+  // only mean "gone" now); the next save stores the cleaned view.
+  const gone = new Set(d.hiddenRefs)
   return {
     view: {
       ...emptyView(),
       ...d.view,
-      nodes: d.view.nodes ?? [],
+      nodes: (d.view.nodes ?? []).filter((n) => !gone.has(n.refId)),
       edges,
       annotations: d.view.annotations ?? [],
     },

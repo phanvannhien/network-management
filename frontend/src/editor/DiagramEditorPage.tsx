@@ -1,4 +1,14 @@
 import { ReactFlowProvider, useReactFlow, useStore as useFlowStore } from '@xyflow/react'
+import {
+  ClipboardPaste,
+  Copy,
+  CopyPlus,
+  ExternalLink,
+  Lock,
+  LockOpen,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
@@ -12,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 import { atLeast } from '@/modules/sites/access'
 import { ConflictError, fetchDiagram, useDiagram, useDiagramMutations } from './doc/api'
-import { addNode, createDevice, removeNodes } from './doc/commands'
+import { createDevice } from './doc/commands'
 import { draftStore, type Draft } from './doc/drafts'
 import { createDocStore, type DocStoreApi } from './doc/store'
 import { changesOf } from './doc/types'
@@ -22,10 +32,13 @@ import { defaultSiteFor } from './library/placement'
 import { NewDeviceDialog, type NewDeviceInput } from './library/NewDeviceDialog'
 import { QuickAdd } from './library/QuickAdd'
 import { Canvas } from './workspace/Canvas'
+import { DeleteFromInventoryDialog } from './workspace/DeleteFromInventoryDialog'
+import { NodeMenu, type MenuItem } from './workspace/NodeMenu'
+import { useEditActions } from './workspace/useEditActions'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { useEditorPrefs } from './workspace/prefs'
-import { actionFor, CANVAS_ONLY, isTyping } from './workspace/shortcuts'
+import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
 import { Toolbar } from './workspace/Toolbar'
@@ -101,6 +114,8 @@ export function DiagramEditorPage() {
 
   const canEdit = atLeast(meta?.access, 'edit')
   const doSave = () => {
+    // One save at a time: a second one would send the same version and get a conflict.
+    if (store.getState().status === 'saving') return
     const body = store.getState().saveRequest()
     if (!body || !canEdit) return
     store.getState().setStatus('saving')
@@ -254,6 +269,13 @@ function Workspace({
     [doc.devices],
   )
   const libraryOpen = canEdit && prefs.library
+  const edit = useEditActions({ orgId, store, canEdit, grid: prefs.grid })
+  const [menu, setMenu] = useState<{
+    x: number
+    y: number
+    kind: 'node' | 'edge' | 'pane'
+    id?: string
+  } | null>(null)
 
   const fit = () => void flow.fitView({ ...fitOptions(libraryOpen), duration: ZOOM_MS })
   /** Top-left for a node centred on `at`, on the grid when snapping. */
@@ -275,7 +297,7 @@ function Workspace({
     if (!canEdit) return
     if (item.kind === 'device') {
       const { x, y } = place(at)
-      store.getState().dispatch(addNode('device', item.device.id, x, y, { device: item.device }))
+      void edit.placeDevice(item.device, x, y)
       return
     }
     setCreating({
@@ -348,10 +370,26 @@ function Workspace({
           break
         case 'deselect':
           s.setSelection([])
+          s.setEdgeSelection([])
+          setMenu(null)
           break
         case 'remove':
-          if (!canEdit || s.selection.length === 0) return
-          s.dispatch(removeNodes(s.selection))
+          edit.remove()
+          break
+        case 'deleteInventory':
+          edit.requestDelete()
+          break
+        case 'copy':
+          edit.copy()
+          break
+        case 'paste':
+          edit.paste()
+          break
+        case 'duplicate':
+          edit.duplicate()
+          break
+        case 'lock':
+          edit.toggleLock()
           break
         case 'quickAdd':
           if (!canEdit) return
@@ -376,6 +414,95 @@ function Workspace({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const menuItems = (m: { kind: 'node' | 'edge' | 'pane'; id?: string }): MenuItem[] => {
+    const keys = (id: Parameters<typeof keysLabel>[0]) => keysLabel(id)
+    if (m.kind === 'pane')
+      return [
+        {
+          id: 'paste',
+          label: t('editorCanvas.keys.paste'),
+          icon: <ClipboardPaste aria-hidden />,
+          keys: keys('paste'),
+          disabled: !canEdit || !edit.hasClip(),
+          onSelect: edit.paste,
+        },
+        {
+          id: 'all',
+          label: t('editorCanvas.keys.selectAll'),
+          keys: keys('selectAll'),
+          onSelect: () => store.getState().setSelection(doc.view.nodes.map((n) => n.id)),
+        },
+      ]
+    if (m.kind === 'edge')
+      return [
+        {
+          id: 'delete',
+          label: t('editorEdit.deleteCable'),
+          icon: <Trash2 aria-hidden />,
+          keys: keys('remove'),
+          danger: true,
+          disabled: !canEdit,
+          onSelect: edit.requestDelete,
+        },
+      ]
+    const node = doc.view.nodes.find((n) => n.id === m.id)
+    const card = node?.refKind === 'device' ? doc.devices[node.refId] : undefined
+    const locked = store
+      .getState()
+      .selection.every((id) => doc.view.nodes.find((n) => n.id === id)?.locked)
+    return [
+      {
+        id: 'copy',
+        label: t('editorCanvas.keys.copy'),
+        icon: <Copy aria-hidden />,
+        keys: keys('copy'),
+        onSelect: edit.copy,
+      },
+      {
+        id: 'duplicate',
+        label: t('editorCanvas.keys.duplicate'),
+        icon: <CopyPlus aria-hidden />,
+        keys: keys('duplicate'),
+        disabled: !canEdit,
+        onSelect: edit.duplicate,
+      },
+      {
+        id: 'lock',
+        label: locked ? t('editorEdit.unlock') : t('editorEdit.lock'),
+        icon: locked ? <LockOpen aria-hidden /> : <Lock aria-hidden />,
+        keys: keys('lock'),
+        disabled: !canEdit,
+        onSelect: edit.toggleLock,
+      },
+      {
+        id: 'open',
+        label: t('editorEdit.openDevice'),
+        icon: <ExternalLink aria-hidden />,
+        disabled: !card || card.draft === true,
+        separated: true,
+        onSelect: () => card && window.open(`/o/${orgId}/devices/${card.id}`, '_blank', 'noopener'),
+      },
+      {
+        id: 'remove',
+        label: t('editorDoc.removeFromDiagram'),
+        icon: <X aria-hidden />,
+        keys: keys('remove'),
+        disabled: !canEdit,
+        separated: true,
+        onSelect: edit.remove,
+      },
+      {
+        id: 'delete',
+        label: t('editorEdit.deleteFromInventory'),
+        icon: <Trash2 aria-hidden />,
+        keys: keys('deleteInventory'),
+        danger: true,
+        disabled: !canEdit || node?.refKind !== 'device',
+        onSelect: edit.requestDelete,
+      },
+    ]
+  }
+
   return (
     <div ref={root} className="contents">
       <Canvas
@@ -384,6 +511,10 @@ function Workspace({
         prefs={prefs}
         libraryOpen={libraryOpen}
         onDropItem={pick}
+        onMenu={(target, x, y) => {
+          const box = root.current?.parentElement?.getBoundingClientRect()
+          setMenu({ ...target, x: x - (box?.left ?? 0), y: y - (box?.top ?? 0) })
+        }}
       />
       <Toolbar
         orgId={orgId}
@@ -429,6 +560,25 @@ function Workspace({
           onView={onView}
           onPick={(item) => pick(item)}
           onClose={() => setQuick(false)}
+        />
+      )}
+      {menu && (
+        <NodeMenu
+          x={menu.x}
+          y={menu.y}
+          label={t('editorEdit.menu')}
+          items={menuItems(menu)}
+          onClose={() => setMenu(null)}
+        />
+      )}
+      {edit.deleting && (
+        <DeleteFromInventoryDialog
+          orgId={orgId}
+          diagramId={diagramId}
+          doc={doc}
+          target={edit.deleting}
+          onConfirm={edit.confirmDelete}
+          onClose={edit.cancelDelete}
         />
       )}
       {creating && (

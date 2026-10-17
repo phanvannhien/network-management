@@ -43,6 +43,7 @@ export function Canvas({
   prefs,
   libraryOpen,
   onDropItem,
+  onMenu,
 }: {
   diagramId: string
   canEdit: boolean
@@ -50,6 +51,8 @@ export function Canvas({
   /** The library covers the left of the canvas. */
   libraryOpen: boolean
   onDropItem: (item: LibraryItem, at: { x: number; y: number }) => void
+  /** Right click on a node, a cable or the background (screen coordinates). */
+  onMenu: (target: { kind: 'node' | 'edge' | 'pane'; id?: string }, x: number, y: number) => void
 }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -69,7 +72,10 @@ export function Canvas({
       // Stable data objects keep memoized nodes from re-rendering when another node moves.
       const cached = dataCache.get(n.id)
       const data =
-        cached && cached.refId === n.data.refId && cached.refKind === n.data.refKind
+        cached &&
+        cached.refId === n.data.refId &&
+        cached.refKind === n.data.refKind &&
+        cached.locked === n.data.locked
           ? cached
           : n.data
       dataCache.set(n.id, data)
@@ -80,7 +86,11 @@ export function Canvas({
     for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
     return out
   }, [doc, selection, measured, canEdit, dataCache])
-  const edges = useMemo(() => (doc ? toFlowEdges(doc) : []), [doc])
+  const edgeSelection = useDoc((s) => s.edgeSelection)
+  const edges = useMemo(
+    () => (doc ? toFlowEdges(doc, new Set(edgeSelection)) : []),
+    [doc, edgeSelection],
+  )
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -133,6 +143,34 @@ export function Canvas({
       edges={edges}
       nodeTypes={NODE_TYPES}
       onNodesChange={onNodesChange}
+      onEdgesChange={(changes) => {
+        const s = store.getState()
+        const next = new Set(s.edgeSelection)
+        let touched = false
+        for (const c of changes)
+          if (c.type === 'select') {
+            touched = true
+            if (c.selected) next.add(c.id)
+            else next.delete(c.id)
+          }
+        if (touched) s.setEdgeSelection([...next])
+      }}
+      onNodeContextMenu={(e, node) => {
+        e.preventDefault()
+        // Right-clicking outside the selection selects that node, like file managers do.
+        const s = store.getState()
+        if (!s.selection.includes(node.id)) s.setSelection([node.id])
+        onMenu({ kind: 'node', id: node.id }, e.clientX, e.clientY)
+      }}
+      onEdgeContextMenu={(e, edge) => {
+        e.preventDefault()
+        store.getState().setEdgeSelection([edge.id])
+        onMenu({ kind: 'edge', id: edge.id }, e.clientX, e.clientY)
+      }}
+      onPaneContextMenu={(e) => {
+        e.preventDefault()
+        onMenu({ kind: 'pane' }, e.clientX, e.clientY)
+      }}
       onNodeDragStart={() => {
         dragKey.current = `drag:${crypto.randomUUID()}`
       }}

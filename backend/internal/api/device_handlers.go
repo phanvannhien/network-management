@@ -397,6 +397,7 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 	out := apigen.Device{
 		Id: uuid.UUID(d.ID.Bytes), Hostname: d.Hostname, Type: apigen.DeviceType(d.Type), Vendor: d.Vendor, Model: d.Model,
+		TemplateId: optUUID(d.TemplateID),
 		PartNumber: d.PartNumber, SerialNumber: d.SerialNumber, AssetTag: d.AssetTag, Firmware: d.Firmware,
 		Role: apigen.DeviceRole(d.Role), Lifecycle: apigen.DeviceLifecycle(d.Lifecycle), Managed: d.Managed, OwnerName: d.OwnerName,
 		PoNumber: d.PoNumber, PurchaseDate: apiDate(d.PurchaseDate), WarrantyEnd: apiDate(d.WarrantyEnd),
@@ -981,6 +982,64 @@ func (s *Server) BulkDeleteDevices(ctx context.Context, req apigen.BulkDeleteDev
 		return nil, err
 	}
 	return apigen.BulkDeleteDevices200JSONResponse{Count: int64(len(ids))}, nil
+}
+
+// DeviceDeleteImpact lists what deleting devices takes along (ADR-033), for the confirmation before a delete from the
+// inventory: every link of the devices, the diagrams showing them, clusters losing a member, IPs released.
+func (s *Server) DeviceDeleteImpact(ctx context.Context, req apigen.DeviceDeleteImpactRequestObject) (apigen.DeviceDeleteImpactResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	if req.Body == nil || len(req.Body.Ids) == 0 || len(req.Body.Ids) > 500 {
+		return apigen.DeviceDeleteImpact400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Chọn từ 1 đến 500 thiết bị"}}, nil
+	}
+	ids := []pgtype.UUID{}
+	for _, id := range uniqueIDs(req.Body.Ids) {
+		ids = append(ids, pgUUID(id))
+	}
+	rows, err := s.q.DeviceDeleteImpact(ctx, store.DeviceDeleteImpactParams{OrganizationID: m.OrgID, Ids: ids})
+	if err != nil {
+		return nil, fmt.Errorf("delete impact: %w", err)
+	}
+	out := apigen.DeviceDeleteImpact{Devices: []apigen.DeviceImpact{}, Links: []apigen.Link{}, Diagrams: []apigen.DiagramShowing{}}
+	found := make([]string, 0, len(rows))
+	var linkRows []store.ListLinksRow
+	seen := map[pgtype.UUID]bool{}
+	for _, r := range rows {
+		out.Devices = append(out.Devices, apigen.DeviceImpact{ClusterMembersLeft: r.ClusterMembersLeft, ClusterName: r.ClusterName,
+			Hostname: r.Hostname, Id: uuid.UUID(r.ID.Bytes), IpCount: r.IpCount, SiteCode: r.SiteCode})
+		found = append(found, uuidStr(r.ID))
+		lr, err := s.q.ListLinks(ctx, store.ListLinksParams{OrganizationID: m.OrgID, EndID: r.ID})
+		if err != nil {
+			return nil, fmt.Errorf("delete impact links: %w", err)
+		}
+		for _, l := range lr {
+			if !seen[l.ID] {
+				seen[l.ID] = true
+				linkRows = append(linkRows, l)
+			}
+		}
+	}
+	if out.Links, err = visibleLinks(ctx, s.q, m, linkRows); err != nil {
+		return nil, err
+	}
+	if len(found) > 0 {
+		dgs, err := s.q.ListDiagramsShowing(ctx, store.ListDiagramsShowingParams{OrganizationID: m.OrgID, Ids: found})
+		if err != nil {
+			return nil, fmt.Errorf("delete impact diagrams: %w", err)
+		}
+		for _, d := range dgs {
+			refs := make([]openapi_types.UUID, 0, len(d.RefIds))
+			for _, id := range d.RefIds {
+				if u, err := uuid.Parse(id); err == nil {
+					refs = append(refs, u)
+				}
+			}
+			out.Diagrams = append(out.Diagrams, apigen.DiagramShowing{DeviceIds: refs, Id: uuid.UUID(d.ID.Bytes), Name: d.Name})
+		}
+	}
+	return apigen.DeviceDeleteImpact200JSONResponse(out), nil
 }
 
 // BulkUpdateDevices changes the given fields on every device, all or nothing; each device keeps its own

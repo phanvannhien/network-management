@@ -74,7 +74,8 @@ describe('diagram document store (P1-13)', () => {
     const req = s.getState().saveRequest()!
     expect(req.version).toBe(4)
     expect(req.changes!.map((c) => c.op)).toEqual(['createDevice', 'createLink'])
-    expect(req.view.nodes.map((n) => n.refId)).toEqual([FW, HIDDEN, SW])
+    // The node of an object deleted from the inventory (hidden ref) is dropped on load.
+    expect(req.view.nodes.map((n) => n.refId)).toEqual([FW, SW])
     expect(req.view.edges).toEqual([{ id: expect.any(String), linkId: LINK }])
     expect(s.getState().status).toBe('dirty')
   })
@@ -86,7 +87,7 @@ describe('diagram document store (P1-13)', () => {
     )
     s.getState().undo()
     expect(changesOf(s.getState().doc!)).toEqual([])
-    expect(s.getState().doc!.view.nodes).toHaveLength(2)
+    expect(s.getState().doc!.view.nodes).toHaveLength(1)
     s.getState().redo()
     expect(changesOf(s.getState().doc!)).toHaveLength(1)
   })
@@ -116,8 +117,7 @@ describe('diagram document store (P1-13)', () => {
     s.getState().undo()
     s.getState().dispatch(deleteDevice(FW))
     expect(changesOf(s.getState().doc!)).toEqual([{ op: 'deleteDevice', id: FW }])
-    // Hidden refs stay untouched.
-    expect(s.getState().doc!.view.nodes.map((n) => n.refId)).toEqual([HIDDEN])
+    expect(s.getState().doc!.view.nodes).toEqual([])
   })
 
   it('deleting a draft device drops its pending link instead of sending deletes', () => {

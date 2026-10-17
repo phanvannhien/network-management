@@ -286,6 +286,61 @@ func (q *Queries) DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFiel
 	return result.RowsAffected(), nil
 }
 
+const deviceDeleteImpact = `-- name: DeviceDeleteImpact :many
+SELECT d.id, d.hostname, COALESCE(s.code, '')::text AS site_code, COALESCE(c.name, '')::text AS cluster_name,
+       (SELECT count(*) FROM devices m
+        WHERE m.organization_id = d.organization_id AND m.cluster_id = d.cluster_id AND m.deleted_at IS NULL
+          AND NOT (m.id = ANY ($1::uuid[])))::int AS cluster_members_left,
+       (SELECT count(*) FROM ip_addresses ip WHERE ip.organization_id = d.organization_id AND ip.device_id = d.id)::int AS ip_count
+FROM devices d
+LEFT JOIN sites s ON s.id = d.site_id
+LEFT JOIN device_clusters c ON c.id = d.cluster_id
+WHERE d.organization_id = $2 AND d.id = ANY ($1::uuid[]) AND d.deleted_at IS NULL
+ORDER BY d.hostname
+`
+
+type DeviceDeleteImpactParams struct {
+	Ids            []pgtype.UUID
+	OrganizationID pgtype.UUID
+}
+
+type DeviceDeleteImpactRow struct {
+	ID                 pgtype.UUID
+	Hostname           string
+	SiteCode           string
+	ClusterName        string
+	ClusterMembersLeft int32
+	IpCount            int32
+}
+
+// What deleting devices takes along (ADR-033): cluster left behind and IPs released, per device.
+func (q *Queries) DeviceDeleteImpact(ctx context.Context, arg DeviceDeleteImpactParams) ([]DeviceDeleteImpactRow, error) {
+	rows, err := q.db.Query(ctx, deviceDeleteImpact, arg.Ids, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DeviceDeleteImpactRow
+	for rows.Next() {
+		var i DeviceDeleteImpactRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Hostname,
+			&i.SiteCode,
+			&i.ClusterName,
+			&i.ClusterMembersLeft,
+			&i.IpCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deviceFacetCounts = `-- name: DeviceFacetCounts :many
 SELECT 'site'::text AS facet, d.site_id::text AS value, count(*)::bigint AS n
 FROM devices d

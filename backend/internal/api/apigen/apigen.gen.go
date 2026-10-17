@@ -1519,19 +1519,22 @@ type Device struct {
 	RackName     string              `json:"rackName"`
 
 	// RackU Lowest U the device occupies
-	RackU        *int32              `json:"rackU"`
-	Role         DeviceRole          `json:"role"`
-	SerialNumber string              `json:"serialNumber"`
-	SiteCode     string              `json:"siteCode"`
-	SiteId       openapi_types.UUID  `json:"siteId"`
-	SiteName     string              `json:"siteName"`
-	Tags         []string            `json:"tags"`
-	Type         DeviceType          `json:"type"`
-	UHeight      int32               `json:"uHeight"`
-	UpdatedAt    time.Time           `json:"updatedAt"`
-	Vendor       string              `json:"vendor"`
-	Version      int32               `json:"version"`
-	WarrantyEnd  *openapi_types.Date `json:"warrantyEnd"`
+	RackU        *int32             `json:"rackU"`
+	Role         DeviceRole         `json:"role"`
+	SerialNumber string             `json:"serialNumber"`
+	SiteCode     string             `json:"siteCode"`
+	SiteId       openapi_types.UUID `json:"siteId"`
+	SiteName     string             `json:"siteName"`
+	Tags         []string           `json:"tags"`
+
+	// TemplateId Template the device was created from (its ports came from it); used when cloning
+	TemplateId  *openapi_types.UUID `json:"templateId"`
+	Type        DeviceType          `json:"type"`
+	UHeight     int32               `json:"uHeight"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	Vendor      string              `json:"vendor"`
+	Version     int32               `json:"version"`
+	WarrantyEnd *openapi_types.Date `json:"warrantyEnd"`
 }
 
 // DeviceBulkResult defines model for DeviceBulkResult.
@@ -1550,6 +1553,13 @@ type DeviceBulkUpdate struct {
 	Role       *DeviceRole          `json:"role,omitempty"`
 }
 
+// DeviceDeleteImpact defines model for DeviceDeleteImpact.
+type DeviceDeleteImpact struct {
+	Devices  []DeviceImpact   `json:"devices"`
+	Diagrams []DiagramShowing `json:"diagrams"`
+	Links    []Link           `json:"links"`
+}
+
 // DeviceHistory defines model for DeviceHistory.
 type DeviceHistory struct {
 	Entries []struct {
@@ -1566,6 +1576,19 @@ type DeviceHistory struct {
 // DeviceIds defines model for DeviceIds.
 type DeviceIds struct {
 	Ids []openapi_types.UUID `json:"ids"`
+}
+
+// DeviceImpact defines model for DeviceImpact.
+type DeviceImpact struct {
+	// ClusterMembersLeft members the cluster keeps after the deletion
+	ClusterMembersLeft int32 `json:"clusterMembersLeft"`
+
+	// ClusterName empty when the device is in no cluster
+	ClusterName string             `json:"clusterName"`
+	Hostname    string             `json:"hostname"`
+	Id          openapi_types.UUID `json:"id"`
+	IpCount     int32              `json:"ipCount"`
+	SiteCode    string             `json:"siteCode"`
 }
 
 // DeviceInput defines model for DeviceInput.
@@ -1869,6 +1892,13 @@ type DiagramSaveResult struct {
 
 	// IdMap tempId → real id of the objects created by this save
 	IdMap map[string]openapi_types.UUID `json:"idMap"`
+}
+
+// DiagramShowing defines model for DiagramShowing.
+type DiagramShowing struct {
+	DeviceIds []openapi_types.UUID `json:"deviceIds"`
+	Id        openapi_types.UUID   `json:"id"`
+	Name      string               `json:"name"`
 }
 
 // DiagramView defines model for DiagramView.
@@ -3269,6 +3299,11 @@ type BulkUpdateDevicesParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// DeviceDeleteImpactParams defines parameters for DeviceDeleteImpact.
+type DeviceDeleteImpactParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // DeleteDeviceParams defines parameters for DeleteDevice.
 type DeleteDeviceParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -3600,6 +3635,9 @@ type BulkDeleteDevicesJSONRequestBody = DeviceIds
 // BulkUpdateDevicesJSONRequestBody defines body for BulkUpdateDevices for application/json ContentType.
 type BulkUpdateDevicesJSONRequestBody = DeviceBulkUpdate
 
+// DeviceDeleteImpactJSONRequestBody defines body for DeviceDeleteImpact for application/json ContentType.
+type DeviceDeleteImpactJSONRequestBody = DeviceIds
+
 // UpdateDeviceJSONRequestBody defines body for UpdateDevice for application/json ContentType.
 type UpdateDeviceJSONRequestBody = DeviceUpdate
 
@@ -3836,6 +3874,9 @@ type ServerInterface interface {
 	// BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
 	// (POST /orgs/{orgId}/devices/bulk-update)
 	BulkUpdateDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkUpdateDevicesParams)
+	// DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
+	// (POST /orgs/{orgId}/devices/delete-impact)
+	DeviceDeleteImpact(w http.ResponseWriter, r *http.Request, orgId OrgId, params DeviceDeleteImpactParams)
 	// DeleteDevice Soft-delete a device
 	// (DELETE /orgs/{orgId}/devices/{deviceId})
 	DeleteDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params DeleteDeviceParams)
@@ -4322,6 +4363,12 @@ func (_ Unimplemented) BulkDeleteDevices(w http.ResponseWriter, r *http.Request,
 // BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
 // (POST /orgs/{orgId}/devices/bulk-update)
 func (_ Unimplemented) BulkUpdateDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params BulkUpdateDevicesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
+// (POST /orgs/{orgId}/devices/delete-impact)
+func (_ Unimplemented) DeviceDeleteImpact(w http.ResponseWriter, r *http.Request, orgId OrgId, params DeviceDeleteImpactParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7131,6 +7178,60 @@ func (siw *ServerInterfaceWrapper) BulkUpdateDevices(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BulkUpdateDevices(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeviceDeleteImpact operation middleware
+func (siw *ServerInterfaceWrapper) DeviceDeleteImpact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeviceDeleteImpactParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeviceDeleteImpact(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11074,6 +11175,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-update", wrapper.BulkUpdateDevices)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/delete-impact", wrapper.DeviceDeleteImpact)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
 	})
 	r.Group(func(r chi.Router) {
@@ -14540,6 +14644,86 @@ func (response BulkUpdateDevices409JSONResponse) VisitBulkUpdateDevicesResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeviceDeleteImpactRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params DeviceDeleteImpactParams
+	Body   *DeviceDeleteImpactJSONRequestBody
+}
+
+type DeviceDeleteImpactResponseObject interface {
+	VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error
+}
+
+type DeviceDeleteImpact200JSONResponse DeviceDeleteImpact
+
+func (response DeviceDeleteImpact200JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeviceDeleteImpact400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeviceDeleteImpact400JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeviceDeleteImpact401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeviceDeleteImpact401JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeviceDeleteImpact403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeviceDeleteImpact403JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeviceDeleteImpact404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeviceDeleteImpact404JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20086,6 +20270,9 @@ type StrictServerInterface interface {
 	// BulkUpdateDevices Change lifecycle / role / owner / tags of many devices at once (all or nothing)
 	// (POST /orgs/{orgId}/devices/bulk-update)
 	BulkUpdateDevices(ctx context.Context, request BulkUpdateDevicesRequestObject) (BulkUpdateDevicesResponseObject, error)
+	// DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
+	// (POST /orgs/{orgId}/devices/delete-impact)
+	DeviceDeleteImpact(ctx context.Context, request DeviceDeleteImpactRequestObject) (DeviceDeleteImpactResponseObject, error)
 	// DeleteDevice Soft-delete a device
 	// (DELETE /orgs/{orgId}/devices/{deviceId})
 	DeleteDevice(ctx context.Context, request DeleteDeviceRequestObject) (DeleteDeviceResponseObject, error)
@@ -21722,6 +21909,40 @@ func (sh *strictHandler) BulkUpdateDevices(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BulkUpdateDevicesResponseObject); ok {
 		if err := validResponse.VisitBulkUpdateDevicesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeviceDeleteImpact operation middleware
+func (sh *strictHandler) DeviceDeleteImpact(w http.ResponseWriter, r *http.Request, orgId OrgId, params DeviceDeleteImpactParams) {
+	var request DeviceDeleteImpactRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body DeviceDeleteImpactJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeviceDeleteImpact(ctx, request.(DeviceDeleteImpactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeviceDeleteImpact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeviceDeleteImpactResponseObject); ok {
+		if err := validResponse.VisitDeviceDeleteImpactResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
