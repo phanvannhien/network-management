@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useInterfaces } from '@/modules/inventory/devices'
+import { AddPorts } from './AddPorts'
 import {
   LINK_KINDS,
   LINK_MEDIA,
@@ -156,6 +157,13 @@ export function CableDialog({
       </FormField>
     )
   }
+  /** A saved device with no port a cable can take (imported without a template): offer to add them here. */
+  const needsPorts = (e: CableEnd, ports: ReturnType<typeof usePorts>) =>
+    e.kind === 'device' &&
+    !e.draft &&
+    noPortReason(e) === null &&
+    ports.loaded &&
+    !ports.list.some((p) => p.kind === 'physical')
   const nameOf = (list: ReturnType<typeof usePorts>['list'], id: string) =>
     list.find((p) => p.id === id)?.name ?? ''
   return (
@@ -215,6 +223,19 @@ export function CableDialog({
               </NativeSelect>
             )}
           </FormField>
+          {[
+            [a, portsA],
+            [b, portsB],
+          ].map(([e, ports]) =>
+            needsPorts(e as CableEnd, ports as ReturnType<typeof usePorts>) ? (
+              <AddPorts
+                key={(e as CableEnd).id}
+                orgId={orgId}
+                device={e as CableEnd}
+                model={doc.devices[(e as CableEnd).id]?.model ?? ''}
+              />
+            ) : null,
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             {endField(
               a,
@@ -306,5 +327,10 @@ function usePorts(orgId: string, doc: DocState, e: CableEnd, kind: LinkKind, sel
   // A device placed in this editor offers the ports its template will generate (temp ids, mapped at save).
   const raw: PortOption[] = e.draft ? (doc.newPorts?.[e.id] ?? []) : (ports.data ?? [])
   const list = sortPorts(raw)
-  return { list, taken: takenPorts(doc, e.id, links.data ?? [], self), kind }
+  return {
+    list,
+    taken: takenPorts(doc, e.id, links.data ?? [], self),
+    kind,
+    loaded: e.draft || ports.isSuccess,
+  }
 }

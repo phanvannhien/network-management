@@ -3,7 +3,14 @@ import { addAnnotation, moveAnnotation, removeAnnotations } from '../doc/command
 import { createDocStore } from '../doc/store'
 import type { DiagramDetail } from '../doc/types'
 import { toAnnotationNodes } from './flow'
-import { clusterBoxes, frameAt, nodesInFrame, rectAround, sharedSite } from './frames'
+import {
+  clusterBoxes,
+  frameAt,
+  nodesInFrame,
+  rectAround,
+  sharedSite,
+  siteFrameMembers,
+} from './frames'
 
 const HCM = 'site-hcm'
 const IDC = 'site-idc'
@@ -123,5 +130,18 @@ describe('frames (P1-19, ADR-032)', () => {
     const boxes = clusterBoxes(s.getState().doc!, {})
     expect(boxes).toHaveLength(1)
     expect(boxes[0]).toMatchObject({ clusterId: 'cl', name: 'CJIDC-HA', kind: 'ha_active_passive' })
+  })
+
+  it('site frames hold the devices of their site inside them (smallest frame wins)', () => {
+    const s = loaded()
+    s.getState().dispatch(
+      addAnnotation({ id: 'idc', kind: 'zone', x: 0, y: 0, width: 600, height: 300, siteId: IDC }),
+    )
+    s.getState().dispatch(
+      addAnnotation({ id: 'hcm', kind: 'zone', x: 0, y: 0, width: 1200, height: 800, siteId: HCM }),
+    )
+    const members = siteFrameMembers(s.getState().doc!, {})
+    // FW1/FW2 sit in both frames but belong to IDC; SW1 (HCM) in the big HCM frame.
+    expect(Object.fromEntries(members)).toEqual({ idc: ['na', 'nb'], hcm: ['nc'] })
   })
 })

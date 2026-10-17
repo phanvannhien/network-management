@@ -69,6 +69,30 @@ export function rectAround(doc: DocState, nodeIds: string[], sizes: Sizes): Rect
   return { x: x0 - PAD, y: y0 - PAD - TITLE, w: x1 - x0 + 2 * PAD, h: y1 - y0 + 2 * PAD + TITLE }
 }
 
+/**
+ * Devices of each site frame (P1-21 feedback): view nodes whose centre is in the frame and whose device belongs to
+ * the frame's site; with nested frames of one site the smallest wins. A drag keeps these frames wrapped around them.
+ */
+export function siteFrameMembers(doc: DocState, sizes: Sizes): Map<string, string[]> {
+  const frames = doc.view.annotations.filter((a) => a.kind === 'zone' && a.siteId)
+  const out = new Map<string, string[]>()
+  for (const n of doc.view.nodes) {
+    if (n.refKind !== 'device') continue
+    const site = doc.devices[n.refId]?.siteId
+    if (!site) continue
+    const { w, h } = sizeOf(sizes, n.id)
+    const cx = n.x + w / 2
+    const cy = n.y + h / 2
+    let best: Annotation | null = null
+    for (const f of frames)
+      if (f.siteId === site && inside(frameRect(f), cx, cy))
+        if (!best || (f.width ?? 0) * (f.height ?? 0) < (best.width ?? 0) * (best.height ?? 0))
+          best = f
+    if (best) out.set(best.id, [...(out.get(best.id) ?? []), n.id])
+  }
+  return out
+}
+
 /** The one site all the given devices share, if any (a frame around them is bound to it). */
 export function sharedSite(doc: DocState, nodeIds: string[]): string | null {
   const sites = new Set<string>()

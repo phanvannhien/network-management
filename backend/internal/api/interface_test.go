@@ -144,6 +144,17 @@ func TestTemplatesInterfacesAndManagementIP(t *testing.T) {
 	if status, body := fx.A.Do("POST", devicePath(org, swID)+"/apply-template", map[string]any{"templateId": tplID}); status != http.StatusOK || body["added"] != float64(0) {
 		t.Errorf("re-apply: %d %v", status, body)
 	}
+	// Port groups typed on the spot (no template): added once; both or neither is refused.
+	groups := []map[string]any{{"pattern": "Gi0/{n}", "start": 1, "count": 2, "media": "RJ45", "speed": "1G"}}
+	if status, body := fx.A.Do("POST", devicePath(org, swID)+"/apply-template", map[string]any{"ports": groups}); status != http.StatusOK || body["added"] != float64(2) {
+		t.Errorf("ad-hoc ports: %d %v", status, body)
+	}
+	if status, _ := fx.A.Do("POST", devicePath(org, swID)+"/apply-template", map[string]any{"ports": groups, "templateId": tplID}); status != http.StatusBadRequest {
+		t.Errorf("template and ports together: %d", status)
+	}
+	if status, _ := fx.A.Do("POST", devicePath(org, swID)+"/apply-template", map[string]any{}); status != http.StatusBadRequest {
+		t.Errorf("neither template nor ports: %d", status)
+	}
 
 	// Virtual interfaces, LAG membership and validation.
 	ifPath := devicePath(org, swID) + "/interfaces"

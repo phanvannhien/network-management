@@ -774,13 +774,33 @@ func (s *Server) ApplyDeviceTemplate(ctx context.Context, req apigen.ApplyDevice
 		if out.code = code; err != nil || code != 0 {
 			return orRollback(err)
 		}
-		tpl, err := q.GetDeviceTemplate(ctx, store.GetDeviceTemplateParams{ID: pgUUID(req.Body.TemplateId), OrganizationID: m.OrgID})
-		if errors.Is(err, pgx.ErrNoRows) {
-			out.bad = msgTemplateNotFound
+		b := req.Body
+		var tpl store.DeviceTemplate
+		switch {
+		case (b.TemplateId == nil) == (b.Ports == nil || len(*b.Ports) == 0):
+			out.bad = "Chọn một template hoặc khai báo nhóm cổng"
 			return errRollback
-		}
-		if err != nil {
-			return fmt.Errorf("load template: %w", err)
+		case b.Ports != nil:
+			// Port groups typed on the spot (a device imported without a template, P1-21).
+			if _, msg := expandPorts(*b.Ports, max(dev.ClusterMemberNo.Int32, 1)); msg != "" {
+				out.bad = msg
+				return errRollback
+			}
+			raw, err := json.Marshal(*b.Ports)
+			if err != nil {
+				return fmt.Errorf("encode ports: %w", err)
+			}
+			tpl = store.DeviceTemplate{Name: "", Ports: raw}
+		default:
+			t, err := q.GetDeviceTemplate(ctx, store.GetDeviceTemplateParams{ID: pgUUID(*b.TemplateId), OrganizationID: m.OrgID})
+			if errors.Is(err, pgx.ErrNoRows) {
+				out.bad = msgTemplateNotFound
+				return errRollback
+			}
+			if err != nil {
+				return fmt.Errorf("load template: %w", err)
+			}
+			tpl = t
 		}
 		// A stack member gets its own port numbers ({m}, ADR-027).
 		if added, err = generatePorts(ctx, q, m, dev.ID, tpl, dev.ClusterMemberNo.Int32); err != nil {

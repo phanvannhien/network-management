@@ -5351,11 +5351,16 @@ components:
 
     ApplyTemplate:
       type: object
-      required: [templateId]
+      description: a template, or port groups typed on the spot (same format as a template's) — exactly one of them
       properties:
         templateId:
           type: string
           format: uuid
+        ports:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PortGroup'
 
     ApplyTemplateResult:
       type: object

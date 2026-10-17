@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — P1-21 bổ sung: thêm cổng tại chỗ, khung site ôm thiết bị
+- Đã làm (theo phản hồi sau khi nhập thử trên máy dev):
+  - **Thiết bị nhập không có template thì không có cổng**: ISR4331, CBS220, C1300 chưa có template trong tổ chức nên chỉ có
+    `Vlan1` (ảo), vì vậy hộp nối dây chỉ hiện "Vlan1 (không cắm được)". Sửa:
+    - Hộp **Nối/Sửa dây** và panel **Thuộc tính → Cổng**: thiết bị chưa có cổng vật lý hiện khung "chưa có cổng để cắm dây",
+      kèm **áp dụng template cùng loại** hoặc **"Thêm các cổng này"** — cổng đoán theo model (C1300-24T-4G → 24 cổng đồng
+      GigabitEthernet1/0/1–24 + 4 SFP 1/0/25–28; CBS220 → GigabitEthernet1–28; ISR4331 → Gi0/0/0–2; FortiGate → wan/port), sửa
+      được mẫu tên/số lượng/loại/tốc độ. Ghi vào kho ngay (như IPAM trong panel, ADR-034); dây vẫn lưu cùng sơ đồ.
+    - Backend: `apply-template` nhận thêm `ports` (nhóm cổng khai tại chỗ, cùng định dạng template) — đúng một trong hai.
+    - Màn **Nhập Excel** cảnh báo trước các model chưa có template (dòng xem trước + hộp cảnh báo, link tới trang Template).
+  - **Khung site ôm thiết bị khi kéo**: kéo thiết bị đang nằm trong khung của chính site nó → khung tự co giãn để ôm trọn các
+    thiết bị của site trong khung (khung lồng nhau: khung nhỏ nhất). Cùng một bước hoàn tác với lần kéo.
+- Test / cách kiểm tra: `make check` pass (Go: nhóm cổng tại chỗ, từ chối khi có cả template lẫn cổng hoặc không có gì; vitest 276:
+  đoán cổng theo model, thành viên khung theo site). Chromium (môi trường riêng): nhập 8 dòng → vẽ sơ đồ → kéo switch HCM ra
+  ngoài, khung HCM giãn theo; panel thêm 28 cổng cho C1300; hộp nối dây hiện GigabitEthernet1/0/x, đầu kia hiện "Thêm các cổng".
+- Còn dở / lỗi đã biết: đoán tên cổng theo model chỉ là đề xuất (cần xác nhận); thêm cổng cho cả loạt thiết bị cùng model một lần
+  — nên tạo template rồi áp dụng (trang thiết bị) — chưa có nút "áp dụng cho mọi thiết bị cùng model".
+- Câu hỏi cho người dùng: như mục P1-21.
+- Đề xuất quyết định cần chốt: khung tự ôm khi kéo có nên **thu nhỏ** khi kéo thiết bị vào trong (đang: vừa khít các thiết bị của
+  site trong khung, tức có thu nhỏ)?
+- Task tiếp theo đề xuất: P1-22 Export.
+
 ## 2026-10-17 — P1-21 Import Excel thiết bị
 - Đã làm:
   - **Trang "Nhập Excel"** (Kho → Thiết bị → nút "Nhập Excel"), các bước trên một trang:

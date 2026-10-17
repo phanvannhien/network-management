@@ -29,7 +29,7 @@ import {
   toFlowNodes,
   type RefData,
 } from './flow'
-import { arrowOrigin, clusterBoxes, nodesInFrame } from './frames'
+import { arrowOrigin, clusterBoxes, nodesInFrame, rectAround, siteFrameMembers } from './frames'
 import { EDGE_TYPES, NODE_TYPES } from './nodeTypes'
 import type { EditorPrefs } from './prefs'
 
@@ -87,6 +87,10 @@ export function Canvas({
   const selection = useDoc((s) => s.selection)
   const [initialViewport] = useState(() => startViewport(diagramId, store.getState().viewport))
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
+  const measuredRef = useRef(measured)
+  measuredRef.current = measured
+  /** Site frames kept around their devices during a device drag: frame id → member node ids. */
+  const fitPlan = useRef<Map<string, string[]> | null>(null)
   const [dataCache] = useState(() => new Map<string, RefData>())
   const dragKey = useRef<string | null>(null)
   /** One undo step per resize gesture (NodeResizer reports `resizing: false` when it ends). */
@@ -216,7 +220,28 @@ export function Canvas({
         else if (c.type === 'select') picked.set(c.id, c.selected)
         else if (c.type === 'dimensions' && c.dimensions) sizes[c.id] = c.dimensions
       }
-      if (moves.length > 0) dispatch(moveNodes(moves, dragKey.current ?? undefined))
+      if (moves.length > 0) {
+        dispatch(moveNodes(moves, dragKey.current ?? undefined))
+        // A site frame follows its devices (same undo step as the drag).
+        const after = store.getState().doc
+        if (fitPlan.current && after)
+          for (const [frameId, members] of fitPlan.current) {
+            const r = rectAround(after, members, measuredRef.current)
+            if (r)
+              dispatch(
+                updateAnnotation(
+                  frameId,
+                  {
+                    x: Math.round(r.x),
+                    y: Math.round(r.y),
+                    width: Math.round(r.w),
+                    height: Math.round(r.h),
+                  },
+                  dragKey.current ?? undefined,
+                ),
+              )
+          }
+      }
       if (picked.size > 0) {
         const next = new Set(current)
         for (const [id, on] of picked) {
@@ -291,6 +316,17 @@ export function Canvas({
       onNodeDragStart={(e, node) => {
         dragKey.current = `drag:${crypto.randomUUID()}`
         const s = store.getState()
+        // Dragging devices: the site frames holding any of them will wrap around their devices.
+        fitPlan.current = null
+        if (s.doc && !isOverlayId(node.id)) {
+          const moved = new Set([node.id, ...s.selection])
+          const plan = new Map(
+            [...siteFrameMembers(s.doc, measured)].filter(([, members]) =>
+              members.some((m) => moved.has(m)),
+            ),
+          )
+          if (plan.size > 0) fitPlan.current = plan
+        }
         const a = isAnnotationId(node.id)
           ? s.doc?.view.annotations.find((x) => ANN + x.id === node.id)
           : undefined
@@ -312,6 +348,7 @@ export function Canvas({
       }}
       onNodeDragStop={() => {
         dragKey.current = null
+        fitPlan.current = null
         frameDrag.current = null
       }}
       onMoveEnd={(_e, vp: Viewport) => {

@@ -1283,9 +1283,10 @@ type AdminUserList struct {
 	Users []AdminUser `json:"users"`
 }
 
-// ApplyTemplate defines model for ApplyTemplate.
+// ApplyTemplate a template, or port groups typed on the spot (same format as a template's) — exactly one of them
 type ApplyTemplate struct {
-	TemplateId openapi_types.UUID `json:"templateId"`
+	Ports      *[]PortGroup        `json:"ports,omitempty"`
+	TemplateId *openapi_types.UUID `json:"templateId,omitempty"`
 }
 
 // ApplyTemplateResult defines model for ApplyTemplateResult.

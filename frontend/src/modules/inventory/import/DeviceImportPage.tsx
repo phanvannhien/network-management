@@ -213,6 +213,7 @@ export function DeviceImportPage() {
   )
   const inFile = useMemo(() => fileProblems(plan, clusters), [plan, clusters])
   const clusterOf = (line: number) => clusters.find((c) => c.accepted && c.lines.includes(line))
+  const noTemplate = [...new Set(plan.filter((p) => !p.templateId && p.model).map((p) => p.model))]
   const ready = plan.filter((p) => p.problems.length === 0 && !inFile.has(p.line))
 
   const requestBody = (rowsIn: PlannedRow[], dryRun: boolean, ids: Record<string, string>) => {
@@ -604,6 +605,19 @@ export function DeviceImportPage() {
                 </NativeSelect>
               )}
             </FormField>
+            {noTemplate.length > 0 && (
+              <Alert className="max-w-3xl">
+                <AlertTitle>
+                  {t('deviceImport.noTemplateTitle', { models: noTemplate.join(', ') })}
+                </AlertTitle>
+                <AlertDescription>
+                  {t('deviceImport.noTemplateBody')}{' '}
+                  <Link className="underline" to={`/o/${orgId}/device-templates`} target="_blank">
+                    {t('deviceImport.openTemplates')}
+                  </Link>
+                </AlertDescription>
+              </Alert>
+            )}
             {clusters.length > 0 && (
               <div className="max-w-3xl space-y-1 rounded-md border border-border p-3">
                 <h3 className="text-sm font-medium">{t('deviceImport.clusters')}</h3>
@@ -683,9 +697,13 @@ export function DeviceImportPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {p.model}
-                          {p.templateId && (
+                          {p.templateId ? (
                             <span className="block text-xs text-muted-foreground">
                               {t('deviceImport.withTemplate')}
+                            </span>
+                          ) : (
+                            <span className="block text-xs text-status-warning">
+                              {t('deviceImport.noTemplate')}
                             </span>
                           )}
                         </td>

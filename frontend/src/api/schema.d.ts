@@ -2593,9 +2593,11 @@ export interface components {
         DeviceTemplateList: {
             templates: components["schemas"]["DeviceTemplate"][];
         };
+        /** @description a template, or port groups typed on the spot (same format as a template's) — exactly one of them */
         ApplyTemplate: {
             /** Format: uuid */
-            templateId: string;
+            templateId?: string;
+            ports?: components["schemas"]["PortGroup"][];
         };
         ApplyTemplateResult: {
             /** Format: int64 */

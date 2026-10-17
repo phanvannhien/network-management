@@ -39,6 +39,7 @@ import type { DocState } from '../doc/types'
 import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId } from './flow'
 import { LABEL_COLORS, LABEL_PRESETS, presetOf } from './labels'
+import { AddPorts } from './AddPorts'
 import { PortIpam } from './PortIpam'
 import { sortPorts, takenPorts } from './wiring'
 
@@ -551,6 +552,22 @@ function PortsSection({
   return (
     <Section title={t('panel.ports', { used: used.length, total: list.length })}>
       {device && <p className="text-xs text-muted-foreground">{t('panel.portsHint')}</p>}
+      {device &&
+        ports.isSuccess &&
+        !list.some((p) => p.kind === 'physical') &&
+        device.type !== 'provider_cloud' && (
+          <AddPorts
+            orgId={orgId}
+            device={{
+              kind: 'device',
+              id: device.id,
+              name: device.hostname,
+              type: device.type,
+              draft: false,
+            }}
+            model={device.model}
+          />
+        )}
       {list.length === 0 ? (
         <p className="text-muted-foreground">{t('panel.noPorts')}</p>
       ) : (
