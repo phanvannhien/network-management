@@ -56,8 +56,22 @@ export function toFlowEdges(
       source,
       target,
       type: 'cable',
-      className: `ntb-edge-${l.kind}${l.draft ? ' ntb-edge-draft' : ''}`,
-      data: { linkId: l.id, aPort: l.aPort, bPort: l.bPort, index, count: 0, pair },
+      className: [
+        `ntb-edge-${l.kind}`,
+        l.draft && 'ntb-edge-draft',
+        l.status && l.status !== 'up' && `ntb-link-${l.status}`,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      data: {
+        linkId: l.id,
+        aPort: l.aPort,
+        bPort: l.bPort,
+        status: l.status ?? 'up',
+        index,
+        count: 0,
+        pair,
+      },
       selected: selection.has(e.id),
     })
   }

@@ -137,7 +137,25 @@ describe('cables on the canvas (P1-17)', () => {
       ['cable', 0, 2],
       ['cable', 1, 2],
     ])
-    expect(edges[0]!.data).toMatchObject({ aPort: 'port1', bPort: 'GigabitEthernet1/0/1' })
+    expect(edges[0]!.data).toMatchObject({
+      aPort: 'port1',
+      bPort: 'GigabitEthernet1/0/1',
+      status: 'up',
+    })
+    s.getState().dispatch(
+      createLink(
+        {
+          a: { kind: 'device', id: FW },
+          b: { kind: 'device', id: SW },
+          kind: 'ethernet',
+          status: 'down',
+        },
+        'l3',
+      ),
+    )
+    const down = toFlowEdges(s.getState().doc!).find((e) => e.data!.linkId === 'l3')!
+    expect(down.className).toContain('ntb-link-down')
+    expect(down.data!.status).toBe('down')
   })
 
   it('a new device sends its template port temp ids so cables drawn before saving keep their ports', () => {

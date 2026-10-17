@@ -279,6 +279,13 @@
 .react-flow__edge.ntb-edge-cellular .react-flow__edge-path {
   stroke-dasharray: 4 4 1 4;
 }
+/* Design status of a cable (with a text badge on the line, CableEdge). */
+.react-flow__edge.ntb-link-down .react-flow__edge-path {
+  stroke: var(--status-down);
+}
+.react-flow__edge.ntb-link-planned .react-flow__edge-path {
+  opacity: 0.45;
+}
 .react-flow__edge.ntb-edge-draft .react-flow__edge-path {
   opacity: 0.7;
 }

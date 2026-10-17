@@ -1001,6 +1001,8 @@ export const en: Strings = {
     takenBy: 'cabled to {{name}}',
     later:
       'Leave a port empty if unknown; double-click the cable on the diagram to assign it later.',
+    down: 'DOWN',
+    planned: 'Planned',
     groupToGroup: 'Two endpoint groups do not connect directly — connect a group to a switch, AP…',
   },
   library: {

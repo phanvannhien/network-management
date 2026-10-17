@@ -32,6 +32,7 @@ function Frame({
   icon,
   label,
   detail,
+  mono = false,
 }: {
   selected: boolean
   connectable?: boolean
@@ -41,6 +42,8 @@ function Frame({
   icon: ReactNode
   label: string
   detail?: string
+  /** The detail is an address (monospace). */
+  mono?: boolean
 }) {
   const { t } = useTranslation()
   const showDetails = useShowDetails()
@@ -66,9 +69,17 @@ function Frame({
           />
         ))}
       {icon}
-      <span className="w-full truncate text-center text-xs font-medium">{label}</span>
+      {/* Long hostnames (c1300-vn-foodville-hcm-162-4) wrap to two lines instead of being cut. */}
+      <span className="line-clamp-2 w-full text-center text-xs leading-tight font-medium [overflow-wrap:anywhere]">
+        {label}
+      </span>
       {showDetails && detail && (
-        <span className="w-full truncate text-center text-[10px] text-muted-foreground">
+        <span
+          className={cn(
+            'w-full truncate text-center text-[10px] text-muted-foreground',
+            mono && 'font-mono',
+          )}
+        >
           {detail}
         </span>
       )}
@@ -99,16 +110,19 @@ function DeviceNodeImpl({ data, selected, isConnectable }: NodeProps<RefFlowNode
   const card = useDoc((s) => s.doc?.devices[data.refId])
   if (!card) return <HiddenFrame selected={selected} />
   const type = t(`devices.types.${card.type}`)
+  // The IP without its prefix length keeps the node compact; the tooltip shows it in full.
+  const ip = card.mgmtIp?.split('/')[0] ?? ''
   return (
     <Frame
       selected={selected}
       connectable={isConnectable}
       locked={data.locked}
       draft={card.draft === true}
-      title={`${card.hostname} · ${type}`}
+      title={[card.hostname, type, card.mgmtIp].filter(Boolean).join(' · ')}
       icon={<DeviceIcon typeId={card.type} size={32} />}
       label={card.hostname}
-      detail={type}
+      detail={ip || type}
+      mono={ip !== ''}
     />
   )
 }

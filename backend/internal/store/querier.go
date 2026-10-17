@@ -144,6 +144,7 @@ type Querier interface {
 	// also take the device, which the API has already checked for visibility.
 	ListDeviceTemplates(ctx context.Context, organizationID pgtype.UUID) ([]DeviceTemplate, error)
 	// Devices (P1-08, SRS §4.1). Every query takes organization_id. A device's category is its site's (ADR-032).
+	// mgmt_ip: the primary IP of the device's management interface, else its cluster's shared management IP (ADR-027).
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
 	// Devices placed on a diagram, with the same visibility as GetDevice.
 	ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error)

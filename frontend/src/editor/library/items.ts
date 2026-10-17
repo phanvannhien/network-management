@@ -8,7 +8,10 @@ export type DeviceType = components['schemas']['DeviceType']
 export type LibraryItem =
   | { kind: 'type'; type: DeviceType }
   | { kind: 'template'; templateId: string; type: DeviceType }
-  | { kind: 'device'; device: { id: string; hostname: string; type: DeviceType; siteId: string } }
+  | {
+      kind: 'device'
+      device: { id: string; hostname: string; type: DeviceType; siteId: string; mgmtIp?: string }
+    }
 
 export const LIBRARY_MIME = 'application/x-ntb-library'
 
@@ -33,6 +36,7 @@ export function decodeItem(raw: string): LibraryItem | null {
           hostname: d.hostname as string,
           type: d.type as DeviceType,
           siteId: d.siteId as string,
+          mgmtIp: typeof d.mgmtIp === 'string' ? d.mgmtIp : undefined,
         },
       }
   } catch {

@@ -5,6 +5,24 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-17 — Sơ đồ: IP trên thiết bị, trạng thái dây; dữ liệu mẫu CJ Foodville
+- Đã làm:
+  - Mỗi thiết bị trên sơ đồ hiện **IP quản trị** dưới hostname (bỏ /mask cho gọn, tooltip có đủ); hostname dài **xuống 2 dòng**
+    thay vì bị cắt. Thành viên cụm chưa có IP quản trị riêng hiện **IP của cụm** (VIP của cặp HA) ở sơ đồ, danh sách và trang
+    thiết bị (query `mgmt_ip` lấy `device_clusters.mgmt_ip` khi thiếu).
+  - **Trạng thái thiết kế của dây** trên sơ đồ: Down = nét đỏ + nhãn "✕ DOWN" (hiện cả khi zoom nhỏ), Dự kiến = mờ + nhãn; chọn
+    trạng thái ngay trong hộp nối/sửa dây. Trạng thái thật Up/Down từ giám sát SNMP là Phase 3.
+  - Script `docs/demo/he-thong/seed-dev-cj.sh` nạp mẫu CJ Foodville (theo `docs/demo`) vào tổ chức CJ trên máy dev **qua API
+    với phiên đăng nhập của người dùng** (cookie `ntb_session`): dùng lại danh mục FOODVILLE, 3 site, template FortiGate có sẵn;
+    cập nhật VPN_CJIDC / ISR4331 theo Excel (ISR về site HaNoi), thêm 8 thiết bị, cụm HA `CJIDC-HA`, 9 dây, sơ đồ mới
+    "Foodville — dữ liệu mẫu" (không đụng sơ đồ "Topology Foodville"). Đã chạy thử trên bản sao cấu trúc ở môi trường riêng.
+    Không tự tạo phiên trong DB của người dùng (bị chặn đúng — giả danh tài khoản).
+- Test / cách kiểm tra: `make check` pass (Go: `TestClusterMemberShowsClusterMgmtIP`; vitest: IP trên node, dây Down).
+- Còn dở / lỗi đã biết: script chỉ nên chạy một lần (lần hai báo trùng dây/sơ đồ).
+- Câu hỏi cho người dùng: chạy script với cookie phiên của mình.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P1-18 Panel thuộc tính.
+
 ## 2026-10-17 — P1-17 Nối dây
 - Đã làm:
   - **Kéo dây** từ điểm nối ở mép thiết bị (hiện khi rê chuột) sang thiết bị khác, hoặc **chế độ nối** (phím L, nút toolbar, menu

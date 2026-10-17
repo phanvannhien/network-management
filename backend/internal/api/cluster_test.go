@@ -199,3 +199,19 @@ func TestClusterPermissions(t *testing.T) {
 		t.Errorf("viewer lists %v", list)
 	}
 }
+
+// A member without its own management interface shows the cluster's shared management IP (an HA pair's VIP).
+func TestClusterMemberShowsClusterMgmtIP(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	idc := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "IDC", "name": "IDC"}))
+	cl := idOf(t, mustCreate(t, fx.A, clustersPath(org), map[string]any{"kind": "ha_active_passive", "name": "HA", "hostname": "FW", "mgmtIp": "10.136.4.101/24", "siteId": idc}))
+	fw := mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "FW-A", "type": "firewall", "siteId": idc, "clusterId": cl, "clusterRole": "primary", "clusterMemberNo": 1})
+	if fw["mgmtIp"] != "10.136.4.101/24" {
+		t.Errorf("member mgmtIp = %v, want the cluster's", fw["mgmtIp"])
+	}
+	alone := mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "FW-B", "type": "firewall", "siteId": idc})
+	if alone["mgmtIp"] != "" {
+		t.Errorf("device without cluster or mgmt: %v", alone["mgmtIp"])
+	}
+}

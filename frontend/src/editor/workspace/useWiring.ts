@@ -128,12 +128,13 @@ export function useWiring({
           aPort: base.a.interfaceId ?? '',
           bPort: base.b.interfaceId ?? '',
           medium: base.medium ?? '',
+          status: base.status ?? 'up',
         },
       },
     })
   }
 
-  const save = (input: Omit<LinkInput, 'status'>, ports: PortNames) => {
+  const save = (input: LinkInput, ports: PortNames) => {
     const o = open
     if (!o) return
     const s = store.getState()

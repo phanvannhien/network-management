@@ -84,7 +84,13 @@ export function QuickAdd({
                   onSelect={() =>
                     pick({
                       kind: 'device',
-                      device: { id: d.id, hostname: d.hostname, type: d.type, siteId: d.siteId },
+                      device: {
+                        id: d.id,
+                        hostname: d.hostname,
+                        type: d.type,
+                        siteId: d.siteId,
+                        mgmtIp: d.mgmtIp,
+                      },
                     })
                   }
                 >

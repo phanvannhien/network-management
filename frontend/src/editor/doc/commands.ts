@@ -200,6 +200,7 @@ export function createLink(
         bId: input.b.id,
         kind: input.kind,
         ...ports,
+        status: input.status ?? 'up',
         draft: true,
       }
       d.view.edges.push({ id: newId(), linkId: tempId })
@@ -216,7 +217,13 @@ export function updateLink(id: string, update: LinkUpdate, ports?: PortNames): D
       else d.linkEdits[id] = update
       const card = d.links[id]
       if (card)
-        Object.assign(card, { aId: update.a.id, bId: update.b.id, kind: update.kind, ...ports })
+        Object.assign(card, {
+          aId: update.a.id,
+          bId: update.b.id,
+          kind: update.kind,
+          status: update.status ?? card.status,
+          ...ports,
+        })
     },
   }
 }

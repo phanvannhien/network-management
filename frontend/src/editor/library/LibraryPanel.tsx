@@ -241,7 +241,13 @@ function InventoryDevices({
             key={d.id}
             item={{
               kind: 'device',
-              device: { id: d.id, hostname: d.hostname, type: d.type, siteId: d.siteId },
+              device: {
+                id: d.id,
+                hostname: d.hostname,
+                type: d.type,
+                siteId: d.siteId,
+                mgmtIp: d.mgmtIp,
+              },
             }}
             icon={icon(d.type)}
             title={d.hostname}

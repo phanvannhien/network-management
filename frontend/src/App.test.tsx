@@ -2222,6 +2222,7 @@ describe('diagrams (P1-13)', () => {
   const FW = {
     id: 'dev-1',
     hostname: 'AGRI-BD-FW01',
+    mgmtIp: '10.72.114.1/24',
     type: 'firewall',
     siteId: AGRI_SITE.id,
     siteCode: 'VPM-AGRI-BD01',
@@ -2317,6 +2318,8 @@ describe('diagrams (P1-13)', () => {
     expect(screen.getByRole('button', { name: 'Mở rộng menu' })).toBeInTheDocument()
     const canvas = screen.getByRole('application')
     expect(within(canvas).getByText('AGRI-BD-FW01')).toBeInTheDocument()
+    // Each device shows its management IP (without the prefix length) under the hostname.
+    expect(within(canvas).getByText('10.72.114.1')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Lưu/ })).toBeDisabled()
     // P1-15: the library is open; its inventory tab offers what is not drawn yet.
     const library = screen.getByRole('complementary', { name: 'Thư viện' })

@@ -15,11 +15,13 @@ import { useInterfaces } from '@/modules/inventory/devices'
 import {
   LINK_KINDS,
   LINK_MEDIA,
+  LINK_STATUSES,
   portFits,
   sharesPort,
   useLinks,
   type LinkInput,
   type LinkKind,
+  type LinkStatus,
 } from '@/modules/inventory/links'
 import type { PortNames } from '../doc/commands'
 import type { DocState } from '../doc/types'
@@ -50,6 +52,7 @@ export interface CableValue {
   aPort: string
   bPort: string
   medium: string
+  status: LinkStatus
 }
 
 /**
@@ -73,7 +76,7 @@ export function CableDialog({
   initial?: CableValue
   /** The cable being edited (its own ports are not "taken"). */
   self?: string
-  onSave: (input: Omit<LinkInput, 'status'>, ports: PortNames) => void
+  onSave: (input: LinkInput, ports: PortNames) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -89,6 +92,7 @@ export function CableDialog({
       aPort: '',
       bPort: '',
       medium: '',
+      status: 'up',
     },
   )
   // Once the user picks the kind, choosing ports no longer re-suggests it.
@@ -169,6 +173,7 @@ export function CableDialog({
                 b: { kind: b.kind, id: b.id, interfaceId: bPort || null },
                 kind: v.kind,
                 medium: v.medium.trim(),
+                status: v.status,
               },
               { aPort: nameOf(portsA.list, aPort), bPort: nameOf(portsB.list, bPort) },
             )
@@ -243,6 +248,21 @@ export function CableDialog({
                   ))}
                 </datalist>
               </>
+            )}
+          </FormField>
+          <FormField label={t('links.status')} guide={t('guides.linkStatus')}>
+            {(p) => (
+              <NativeSelect
+                {...p}
+                value={v.status}
+                onChange={(e) => setV({ ...v, status: e.target.value as LinkStatus })}
+              >
+                {LINK_STATUSES.map((st) => (
+                  <option key={st} value={st}>
+                    {t(`links.statuses.${st}`)}
+                  </option>
+                ))}
+              </NativeSelect>
             )}
           </FormField>
           <p className="text-xs text-muted-foreground">{t('cable.later')}</p>

@@ -8,6 +8,8 @@ import {
   type InternalNode,
 } from '@xyflow/react'
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
 import { borderPoint, parallelOffset, type Pt } from './flow'
 import { shortPort } from './wiring'
 
@@ -18,6 +20,7 @@ export interface CableData extends Record<string, unknown> {
   linkId: string
   aPort: string
   bPort: string
+  status: 'up' | 'down' | 'planned'
   /** Position among the cables of the same node pair, and their count. */
   index: number
   count: number
@@ -76,13 +79,38 @@ function CableEdgeImpl({
         markerEnd={markerEnd}
         interactionWidth={interactionWidth ?? 16}
       />
-      {showLabels && (data?.aPort || data?.bPort) && (
+      {(showLabels || data?.status === 'down') && (
         <EdgeLabelRenderer>
-          {data?.aPort && <PortLabel text={shortPort(data.aPort)} x={la.x} y={la.y} />}
-          {data?.bPort && <PortLabel text={shortPort(data.bPort)} x={lb.x} y={lb.y} />}
+          {showLabels && data?.aPort && (
+            <PortLabel text={shortPort(data.aPort)} x={la.x} y={la.y} />
+          )}
+          {showLabels && data?.bPort && (
+            <PortLabel text={shortPort(data.bPort)} x={lb.x} y={lb.y} />
+          )}
+          {/* Colour is never the only signal (DESIGN.md): a down / planned cable says so in words. */}
+          {data && data.status !== 'up' && (
+            <StatusBadge status={data.status} x={(s.x + t.x) / 2} y={(s.y + t.y) / 2} />
+          )}
         </EdgeLabelRenderer>
       )}
     </>
+  )
+}
+
+function StatusBadge({ status, x, y }: { status: 'down' | 'planned'; x: number; y: number }) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className={cn(
+        'nodrag nopan pointer-events-none absolute rounded-sm border bg-background px-1 text-[10px] font-medium',
+        status === 'down'
+          ? 'border-status-down text-status-down'
+          : 'border-border-control text-muted-foreground',
+      )}
+      style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
+    >
+      {status === 'down' ? `✕ ${t('cable.down')}` : t('cable.planned')}
+    </div>
   )
 }
 

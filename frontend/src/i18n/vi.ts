@@ -994,6 +994,8 @@ export const vi = {
     unfit: 'không cắm được',
     takenBy: 'đang nối {{name}}',
     later: 'Chưa biết cổng thì để trống; nhấp đúp vào dây trên sơ đồ để gán sau.',
+    down: 'DOWN',
+    planned: 'Dự kiến',
     groupToGroup:
       'Hai nhóm thiết bị đầu cuối không nối trực tiếp với nhau — nối nhóm vào switch, AP…',
   },

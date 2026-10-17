@@ -30,6 +30,8 @@ export interface DeviceCard {
   siteId: string
   /** Cluster (stack / HA pair) of the device: a cable between members suggests "stack". */
   clusterId?: string | null
+  /** Management IP (with prefix), shown under the hostname (SRS §6.3 label {hostname}\n{mgmtIp}). */
+  mgmtIp?: string
   /** Created in the editor, not saved yet. */
   draft?: boolean
 }
@@ -41,6 +43,8 @@ export interface LinkCard {
   kind: Link['kind']
   aPort: string
   bPort: string
+  /** Design status (Phase 3 adds the live one from monitoring). */
+  status?: Link['status']
   draft?: boolean
 }
 
@@ -72,6 +76,7 @@ export function linkCard(l: Link): LinkCard {
     kind: l.kind,
     aPort: l.a.interfaceName,
     bPort: l.b.interfaceName,
+    status: l.status,
   }
 }
 
@@ -88,6 +93,7 @@ export function docFromDetail(d: DiagramDetail): DocState {
       type: x.type,
       siteId: x.siteId,
       clusterId: x.clusterId ?? null,
+      mgmtIp: x.mgmtIp,
     }
   const groups: DocState['groups'] = {}
   for (const g of d.endpointGroups) groups[g.id] = { id: g.id, name: g.name, kind: g.kind }

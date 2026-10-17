@@ -1,4 +1,5 @@
 -- Devices (P1-08, SRS §4.1). Every query takes organization_id. A device's category is its site's (ADR-032).
+-- mgmt_ip: the primary IP of the device's management interface, else its cluster's shared management IP (ADR-027).
 
 -- name: ListDevices :many
 SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
@@ -8,7 +9,7 @@ SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
+                 ORDER BY family(ip.address) LIMIT 1), dc.mgmt_ip::text, '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 LEFT JOIN locations l ON l.id = d.location_id
@@ -207,7 +208,7 @@ SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
+                 ORDER BY family(ip.address) LIMIT 1), dc.mgmt_ip::text, '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 LEFT JOIN locations l ON l.id = d.location_id
@@ -313,7 +314,7 @@ SELECT d.*, s.code::text AS site_code, s.name AS site_name, s.category_id,
        COALESCE(dc.name, '')::text AS cluster_name, COALESCE(dc.kind, '')::text AS cluster_kind,
        COALESCE((SELECT ip.address::text FROM ip_addresses ip
                  WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
-                 ORDER BY family(ip.address) LIMIT 1), '')::text AS mgmt_ip
+                 ORDER BY family(ip.address) LIMIT 1), dc.mgmt_ip::text, '')::text AS mgmt_ip
 FROM devices d
 JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 LEFT JOIN locations l ON l.id = d.location_id
