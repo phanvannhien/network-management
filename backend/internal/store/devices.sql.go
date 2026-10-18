@@ -583,7 +583,7 @@ func (q *Queries) GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefPa
 }
 
 const getDevice = `-- name: GetDevice :one
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, d.alerts_muted, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -645,6 +645,7 @@ type GetDeviceRow struct {
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
 	CatalogID         string
+	AlertsMuted       bool
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -700,6 +701,7 @@ func (q *Queries) GetDevice(ctx context.Context, arg GetDeviceParams) (GetDevice
 		&i.ClusterRole,
 		&i.ClusterMemberNo,
 		&i.CatalogID,
+		&i.AlertsMuted,
 		&i.SiteCode,
 		&i.SiteName,
 		&i.CategoryID,
@@ -806,7 +808,7 @@ func (q *Queries) ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryPa
 
 const listDevices = `-- name: ListDevices :many
 
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, d.alerts_muted, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -920,6 +922,7 @@ type ListDevicesRow struct {
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
 	CatalogID         string
+	AlertsMuted       bool
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -1000,6 +1003,7 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 			&i.ClusterRole,
 			&i.ClusterMemberNo,
 			&i.CatalogID,
+			&i.AlertsMuted,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.CategoryID,
@@ -1022,7 +1026,7 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 }
 
 const listDevicesByIDs = `-- name: ListDevicesByIDs :many
-SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, s.code::text AS site_code, s.name AS site_name, s.category_id,
+SELECT d.id, d.organization_id, d.site_id, d.location_id, d.rack_id, d.rack_u, d.u_height, d.hostname, d.type, d.vendor, d.model, d.part_number, d.serial_number, d.asset_tag, d.firmware, d.role, d.lifecycle, d.managed, d.owner_name, d.purchase_date, d.po_number, d.warranty_end, d.license_end, d.eol_date, d.eos_date, d.notes, d.tags, d.custom_fields, d.deleted_at, d.created_at, d.updated_at, d.version, d.mgmt_interface_id, d.poll_address, d.template_id, d.cluster_id, d.cluster_role, d.cluster_member_no, d.catalog_id, d.alerts_muted, s.code::text AS site_code, s.name AS site_name, s.category_id,
        category_path(s.category_id)::text AS category_path,
        COALESCE(l.name, '')::text AS location_name, COALESCE(r.name, '')::text AS rack_name,
        COALESCE(mi.name, '')::text AS mgmt_interface_name,
@@ -1084,6 +1088,7 @@ type ListDevicesByIDsRow struct {
 	ClusterRole       pgtype.Text
 	ClusterMemberNo   pgtype.Int4
 	CatalogID         string
+	AlertsMuted       bool
 	SiteCode          string
 	SiteName          string
 	CategoryID        pgtype.UUID
@@ -1146,6 +1151,7 @@ func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsPara
 			&i.ClusterRole,
 			&i.ClusterMemberNo,
 			&i.CatalogID,
+			&i.AlertsMuted,
 			&i.SiteCode,
 			&i.SiteName,
 			&i.CategoryID,

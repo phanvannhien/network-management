@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AlertSetting struct {
+	OrganizationID pgtype.UUID
+	Enabled        bool
+	Kinds          []string
+	Milestones     []int32
+	EmailAdmins    bool
+	ExtraEmails    []string
+	LastDigestOn   pgtype.Date
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type AuditLog struct {
 	ID             int64
 	OrganizationID pgtype.UUID
@@ -95,6 +107,7 @@ type Device struct {
 	ClusterRole     pgtype.Text
 	ClusterMemberNo pgtype.Int4
 	CatalogID       string
+	AlertsMuted     bool
 }
 
 type DeviceCluster struct {
@@ -304,6 +317,23 @@ type MfaTotp struct {
 	UpdatedAt        pgtype.Timestamptz
 }
 
+type Notification struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Kind           string
+	DeviceID       pgtype.UUID
+	DueDate        pgtype.Date
+	Milestone      int32
+	CreatedAt      pgtype.Timestamptz
+	EmailedAt      pgtype.Timestamptz
+}
+
+type NotificationRead struct {
+	OrganizationID pgtype.UUID
+	UserID         pgtype.UUID
+	SeenAt         pgtype.Timestamptz
+}
+
 type Organization struct {
 	ID        pgtype.UUID
 	Name      string
@@ -361,6 +391,23 @@ type Site struct {
 	Isp            string
 	CategoryID     pgtype.UUID
 	LocalCode      string
+}
+
+type SmtpSetting struct {
+	ID                 int16
+	Host               string
+	Port               int32
+	Security           string
+	Username           string
+	PasswordCiphertext []byte
+	PasswordWrappedDek []byte
+	PasswordKeyVersion pgtype.Int2
+	FromAddress        string
+	FromName           string
+	PublicUrl          string
+	UpdatedAt          pgtype.Timestamptz
+	UpdatedBy          pgtype.UUID
+	Version            int32
 }
 
 type Subnet struct {

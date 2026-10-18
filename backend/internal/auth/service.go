@@ -267,3 +267,6 @@ func (s *Service) audit(ctx context.Context, actor pgtype.UUID, action, email st
 		s.logger.ErrorContext(ctx, "write audit log", "action", action, "error", err)
 	}
 }
+
+// Keyring is the envelope-encryption keyring of the installation (other stored secrets use it too: SMTP password).
+func (s *Service) Keyring() *secrets.Keyring { return s.keys }

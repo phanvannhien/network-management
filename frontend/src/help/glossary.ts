@@ -138,6 +138,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'smtp',
+    'org',
+    ['SMTP (máy chủ gửi email)', 'SMTP (mail server)'],
+    [
+      'Giao thức gửi email. Hệ thống cần một máy chủ SMTP (Gmail, Microsoft 365 hoặc mail công ty) để gửi cảnh báo hết hạn. STARTTLS (cổng 587) hay TLS (cổng 465) là cách mã hóa kết nối để mật khẩu và nội dung không bị nghe lén.',
+      'The protocol for sending e-mail. The system needs an SMTP server (Gmail, Microsoft 365 or your own) to send expiry alerts. STARTTLS (port 587) or TLS (port 465) encrypt the connection so the password and content cannot be read on the way.',
+    ],
+    [
+      'Gmail: smtp.gmail.com, cổng 587, STARTTLS, đăng nhập bằng mật khẩu ứng dụng.',
+      'Gmail: smtp.gmail.com, port 587, STARTTLS, login with an app password.',
+    ],
+  ),
+  e(
     'template',
     'device',
     ['Template thiết bị', 'Device template'],

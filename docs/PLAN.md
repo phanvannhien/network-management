@@ -100,7 +100,7 @@ Phase hiện tại: **Phase 0**
 - [ ] **P2-02 Kho mật khẩu**: credentials local (envelope encryption, xoay master key) + external reference (Bitwarden/Vaultwarden, HashiCorp Vault, khác); gắn thiết bị; reveal/copy với quyền + MFA 5 phút + audit; clipboard tự xóa; cảnh báo dùng chung/quá hạn đổi.
 - [ ] **P2-03 Tài khoản cloud**: CRUD, liên kết credential, thiết bị được quản lý, người giữ MFA, ngày hết hạn.
 - [ ] **P2-04 Nhà cung cấp & hợp đồng**: vendors, vendor_contacts, contracts + đính kèm file; liên kết thiết bị/link WAN; trường mua sắm/hỗ trợ của thiết bị trỏ tới nhà cung cấp/hợp đồng. *(đổi tên từ "Đối tác & hợp đồng" — ADR-031)*
-- [ ] **P2-05 Cảnh báo hết hạn**: cấu hình SMTP theo tổ chức; quy tắc 90/60/30/7 ngày cho bảo hành, license, EoL, cloud, hợp đồng, credential; thông báo trong app + email.
+- [ ] **P2-05 Cảnh báo hết hạn**: cấu hình SMTP theo tổ chức; quy tắc 90/60/30/7 ngày cho bảo hành, license, EoL, cloud, hợp đồng, credential; thông báo trong app + email. *(2026-10-18, ADR-043: xong phần SMTP hệ thống, bảo hành / license / hết hỗ trợ của thiết bị, email tổng hợp, chuông. Còn cloud / hợp đồng / credential — nối vào khi làm P2-03 / P2-04 / P2-02.)*
 - [ ] **P2-06 Link chia sẻ chỉ xem**: token có hạn, mật khẩu tùy chọn, ẩn IP tùy chọn, thu hồi; trang xem công khai không lộ dữ liệu khác.
 - [ ] **P2-07 SSO OIDC**: Entra ID / Google Workspace / Keycloak; ánh xạ nhóm → vai trò.
 - [ ] **P2-08 Multi-page, layer L1/L2/L3, segment (bus)**, off-page connector.

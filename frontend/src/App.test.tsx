@@ -3212,3 +3212,90 @@ describe('overview diagrams (P2-21)', () => {
     expect(body.view.nodes.every((n) => n.refKind === 'site')).toBe(true)
   })
 })
+
+describe('expiry alerts (P2-05)', () => {
+  const SETTINGS = {
+    enabled: true,
+    kinds: ['warranty', 'license', 'eos'],
+    milestones: [90, 60, 30, 7],
+    emailAdmins: true,
+    extraEmails: [],
+    version: 0,
+    recipients: ['owner@example.com'],
+    smtpConfigured: false,
+  }
+
+  it('settings say when e-mail is not set up and save what was chosen', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/alert-settings`]: () => json(SETTINGS),
+      [`PUT /api/orgs/${ORG_ID}/alert-settings`]: () =>
+        json({
+          ...SETTINGS,
+          kinds: ['warranty', 'eos'],
+          version: 1,
+          recipients: ['noc@example.com'],
+        }),
+      [`GET /api/orgs/${ORG_ID}/notifications`]: () => json({ notifications: [], unread: 0 }),
+    })
+    renderAt(`/o/${ORG_ID}/alerts`)
+    expect(await screen.findByText(/Hệ thống chưa cấu hình gửi email/)).toBeInTheDocument()
+    expect(screen.getByText('owner@example.com')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: /Hết license/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Chủ sở hữu và quản trị/ }))
+    fireEvent.change(screen.getByLabelText(/Thêm địa chỉ/), {
+      target: { value: 'noc@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText(/Báo trước/), { target: { value: '30, 7' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    const put = (r: Request) => r.method === 'PUT' && r.url.endsWith('/alert-settings')
+    await waitFor(() => expect(calls.some(put)).toBe(true))
+    expect(await calls.find(put)!.clone().json()).toEqual({
+      enabled: true,
+      kinds: ['warranty', 'eos'],
+      milestones: [30, 7],
+      emailAdmins: false,
+      extraEmails: ['noc@example.com'],
+      version: 0,
+    })
+  })
+
+  it('the bell counts unread milestones and marks them read once seen', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/devices`]: () => json({ devices: [], total: 0, facets: {} }),
+      [`GET /api/orgs/${ORG_ID}/notifications`]: () =>
+        json({
+          unread: 1,
+          notifications: [
+            {
+              id: 'n1',
+              kind: 'eos',
+              deviceId: 'dev-1',
+              hostname: 'CORE-SW01',
+              siteCode: 'HCM01',
+              dueDate: '2026-10-31',
+              milestone: 30,
+              createdAt: '2026-10-18T01:00:00Z',
+              unread: true,
+            },
+          ],
+        }),
+      [`POST /api/orgs/${ORG_ID}/notifications/seen`]: () => new Response(null, { status: 204 }),
+    })
+    renderAt(`/o/${ORG_ID}/devices`)
+    const bell = await screen.findByRole('button', { name: 'Thông báo — 1 chưa đọc' })
+    fireEvent.click(bell)
+    expect(await screen.findByRole('link', { name: 'CORE-SW01' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/devices/dev-1`,
+    )
+    expect(screen.getByText(/Hãng ngừng hỗ trợ/)).toBeInTheDocument()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    await waitFor(() =>
+      expect(calls.some((c) => c.method === 'POST' && c.url.endsWith('/notifications/seen'))).toBe(
+        true,
+      ),
+    )
+  })
+})

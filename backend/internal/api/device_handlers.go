@@ -403,7 +403,7 @@ func snapDevice(d store.GetDeviceRow) deviceSnapshot {
 func toDevice(d store.GetDeviceRow, level int) apigen.Device {
 	out := apigen.Device{
 		Id: uuid.UUID(d.ID.Bytes), Hostname: d.Hostname, Type: apigen.DeviceType(d.Type), Vendor: d.Vendor, Model: d.Model,
-		TemplateId: optUUID(d.TemplateID), CatalogId: d.CatalogID,
+		TemplateId: optUUID(d.TemplateID), CatalogId: d.CatalogID, AlertsMuted: &d.AlertsMuted,
 		PartNumber: d.PartNumber, SerialNumber: d.SerialNumber, AssetTag: d.AssetTag, Firmware: d.Firmware,
 		Role: apigen.DeviceRole(d.Role), Lifecycle: apigen.DeviceLifecycle(d.Lifecycle), Managed: d.Managed, OwnerName: d.OwnerName,
 		PoNumber: d.PoNumber, PurchaseDate: apiDate(d.PurchaseDate), WarrantyEnd: apiDate(d.WarrantyEnd),

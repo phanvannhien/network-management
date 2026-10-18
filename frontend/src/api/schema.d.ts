@@ -957,6 +957,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/alert-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Expiry alerts of the organization (P2-05) — owners and admins */
+        get: operations["getAlertSettings"];
+        /** Save the organization's expiry alerts (owners and admins) */
+        put: operations["saveAlertSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Latest expiry notifications of devices the caller can see (the bell, P2-05) */
+        get: operations["listNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/notifications/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The caller opened the bell — what is there now is read */
+        post: operations["markNotificationsSeen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/alerts-muted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn expiry alerts off / on for one device (edit access, audited) */
+        put: operations["setDeviceAlertsMuted"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/{deviceId}": {
         parameters: {
             query?: never;
@@ -1677,6 +1759,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/smtp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Outgoing mail server of the installation (P2-05) — the password is never returned */
+        get: operations["adminGetSmtp"];
+        /** Save the outgoing mail server (password envelope-encrypted; omitted = kept, empty = removed) */
+        put: operations["adminSaveSmtp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/smtp/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test e-mail with the saved settings */
+        post: operations["adminTestSmtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/audit": {
         parameters: {
             query?: never;
@@ -2327,6 +2444,8 @@ export interface components {
             templateId: string | null;
             /** @description system template (built-in catalog) the device was created from; empty when none */
             catalogId: string;
+            /** @description expiry alerts are turned off for this device (P2-05) */
+            alertsMuted?: boolean;
             /**
              * Format: uuid
              * @description the site's category (null = attached straight to the organization)
@@ -2915,6 +3034,77 @@ export interface components {
             notes: string;
             images: components["schemas"]["CatalogImages"];
             lifecycle: components["schemas"]["CatalogLifecycle"];
+        };
+        /**
+         * @description warranty end, license end, vendor end of support
+         * @enum {string}
+         */
+        AlertKind: "warranty" | "license" | "eos";
+        SmtpSettings: {
+            host: string;
+            port: number;
+            /** @enum {string} */
+            security: "starttls" | "tls" | "none";
+            username: string;
+            /** @description a password is stored (it is never sent back) */
+            passwordSet: boolean;
+            fromAddress: string;
+            fromName: string;
+            /** @description address users open the system at, for links in e-mails */
+            publicUrl: string;
+            /** @description host and sender are set — e-mails can be sent */
+            configured: boolean;
+        };
+        SmtpSettingsInput: {
+            host: string;
+            port: number;
+            /** @enum {string} */
+            security: "starttls" | "tls" | "none";
+            username: string;
+            /** @description omitted = keep the stored one, empty = remove it */
+            password?: string;
+            fromAddress: string;
+            fromName: string;
+            publicUrl: string;
+        };
+        AlertSettings: {
+            enabled: boolean;
+            kinds: components["schemas"]["AlertKind"][];
+            /** @description days before the date, each announced once */
+            milestones: number[];
+            /** @description owners and admins get the e-mail */
+            emailAdmins: boolean;
+            extraEmails: string[];
+            /** @description 0 = the defaults (never saved) */
+            version: number;
+            /** @description who gets the digest now (owners / admins and the extra addresses) */
+            recipients: string[];
+            /** @description the installation can send e-mail (else in-app notifications only) */
+            smtpConfigured: boolean;
+        };
+        AlertSettingsInput: {
+            enabled: boolean;
+            kinds: components["schemas"]["AlertKind"][];
+            milestones: number[];
+            emailAdmins: boolean;
+            extraEmails: string[];
+            version: number;
+        };
+        Notification: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["AlertKind"];
+            /** Format: uuid */
+            deviceId: string;
+            hostname: string;
+            siteCode: string;
+            /** Format: date */
+            dueDate: string;
+            /** @description days before the date when it was raised; 0 = the date had passed */
+            milestone: number;
+            /** Format: date-time */
+            createdAt: string;
+            unread: boolean;
         };
         /** @description Vendor milestones of the model (P2-22), ISO dates, empty when not announced */
         CatalogLifecycle: {
@@ -5958,6 +6148,153 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    getAlertSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK (the defaults when never saved) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    saveAlertSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        unread: number;
+                        notifications: components["schemas"]["Notification"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    markNotificationsSeen: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setDeviceAlertsMuted: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    muted: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getDevice: {
         parameters: {
             query?: never;
@@ -7893,6 +8230,91 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    adminGetSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmtpSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminSaveSmtp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmtpSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmtpSettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminTestSmtp: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    to: string;
+                };
+            };
+        };
+        responses: {
+            /** @description What the mail server answered (sent or why not) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent: boolean;
+                        message: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listSystemAudit: {

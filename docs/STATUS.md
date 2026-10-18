@@ -5,6 +5,53 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-05 Cảnh báo hết hạn — phần thiết bị (ADR-043)
+- Người dùng chốt:
+  - SMTP chung cho cả hệ thống, SMTP riêng theo tổ chức để sau;
+  - mỗi sáng một email tổng hợp, chỉ khi có gì mới;
+  - người nhận là owner + admin, cộng email thêm.
+- Đã làm:
+  - **Hệ thống › Gửi email:**
+    - máy chủ, cổng, kiểu mã hóa (STARTTLS / TLS / không), tài khoản, mật khẩu, địa chỉ / tên người gửi, địa chỉ truy cập hệ thống (cho link trong email);
+    - nút gửi thử;
+    - mật khẩu mã hóa envelope, không bao giờ trả về hay ghi audit;
+    - STARTTLS không tự hạ xuống; không gửi mật khẩu qua kết nối không mã hóa.
+  - **Tổ chức › Cảnh báo hết hạn** (owner / admin):
+    - bật / tắt; báo hết bảo hành / hết license / hãng ngừng hỗ trợ;
+    - mốc 90/60/30/7 (sửa được);
+    - người nhận: owner + admin và email thêm; xem trước ai đang nhận;
+    - cảnh báo rõ khi hệ thống chưa cấu hình email.
+  - **Chỉ thiết bị có ngày, đang dùng hoặc dự phòng** mới bị báo; switch không có license thì không. Nút **"Tắt cảnh báo"** cho từng thiết bị.
+  - **Job chạy mỗi giờ:**
+    - mỗi mốc báo một lần, gia hạn thì bắt đầu lại;
+    - ngày đã quá hạn quá 30 ngày không báo (đã có trên dashboard);
+    - từ 7 giờ sáng, mỗi tổ chức tối đa một email tổng hợp mỗi ngày.
+  - **Chuông** có số chưa đọc, danh sách link tới thiết bị, mở xong thì đánh dấu đã đọc.
+  - Giờ theo `NTB_TIMEZONE` (mặc định Asia/Ho_Chi_Minh), dữ liệu múi giờ nằm trong binary.
+  - Agent rà code đã chỉ ra, và đã sửa:
+    - container chạy giờ UTC nên email đi lúc 14 giờ;
+    - máy chủ đã nhận thư nhưng QUIT báo lỗi thì gửi lặp mỗi giờ;
+    - một địa chỉ bị từ chối làm hỏng cả email;
+    - đọc SMTP lỗi thì email trong ngày bị bỏ qua lặng lẽ;
+    - lần chạy đầu bị "lũ" các ngày quá hạn từ nhiều năm trước;
+    - trang cài đặt kẹt sau 409;
+    - một tổ chức lỗi làm dừng cả lượt chạy;
+    - EHLO bằng tên miền người gửi.
+- Test / cách kiểm tra:
+  - Unit (`notify`): mốc, chặn chèn header, nội dung email (escape HTML, link), gửi thật qua máy chủ SMTP giả lập, từ chối mật khẩu khi không mã hóa, không hạ STARTTLS, bỏ qua người nhận bị từ chối.
+  - API: chỉ quản trị hệ thống chỉnh SMTP; mật khẩu không lộ ra API, DB hay audit; cài đặt tổ chức (quyền, 409, chặn đọc chéo tổ chức); job tạo đúng thông báo, một email mỗi ngày, gia hạn, tắt cảnh báo, chuông.
+  - App test cho trang cảnh báo và chuông.
+  - Trên trình duyệt với máy chủ SMTP giả lập: gửi thử OK; email tổng hợp tới admin và noc@ liệt kê 3 router Cisco hết hỗ trợ kèm link; chuông hiện 3 thông báo, mở xong hết chưa đọc.
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Chưa có cảnh báo cho hợp đồng (P2-04), cloud (P2-03), credential (P2-02) — P2-05 chưa tick.
+  - Chuông đánh dấu đã đọc tới "bây giờ" (có thể gồm thông báo vừa tới sau lần tải).
+  - Thông báo cũ chưa được dọn.
+  - Lỗi gửi chưa hiện trên trang cảnh báo (chỉ trong log).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-04 Nhà cung cấp & hợp đồng (dòng hợp đồng / license nhiều ngày, file đính kèm).
+
 ## 2026-10-18 — P2-22 Ngày ngừng bán / hết hỗ trợ trong thư viện model (ADR-042)
 - Đã làm:
   - **Dữ liệu:**

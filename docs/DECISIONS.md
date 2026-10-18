@@ -595,3 +595,41 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Một số SKU theo vùng (Cisco -IN, -BR) có ngày khác; người dùng tự sửa.
   - Huawei, Aruba 2530 chưa có vì chưa tải được nguồn hoặc chưa xác nhận được ngày.
 - **Để sau:** email cảnh báo theo mốc (P2-05); báo cáo Excel thiết bị hết hỗ trợ (P2-11).
+
+### ADR-043 — Cảnh báo hết hạn: SMTP chung cho hệ thống, email tổng hợp mỗi sáng, chuông trong ứng dụng
+- **Bối cảnh:** P2-05, người dùng chốt 2026-10-18.
+  - Chỉ một số thiết bị có license; không muốn bị spam.
+  - Người dùng chấp nhận ba đề xuất: SMTP chung trước; email tổng hợp mỗi sáng, chỉ khi có gì mới; người nhận là owner + admin cộng email thêm.
+- **Quyết định:**
+  - **Một máy chủ SMTP cho cả hệ thống**, quản trị hệ thống chỉnh ở Hệ thống › Gửi email (bảng `smtp_settings` một dòng).
+    - Đây là cấu hình hệ thống, giống bảng `users`, nên không có `organization_id`.
+    - Mật khẩu mã hóa envelope (keyring của `NTB_MASTER_KEY`, AAD riêng). Không bao giờ trả về qua API (chỉ `passwordSet`), không vào audit, không log.
+    - Kiểu mã hóa: STARTTLS (bắt buộc khi đã chọn, không tự hạ xuống), TLS, hoặc không mã hóa (chỉ cho relay nội bộ). Không gửi mật khẩu qua kết nối không mã hóa.
+    - Có nút gửi thử. Ô "Địa chỉ truy cập hệ thống" dùng để đặt link trong email.
+    - SMTP riêng theo tổ chức để sau.
+  - **Cài đặt theo tổ chức** (owner / admin):
+    - bật / tắt; loại cảnh báo: hết bảo hành / hết license / hãng ngừng hỗ trợ;
+    - mốc báo trước: mặc định 90/60/30/7, tối đa 6 mốc;
+    - người nhận: owner + admin (bỏ chọn được) cộng tối đa 20 email thêm.
+  - **Chỉ thiết bị có ngày tương ứng, đang dùng hoặc dự phòng, không bị tắt cảnh báo** mới được báo.
+    - Ô trống thì không báo, nên switch không có license không bị làm phiền.
+    - Có nút "Tắt cảnh báo" cho từng thiết bị, có audit.
+  - **Mỗi mốc báo một lần** (bảng `notifications`, unique theo thiết bị + loại + ngày + mốc).
+    - Thiết bị mới thêm đã gần hạn chỉ nhận mốc hiện tại, không nhận dồn các mốc trước.
+    - Quá hạn thì báo thêm một lần "đã hết hạn".
+    - Gia hạn (đổi ngày) thì bắt đầu chu kỳ mới.
+  - **Job chạy mỗi giờ** trong process API, có advisory lock để không chạy trùng.
+    - Từ 7 giờ sáng (giờ máy chủ) mỗi tổ chức nhận tối đa **một email tổng hợp mỗi ngày**, gồm những mốc mới.
+    - Gửi lỗi thì giữ lại, thử lần sau.
+    - Chưa cấu hình SMTP thì chỉ có thông báo trong ứng dụng, và không dồn email cũ khi bật SMTP sau.
+  - **Chuông** hiện 50 thông báo mới nhất, chỉ của thiết bị người dùng được xem; đếm chưa đọc theo từng người.
+  - Gửi mail bằng `net/smtp` + `crypto/tls` có sẵn trong Go, không thêm thư viện.
+- **Lý do:** cài đặt tự host thường chỉ có một máy chủ mail. Email tổng hợp và báo mỗi mốc một lần tránh làm phiền. Dựa vào ô ngày có hay không là cách tự nhiên nhất để chỉ báo thiết bị có license.
+- **Đánh đổi:**
+  - Mỗi thiết bị chỉ có một ô "Hết license", trong khi thực tế thường có nhiều gói (FortiCare / FortiGuard, SmartNet / DNA): tạm ghi ngày gần nhất.
+  - Giờ gửi theo giờ máy chủ (đặt `TZ`).
+- **Để sau:**
+  - cảnh báo theo dòng hợp đồng / gói dịch vụ (P2-04), tài khoản cloud (P2-03), credential quá hạn đổi (P2-02);
+  - SMTP riêng theo tổ chức;
+  - người nhận theo site / danh mục;
+  - dọn thông báo cũ.

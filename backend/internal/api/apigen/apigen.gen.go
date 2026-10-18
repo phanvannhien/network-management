@@ -57,6 +57,27 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 	}
 }
 
+// Defines values for AlertKind.
+const (
+	AlertKindEos      AlertKind = "eos"
+	AlertKindLicense  AlertKind = "license"
+	AlertKindWarranty AlertKind = "warranty"
+)
+
+// Valid indicates whether the value is a known member of the AlertKind enum.
+func (e AlertKind) Valid() bool {
+	switch e {
+	case AlertKindEos:
+		return true
+	case AlertKindLicense:
+		return true
+	case AlertKindWarranty:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ClusterKind.
 const (
 	ClusterKindHaActiveActive  ClusterKind = "ha_active_active"
@@ -137,16 +158,16 @@ func (e CustomFieldKind) Valid() bool {
 
 // Defines values for DashboardExpiryKind.
 const (
-	Eos      DashboardExpiryKind = "eos"
-	Warranty DashboardExpiryKind = "warranty"
+	DashboardExpiryKindEos      DashboardExpiryKind = "eos"
+	DashboardExpiryKindWarranty DashboardExpiryKind = "warranty"
 )
 
 // Valid indicates whether the value is a known member of the DashboardExpiryKind enum.
 func (e DashboardExpiryKind) Valid() bool {
 	switch e {
-	case Eos:
+	case DashboardExpiryKindEos:
 		return true
-	case Warranty:
+	case DashboardExpiryKindWarranty:
 		return true
 	default:
 		return false
@@ -1404,6 +1425,48 @@ func (e SiteLinkService) Valid() bool {
 	}
 }
 
+// Defines values for SmtpSettingsSecurity.
+const (
+	SmtpSettingsSecurityNone     SmtpSettingsSecurity = "none"
+	SmtpSettingsSecurityStarttls SmtpSettingsSecurity = "starttls"
+	SmtpSettingsSecurityTls      SmtpSettingsSecurity = "tls"
+)
+
+// Valid indicates whether the value is a known member of the SmtpSettingsSecurity enum.
+func (e SmtpSettingsSecurity) Valid() bool {
+	switch e {
+	case SmtpSettingsSecurityNone:
+		return true
+	case SmtpSettingsSecurityStarttls:
+		return true
+	case SmtpSettingsSecurityTls:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SmtpSettingsInputSecurity.
+const (
+	SmtpSettingsInputSecurityNone     SmtpSettingsInputSecurity = "none"
+	SmtpSettingsInputSecurityStarttls SmtpSettingsInputSecurity = "starttls"
+	SmtpSettingsInputSecurityTls      SmtpSettingsInputSecurity = "tls"
+)
+
+// Valid indicates whether the value is a known member of the SmtpSettingsInputSecurity enum.
+func (e SmtpSettingsInputSecurity) Valid() bool {
+	switch e {
+	case SmtpSettingsInputSecurityNone:
+		return true
+	case SmtpSettingsInputSecurityStarttls:
+		return true
+	case SmtpSettingsInputSecurityTls:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ValConflictKind.
 const (
 	ValConflictKindHostname ValConflictKind = "hostname"
@@ -1618,6 +1681,40 @@ type AdminUser struct {
 // AdminUserList defines model for AdminUserList.
 type AdminUserList struct {
 	Users []AdminUser `json:"users"`
+}
+
+// AlertKind warranty end, license end, vendor end of support
+type AlertKind string
+
+// AlertSettings defines model for AlertSettings.
+type AlertSettings struct {
+	// EmailAdmins owners and admins get the e-mail
+	EmailAdmins bool        `json:"emailAdmins"`
+	Enabled     bool        `json:"enabled"`
+	ExtraEmails []string    `json:"extraEmails"`
+	Kinds       []AlertKind `json:"kinds"`
+
+	// Milestones days before the date, each announced once
+	Milestones []int `json:"milestones"`
+
+	// Recipients who gets the digest now (owners / admins and the extra addresses)
+	Recipients []string `json:"recipients"`
+
+	// SmtpConfigured the installation can send e-mail (else in-app notifications only)
+	SmtpConfigured bool `json:"smtpConfigured"`
+
+	// Version 0 = the defaults (never saved)
+	Version int `json:"version"`
+}
+
+// AlertSettingsInput defines model for AlertSettingsInput.
+type AlertSettingsInput struct {
+	EmailAdmins bool        `json:"emailAdmins"`
+	Enabled     bool        `json:"enabled"`
+	ExtraEmails []string    `json:"extraEmails"`
+	Kinds       []AlertKind `json:"kinds"`
+	Milestones  []int       `json:"milestones"`
+	Version     int         `json:"version"`
 }
 
 // ApplyTemplate an organization template, a system template (catalogId) or port groups typed on the spot — exactly one
@@ -2149,8 +2246,11 @@ type DesignResult struct {
 // Device defines model for Device.
 type Device struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
-	Access   AccessLevel `json:"access"`
-	AssetTag string      `json:"assetTag"`
+	Access AccessLevel `json:"access"`
+
+	// AlertsMuted expiry alerts are turned off for this device (P2-05)
+	AlertsMuted *bool  `json:"alertsMuted,omitempty"`
+	AssetTag    string `json:"assetTag"`
 
 	// CatalogId system template (built-in catalog) the device was created from; empty when none
 	CatalogId string `json:"catalogId"`
@@ -3410,6 +3510,23 @@ type NextFreeIp struct {
 	Host    *string `json:"host"`
 }
 
+// Notification defines model for Notification.
+type Notification struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	DeviceId  openapi_types.UUID `json:"deviceId"`
+	DueDate   openapi_types.Date `json:"dueDate"`
+	Hostname  string             `json:"hostname"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Kind warranty end, license end, vendor end of support
+	Kind AlertKind `json:"kind"`
+
+	// Milestone days before the date when it was raised; 0 = the date had passed
+	Milestone int    `json:"milestone"`
+	SiteCode  string `json:"siteCode"`
+	Unread    bool   `json:"unread"`
+}
+
 // NtbFile a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
 type NtbFile map[string]interface{}
 
@@ -3813,6 +3930,44 @@ type SiteWan struct {
 	// Service what a link carries (translated by the client)
 	Service SiteLinkService `json:"service"`
 }
+
+// SmtpSettings defines model for SmtpSettings.
+type SmtpSettings struct {
+	// Configured host and sender are set — e-mails can be sent
+	Configured  bool   `json:"configured"`
+	FromAddress string `json:"fromAddress"`
+	FromName    string `json:"fromName"`
+	Host        string `json:"host"`
+
+	// PasswordSet a password is stored (it is never sent back)
+	PasswordSet bool `json:"passwordSet"`
+	Port        int  `json:"port"`
+
+	// PublicUrl address users open the system at, for links in e-mails
+	PublicUrl string               `json:"publicUrl"`
+	Security  SmtpSettingsSecurity `json:"security"`
+	Username  string               `json:"username"`
+}
+
+// SmtpSettingsSecurity defines model for SmtpSettings.Security.
+type SmtpSettingsSecurity string
+
+// SmtpSettingsInput defines model for SmtpSettingsInput.
+type SmtpSettingsInput struct {
+	FromAddress string `json:"fromAddress"`
+	FromName    string `json:"fromName"`
+	Host        string `json:"host"`
+
+	// Password omitted = keep the stored one, empty = remove it
+	Password  *string                   `json:"password,omitempty"`
+	Port      int                       `json:"port"`
+	PublicUrl string                    `json:"publicUrl"`
+	Security  SmtpSettingsInputSecurity `json:"security"`
+	Username  string                    `json:"username"`
+}
+
+// SmtpSettingsInputSecurity defines model for SmtpSettingsInput.Security.
+type SmtpSettingsInputSecurity string
 
 // Subnet defines model for Subnet.
 type Subnet struct {
@@ -4257,6 +4412,21 @@ type AdminDeleteOrganizationParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// AdminSaveSmtpParams defines parameters for AdminSaveSmtp.
+type AdminSaveSmtpParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminTestSmtpJSONBody defines parameters for AdminTestSmtp.
+type AdminTestSmtpJSONBody struct {
+	To string `json:"to"`
+}
+
+// AdminTestSmtpParams defines parameters for AdminTestSmtp.
+type AdminTestSmtpParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AdminDisableUserParams defines parameters for AdminDisableUser.
 type AdminDisableUserParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4309,6 +4479,11 @@ type UpdateOrganizationParams struct {
 
 // ActivateOrganizationParams defines parameters for ActivateOrganization.
 type ActivateOrganizationParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// SaveAlertSettingsParams defines parameters for SaveAlertSettings.
+type SaveAlertSettingsParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -4514,6 +4689,16 @@ type UpdateDeviceParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// SetDeviceAlertsMutedJSONBody defines parameters for SetDeviceAlertsMuted.
+type SetDeviceAlertsMutedJSONBody struct {
+	Muted bool `json:"muted"`
+}
+
+// SetDeviceAlertsMutedParams defines parameters for SetDeviceAlertsMuted.
+type SetDeviceAlertsMutedParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ApplyDeviceTemplateParams defines parameters for ApplyDeviceTemplate.
 type ApplyDeviceTemplateParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4668,6 +4853,11 @@ type UpdateMemberParams struct {
 
 // RegenerateInviteParams defines parameters for RegenerateInvite.
 type RegenerateInviteParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// MarkNotificationsSeenParams defines parameters for MarkNotificationsSeen.
+type MarkNotificationsSeenParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -4830,6 +5020,12 @@ type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
 // AdminCreateOrganizationJSONRequestBody defines body for AdminCreateOrganization for application/json ContentType.
 type AdminCreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
+// AdminSaveSmtpJSONRequestBody defines body for AdminSaveSmtp for application/json ContentType.
+type AdminSaveSmtpJSONRequestBody = SmtpSettingsInput
+
+// AdminTestSmtpJSONRequestBody defines body for AdminTestSmtp for application/json ContentType.
+type AdminTestSmtpJSONRequestBody AdminTestSmtpJSONBody
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
@@ -4844,6 +5040,9 @@ type VerifyMfaJSONRequestBody = MfaVerifyRequest
 
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
+// SaveAlertSettingsJSONRequestBody defines body for SaveAlertSettings for application/json ContentType.
+type SaveAlertSettingsJSONRequestBody = AlertSettingsInput
 
 // CreateCategoryJSONRequestBody defines body for CreateCategory for application/json ContentType.
 type CreateCategoryJSONRequestBody = CategoryInput
@@ -4901,6 +5100,9 @@ type FillDeviceLifecycleJSONRequestBody FillDeviceLifecycleJSONBody
 
 // UpdateDeviceJSONRequestBody defines body for UpdateDevice for application/json ContentType.
 type UpdateDeviceJSONRequestBody = DeviceUpdate
+
+// SetDeviceAlertsMutedJSONRequestBody defines body for SetDeviceAlertsMuted for application/json ContentType.
+type SetDeviceAlertsMutedJSONRequestBody SetDeviceAlertsMutedJSONBody
 
 // ApplyDeviceTemplateJSONRequestBody defines body for ApplyDeviceTemplate for application/json ContentType.
 type ApplyDeviceTemplateJSONRequestBody = ApplyTemplate
@@ -5024,6 +5226,15 @@ type ServerInterface interface {
 	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
 	// (DELETE /admin/organizations/{orgId})
 	AdminDeleteOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params AdminDeleteOrganizationParams)
+	// AdminGetSmtp Outgoing mail server of the installation (P2-05) — the password is never returned
+	// (GET /admin/smtp)
+	AdminGetSmtp(w http.ResponseWriter, r *http.Request)
+	// AdminSaveSmtp Save the outgoing mail server (password envelope-encrypted; omitted = kept, empty = removed)
+	// (PUT /admin/smtp)
+	AdminSaveSmtp(w http.ResponseWriter, r *http.Request, params AdminSaveSmtpParams)
+	// AdminTestSmtp Send a test e-mail with the saved settings
+	// (POST /admin/smtp/test)
+	AdminTestSmtp(w http.ResponseWriter, r *http.Request, params AdminTestSmtpParams)
 	// AdminListUsers All users (system admin)
 	// (GET /admin/users)
 	AdminListUsers(w http.ResponseWriter, r *http.Request)
@@ -5075,6 +5286,12 @@ type ServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams)
+	// GetAlertSettings Expiry alerts of the organization (P2-05) — owners and admins
+	// (GET /orgs/{orgId}/alert-settings)
+	GetAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// SaveAlertSettings Save the organization's expiry alerts (owners and admins)
+	// (PUT /orgs/{orgId}/alert-settings)
+	SaveAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId, params SaveAlertSettingsParams)
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAuditParams)
@@ -5186,6 +5403,9 @@ type ServerInterface interface {
 	// UpdateDevice Update a device (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId})
 	UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams)
+	// SetDeviceAlertsMuted Turn expiry alerts off / on for one device (edit access, audited)
+	// (PUT /orgs/{orgId}/devices/{deviceId}/alerts-muted)
+	SetDeviceAlertsMuted(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceAlertsMutedParams)
 	// ApplyDeviceTemplate Generate the template ports the device does not have yet
 	// (POST /orgs/{orgId}/devices/{deviceId}/apply-template)
 	ApplyDeviceTemplate(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params ApplyDeviceTemplateParams)
@@ -5300,6 +5520,12 @@ type ServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams)
+	// ListNotifications Latest expiry notifications of devices the caller can see (the bell, P2-05)
+	// (GET /orgs/{orgId}/notifications)
+	ListNotifications(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// MarkNotificationsSeen The caller opened the bell — what is there now is read
+	// (POST /orgs/{orgId}/notifications/seen)
+	MarkNotificationsSeen(w http.ResponseWriter, r *http.Request, orgId OrgId, params MarkNotificationsSeenParams)
 	// ImportNtb Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
 	// (POST /orgs/{orgId}/ntb-imports)
 	ImportNtb(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportNtbParams)
@@ -5438,6 +5664,24 @@ func (_ Unimplemented) AdminDeleteOrganization(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// AdminGetSmtp Outgoing mail server of the installation (P2-05) — the password is never returned
+// (GET /admin/smtp)
+func (_ Unimplemented) AdminGetSmtp(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminSaveSmtp Save the outgoing mail server (password envelope-encrypted; omitted = kept, empty = removed)
+// (PUT /admin/smtp)
+func (_ Unimplemented) AdminSaveSmtp(w http.ResponseWriter, r *http.Request, params AdminSaveSmtpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminTestSmtp Send a test e-mail with the saved settings
+// (POST /admin/smtp/test)
+func (_ Unimplemented) AdminTestSmtp(w http.ResponseWriter, r *http.Request, params AdminTestSmtpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // AdminListUsers All users (system admin)
 // (GET /admin/users)
 func (_ Unimplemented) AdminListUsers(w http.ResponseWriter, r *http.Request) {
@@ -5537,6 +5781,18 @@ func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request
 // ActivateOrganization Remember this organization as the default to open after sign-in
 // (POST /orgs/{orgId}/activate)
 func (_ Unimplemented) ActivateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params ActivateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetAlertSettings Expiry alerts of the organization (P2-05) — owners and admins
+// (GET /orgs/{orgId}/alert-settings)
+func (_ Unimplemented) GetAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SaveAlertSettings Save the organization's expiry alerts (owners and admins)
+// (PUT /orgs/{orgId}/alert-settings)
+func (_ Unimplemented) SaveAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId, params SaveAlertSettingsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5759,6 +6015,12 @@ func (_ Unimplemented) GetDevice(w http.ResponseWriter, r *http.Request, orgId O
 // UpdateDevice Update a device (optimistic lock on version)
 // (PATCH /orgs/{orgId}/devices/{deviceId})
 func (_ Unimplemented) UpdateDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params UpdateDeviceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetDeviceAlertsMuted Turn expiry alerts off / on for one device (edit access, audited)
+// (PUT /orgs/{orgId}/devices/{deviceId}/alerts-muted)
+func (_ Unimplemented) SetDeviceAlertsMuted(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceAlertsMutedParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5987,6 +6249,18 @@ func (_ Unimplemented) UpdateMember(w http.ResponseWriter, r *http.Request, orgI
 // RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 // (POST /orgs/{orgId}/members/{userId}/invite)
 func (_ Unimplemented) RegenerateInvite(w http.ResponseWriter, r *http.Request, orgId OrgId, userId UserId, params RegenerateInviteParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListNotifications Latest expiry notifications of devices the caller can see (the bell, P2-05)
+// (GET /orgs/{orgId}/notifications)
+func (_ Unimplemented) ListNotifications(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkNotificationsSeen The caller opened the bell — what is there now is read
+// (POST /orgs/{orgId}/notifications/seen)
+func (_ Unimplemented) MarkNotificationsSeen(w http.ResponseWriter, r *http.Request, orgId OrgId, params MarkNotificationsSeenParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6458,6 +6732,110 @@ func (siw *ServerInterfaceWrapper) AdminDeleteOrganization(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminDeleteOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetSmtp operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetSmtp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetSmtp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminSaveSmtp operation middleware
+func (siw *ServerInterfaceWrapper) AdminSaveSmtp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminSaveSmtpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminSaveSmtp(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminTestSmtp operation middleware
+func (siw *ServerInterfaceWrapper) AdminTestSmtp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminTestSmtpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminTestSmtp(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7103,6 +7481,86 @@ func (siw *ServerInterfaceWrapper) ActivateOrganization(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ActivateOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAlertSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetAlertSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAlertSettings(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveAlertSettings operation middleware
+func (siw *ServerInterfaceWrapper) SaveAlertSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SaveAlertSettingsParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveAlertSettings(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -9199,6 +9657,69 @@ func (siw *ServerInterfaceWrapper) UpdateDevice(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateDevice(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetDeviceAlertsMuted operation middleware
+func (siw *ServerInterfaceWrapper) SetDeviceAlertsMuted(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetDeviceAlertsMutedParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetDeviceAlertsMuted(w, r, orgId, deviceId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11328,6 +11849,86 @@ func (siw *ServerInterfaceWrapper) RegenerateInvite(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ListNotifications(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListNotifications(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkNotificationsSeen operation middleware
+func (siw *ServerInterfaceWrapper) MarkNotificationsSeen(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MarkNotificationsSeenParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkNotificationsSeen(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ImportNtb operation middleware
 func (siw *ServerInterfaceWrapper) ImportNtb(w http.ResponseWriter, r *http.Request) {
 
@@ -13430,6 +14031,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/alert-settings", wrapper.GetAlertSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/orgs/{orgId}/alert-settings", wrapper.SaveAlertSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/notifications", wrapper.ListNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/notifications/seen", wrapper.MarkNotificationsSeen)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/alerts-muted", wrapper.SetDeviceAlertsMuted)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}", wrapper.DeleteDevice)
 	})
 	r.Group(func(r chi.Router) {
@@ -13614,6 +14230,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/audit", wrapper.ListOrgAudit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/smtp", wrapper.AdminGetSmtp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/admin/smtp", wrapper.AdminSaveSmtp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/smtp/test", wrapper.AdminTestSmtp)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/audit", wrapper.ListSystemAudit)
@@ -13963,6 +14588,188 @@ func (response AdminDeleteOrganization404JSONResponse) VisitAdminDeleteOrganizat
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetSmtpRequestObject struct {
+}
+
+type AdminGetSmtpResponseObject interface {
+	VisitAdminGetSmtpResponse(w http.ResponseWriter) error
+}
+
+type AdminGetSmtp200JSONResponse SmtpSettings
+
+func (response AdminGetSmtp200JSONResponse) VisitAdminGetSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetSmtp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminGetSmtp401JSONResponse) VisitAdminGetSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetSmtp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetSmtp403JSONResponse) VisitAdminGetSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminSaveSmtpRequestObject struct {
+	Params AdminSaveSmtpParams
+	Body   *AdminSaveSmtpJSONRequestBody
+}
+
+type AdminSaveSmtpResponseObject interface {
+	VisitAdminSaveSmtpResponse(w http.ResponseWriter) error
+}
+
+type AdminSaveSmtp200JSONResponse SmtpSettings
+
+func (response AdminSaveSmtp200JSONResponse) VisitAdminSaveSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminSaveSmtp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminSaveSmtp400JSONResponse) VisitAdminSaveSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminSaveSmtp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminSaveSmtp401JSONResponse) VisitAdminSaveSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminSaveSmtp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminSaveSmtp403JSONResponse) VisitAdminSaveSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestSmtpRequestObject struct {
+	Params AdminTestSmtpParams
+	Body   *AdminTestSmtpJSONRequestBody
+}
+
+type AdminTestSmtpResponseObject interface {
+	VisitAdminTestSmtpResponse(w http.ResponseWriter) error
+}
+
+type AdminTestSmtp200JSONResponse struct {
+	Message string `json:"message"`
+	Sent    bool   `json:"sent"`
+}
+
+func (response AdminTestSmtp200JSONResponse) VisitAdminTestSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestSmtp400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminTestSmtp400JSONResponse) VisitAdminTestSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestSmtp401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminTestSmtp401JSONResponse) VisitAdminTestSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestSmtp403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminTestSmtp403JSONResponse) VisitAdminTestSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -14913,6 +15720,164 @@ func (response ActivateOrganization404JSONResponse) VisitActivateOrganizationRes
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAlertSettingsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type GetAlertSettingsResponseObject interface {
+	VisitGetAlertSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetAlertSettings200JSONResponse AlertSettings
+
+func (response GetAlertSettings200JSONResponse) VisitGetAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAlertSettings401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetAlertSettings401JSONResponse) VisitGetAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAlertSettings403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetAlertSettings403JSONResponse) VisitGetAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAlertSettings404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetAlertSettings404JSONResponse) VisitGetAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettingsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params SaveAlertSettingsParams
+	Body   *SaveAlertSettingsJSONRequestBody
+}
+
+type SaveAlertSettingsResponseObject interface {
+	VisitSaveAlertSettingsResponse(w http.ResponseWriter) error
+}
+
+type SaveAlertSettings200JSONResponse AlertSettings
+
+func (response SaveAlertSettings200JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettings400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SaveAlertSettings400JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettings401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SaveAlertSettings401JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettings403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SaveAlertSettings403JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettings404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SaveAlertSettings404JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveAlertSettings409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SaveAlertSettings409JSONResponse) VisitSaveAlertSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -17881,6 +18846,81 @@ func (response UpdateDevice409JSONResponse) VisitUpdateDeviceResponse(w http.Res
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceAlertsMutedRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   SetDeviceAlertsMutedParams
+	Body     *SetDeviceAlertsMutedJSONRequestBody
+}
+
+type SetDeviceAlertsMutedResponseObject interface {
+	VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error
+}
+
+type SetDeviceAlertsMuted204Response struct {
+}
+
+func (response SetDeviceAlertsMuted204Response) VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SetDeviceAlertsMuted400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SetDeviceAlertsMuted400JSONResponse) VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceAlertsMuted401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SetDeviceAlertsMuted401JSONResponse) VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceAlertsMuted403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SetDeviceAlertsMuted403JSONResponse) VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceAlertsMuted404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SetDeviceAlertsMuted404JSONResponse) VisitSetDeviceAlertsMutedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20857,6 +21897,104 @@ func (response RegenerateInvite409JSONResponse) VisitRegenerateInviteResponse(w 
 	return err
 }
 
+type ListNotificationsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListNotificationsResponseObject interface {
+	VisitListNotificationsResponse(w http.ResponseWriter) error
+}
+
+type ListNotifications200JSONResponse struct {
+	Notifications []Notification `json:"notifications"`
+	Unread        int            `json:"unread"`
+}
+
+func (response ListNotifications200JSONResponse) VisitListNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListNotifications401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListNotifications401JSONResponse) VisitListNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListNotifications404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListNotifications404JSONResponse) VisitListNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkNotificationsSeenRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params MarkNotificationsSeenParams
+}
+
+type MarkNotificationsSeenResponseObject interface {
+	VisitMarkNotificationsSeenResponse(w http.ResponseWriter) error
+}
+
+type MarkNotificationsSeen204Response struct {
+}
+
+func (response MarkNotificationsSeen204Response) VisitMarkNotificationsSeenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MarkNotificationsSeen401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response MarkNotificationsSeen401JSONResponse) VisitMarkNotificationsSeenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkNotificationsSeen404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response MarkNotificationsSeen404JSONResponse) VisitMarkNotificationsSeenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ImportNtbRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ImportNtbParams
@@ -23671,6 +24809,15 @@ type StrictServerInterface interface {
 	// AdminDeleteOrganization Soft-delete an organization (system admin, ADR-022)
 	// (DELETE /admin/organizations/{orgId})
 	AdminDeleteOrganization(ctx context.Context, request AdminDeleteOrganizationRequestObject) (AdminDeleteOrganizationResponseObject, error)
+	// AdminGetSmtp Outgoing mail server of the installation (P2-05) — the password is never returned
+	// (GET /admin/smtp)
+	AdminGetSmtp(ctx context.Context, request AdminGetSmtpRequestObject) (AdminGetSmtpResponseObject, error)
+	// AdminSaveSmtp Save the outgoing mail server (password envelope-encrypted; omitted = kept, empty = removed)
+	// (PUT /admin/smtp)
+	AdminSaveSmtp(ctx context.Context, request AdminSaveSmtpRequestObject) (AdminSaveSmtpResponseObject, error)
+	// AdminTestSmtp Send a test e-mail with the saved settings
+	// (POST /admin/smtp/test)
+	AdminTestSmtp(ctx context.Context, request AdminTestSmtpRequestObject) (AdminTestSmtpResponseObject, error)
 	// AdminListUsers All users (system admin)
 	// (GET /admin/users)
 	AdminListUsers(ctx context.Context, request AdminListUsersRequestObject) (AdminListUsersResponseObject, error)
@@ -23722,6 +24869,12 @@ type StrictServerInterface interface {
 	// ActivateOrganization Remember this organization as the default to open after sign-in
 	// (POST /orgs/{orgId}/activate)
 	ActivateOrganization(ctx context.Context, request ActivateOrganizationRequestObject) (ActivateOrganizationResponseObject, error)
+	// GetAlertSettings Expiry alerts of the organization (P2-05) — owners and admins
+	// (GET /orgs/{orgId}/alert-settings)
+	GetAlertSettings(ctx context.Context, request GetAlertSettingsRequestObject) (GetAlertSettingsResponseObject, error)
+	// SaveAlertSettings Save the organization's expiry alerts (owners and admins)
+	// (PUT /orgs/{orgId}/alert-settings)
+	SaveAlertSettings(ctx context.Context, request SaveAlertSettingsRequestObject) (SaveAlertSettingsResponseObject, error)
 	// ListOrgAudit Audit log of the organization (owner/admin), newest first
 	// (GET /orgs/{orgId}/audit)
 	ListOrgAudit(ctx context.Context, request ListOrgAuditRequestObject) (ListOrgAuditResponseObject, error)
@@ -23833,6 +24986,9 @@ type StrictServerInterface interface {
 	// UpdateDevice Update a device (optimistic lock on version)
 	// (PATCH /orgs/{orgId}/devices/{deviceId})
 	UpdateDevice(ctx context.Context, request UpdateDeviceRequestObject) (UpdateDeviceResponseObject, error)
+	// SetDeviceAlertsMuted Turn expiry alerts off / on for one device (edit access, audited)
+	// (PUT /orgs/{orgId}/devices/{deviceId}/alerts-muted)
+	SetDeviceAlertsMuted(ctx context.Context, request SetDeviceAlertsMutedRequestObject) (SetDeviceAlertsMutedResponseObject, error)
 	// ApplyDeviceTemplate Generate the template ports the device does not have yet
 	// (POST /orgs/{orgId}/devices/{deviceId}/apply-template)
 	ApplyDeviceTemplate(ctx context.Context, request ApplyDeviceTemplateRequestObject) (ApplyDeviceTemplateResponseObject, error)
@@ -23947,6 +25103,12 @@ type StrictServerInterface interface {
 	// RegenerateInvite Issue a new invite link for a member who has not accepted yet (old links stop working)
 	// (POST /orgs/{orgId}/members/{userId}/invite)
 	RegenerateInvite(ctx context.Context, request RegenerateInviteRequestObject) (RegenerateInviteResponseObject, error)
+	// ListNotifications Latest expiry notifications of devices the caller can see (the bell, P2-05)
+	// (GET /orgs/{orgId}/notifications)
+	ListNotifications(ctx context.Context, request ListNotificationsRequestObject) (ListNotificationsResponseObject, error)
+	// MarkNotificationsSeen The caller opened the bell — what is there now is read
+	// (POST /orgs/{orgId}/notifications/seen)
+	MarkNotificationsSeen(ctx context.Context, request MarkNotificationsSeenRequestObject) (MarkNotificationsSeenResponseObject, error)
 	// ImportNtb Import a .ntb.json file as a new diagram (one transaction; new ids; devices reused / updated / created / skipped)
 	// (POST /orgs/{orgId}/ntb-imports)
 	ImportNtb(ctx context.Context, request ImportNtbRequestObject) (ImportNtbResponseObject, error)
@@ -24246,6 +25408,96 @@ func (sh *strictHandler) AdminDeleteOrganization(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminDeleteOrganizationResponseObject); ok {
 		if err := validResponse.VisitAdminDeleteOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminGetSmtp operation middleware
+func (sh *strictHandler) AdminGetSmtp(w http.ResponseWriter, r *http.Request) {
+	var request AdminGetSmtpRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetSmtp(ctx, request.(AdminGetSmtpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetSmtp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminGetSmtpResponseObject); ok {
+		if err := validResponse.VisitAdminGetSmtpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminSaveSmtp operation middleware
+func (sh *strictHandler) AdminSaveSmtp(w http.ResponseWriter, r *http.Request, params AdminSaveSmtpParams) {
+	var request AdminSaveSmtpRequestObject
+
+	request.Params = params
+
+	var body AdminSaveSmtpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminSaveSmtp(ctx, request.(AdminSaveSmtpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminSaveSmtp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminSaveSmtpResponseObject); ok {
+		if err := validResponse.VisitAdminSaveSmtpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminTestSmtp operation middleware
+func (sh *strictHandler) AdminTestSmtp(w http.ResponseWriter, r *http.Request, params AdminTestSmtpParams) {
+	var request AdminTestSmtpRequestObject
+
+	request.Params = params
+
+	var body AdminTestSmtpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminTestSmtp(ctx, request.(AdminTestSmtpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminTestSmtp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminTestSmtpResponseObject); ok {
+		if err := validResponse.VisitAdminTestSmtpResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -24719,6 +25971,66 @@ func (sh *strictHandler) ActivateOrganization(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ActivateOrganizationResponseObject); ok {
 		if err := validResponse.VisitActivateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAlertSettings operation middleware
+func (sh *strictHandler) GetAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request GetAlertSettingsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAlertSettings(ctx, request.(GetAlertSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAlertSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAlertSettingsResponseObject); ok {
+		if err := validResponse.VisitGetAlertSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveAlertSettings operation middleware
+func (sh *strictHandler) SaveAlertSettings(w http.ResponseWriter, r *http.Request, orgId OrgId, params SaveAlertSettingsParams) {
+	var request SaveAlertSettingsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body SaveAlertSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveAlertSettings(ctx, request.(SaveAlertSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveAlertSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveAlertSettingsResponseObject); ok {
+		if err := validResponse.VisitSaveAlertSettingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -25858,6 +27170,41 @@ func (sh *strictHandler) UpdateDevice(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateDeviceResponseObject); ok {
 		if err := validResponse.VisitUpdateDeviceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetDeviceAlertsMuted operation middleware
+func (sh *strictHandler) SetDeviceAlertsMuted(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceAlertsMutedParams) {
+	var request SetDeviceAlertsMutedRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body SetDeviceAlertsMutedJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetDeviceAlertsMuted(ctx, request.(SetDeviceAlertsMutedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetDeviceAlertsMuted")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetDeviceAlertsMutedResponseObject); ok {
+		if err := validResponse.VisitSetDeviceAlertsMutedResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -27044,6 +28391,59 @@ func (sh *strictHandler) RegenerateInvite(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegenerateInviteResponseObject); ok {
 		if err := validResponse.VisitRegenerateInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListNotifications operation middleware
+func (sh *strictHandler) ListNotifications(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListNotificationsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListNotifications(ctx, request.(ListNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListNotificationsResponseObject); ok {
+		if err := validResponse.VisitListNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkNotificationsSeen operation middleware
+func (sh *strictHandler) MarkNotificationsSeen(w http.ResponseWriter, r *http.Request, orgId OrgId, params MarkNotificationsSeenParams) {
+	var request MarkNotificationsSeenRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkNotificationsSeen(ctx, request.(MarkNotificationsSeenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkNotificationsSeen")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkNotificationsSeenResponseObject); ok {
+		if err := validResponse.VisitMarkNotificationsSeenResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

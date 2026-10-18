@@ -18,6 +18,9 @@ type Config struct {
 	DatabaseURL string
 	// MigrateOnStart applies pending migrations before serving (enabled in Docker Compose).
 	MigrateOnStart bool
+	// Timezone is the calendar of the installation (expiry dates, the 07:00 alert digest) when TZ is not set;
+	// containers run on UTC otherwise.
+	Timezone string
 	// MasterKey is the base64 32-byte key for envelope encryption of secrets (required; ADR-018).
 	MasterKey string
 	// TrustedProxies are CIDRs whose X-Forwarded-For / X-Forwarded-Proto headers are honoured
@@ -34,6 +37,7 @@ func Load() Config {
 		DatabaseURL:    getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 		MigrateOnStart: getbool("NTB_MIGRATE_ON_START", false),
 		TrustedProxies: getenv("NTB_TRUSTED_PROXIES", "127.0.0.1/32,::1/128"),
+		Timezone:       getenv("NTB_TIMEZONE", "Asia/Ho_Chi_Minh"),
 		MasterKey:      os.Getenv("NTB_MASTER_KEY"), // no default: the server refuses to start without it
 	}
 }

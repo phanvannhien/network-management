@@ -26,6 +26,7 @@ import { DeviceFormDialog } from './DeviceFormDialog'
 import { LinksPanel } from './LinksPanel'
 import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import { PhotoButton } from './PhotoDialog'
+import { useMuteAlerts } from '@/modules/alerts/alerts'
 import {
   useCustomFields,
   useDeleteDevices,
@@ -345,6 +346,12 @@ export function DeviceDetailPage() {
               ]}
             />
           </div>
+          <AlertsMuteRow
+            orgId={orgId}
+            deviceId={d.id}
+            muted={d.alertsMuted === true}
+            canEdit={canEdit}
+          />
           <p className="text-muted-foreground">{t('devices.contractsHint')}</p>
         </TabsContent>
         <TabsContent value="diagrams" className="pt-3">
@@ -377,5 +384,38 @@ export function DeviceDetailPage() {
         }
       />
     </div>
+  )
+}
+
+/** Expiry alerts of this device on / off (P2-05): for a box being replaced or already known. */
+function AlertsMuteRow({
+  orgId,
+  deviceId,
+  muted,
+  canEdit,
+}: {
+  orgId: string
+  deviceId: string
+  muted: boolean
+  canEdit: boolean
+}) {
+  const { t } = useTranslation()
+  const mute = useMuteAlerts(orgId, deviceId)
+  return (
+    <label className="flex items-start gap-2 text-sm">
+      <input
+        type="checkbox"
+        className="mt-0.5 size-4 accent-primary"
+        checked={muted}
+        disabled={!canEdit || mute.isPending}
+        onChange={(e) =>
+          mute.mutate(e.target.checked, { onError: (err) => toast.error(err.message) })
+        }
+      />
+      <span>
+        {t('alerts.muteDevice')}
+        <span className="block text-xs text-muted-foreground">{t('alerts.muteDeviceGuide')}</span>
+      </span>
+    </label>
   )
 }

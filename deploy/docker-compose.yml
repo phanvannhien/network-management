@@ -29,6 +29,7 @@ services:
       NTB_ENV: ${NTB_ENV:-production}
       NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:-ntb_dev_password}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
       NTB_MIGRATE_ON_START: "true"
+      NTB_TIMEZONE: ${NTB_TIMEZONE:-Asia/Ho_Chi_Minh}
       # Trust X-Forwarded-For only from the nginx container. Never trust whole private ranges:
       # LAN clients (often 192.168.x.x) could then spoof their IP and bypass per-IP rate limits.
       NTB_TRUSTED_PROXIES: "172.30.68.10/32"

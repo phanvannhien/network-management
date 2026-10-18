@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	_ "time/tzdata" // timezone database inside the binary (alpine images have none)
 
 	"golang.org/x/term"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/notify"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
@@ -54,6 +56,14 @@ func main() {
 
 func serve(logger *slog.Logger) error {
 	cfg := config.Load()
+	// Calendar days (expiry dates, the 07:00 digest) follow the installation's timezone; TZ, when set, wins.
+	if os.Getenv("TZ") == "" {
+		loc, err := time.LoadLocation(cfg.Timezone)
+		if err != nil {
+			return fmt.Errorf("NTB_TIMEZONE: %w", err)
+		}
+		time.Local = loc
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -108,6 +118,8 @@ func serve(logger *slog.Logger) error {
 	}
 
 	go cleanupExpiredSessions(ctx, logger, queries)
+	// Expiry alerts (P2-05): notifications hourly, one digest e-mail a day per organization.
+	go notify.Runner{Pool: pool, Keys: keys, Send: notify.SendSMTP, Logger: logger}.Loop(ctx)
 
 	errCh := make(chan error, 1)
 	go func() {

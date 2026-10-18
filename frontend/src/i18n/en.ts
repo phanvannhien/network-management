@@ -24,6 +24,8 @@ export const en: Strings = {
     title: '{{name}} environment — not the production system',
   },
   nav: {
+    alerts: 'Expiry alerts',
+    systemSmtp: 'Outgoing mail',
     main: 'Main navigation',
     dashboard: 'Dashboard',
     diagrams: 'Diagrams',
@@ -2027,6 +2029,93 @@ export const en: Strings = {
   scope: {
     label: 'Filter by category',
     all: 'Whole organization',
+  },
+  smtp: {
+    title: 'Outgoing mail (SMTP)',
+    intro:
+      'One mail server for the whole installation, used for expiry alerts. Gmail / Google Workspace, Microsoft 365 or your own mail server.',
+    loadFailed: 'Mail settings could not be loaded',
+    host: 'SMTP server',
+    hostGuide:
+      'Mail server name, e.g. smtp.gmail.com (Google), smtp.office365.com (Microsoft 365) or mail.example.com.',
+    port: 'Port',
+    portGuide: '587 for STARTTLS (most common), 465 for TLS, 25 for an internal relay.',
+    security: 'Connection security',
+    securityValues: {
+      starttls: 'STARTTLS (port 587)',
+      tls: 'TLS from the start (port 465)',
+      none: 'None (internal relay only)',
+    },
+    securityGuide: {
+      starttls:
+        'Plain connection upgraded to encryption — the Gmail / Microsoft 365 standard. If the server does not offer it, sending is refused, never downgraded.',
+      tls: 'Encrypted from the first byte (SMTPS).',
+      none: 'Only for a relay inside your network that needs no login. A password is never sent over an unencrypted connection.',
+    },
+    username: 'Login',
+    usernameGuide: 'Usually the sending address. Leave empty if the relay needs no login.',
+    password: 'Password',
+    passwordGuide:
+      'With Gmail / Microsoft 365 use an "app password" rather than the main one. Stored encrypted.',
+    passwordKept:
+      'A password is stored (never shown again). Leave empty to keep it; type a new one to replace it.',
+    clearPassword: 'Remove password',
+    keepPassword: 'Keep password',
+    fromAddress: 'Sender address',
+    fromAddressGuide: 'Shown in "From". Many servers require it to match the login.',
+    fromName: 'Sender name',
+    publicUrl: 'System address',
+    publicUrlGuide:
+      'Where people open the system, e.g. https://ntb.example.com — used for links to devices in e-mails. Empty = no links.',
+    saved: 'Mail settings saved',
+    testTitle: 'Send a test e-mail',
+    testGuide:
+      'Save first, then send a test to make sure the server accepts the login and delivers.',
+    testTo: 'Send to',
+    testSend: 'Send test',
+    testSent: 'Sent. Check the inbox (and the spam folder).',
+    testError: 'Not sent: {{message}}',
+    testFailed: 'The test e-mail could not be sent',
+  },
+  alerts: {
+    title: 'Expiry alerts',
+    intro:
+      'Warnings before a device leaves warranty, its license ends or the vendor stops supporting it. Only devices with that date, in use or spare, are concerned. Each milestone is announced once; one digest e-mail each morning with what is new.',
+    loadFailed: 'Alert settings could not be loaded',
+    noSmtp:
+      'The system cannot send e-mail yet — notifications appear in the bell only. Ask a system admin to set it up in System › Outgoing mail.',
+    enabled: 'Expiry alerts on for this organization',
+    kinds: 'Announce',
+    kindsGuide: 'A device without that date is not concerned (e.g. a switch without a license).',
+    kindValues: { warranty: 'Warranty ends', license: 'License ends', eos: 'Vendor support ends' },
+    kindGuides: {
+      warranty: 'Hardware warranty end (the device\'s "Warranty end").',
+      license: 'License / subscription end (FortiGuard, SmartNet, DNA…) — "License end".',
+      eos: 'Vendor end of support: no more security fixes, replace before this date.',
+    },
+    milestones: 'Days before',
+    milestonesGuide:
+      'Milestones separated by commas, e.g. 90, 60, 30, 7. Once the date has passed it is announced once more.',
+    recipients: 'Who gets the e-mail',
+    emailAdmins: 'Owners and admins of the organization',
+    extraEmails: 'Other addresses',
+    extraEmailsGuide:
+      'One per line, e.g. the NOC mailbox or the engineer in charge of the customer.',
+    recipientsNow: 'Sent to',
+    noRecipients: 'nobody — no e-mail will be sent',
+    saved: 'Alert settings saved',
+    muteDevice: 'No expiry alerts for this device',
+    muteDeviceGuide: 'For a device being replaced or already known, so e-mails stop reminding.',
+  },
+  notifications: {
+    title: 'Notifications',
+    settings: 'Alert settings',
+    loadFailed: 'Notifications could not be loaded',
+    passed: 'expired',
+    within: 'within {{count}} days',
+    within_one: 'within {{count}} day',
+    unreadLabel: 'Notifications — {{count}} unread',
+    unreadLabel_one: 'Notifications — {{count}} unread',
   },
   lifecycleFill: {
     open: 'Fill support dates',

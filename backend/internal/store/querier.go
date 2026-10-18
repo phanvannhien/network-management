@@ -20,6 +20,13 @@ type Querier interface {
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
 	// System admin: user management (global by design).
 	AdminListUsers(ctx context.Context) ([]AdminListUsersRow, error)
+	// Owners and admins of the organization whose account is active.
+	AlertAdminEmails(ctx context.Context, organizationID pgtype.UUID) ([]string, error)
+	// Dates of devices in use (or spare) of an organization up to @until; muted devices and retired / planned ones are
+	// left out, like the dashboard's expiry block.
+	AlertCandidates(ctx context.Context, arg AlertCandidatesParams) ([]AlertCandidatesRow, error)
+	// Live organizations with their alert settings (defaults when they never saved any).
+	AlertOrganizations(ctx context.Context) ([]AlertOrganizationsRow, error)
 	CategoryPath(ctx context.Context, id pgtype.UUID) (string, error)
 	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
@@ -134,6 +141,7 @@ type Querier interface {
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
 	// The organization's template already standing for a catalog model: same name, or same type and model / part number.
 	FindTemplateForCatalog(ctx context.Context, arg FindTemplateForCatalogParams) (DeviceTemplate, error)
+	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
@@ -151,6 +159,7 @@ type Querier interface {
 	// Soft-deleted organizations (deleted_at IS NOT NULL) are invisible everywhere except audit history.
 	// The tenant middleware's single source of truth: does this user belong to this (live) organization?
 	GetMembership(ctx context.Context, arg GetMembershipParams) (GetMembershipRow, error)
+	GetNotificationsSeen(ctx context.Context, arg GetNotificationsSeenParams) (pgtype.Timestamptz, error)
 	GetOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	// A switch port a member may plug into: an interface of a live device in the organization.
 	GetPortInterface(ctx context.Context, arg GetPortInterfaceParams) (GetPortInterfaceRow, error)
@@ -161,6 +170,8 @@ type Querier interface {
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
 	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
+	// Expiry alerts (P2-05, ADR-043).
+	GetSmtpSettings(ctx context.Context) (SmtpSetting, error)
 	GetSubnet(ctx context.Context, arg GetSubnetParams) (GetSubnetRow, error)
 	// MFA data is per user (global, not tenant-scoped).
 	GetTOTP(ctx context.Context, userID pgtype.UUID) (MfaTotp, error)
@@ -180,7 +191,10 @@ type Querier interface {
 	ImportInterfaceByName(ctx context.Context, arg ImportInterfaceByNameParams) (pgtype.UUID, error)
 	// Prefix length of the most specific subnet holding the address in the VRF (0 = none).
 	ImportSubnetPrefix(ctx context.Context, arg ImportSubnetPrefixParams) (int32, error)
+	// First save of an organization that still had the defaults (no row); nothing back = someone saved meanwhile.
+	InsertAlertSettings(ctx context.Context, arg InsertAlertSettingsParams) (AlertSetting, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	InsertNotification(ctx context.Context, arg InsertNotificationParams) (pgtype.UUID, error)
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
@@ -221,6 +235,8 @@ type Querier interface {
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
 	ListMyOrganizations(ctx context.Context, userID pgtype.UUID) ([]ListMyOrganizationsRow, error)
+	// The latest notifications of an organization for the bell (the caller filters them by device visibility).
+	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
@@ -256,6 +272,8 @@ type Querier interface {
 	LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error)
 	// Subnets containing the address (any VRF), most specific first.
 	LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([]LookupSubnetsRow, error)
+	MarkNotificationsEmailed(ctx context.Context, arg MarkNotificationsEmailedParams) error
+	MarkNotificationsSeen(ctx context.Context, arg MarkNotificationsSeenParams) error
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
 	MaxInterfaceSort(ctx context.Context, arg MaxInterfaceSortParams) (int32, error)
 	// Members of a cluster share a hostname: their member number tells them apart.
@@ -277,6 +295,8 @@ type Querier interface {
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
+	// keep_password leaves the stored password as it is; otherwise the given one (NULL clears it) replaces it.
+	SaveSmtpSettings(ctx context.Context, arg SaveSmtpSettingsParams) (SmtpSetting, error)
 	// Live members of the clusters: a cluster is drawn through its members.
 	SearchClusterMembers(ctx context.Context, arg SearchClusterMembersParams) ([]SearchClusterMembersRow, error)
 	// Stacks / HA pairs / VCs by name or hostname (their VIP is found by SearchIPs).
@@ -295,6 +315,8 @@ type Querier interface {
 	SearchMACs(ctx context.Context, arg SearchMACsParams) ([]SearchMACsRow, error)
 	// Live, not retired devices with this serial (trimmed, case-insensitive).
 	SerialHolders(ctx context.Context, arg SerialHoldersParams) ([]SerialHoldersRow, error)
+	SetAlertDigestDay(ctx context.Context, arg SetAlertDigestDayParams) error
+	SetDeviceAlertsMuted(ctx context.Context, arg SetDeviceAlertsMutedParams) (int64, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error
@@ -317,6 +339,9 @@ type Querier interface {
 	// Interface / IP changes bump the device version so open device forms see the change.
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
+	// Notifications not e-mailed yet; current = the device still counts (date unchanged, not muted, still in use).
+	UnsentNotifications(ctx context.Context, organizationID pgtype.UUID) ([]UnsentNotificationsRow, error)
+	UpdateAlertSettingsVersioned(ctx context.Context, arg UpdateAlertSettingsVersionedParams) (AlertSetting, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (int64, error)
 	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)

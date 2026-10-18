@@ -22,6 +22,8 @@ export const vi = {
     title: 'Môi trường {{name}} — không phải hệ thống chính thức',
   },
   nav: {
+    alerts: 'Cảnh báo hết hạn',
+    systemSmtp: 'Gửi email',
     main: 'Điều hướng chính',
     dashboard: 'Dashboard',
     diagrams: 'Sơ đồ',
@@ -2013,6 +2015,93 @@ export const vi = {
   scope: {
     label: 'Lọc theo danh mục',
     all: 'Toàn tổ chức',
+  },
+  smtp: {
+    title: 'Gửi email (SMTP)',
+    intro:
+      'Máy chủ email dùng chung cho cả hệ thống, để gửi cảnh báo hết hạn. Có thể dùng Gmail / Google Workspace, Microsoft 365 hoặc máy chủ mail của công ty.',
+    loadFailed: 'Không tải được cài đặt email',
+    host: 'Máy chủ SMTP',
+    hostGuide:
+      'Tên máy chủ gửi thư, vd smtp.gmail.com (Google), smtp.office365.com (Microsoft 365), hoặc mail.congty.vn.',
+    port: 'Cổng',
+    portGuide: '587 cho STARTTLS (phổ biến nhất), 465 cho TLS, 25 cho relay nội bộ.',
+    security: 'Mã hóa kết nối',
+    securityValues: {
+      starttls: 'STARTTLS (cổng 587)',
+      tls: 'TLS ngay từ đầu (cổng 465)',
+      none: 'Không mã hóa (chỉ relay nội bộ)',
+    },
+    securityGuide: {
+      starttls:
+        'Kết nối thường rồi nâng lên mã hóa — chuẩn của Gmail, Microsoft 365. Máy chủ không hỗ trợ thì hệ thống từ chối gửi, không tự hạ xuống.',
+      tls: 'Mã hóa ngay khi kết nối (SMTPS).',
+      none: 'Chỉ dùng cho máy chủ relay trong mạng nội bộ, không cần đăng nhập. Hệ thống không bao giờ gửi mật khẩu qua kết nối không mã hóa.',
+    },
+    username: 'Tài khoản đăng nhập',
+    usernameGuide: 'Thường là địa chỉ email gửi. Để trống nếu máy chủ relay không cần đăng nhập.',
+    password: 'Mật khẩu',
+    passwordGuide:
+      'Với Gmail / Microsoft 365 nên dùng "mật khẩu ứng dụng" (app password) thay cho mật khẩu chính. Mật khẩu được mã hóa khi lưu.',
+    passwordKept:
+      'Đã lưu một mật khẩu (không hiển thị lại). Để trống là giữ nguyên; nhập mới để thay.',
+    clearPassword: 'Xóa mật khẩu',
+    keepPassword: 'Giữ mật khẩu',
+    fromAddress: 'Địa chỉ gửi',
+    fromAddressGuide:
+      'Email hiện ở dòng "Từ". Nhiều máy chủ bắt buộc trùng với tài khoản đăng nhập.',
+    fromName: 'Tên người gửi',
+    publicUrl: 'Địa chỉ truy cập hệ thống',
+    publicUrlGuide:
+      'Địa chỉ mọi người mở hệ thống, vd https://ntb.congty.vn — dùng để đặt link tới thiết bị trong email. Để trống thì email không có link.',
+    saved: 'Đã lưu cài đặt email',
+    testTitle: 'Gửi email thử',
+    testGuide: 'Lưu cài đặt trước, rồi gửi thử để chắc máy chủ nhận đăng nhập và gửi được.',
+    testTo: 'Gửi tới địa chỉ',
+    testSend: 'Gửi thử',
+    testSent: 'Đã gửi. Kiểm tra hộp thư (cả thư rác).',
+    testError: 'Không gửi được: {{message}}',
+    testFailed: 'Không gửi được email thử',
+  },
+  alerts: {
+    title: 'Cảnh báo hết hạn',
+    intro:
+      'Báo trước khi thiết bị hết bảo hành, hết license hoặc hãng ngừng hỗ trợ. Chỉ thiết bị có điền ngày tương ứng, đang dùng hoặc dự phòng mới được báo. Mỗi mốc báo một lần; mỗi sáng gửi một email tổng hợp những gì mới.',
+    loadFailed: 'Không tải được cài đặt cảnh báo',
+    noSmtp:
+      'Hệ thống chưa cấu hình gửi email — hiện chỉ có thông báo ở biểu tượng chuông. Nhờ quản trị hệ thống cài ở Hệ thống › Gửi email.',
+    enabled: 'Bật cảnh báo hết hạn cho tổ chức này',
+    kinds: 'Báo những gì',
+    kindsGuide: 'Thiết bị để trống ngày nào thì không bị báo loại đó (vd switch không có license).',
+    kindValues: { warranty: 'Hết bảo hành', license: 'Hết license', eos: 'Hãng ngừng hỗ trợ' },
+    kindGuides: {
+      warranty: 'Ngày hết bảo hành phần cứng (ô "Hết bảo hành" của thiết bị).',
+      license: 'Ngày hết license / gói dịch vụ (FortiGuard, SmartNet, DNA…) — ô "Hết license".',
+      eos: 'Ngày hãng ngừng hỗ trợ (End-of-Support): không còn bản vá bảo mật, nên thay trước ngày này.',
+    },
+    milestones: 'Báo trước (ngày)',
+    milestonesGuide:
+      'Các mốc, cách nhau bằng dấu phẩy, vd 90, 60, 30, 7. Khi ngày đã qua sẽ báo thêm một lần "đã hết hạn".',
+    recipients: 'Ai nhận email',
+    emailAdmins: 'Chủ sở hữu và quản trị của tổ chức',
+    extraEmails: 'Thêm địa chỉ',
+    extraEmailsGuide:
+      'Mỗi dòng một email, vd hộp thư chung của đội NOC hoặc kỹ sư phụ trách khách hàng.',
+    recipientsNow: 'Đang gửi tới',
+    noRecipients: 'chưa có ai — email sẽ không được gửi',
+    saved: 'Đã lưu cài đặt cảnh báo',
+    muteDevice: 'Tắt cảnh báo hết hạn cho thiết bị này',
+    muteDeviceGuide: 'Dùng khi thiết bị sắp được thay hoặc đã biết rõ, để email không nhắc lại.',
+  },
+  notifications: {
+    title: 'Thông báo',
+    settings: 'Cài đặt cảnh báo',
+    loadFailed: 'Không tải được thông báo',
+    passed: 'đã hết hạn',
+    within: 'còn ≤ {{count}} ngày',
+    within_one: 'còn ≤ {{count}} ngày',
+    unreadLabel: 'Thông báo — {{count}} chưa đọc',
+    unreadLabel_one: 'Thông báo — {{count}} chưa đọc',
   },
   lifecycleFill: {
     open: 'Điền ngày hết hỗ trợ',

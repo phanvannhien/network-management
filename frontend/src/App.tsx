@@ -62,6 +62,12 @@ const DeviceImportPage = lazy(() =>
 const TemplatesPage = lazy(() =>
   import('./modules/inventory/TemplatesPage').then((m) => ({ default: m.TemplatesPage })),
 )
+const AlertSettingsPage = lazy(() =>
+  import('./modules/alerts/AlertSettingsPage').then((m) => ({ default: m.AlertSettingsPage })),
+)
+const AdminSmtpPage = lazy(() =>
+  import('./modules/admin/AdminSmtpPage').then((m) => ({ default: m.AdminSmtpPage })),
+)
 const CustomFieldsPage = lazy(() =>
   import('./modules/inventory/CustomFieldsPage').then((m) => ({ default: m.CustomFieldsPage })),
 )
@@ -115,6 +121,7 @@ export function AppRoutes() {
         <Route path="device-templates" element={<TemplatesPage />} />
         <Route path="glossary" element={<GlossaryPage />} />
         <Route path="custom-fields" element={<CustomFieldsPage />} />
+        <Route path="alerts" element={<AlertSettingsPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/admin" element={guard(<SystemShell />)}>
@@ -122,6 +129,7 @@ export function AppRoutes() {
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="audit" element={<AuditLogPage scope="system" />} />
         <Route path="health" element={<SystemHealthPage />} />
+        <Route path="smtp" element={<AdminSmtpPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/editor" element={guard(<EditorPage />)} />

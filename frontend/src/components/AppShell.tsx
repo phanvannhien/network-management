@@ -1,7 +1,7 @@
 import {
   Activity,
   ArrowLeft,
-  Bell,
+  BellRing,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   Network,
   LayoutTemplate,
   ListPlus,
+  Mail,
   ScrollText,
   Search,
   Server,
@@ -20,6 +21,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { NotificationBell } from '@/modules/alerts/NotificationBell'
 import { PhotoViewer } from '@/modules/inventory/PhotoDialog'
 import { ScopeSelector } from '@/modules/sites/ScopeSelector'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
@@ -40,7 +42,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { setLanguage } from '@/i18n'
@@ -320,22 +321,6 @@ function AccountMenu() {
   )
 }
 
-function Notifications() {
-  const { t } = useTranslation()
-  return (
-    <Popover>
-      <PopoverTrigger
-        render={<Button variant="ghost" size="icon" aria-label={t('topbar.notifications')} />}
-      >
-        <Bell aria-hidden />
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 text-muted-foreground">
-        {t('topbar.noNotifications')}
-      </PopoverContent>
-    </Popover>
-  )
-}
-
 /**
  * Application frame (DESIGN.md §6): collapsible sidebar, topbar with the current organization (or
  * the system-area band), breadcrumb, Ctrl+K, notifications, account menu, session-expiry warning.
@@ -424,7 +409,7 @@ function Shell({
                   Ctrl K
                 </kbd>
               </Button>
-              <Notifications />
+              <NotificationBell />
               <AccountMenu />
             </div>
           </header>
@@ -471,6 +456,7 @@ export function OrgShell() {
         ...(isAdmin
           ? [
               { to: `${base}/custom-fields`, label: t('nav.customFields'), icon: ListPlus },
+              { to: `${base}/alerts`, label: t('nav.alerts'), icon: BellRing },
               { to: `${base}/audit`, label: t('nav.audit'), icon: ScrollText },
             ]
           : []),
@@ -515,6 +501,7 @@ export function SystemShell() {
         { to: '/admin/users', label: t('nav.systemUsers'), icon: Users },
         { to: '/admin/audit', label: t('nav.audit'), icon: ScrollText },
         { to: '/admin/health', label: t('nav.systemHealth'), icon: Activity },
+        { to: '/admin/smtp', label: t('nav.systemSmtp'), icon: Mail },
       ],
     },
     { items: [{ to: '/', label: t('nav.backToOrgs'), icon: ArrowLeft, end: true }] },

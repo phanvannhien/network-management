@@ -1651,6 +1651,127 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/alert-settings:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getAlertSettings
+      summary: Expiry alerts of the organization (P2-05) — owners and admins
+      responses:
+        '200':
+          description: OK (the defaults when never saved)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: saveAlertSettings
+      summary: Save the organization's expiry alerts (owners and admins)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertSettingsInput'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/notifications:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listNotifications
+      summary: Latest expiry notifications of devices the caller can see (the bell, P2-05)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notifications, unread]
+                properties:
+                  unread:
+                    type: integer
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/notifications/seen:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: markNotificationsSeen
+      summary: The caller opened the bell — what is there now is read
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/devices/{deviceId}/alerts-muted:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DeviceId'
+    put:
+      operationId: setDeviceAlertsMuted
+      summary: Turn expiry alerts off / on for one device (edit access, audited)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [muted]
+              properties:
+                muted:
+                  type: boolean
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/devices/{deviceId}:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -3203,6 +3324,83 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /admin/smtp:
+    get:
+      operationId: adminGetSmtp
+      summary: Outgoing mail server of the installation (P2-05) — the password is never returned
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmtpSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      operationId: adminSaveSmtp
+      summary: Save the outgoing mail server (password envelope-encrypted; omitted = kept, empty = removed)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmtpSettingsInput'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmtpSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/smtp/test:
+    post:
+      operationId: adminTestSmtp
+      summary: Send a test e-mail with the saved settings
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to:
+                  type: string
+                  maxLength: 320
+      responses:
+        '200':
+          description: What the mail server answered (sent or why not)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sent, message]
+                properties:
+                  sent:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /admin/audit:
     get:
       operationId: listSystemAudit
@@ -4728,6 +4926,9 @@ components:
         catalogId:
           type: string
           description: system template (built-in catalog) the device was created from; empty when none
+        alertsMuted:
+          type: boolean
+          description: expiry alerts are turned off for this device (P2-05)
         categoryId:
           type: [string, 'null']
           format: uuid
@@ -5863,6 +6064,161 @@ components:
           $ref: '#/components/schemas/CatalogImages'
         lifecycle:
           $ref: '#/components/schemas/CatalogLifecycle'
+
+    AlertKind:
+      type: string
+      description: warranty end, license end, vendor end of support
+      enum: [warranty, license, eos]
+
+    SmtpSettings:
+      type: object
+      required: [host, port, security, username, passwordSet, fromAddress, fromName, publicUrl, configured]
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        security:
+          type: string
+          enum: [starttls, tls, none]
+        username:
+          type: string
+        passwordSet:
+          type: boolean
+          description: a password is stored (it is never sent back)
+        fromAddress:
+          type: string
+        fromName:
+          type: string
+        publicUrl:
+          type: string
+          description: address users open the system at, for links in e-mails
+        configured:
+          type: boolean
+          description: host and sender are set — e-mails can be sent
+
+    SmtpSettingsInput:
+      type: object
+      required: [host, port, security, username, fromAddress, fromName, publicUrl]
+      properties:
+        host:
+          type: string
+          maxLength: 253
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        security:
+          type: string
+          enum: [starttls, tls, none]
+        username:
+          type: string
+          maxLength: 320
+        password:
+          type: string
+          maxLength: 500
+          description: omitted = keep the stored one, empty = remove it
+        fromAddress:
+          type: string
+          maxLength: 320
+        fromName:
+          type: string
+          maxLength: 200
+        publicUrl:
+          type: string
+          maxLength: 300
+
+    AlertSettings:
+      type: object
+      required: [enabled, kinds, milestones, emailAdmins, extraEmails, version, recipients, smtpConfigured]
+      properties:
+        enabled:
+          type: boolean
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertKind'
+        milestones:
+          type: array
+          description: days before the date, each announced once
+          items:
+            type: integer
+        emailAdmins:
+          type: boolean
+          description: owners and admins get the e-mail
+        extraEmails:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          description: 0 = the defaults (never saved)
+        recipients:
+          type: array
+          description: who gets the digest now (owners / admins and the extra addresses)
+          items:
+            type: string
+        smtpConfigured:
+          type: boolean
+          description: the installation can send e-mail (else in-app notifications only)
+
+    AlertSettingsInput:
+      type: object
+      required: [enabled, kinds, milestones, emailAdmins, extraEmails, version]
+      properties:
+        enabled:
+          type: boolean
+        kinds:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/AlertKind'
+        milestones:
+          type: array
+          minItems: 1
+          maxItems: 6
+          items:
+            type: integer
+            minimum: 1
+            maximum: 365
+        emailAdmins:
+          type: boolean
+        extraEmails:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 320
+        version:
+          type: integer
+
+    Notification:
+      type: object
+      required: [id, kind, deviceId, hostname, siteCode, dueDate, milestone, createdAt, unread]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/AlertKind'
+        deviceId:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        milestone:
+          type: integer
+          description: days before the date when it was raised; 0 = the date had passed
+        createdAt:
+          type: string
+          format: date-time
+        unread:
+          type: boolean
 
     CatalogLifecycle:
       type: object
