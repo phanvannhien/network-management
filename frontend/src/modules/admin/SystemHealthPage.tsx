@@ -11,10 +11,11 @@ import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/format'
 import { BackupState } from './BackupsPage'
 import { sizeText as kib, useBackups } from './backups'
+import { useHelpTopic } from '@/help/topic'
 
 /**
  * Backups (P2-13): whether they are on, the newest good one (red after 2 days without), the recent runs with their
- * errors. Configuration stays in the environment (docs/OPERATIONS.md).
+ * errors. Configuration stays in the environment (docs/help/sao-luu-khoi-phuc.md).
  */
 function BackupsSection({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation()
@@ -97,6 +98,7 @@ export function SystemHealthPage() {
   const session = useSession()
   const health = useHealth()
   useBreadcrumbs([{ label: t('health.title') }])
+  useHelpTopic('sao-luu-khoi-phuc')
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
 
   const h = health.data

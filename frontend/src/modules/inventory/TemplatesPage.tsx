@@ -35,6 +35,7 @@ import {
   type InterfaceMedia,
   type PortGroup,
 } from './devices'
+import { useHelpTopic } from '@/help/topic'
 
 /** Common models to start from (the full model library is Phase 2, SRS §4.3). */
 const PRESETS: {
@@ -391,6 +392,7 @@ export function TemplatesPage() {
   const [tab, setTab] = useState<'own' | 'system'>('system')
   const catalogCount = useCatalog(orgId).data?.length ?? 0
   useBreadcrumbs([{ label: t('templates.title') }])
+  useHelpTopic('thiet-bi#cong-va-ip')
   return (
     <div className="max-w-5xl space-y-3 p-4">
       <PageHeader

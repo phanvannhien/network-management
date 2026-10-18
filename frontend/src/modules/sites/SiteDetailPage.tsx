@@ -41,6 +41,7 @@ import {
   type Location,
   type Rack,
 } from './sites'
+import { useHelpTopic } from '@/help/topic'
 
 const TABS = ['locations', 'racks', 'info', 'devices', 'diagrams'] as const
 type Tab = (typeof TABS)[number]
@@ -331,6 +332,7 @@ export function SiteDetailPage() {
       : []),
     { label: s?.code ?? '…' },
   ])
+  useHelpTopic('danh-muc-site')
 
   const canEdit = atLeast(s?.access, 'edit')
   const canAdmin = atLeast(s?.access, 'admin')

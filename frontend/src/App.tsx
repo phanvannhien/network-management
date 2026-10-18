@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, type ReactNode } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
 import { AcceptInvitePage } from './app/AcceptInvitePage'
 import { ForgotPasswordPage } from './app/ForgotPasswordPage'
 import { LoginPage } from './app/LoginPage'
@@ -54,6 +54,17 @@ const SubnetDetailPage = lazy(() =>
 const GlossaryPage = lazy(() =>
   import('./help/GlossaryPage').then((m) => ({ default: m.GlossaryPage })),
 )
+const HelpShell = lazy(() => import('./help/HelpShell').then((m) => ({ default: m.HelpShell })))
+const HelpHome = lazy(() => import('./help/HelpPages').then((m) => ({ default: m.HelpHome })))
+const HelpArticlePage = lazy(() =>
+  import('./help/HelpPages').then((m) => ({ default: m.HelpArticlePage })),
+)
+
+/** The old per-organization glossary address (bookmarks) opens the help centre's glossary. */
+function GlossaryRedirect() {
+  const { hash } = useLocation()
+  return <Navigate to={`/help/glossary${hash}`} replace />
+}
 const DeviceImportPage = lazy(() =>
   import('./modules/inventory/import/DeviceImportPage').then((m) => ({
     default: m.DeviceImportPage,
@@ -137,7 +148,7 @@ export function AppRoutes() {
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage scope="org" />} />
         <Route path="device-templates" element={<TemplatesPage />} />
-        <Route path="glossary" element={<GlossaryPage />} />
+        <Route path="glossary" element={<GlossaryRedirect />} />
         <Route path="custom-fields" element={<CustomFieldsPage />} />
         <Route path="alerts" element={<AlertSettingsPage />} />
         <Route path="vendors" element={<VendorsPage />} />
@@ -146,6 +157,11 @@ export function AppRoutes() {
         <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
         <Route path="contracts/:contractId" element={<ContractPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
+      </Route>
+      <Route path="/help" element={guard(<HelpShell />)}>
+        <Route index element={<HelpHome />} />
+        <Route path="glossary" element={<GlossaryPage />} />
+        <Route path=":slug" element={<HelpArticlePage />} />
       </Route>
       <Route path="/admin" element={guard(<SystemShell />)}>
         <Route path="organizations" element={<AdminOrganizationsPage />} />

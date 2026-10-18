@@ -50,6 +50,7 @@ import {
 } from './devices'
 import { downloadDevicesXlsx } from './exportDevices'
 import { api, csrfParam } from '@/api/client'
+import { useHelpTopic } from '@/help/topic'
 
 /** Warranty date; amber icon within 90 days, red text once expired. */
 export function WarrantyText({ date }: { date: string | null }) {
@@ -126,6 +127,7 @@ export function DeviceListPage() {
   const sites = useSites(orgId)
   const clusters = useClusters(orgId)
   useBreadcrumbs([{ label: t('nav.devices') }])
+  useHelpTopic('thiet-bi')
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') === 'groups' ? 'groups' : 'devices'
   const [creatingGroup, setCreatingGroup] = useState(false)

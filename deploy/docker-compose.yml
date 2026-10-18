@@ -40,7 +40,7 @@ services:
       # Envelope-encryption master key for secrets (MFA seeds now, credentials later). Required:
       # compose refuses to start without it. Create deploy/.env with `make dev-env`.
       NTB_MASTER_KEY: ${NTB_MASTER_KEY:?Set NTB_MASTER_KEY in deploy/.env (run make dev-env, or openssl rand -base64 32)}
-      # Backups (P2-13, docs/OPERATIONS.md): off until a passphrase (16+ characters) is set. Kept apart from the
+      # Backups (P2-13, docs/help/sao-luu-khoi-phuc.md): off until a passphrase (16+ characters) is set. Kept apart from the
       # master key; losing it makes the backups unreadable.
       NTB_BACKUP_PASSPHRASE: ${NTB_BACKUP_PASSPHRASE:-}
       NTB_BACKUP_TIME: ${NTB_BACKUP_TIME:-02:00}

@@ -16,6 +16,7 @@ import { WarrantyText } from '@/modules/inventory/DeviceListPage'
 import { ContractDialog } from './ContractDialog'
 import { SupportBox } from './SupportBox'
 import { fileUrl, useContract, useContractMutations } from './vendors'
+import { useHelpTopic } from '@/help/topic'
 
 const sizeText = (n: number) =>
   n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`
@@ -39,6 +40,7 @@ export function ContractPage() {
     { label: t('vendors.title'), to: `/o/${orgId}/vendors?tab=contracts` },
     { label: k?.name ?? '…' },
   ])
+  useHelpTopic('nha-cung-cap#hop-dong')
   if (detail.isError) return <NotFoundPage inShell />
   if (!detail.data || !k) return <Skeleton className="m-4 h-64" />
   const d = detail.data

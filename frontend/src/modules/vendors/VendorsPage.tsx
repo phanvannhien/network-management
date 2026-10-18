@@ -15,6 +15,7 @@ import { WarrantyText } from '@/modules/inventory/DeviceListPage'
 import { ContractDialog } from './ContractDialog'
 import { VendorDialog } from './VendorDialogs'
 import { VENDOR_KINDS, useContracts, useVendors } from './vendors'
+import { useHelpTopic } from '@/help/topic'
 
 /**
  * Vendors & contracts (P2-04, SRS §8): manufacturers, suppliers, ISPs and maintenance companies with their support
@@ -34,6 +35,7 @@ export function VendorsPage() {
   const [within, setWithin] = useState(params.get('within') ?? '')
   const [adding, setAdding] = useState<'vendor' | 'contract' | null>(null)
   useBreadcrumbs([{ label: t('vendors.title') }])
+  useHelpTopic('nha-cung-cap')
   const vendors = useVendors(orgId, q, kind, tab === 'vendors')
   const contracts = useContracts(
     orgId,

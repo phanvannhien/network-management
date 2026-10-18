@@ -495,6 +495,27 @@ export const vi = {
     yes: 'Có',
     no: 'Không',
   },
+  helpCenter: {
+    title: 'Trợ giúp',
+    open: 'Trợ giúp cho trang này',
+    intro:
+      'Hướng dẫn dùng hệ thống, thuật ngữ mạng giải thích dễ hiểu, và (với quản trị hệ thống) cài đặt, sao lưu, khôi phục.',
+    search: 'Tìm trong trợ giúp',
+    searchPlaceholder: 'Tìm: nhập Excel, VLAN, sao lưu, PDF…',
+    results: 'Kết quả',
+    noResults: 'Không tìm thấy — thử từ khác, hoặc xem danh sách bên trái.',
+    terms: 'Thuật ngữ',
+    glossaryBlurb: '{{count}} khái niệm mạng giải thích cho người không chuyên, kèm ví dụ thật.',
+    toc: 'Trong bài này',
+    more: 'Bài khác',
+    back: 'Quay lại hệ thống',
+    sections: {
+      start: 'Bắt đầu',
+      guides: 'Hướng dẫn theo việc',
+      admin: 'Quản trị hệ thống',
+      glossary: 'Thuật ngữ',
+    },
+  },
   help: {
     about: 'Giải thích: {{term}}',
     example: 'Ví dụ',
@@ -2678,7 +2699,7 @@ export const vi = {
   },
   backups: {
     intro:
-      'Mỗi đêm hệ thống tự sao lưu, mã hóa bằng mật khẩu sao lưu, rồi gửi bản sao lên các đích bên dưới. Mật khẩu sao lưu và lịch đặt trong deploy/.env (docs/OPERATIONS.md).',
+      'Mỗi đêm hệ thống tự sao lưu, mã hóa bằng mật khẩu sao lưu, rồi gửi bản sao lên các đích bên dưới. Mật khẩu sao lưu và lịch đặt trong deploy/.env (Trợ giúp → Sao lưu & khôi phục).',
     runNow: 'Sao lưu ngay',
     started: 'Đã bắt đầu sao lưu — kết quả hiện ở Lịch sử',
     targetsFailing: '{{count}} đích gửi lỗi',
@@ -2744,7 +2765,7 @@ export const vi = {
       kind: 'Loại đích',
       guide: {
         local:
-          'Thư mục bên trong container, thường là ổ NAS (SMB/NFS) hoặc USB đã mount trên máy chủ rồi gắn vào container api (xem docs/OPERATIONS.md). Bật snapshot trên NAS để chống ransomware.',
+          'Thư mục bên trong container, thường là ổ NAS (SMB/NFS) hoặc USB đã mount trên máy chủ rồi gắn vào container api (xem Trợ giúp → Sao lưu & khôi phục). Bật snapshot trên NAS để chống ransomware.',
         sftp: 'Gửi qua SSH tới NAS (Synology / QNAP bật SFTP) hoặc máy chủ khác. Nên tạo tài khoản riêng chỉ ghi được vào một thư mục, và dán khóa máy chủ để chống giả mạo.',
         s3: 'Kho lưu trữ đám mây chuẩn S3, nằm ngoài toà nhà. Tạo bucket có bật Object Lock (khóa không cho xóa N ngày) và một access key chỉ dùng cho bucket này.',
         drive:
@@ -2791,7 +2812,7 @@ export const vi = {
     state: 'Tình trạng',
     off: 'Chưa bật',
     offGuide:
-      'Chưa có mật khẩu sao lưu nên hệ thống chưa tự sao lưu. Đặt NTB_BACKUP_PASSPHRASE (≥ 16 ký tự, khác master key, cất riêng) trong deploy/.env rồi khởi động lại — xem docs/OPERATIONS.md.',
+      'Chưa có mật khẩu sao lưu nên hệ thống chưa tự sao lưu. Đặt NTB_BACKUP_PASSPHRASE (≥ 16 ký tự, khác master key, cất riêng) trong deploy/.env rồi khởi động lại — xem Trợ giúp → Sao lưu & khôi phục.',
     stale: 'Quá 2 ngày chưa có bản tốt',
     ok: 'Bình thường',
     last: 'Bản tốt gần nhất',
@@ -2811,7 +2832,7 @@ export const vi = {
     running: 'Đang chạy…',
     failed: 'Lỗi',
     howTo:
-      'Máy tắt đúng giờ thì chạy bù khi bật lại. Bản thủ công / trước nâng cấp giữ 5 bản mới nhất. Sao lưu ngay: make backup · Danh sách: make backup-list · Khôi phục: make restore FILE=… (docs/OPERATIONS.md).',
+      'Máy tắt đúng giờ thì chạy bù khi bật lại. Bản thủ công / trước nâng cấp giữ 5 bản mới nhất. Sao lưu ngay: make backup · Danh sách: make backup-list · Khôi phục: make restore FILE=… (Trợ giúp → Sao lưu & khôi phục).',
   },
   reports: {
     title: 'Báo cáo',

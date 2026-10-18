@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { ALERT_KINDS, useAlertSettings, useSaveAlertSettings, type AlertSettings } from './alerts'
+import { useHelpTopic } from '@/help/topic'
 
 /**
  * Organization › expiry alerts (P2-05, ADR-043): what is announced (warranty, license, vendor end of support), how
@@ -21,6 +22,7 @@ export function AlertSettingsPage() {
   const { orgId = '' } = useParams()
   const settings = useAlertSettings(orgId)
   useBreadcrumbs([{ label: t('alerts.title') }])
+  useHelpTopic('nha-cung-cap#canh-bao-het-han')
   const s = settings.data
   if (settings.isError) return <p className="p-4 text-status-down">{settings.error.message}</p>
   if (!s) return <Skeleton className="m-4 h-64" />

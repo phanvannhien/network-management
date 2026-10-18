@@ -13,6 +13,14 @@ export default defineConfig({
     },
   },
   server: {
+    // Files outside frontend/ the app bundles: the .ntb schema and the help articles (docs/help, P2-24).
+    fs: {
+      allow: [
+        import.meta.dirname,
+        path.resolve(import.meta.dirname, '../schema'),
+        path.resolve(import.meta.dirname, '../docs/help'),
+      ],
+    },
     proxy: {
       // Same path layout as nginx in Docker: /api is forwarded untouched to the Go API.
       '/api': {

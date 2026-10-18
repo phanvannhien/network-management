@@ -88,6 +88,7 @@ import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcu
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
 import { Toolbar } from './workspace/Toolbar'
+import { useHelpTopic } from '@/help/topic'
 
 const DRAFT_DELAY_MS = 600
 
@@ -119,6 +120,7 @@ export function DiagramEditorPage() {
     ...(parent ? [{ label: parent.name, to: `/o/${orgId}/diagrams/${from}` }] : []),
     { label: meta?.name ?? '…' },
   ])
+  useHelpTopic('so-do')
 
   // Load once per diagram, then offer a draft left from an earlier session.
   useEffect(() => {

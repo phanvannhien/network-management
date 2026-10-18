@@ -79,7 +79,7 @@ test:
 	cd frontend && npm run test
 	cd backend && go test ./...
 
-# Backups (P2-13, docs/OPERATIONS.md): run in the api container (its environment and backup volume).
+# Backups (P2-13, docs/help/sao-luu-khoi-phuc.md): run in the api container (its environment and backup volume).
 # deploy/docker-compose.override.yml (extra mounts, e.g. a NAS folder for backups) is used when present.
 COMPOSE = docker compose -f deploy/docker-compose.yml $(if $(wildcard deploy/docker-compose.override.yml),-f deploy/docker-compose.override.yml)
 backup:

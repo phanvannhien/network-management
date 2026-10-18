@@ -26,6 +26,7 @@ import { DashboardPanels } from '@/modules/dashboard/DashboardPanels'
 import { SiteCodeChangesDialog } from '@/modules/sites/CategoryDialogs'
 import { previewOrgCode, type SiteCodeChange } from '@/modules/sites/sites'
 import { ConflictError, NotFoundError, useOrganization, useUpdateOrganization } from './orgs'
+import { useHelpTopic } from '@/help/topic'
 
 function Panel({
   title,
@@ -302,6 +303,7 @@ export function OrgHomePage() {
   const session = useSession()
   const org = useOrganization(orgId)
   useBreadcrumbs([{ label: t('nav.dashboard') }])
+  useHelpTopic('bat-dau-nhanh')
 
   if (org.isError) {
     if (org.error instanceof NotFoundError) return <NotFoundPage inShell />

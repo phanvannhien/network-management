@@ -25,6 +25,7 @@ import {
   type BackupStatus,
   type BackupTarget,
 } from './backups'
+import { useHelpTopic } from '@/help/topic'
 
 /** Where a destination writes, in one line. */
 function whereOf(t: BackupTarget): string {
@@ -68,6 +69,7 @@ export function BackupsPage() {
   const [deleting, setDeleting] = useState<BackupTarget | null>(null)
   const [askMfa, setAskMfa] = useState<string | null>(null)
   useBreadcrumbs([{ label: t('backups.title') }])
+  useHelpTopic('sao-luu-khoi-phuc')
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
   const b = q.data
   if (!b) return <Skeleton className="m-4 h-64" />

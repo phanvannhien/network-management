@@ -21,6 +21,7 @@ import {
   type Category,
   type CategoryNode,
 } from './sites'
+import { useHelpTopic } from '@/help/topic'
 
 /**
  * "Danh mục & Sites" (SRS §3, ADR-032): the organization's category tree on the left (as deep as needed, may be
@@ -45,6 +46,7 @@ export function SiteListPage() {
   const [deleting, setDeleting] = useState<Category | null>(null)
   const [addingSite, setAddingSite] = useState(false)
   useBreadcrumbs([{ label: t('nav.sites') }])
+  useHelpTopic('danh-muc-site')
   const select = (id: string | null) => setParams(id ? { category: id } : {}, { replace: true })
 
   const nodeButton = (c: CategoryNode | null) => {

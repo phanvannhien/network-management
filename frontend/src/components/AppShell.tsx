@@ -13,6 +13,7 @@ import {
   KeyRound,
   FileSpreadsheet,
   DatabaseBackup,
+  CircleHelp,
   Hash,
   Network,
   LayoutTemplate,
@@ -33,7 +34,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useMatch, useNavigate, useParams } from 'react-router'
 import { useLogout, useSession } from '@/app/auth'
 import { activateOrganization, useMyOrganizations, useOrganization } from '@/app/orgs'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { setLanguage } from '@/i18n'
 import { usePreferences, type Density, type Theme } from '@/lib/preferences'
 import { cn } from '@/lib/utils'
+import { useCurrentHelpTopic } from '@/help/topic'
 import { useCrumbStore } from './breadcrumbs'
 import { CommandPalette } from './CommandPalette'
 import { EnvBadge } from './EnvBadge'
@@ -58,7 +60,7 @@ import { OrgAvatar, SystemAvatar } from './OrgAvatar'
 import { SessionExpiryWarning } from './SessionExpiryWarning'
 
 /** Placeholder while a lazily loaded page arrives (route code splitting). */
-function PageSkeleton() {
+export function PageSkeleton() {
   return (
     <div className="space-y-3 p-4" aria-busy>
       <Skeleton className="h-7 w-56" />
@@ -237,7 +239,6 @@ function AccountMenu() {
   const session = useSession()
   const logout = useLogout()
   const { theme, density, setTheme, setDensity, showGuides, setShowGuides } = usePreferences()
-  const { orgId } = useParams()
   const user = session.data?.user
   if (!user) return null
   const initials = (user.displayName || user.email).slice(0, 2).toUpperCase()
@@ -309,11 +310,10 @@ function AccountMenu() {
           >
             {t('help.showGuides')}
           </DropdownMenuCheckboxItem>
-          {orgId && (
-            <DropdownMenuItem render={<Link to={`/o/${orgId}/glossary`} />}>
-              {t('help.glossary')}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem render={<Link to="/help" />}>{t('helpCenter.title')}</DropdownMenuItem>
+          <DropdownMenuItem render={<Link to="/help/glossary" />}>
+            {t('help.glossary')}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link to="/mfa/setup?next=/" />}>
@@ -329,7 +329,7 @@ function AccountMenu() {
  * Application frame (DESIGN.md §6): collapsible sidebar, topbar with the current organization (or
  * the system-area band), breadcrumb, Ctrl+K, notifications, account menu, session-expiry warning.
  */
-function Shell({
+export function Shell({
   area,
   nav,
   children,
@@ -413,6 +413,7 @@ function Shell({
                   Ctrl K
                 </kbd>
               </Button>
+              <HelpButton />
               <NotificationBell />
               <AccountMenu />
             </div>
@@ -534,5 +535,21 @@ export function SystemShell() {
         <Outlet />
       </Suspense>
     </Shell>
+  )
+}
+
+/** "?" in the top bar: the help article about the page on screen, else the help home (P2-24). */
+function HelpButton() {
+  const { t } = useTranslation()
+  const topic = useCurrentHelpTopic()
+  return (
+    <Link
+      to={topic ? `/help/${topic}` : '/help'}
+      aria-label={t('helpCenter.open')}
+      title={t('helpCenter.open')}
+      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+    >
+      <CircleHelp aria-hidden />
+    </Link>
   )
 }

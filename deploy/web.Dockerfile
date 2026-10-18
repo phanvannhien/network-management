@@ -1,9 +1,11 @@
-# Build stage — mirrors the repo layout because the frontend imports ../schema (Vite alias @schema).
+# Build stage — mirrors the repo layout because the frontend imports ../schema (Vite alias @schema) and bundles the
+# help articles from ../docs/help (P2-24).
 FROM node:22-alpine AS build
 WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY schema/ /repo/schema/
+COPY docs/help/ /repo/docs/help/
 COPY frontend/ ./
 RUN npm run build
 

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSaveSmtp, useSmtp, useTestSmtp, type SmtpSettings } from '@/modules/alerts/alerts'
+import { useHelpTopic } from '@/help/topic'
 
 type Security = SmtpSettings['security']
 const DEFAULT_PORT: Record<Security, number> = { starttls: 587, tls: 465, none: 25 }
@@ -25,6 +26,7 @@ export function AdminSmtpPage() {
   const session = useSession()
   const smtp = useSmtp(session.data?.user.isSystemAdmin === true)
   useBreadcrumbs([{ label: t('smtp.title') }])
+  useHelpTopic('cai-dat-nang-cap')
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
   if (!smtp.data) return <Skeleton className="m-4 h-64" />
   return <SmtpForm saved={smtp.data} />

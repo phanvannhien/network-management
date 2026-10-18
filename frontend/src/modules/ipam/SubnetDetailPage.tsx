@@ -36,6 +36,7 @@ import {
   type SubnetDetail,
 } from './ipam'
 import { HolderLink, HolderRole, UsageBar, VlanChip } from './UsageBar'
+import { useHelpTopic } from '@/help/topic'
 
 function NextFree({ orgId, subnetId }: { orgId: string; subnetId: string }) {
   const { t } = useTranslation()
@@ -266,6 +267,7 @@ export function SubnetDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const s = subnet.data
   useBreadcrumbs([{ label: t('ipam.title'), to: `/o/${orgId}/ipam` }, { label: s?.cidr ?? '…' }])
+  useHelpTopic('ipam')
   if (subnet.isPending) {
     return (
       <div className="space-y-3 p-4">

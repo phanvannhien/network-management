@@ -27,6 +27,7 @@ import {
   useVaultRights,
 } from './vault'
 import { SHARED_CREDENTIAL_MIN } from '@/editor/checks/rules'
+import { useHelpTopic } from '@/help/topic'
 
 /**
  * Password vault (P2-02 / P2-03, SRS §9): device credentials (SSH, web, console, enable, SNMP…) and cloud
@@ -44,6 +45,7 @@ export function VaultPage() {
   const [q, setQ] = useState('')
   const [adding, setAdding] = useState<'credential' | 'cloud' | null>(null)
   useBreadcrumbs([{ label: t('vault.title') }])
+  useHelpTopic('kho-mat-khau')
   const creds = useCredentials(orgId, q, '', tab === 'credentials')
   const clouds = useCloudAccounts(orgId, q, '', tab === 'cloud')
   const open = (key: 'credential' | 'account', id: string) =>

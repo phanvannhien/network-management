@@ -947,3 +947,18 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Tài liệu:** `docs/INSTALL.md` (cài, HTTPS, nâng cấp, quay về bản cũ), `docs/OPERATIONS.md` (sao lưu, đích theo cỡ khách, chống ransomware, khôi phục). Lệnh `make` tự dùng `deploy/docker-compose.override.yml` nếu có.
 - **Để sau:** thêm đích FTP / WebDAV; đặt mật khẩu sao lưu và lịch ngay trên giao diện (hiện nằm trong `deploy/.env`).
 
+### ADR-054 — Trung tâm trợ giúp trong app (P2-24)
+- **Bối cảnh:** Kiến thức nằm rải rác: trang thuật ngữ chỉ vào được qua menu tài khoản (và chỉ trong một tổ chức), hướng dẫn vận hành chỉ có trong `docs/*.md`. Khách tự cài thường chạy trong mạng nội bộ, nên trợ giúp phải nằm trong app. Người dùng đề xuất có mục help (2026-10-18).
+- **Quyết định (người dùng đồng ý theo đề xuất, 2026-10-18):**
+  - **`/help`** có khung riêng (menu trái theo mục), gồm Bắt đầu, Hướng dẫn theo việc, Thuật ngữ (chuyển từ `/o/:orgId/glossary`, địa chỉ cũ tự chuyển hướng), và Quản trị hệ thống. **Chỉ system admin thấy** phần Quản trị hệ thống (gõ thẳng địa chỉ cũng ra 404).
+  - **Nút ? trên thanh trên cùng** ở mọi trang: mở bài về trang đang xem (`useHelpTopic(slug)` trong từng trang), không có thì mở trang chủ trợ giúp. Menu tài khoản có Trợ giúp và Thuật ngữ; nút (?) cạnh ô nhập trỏ tới `/help/glossary#…`.
+  - **Nội dung là Markdown trong `docs/help/*.md`** (front matter: title, section, order, summary). Đây là một nguồn duy nhất cho cả GitHub lẫn app: app nhúng lúc build (`import.meta.glob ?raw`, chunk riêng chỉ tải khi mở trợ giúp; Vite / Vitest mở `fs.allow` cho `docs/help`; image `web` chép `docs/help`). `docs/INSTALL.md` / `OPERATIONS.md` chuyển thành bài quản trị.
+  - **Hiển thị Markdown bằng bộ đọc tự viết** (không thêm thư viện): tiêu đề có anchor tiếng Việt không dấu, đoạn, danh sách lồng nhau, khối lệnh, bảng, ghi chú, chữ đậm / mã / link, và `:::tên` để chèn thành phần sống (vd bảng phím tắt lấy từ `shortcuts.ts`).
+    - Mọi chữ đi qua React, không chèn HTML.
+    - Link: `help:slug#anchor`, đường dẫn trong app, `http(s)` (mở tab mới); loại khác (`javascript:`, `data:`…) thành chữ thường.
+  - **Tìm kiếm** trên toàn bộ bài và thuật ngữ, không phân biệt dấu / hoa thường, nhảy tới đúng tiêu đề chứa kết quả.
+  - Test kiểm tra mọi link `help:` trỏ tới bài và tiêu đề có thật, mọi link thuật ngữ trỏ tới mục có thật.
+  - **Tiếng Việt trước;** bản tiếng Anh để sau (giao diện trợ giúp đã song ngữ).
+  - **Quy tắc mới:** tính năng mới phải kèm cập nhật bài trong `docs/help/` (CLAUDE.md).
+- **Để sau:** bài tiếng Anh; ảnh minh họa trong bài; link "Xem hướng dẫn" ngay trong các hộp thoại.
+

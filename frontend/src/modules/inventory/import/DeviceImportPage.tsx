@@ -44,6 +44,7 @@ import {
   type Field,
   type PlannedRow,
 } from './plan'
+import { useHelpTopic } from '@/help/topic'
 
 // Excel import of devices (P1-21, SRS §12). Steps on one page: file → columns → values (company → category,
 // place → site, kind → type) → preview (server dry run, HA pairs) → import in chunks with progress → optional first
@@ -89,6 +90,7 @@ function downloadTemplate() {
 
 export function DeviceImportPage() {
   const { t } = useTranslation()
+  useHelpTopic('thiet-bi#nhap-tu-excel')
   const { orgId = '' } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()

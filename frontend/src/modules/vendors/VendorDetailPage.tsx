@@ -15,6 +15,7 @@ import { ContractDialog } from './ContractDialog'
 import { SupportBox, safeHref } from './SupportBox'
 import { ContactDialog, VendorDialog } from './VendorDialogs'
 import { useVendor, useVendorMutations, type VendorContact } from './vendors'
+import { useHelpTopic } from '@/help/topic'
 
 /** One vendor: support channels, contact people, contracts (P2-04). */
 export function VendorDetailPage() {
@@ -35,6 +36,7 @@ export function VendorDetailPage() {
     { label: t('vendors.title'), to: `/o/${orgId}/vendors` },
     { label: v?.name ?? '…' },
   ])
+  useHelpTopic('nha-cung-cap')
   if (detail.isError) return <NotFoundPage inShell />
   if (!detail.data || !v) return <Skeleton className="m-4 h-64" />
   const d = detail.data

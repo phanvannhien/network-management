@@ -78,6 +78,7 @@ Makefile
 - **Editor sơ đồ:** thay đổi đi qua command (undo/redo); không re-render toàn canvas khi một node đổi; validation trong Web Worker.
 - **Ngôn ngữ:** code, biến, comment, commit tiếng Anh; trao đổi với người dùng và docs tiếng Việt.
 - **Hướng dẫn trên UI (DESIGN.md §4a):** mọi form/panel mới có `hint`/`guide`/`help` cho ô kỹ thuật; khái niệm mạng mới → thêm vào `frontend/src/help/glossary.ts` và `docs/GLOSSARY.md`.
+- **Trợ giúp trong app (ADR-054):** tính năng mới / đổi cách dùng → cập nhật bài trong `docs/help/*.md` (front matter title/section/order/summary; link nội bộ `help:slug#anchor`); trang mới gọi `useHelpTopic('<slug>')` để nút ? mở đúng bài.
 
 ## Mẫu ghi `docs/STATUS.md` (thêm vào ĐẦU file)
 ```

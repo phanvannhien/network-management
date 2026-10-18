@@ -30,6 +30,7 @@ import type { DiagramMeta } from './doc/types'
 import { DesignTemplateDialog } from './DesignTemplateDialog'
 import { OverviewDialog } from './overview/OverviewDialog'
 import { NtbImportDialog } from './NtbImportDialog'
+import { useHelpTopic } from '@/help/topic'
 
 function CreateDiagramDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   const { t } = useTranslation()
@@ -119,6 +120,7 @@ export function DiagramListPage() {
   const [deleting, setDeleting] = useState<DiagramMeta | null>(null)
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   useBreadcrumbs([{ label: t('nav.diagrams') }])
+  useHelpTopic('so-do')
   const scoped = diagrams.data
   const rows = useMemo(() => {
     const q = filter.q.trim().toLowerCase()

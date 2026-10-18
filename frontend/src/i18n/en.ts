@@ -500,6 +500,27 @@ export const en: Strings = {
     yes: 'Yes',
     no: 'No',
   },
+  helpCenter: {
+    title: 'Help',
+    open: 'Help for this page',
+    intro:
+      'How to use the system, networking terms in plain words, and (for system admins) installation, backups and restore. Articles are in Vietnamese for now.',
+    search: 'Search help',
+    searchPlaceholder: 'Search: Excel import, VLAN, backup, PDF…',
+    results: 'Results',
+    noResults: 'Nothing found — try other words, or browse the list on the left.',
+    terms: 'Terms',
+    glossaryBlurb: '{{count}} networking terms explained for non-specialists, with real examples.',
+    toc: 'On this page',
+    more: 'More articles',
+    back: 'Back to the system',
+    sections: {
+      start: 'Getting started',
+      guides: 'Guides',
+      admin: 'System administration',
+      glossary: 'Glossary',
+    },
+  },
   help: {
     about: 'About: {{term}}',
     example: 'Example',
@@ -2694,7 +2715,7 @@ export const en: Strings = {
   },
   backups: {
     intro:
-      'Every night the system backs up, encrypts with the backup passphrase, then sends a copy to the destinations below. The passphrase and schedule live in deploy/.env (docs/OPERATIONS.md).',
+      'Every night the system backs up, encrypts with the backup passphrase, then sends a copy to the destinations below. The passphrase and schedule live in deploy/.env (Help → Backups & restore).',
     runNow: 'Back up now',
     started: 'Backup started — the result shows under History',
     targetsFailing: '{{count}} destination(s) failing',
@@ -2760,7 +2781,7 @@ export const en: Strings = {
       kind: 'Kind',
       guide: {
         local:
-          'A folder inside the container — usually a NAS share (SMB/NFS) or USB disk mounted on the server and into the api container (see docs/OPERATIONS.md). Turn on NAS snapshots against ransomware.',
+          'A folder inside the container — usually a NAS share (SMB/NFS) or USB disk mounted on the server and into the api container (see Help → Backups & restore). Turn on NAS snapshots against ransomware.',
         sftp: 'Sent over SSH to a NAS (Synology / QNAP with SFTP on) or another server. Use an account that can write one folder only, and paste the server key against impostors.',
         s3: 'S3-compatible cloud storage, outside the building. Create the bucket with Object Lock (no deletion for N days) and an access key for this bucket only.',
         drive:
@@ -2807,7 +2828,7 @@ export const en: Strings = {
     state: 'State',
     off: 'Off',
     offGuide:
-      'No backup passphrase is set, so nothing is backed up automatically. Set NTB_BACKUP_PASSPHRASE (16+ characters, not the master key, kept apart) in deploy/.env and restart — see docs/OPERATIONS.md.',
+      'No backup passphrase is set, so nothing is backed up automatically. Set NTB_BACKUP_PASSPHRASE (16+ characters, not the master key, kept apart) in deploy/.env and restart — see Help → Backups & restore.',
     stale: 'No good backup for over 2 days',
     ok: 'Healthy',
     last: 'Newest good backup',
@@ -2827,7 +2848,7 @@ export const en: Strings = {
     running: 'Running…',
     failed: 'Failed',
     howTo:
-      'A server off at that time catches up when it is back. Manual / pre-upgrade backups: newest 5 kept. Back up now: make backup · List: make backup-list · Restore: make restore FILE=… (docs/OPERATIONS.md).',
+      'A server off at that time catches up when it is back. Manual / pre-upgrade backups: newest 5 kept. Back up now: make backup · List: make backup-list · Restore: make restore FILE=… (Help → Backups & restore).',
   },
   reports: {
     title: 'Reports',

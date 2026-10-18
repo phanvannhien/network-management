@@ -114,6 +114,7 @@ Phase hiện tại: **Phase 0**
 - [x] **P2-21 Sơ đồ nhiều cấp**: sơ đồ tổng quan tổ chức/đơn vị, node site double-click mở sơ đồ chi tiết, tự sinh bố cục hình sao từ dữ liệu.
 - [x] **P2-23 Sơ đồ mẫu** (người dùng thêm 2026-10-17, ADR-039): tạo sơ đồ từ mẫu văn phòng nhỏ / vừa / trụ sở + chi nhánh, tùy chọn HA, VPN, IP Phone, camera, Wi-Fi khách, bộ hãng; sinh thiết bị Dự kiến (model thật), nhóm đầu cuối, dây đúng cổng, VLAN/subnet/dải IP; xem trước trước khi tạo.
 - [x] **P2-22 Ngày End-of-Life trong model library** (ADR-042): model library lưu End-of-Sale/End-of-Support; tự điền cho thiết bị; báo cáo thiết bị hết hỗ trợ.
+- [x] **P2-24 Trung tâm trợ giúp** (người dùng thêm 2026-10-18, ADR-054): `/help` với bắt đầu nhanh, hướng dẫn theo việc, thuật ngữ, quản trị hệ thống (chỉ system admin); nút ? theo trang; nội dung Markdown trong `docs/help/`; tìm kiếm.
 
 ## Phase 3 — Giám sát SNMP
 

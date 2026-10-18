@@ -56,6 +56,7 @@ import {
   type Member,
   type Permission,
 } from './members'
+import { useHelpTopic } from '@/help/topic'
 
 type Role = Member['role']
 
@@ -297,6 +298,7 @@ export function MembersPage() {
   const myId = session.data?.user.id ?? ''
   const orgName = org.data?.organization.name ?? ''
   useBreadcrumbs([{ label: t('nav.admin') }, { label: t('members.title') }])
+  useHelpTopic('thanh-vien-phan-quyen')
 
   const [params] = useSearchParams()
   // ?q= preselects a search (e.g. from Ctrl+K → member).

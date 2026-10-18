@@ -1,6 +1,6 @@
 import { CircleHelp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router'
+import { Link } from 'react-router'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { GLOSSARY_BY_ID } from '@/help/glossary'
 
@@ -10,7 +10,6 @@ import { GLOSSARY_BY_ID } from '@/help/glossary'
  */
 export function FieldHelp({ term }: { term: string }) {
   const { t, i18n } = useTranslation()
-  const { orgId } = useParams()
   const entry = GLOSSARY_BY_ID.get(term)
   if (!entry) return null
   const lang = i18n.language.startsWith('en') ? 'en' : 'vi'
@@ -31,14 +30,12 @@ export function FieldHelp({ term }: { term: string }) {
             {t('help.example')}: {entry.example[lang]}
           </p>
         )}
-        {orgId && (
-          <Link
-            to={`/o/${orgId}/glossary#${entry.id}`}
-            className="inline-block text-primary hover:underline"
-          >
-            {t('help.openGlossary')}
-          </Link>
-        )}
+        <Link
+          to={`/help/glossary#${entry.id}`}
+          className="inline-block text-primary hover:underline"
+        >
+          {t('help.openGlossary')}
+        </Link>
       </PopoverContent>
     </Popover>
   )

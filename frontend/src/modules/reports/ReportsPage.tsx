@@ -45,6 +45,7 @@ import {
   useVlanReport,
   type ReportScope,
 } from './reports'
+import { useHelpTopic } from '@/help/topic'
 
 /** Rows shown on screen per sheet; the file has them all. */
 const PREVIEW_ROWS = 100
@@ -123,6 +124,7 @@ export function ReportsPage() {
   const scope: ReportScope = { categoryId, siteId }
   const [busy, setBusy] = useState(false)
   useBreadcrumbs([{ label: t('reports.title') }])
+  useHelpTopic('bao-cao')
 
   const ipPlan = useIpPlanReport(orgId, scope, tab === 'ipPlan')
   const vlans = useVlanReport(orgId, scope, tab === 'vlans')

@@ -5,6 +5,34 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-24 Trung tâm trợ giúp (ADR-054)
+- Người dùng chốt:
+  - làm mục Trợ giúp theo đề xuất: tiếng Việt trước, phần quản trị chỉ system admin thấy;
+  - file `ntb-recovery-codes.txt`: xóa khỏi git là đủ (đã làm, commit `14240db`; lịch sử cũ giữ nguyên theo ý người dùng).
+- Đã làm:
+  - **Trang `/help`** (khung riêng, menu trái theo mục):
+    - Bắt đầu nhanh;
+    - Hướng dẫn theo việc: tổ chức / danh mục / site, kho thiết bị, vẽ sơ đồ, IPAM, kho mật khẩu, nhà cung cấp & cảnh báo hết hạn, báo cáo & xuất file, thành viên & phân quyền, phím tắt (lấy trực tiếp từ màn vẽ);
+    - Thuật ngữ (chuyển từ `/o/:orgId/glossary`, địa chỉ cũ tự chuyển);
+    - Quản trị hệ thống: cài đặt & nâng cấp, sao lưu & khôi phục — chỉ system admin.
+  - **Nút ? trên thanh trên cùng** mở bài về trang đang xem (20 trang đã gắn chủ đề); menu tài khoản có Trợ giúp và Thuật ngữ.
+  - **Tìm kiếm** không dấu trên mọi bài và thuật ngữ, nhảy tới đúng mục.
+  - **Nội dung Markdown trong `docs/help/`**, một nguồn cho cả GitHub lẫn app. `docs/INSTALL.md` / `OPERATIONS.md` chuyển vào đó (file cũ trỏ sang). Bộ đọc Markdown tự viết, không thêm thư viện, không chèn HTML, link lạ bị vô hiệu.
+  - Nội dung trợ giúp tải riêng (chunk 49 KB) khi mở `/help`.
+  - Image `web` chép `docs/help` lúc build.
+  - CLAUDE.md thêm quy tắc: tính năng mới cập nhật `docs/help` và gắn `useHelpTopic`.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Vitest `help.test.tsx`: bộ đọc Markdown, link an toàn, mọi link giữa các bài và tới thuật ngữ có thật, ẩn bài quản trị, tìm kiếm không dấu, front matter.
+  - Vitest `App.test.tsx`: trang chủ trợ giúp, tìm kiếm, mở bài, người không phải system admin bị 404 bài quản trị, nút ? mở đúng bài theo trang.
+  - Trình duyệt thật: từ IPAM bấm ? → bài IPAM; tìm "object lock" → đúng mục trong bài sao lưu; bảng phím tắt hiện đủ; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Bài viết chỉ có tiếng Việt.
+  - Chưa có ảnh minh họa trong bài.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-14 Gate Enterprise (review bảo mật kho mật khẩu & phân quyền, kiểm thử xâm nhập cơ bản).
+
 ## 2026-10-18 — P2-13 Vận hành, bước 2–3: đích lưu ngoài máy chủ, trang Sao lưu, tài liệu cài đặt / nâng cấp (ADR-053) — xong P2-13
 - Người dùng: làm xong P2-13 rồi dừng.
 - Đã làm:

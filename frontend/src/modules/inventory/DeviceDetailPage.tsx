@@ -37,6 +37,7 @@ import {
   type Device,
   type HistoryEntry,
 } from './devices'
+import { useHelpTopic } from '@/help/topic'
 
 const TABS = [
   'overview',
@@ -153,6 +154,7 @@ export function DeviceDetailPage() {
     { label: t('nav.devices'), to: `/o/${orgId}/devices` },
     { label: d?.hostname ?? '…' },
   ])
+  useHelpTopic('thiet-bi')
 
   if (device.isPending) return <DetailSkeleton />
   if (!d) return <NotFoundPage inShell />

@@ -33,6 +33,7 @@ import {
 import { HolderLink, HolderRole, UsageBar, VlanChip } from './UsageBar'
 import { IpamImportDialog } from './IpamImportDialog'
 import { cn } from '@/lib/utils'
+import { useHelpTopic } from '@/help/topic'
 
 const TABS = ['subnets', 'vlans'] as const
 type Tab = (typeof TABS)[number]
@@ -557,6 +558,7 @@ export function IpamPage() {
   const canAdd = access.canAddSites
   const [importing, setImporting] = useState(false)
   useBreadcrumbs([{ label: t('ipam.title') }])
+  useHelpTopic('ipam')
   return (
     <div className="space-y-3 p-4">
       <PageHeader

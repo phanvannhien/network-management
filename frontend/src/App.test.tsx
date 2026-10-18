@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { usePreferences } from './lib/preferences'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -1856,7 +1856,7 @@ describe('device inventory (P1-08)', () => {
     expect(await screen.findByText(/Routed: cổng có IP như cổng router/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Xem trong bảng thuật ngữ' })).toHaveAttribute(
       'href',
-      `/o/${ORG_ID}/glossary#mode`,
+      `/help/glossary#mode`,
     )
     act(() => usePreferences.getState().setShowGuides(false))
     expect(within(dialog).queryByText(/Access: cổng mang 1 VLAN/)).not.toBeInTheDocument()
@@ -1876,6 +1876,57 @@ describe('device inventory (P1-08)', () => {
     })
     expect(screen.getByText('Cổng trunk')).toBeInTheDocument()
     expect(screen.queryByText('VRF')).not.toBeInTheDocument()
+  })
+})
+
+describe('help centre (P2-24)', () => {
+  it('lists articles by section, searches without accents, and opens an article', async () => {
+    fakeApi({ 'GET /api/auth/me': () => json(SESSION) })
+    renderAt('/help')
+    expect(await screen.findByRole('heading', { name: 'Trợ giúp' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Quản trị hệ thống' })).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm trong trợ giúp' }), {
+      target: { value: 'nhap excel' },
+    })
+    expect(
+      within(screen.getByRole('region', { name: 'Kết quả' })).getByRole('link', {
+        name: /IPAM — quản lý IP/,
+      }),
+    ).toBeInTheDocument()
+    cleanup()
+    renderAt('/help/ipam')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'IPAM — quản lý IP' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nhập IP plan từ Excel' })).toBeInTheDocument()
+  })
+
+  it('hides system administration from other users', async () => {
+    fakeApi({
+      'GET /api/auth/me': () =>
+        json({ ...SESSION, user: { ...SESSION.user, isSystemAdmin: false } }),
+    })
+    renderAt('/help/sao-luu-khoi-phuc')
+    expect(await screen.findByText('Không tìm thấy trang')).toBeInTheDocument()
+    cleanup()
+    renderAt('/help')
+    expect(await screen.findByRole('region', { name: 'Hướng dẫn theo việc' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Quản trị hệ thống' })).not.toBeInTheDocument()
+  })
+
+  it('the ? in the top bar opens the article about the page on screen', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}`]: () => json(ORG_VIEW),
+      [`GET /api/orgs/${ORG_ID}/members`]: () => json({ members: [MEMBER] }),
+    })
+    renderAt(`/o/${ORG_ID}/members`)
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Trợ giúp cho trang này' })).toHaveAttribute(
+        'href',
+        '/help/thanh-vien-phan-quyen',
+      ),
+    )
   })
 })
 
