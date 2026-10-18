@@ -632,7 +632,8 @@ export const en: Strings = {
     mode: 'Access: one VLAN (PCs, cameras…). Trunk: many VLANs (switch–switch, switch–firewall). Routed: the port has an IP like a router.',
     accessVlan: 'The VLAN of an access port.',
     nativeVlan: 'On a trunk: the untagged VLAN (VLAN 1 by default).',
-    allowedVlans: 'On a trunk: the VLANs allowed through, e.g. 10,20-30.',
+    allowedVlans:
+      'On a trunk: the VLANs allowed through, e.g. 10,20-30. Left empty it depends on the vendor (Cisco: all, Huawei / H3C: VLAN 1 only); type 1-4094 for all.',
     lag: 'The LAG this port belongs to (pick an interface of kind LAG).',
     mac: "The port's hardware address in any common form: aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…",
     vlanTag: 'Sub-interfaces only: the 802.1Q VLAN the sub-interface handles, e.g. Gi0/0.10 → 10.',
@@ -917,6 +918,43 @@ export const en: Strings = {
     unsaved: 'unsaved',
     empty: 'The diagram is empty.',
   },
+  l2: {
+    lens: 'View',
+    physical: 'L1 physical',
+    view: 'L2 VLANs',
+    physicalHint: 'The real cables: cable type, ports at both ends (Alt+1)',
+    viewHint:
+      'VLANs on the same layout (Alt+2): access cables in their VLAN colour, trunks bold with their VLAN list, a LAG as one line. Read from the port settings in the inventory, nothing extra to draw.',
+    cables_one: '{{count}} cable',
+    cables_other: '{{count}} cables',
+    notInIpam: 'not in IPAM',
+    accessNoVlan: 'access · no VLAN set',
+    routed: 'routed (no VLAN)',
+    unset: 'mode not set',
+    unspecifiedHint:
+      'This trunk has no allowed VLAN list. Vendors differ: Cisco / UniFi / Omada allow all, Huawei / H3C VLAN 1 only, FortiSwitch the native one only. Type 1-4094 to mean all.',
+    legend: 'VLANs on the diagram',
+    legendHint:
+      'Click a VLAN to highlight the cables carrying it and the device routing it; click again to clear.',
+    legendEmpty: "No cable has VLANs set yet. Open a device's ports to set their mode and VLANs.",
+    clearFilter: 'Clear',
+    gateway: 'Gateway of VLAN {{list}}',
+    maybe: 'Dashed amber: only one end lets this VLAN through, or one end has no VLAN list.',
+    hidden: 'Power, console and stack cables are hidden (they carry no VLAN).',
+    issue: {
+      accessDiffers:
+        'Access VLANs differ at the two ends ({{a}} ≠ {{b}}): the two sides cannot reach each other.',
+      nativeDiffers:
+        'Native VLANs differ at the two trunk ends ({{a}} ≠ {{b}}): untagged traffic leaks into another VLAN.',
+      nativeOneSide:
+        'Native VLAN set at one end only ({{a}} / default {{b}}). Check the other end.',
+      allowedOneSide: 'VLANs allowed at one trunk end only: {{vlans}}.',
+      accessToTrunk:
+        'Access port in VLAN {{access}} facing a trunk with native {{native}}: only the native VLAN gets through.',
+      lagOneSide:
+        'One end is a member of {{lag}}, the other a plain port: the LAG will not come up.',
+    },
+  },
   editorCanvas: {
     pointer: 'Pointer — select and move devices (V)',
     hand: 'Hand — drag to move the view (H; or hold Space + drag)',
@@ -971,6 +1009,8 @@ export const en: Strings = {
       multiSelect: 'Hold while clicking to add to the selection',
       quickAdd: 'Quick add a device',
       library: 'Show / hide the library',
+      lensPhysical: 'L1 physical view (the real cables)',
+      lensL2: 'L2 view (VLANs, trunks, LAGs)',
       connect: 'Draw a cable (click two devices)',
       pointer: 'Pointer: select and move devices (leaves hand / connect)',
       hand: 'Hand tool on/off: left drag moves the view',
@@ -1132,6 +1172,9 @@ export const en: Strings = {
     mgmtIpSave: 'Save IP',
     mgmtIpSaved: 'Management IP {{ip}} saved on {{iface}}',
     bundle: 'Cable bundle ({{count}})',
+    lag: 'LAG {{name}} ({{count}} cables)',
+    lagGuide:
+      "The L2 view draws the member cables of a LAG as one line. Switch back to L1 to edit a cable; set the mode / VLANs on the device's LAG port.",
     bundlePorts: 'Ports',
     bundleCount: 'Cables',
     bundleGuide:

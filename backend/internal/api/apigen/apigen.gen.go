@@ -3045,12 +3045,18 @@ type DiagramDetail struct {
 	Diagram        Diagram         `json:"diagram"`
 	EndpointGroups []EndpointGroup `json:"endpointGroups"`
 
+	// Gateways L2 view — devices on the view holding the gateway IP of a subnet with a VLAN
+	Gateways *[]DiagramGateway `json:"gateways,omitempty"`
+
 	// HiddenRefs ids referenced by the view that the caller may not see (kept unchanged when saving)
 	HiddenRefs []openapi_types.UUID `json:"hiddenRefs"`
 
 	// Links links whose both ends are nodes of the view
 	Links []Link      `json:"links"`
 	View  DiagramView `json:"view"`
+
+	// Vlans L2 view (P2-08, ADR-047): VLANs of the sites of the devices on the view and the organization-wide ones (name and colour for each VLAN id; a site's own VLAN wins over the organization-wide one)
+	Vlans *[]DiagramVlan `json:"vlans,omitempty"`
 }
 
 // DiagramEdge defines model for DiagramEdge.
@@ -3063,6 +3069,20 @@ type DiagramEdge struct {
 
 // DiagramEdgeRouting defines model for DiagramEdge.Routing.
 type DiagramEdgeRouting string
+
+// DiagramGateway defines model for DiagramGateway.
+type DiagramGateway struct {
+	// Address the gateway IP, e.g. 10.1.20.1
+	Address  string             `json:"address"`
+	DeviceId openapi_types.UUID `json:"deviceId"`
+
+	// InterfaceName e.g. Vlan20, port2.20
+	InterfaceName string `json:"interfaceName"`
+
+	// SiteId site of the VLAN (null = organization-wide)
+	SiteId *openapi_types.UUID `json:"siteId"`
+	Vid    int32               `json:"vid"`
+}
 
 // DiagramInput defines model for DiagramInput.
 type DiagramInput struct {
@@ -3155,6 +3175,16 @@ type DiagramViewport struct {
 	X    float32 `json:"x"`
 	Y    float32 `json:"y"`
 	Zoom float32 `json:"zoom"`
+}
+
+// DiagramVlan defines model for DiagramVlan.
+type DiagramVlan struct {
+	Color string `json:"color"`
+	Name  string `json:"name"`
+
+	// SiteId null = organization-wide
+	SiteId *openapi_types.UUID `json:"siteId"`
+	Vid    int32               `json:"vid"`
 }
 
 // EndpointGroup defines model for EndpointGroup.
@@ -3624,17 +3654,32 @@ type LinkConnector string
 
 // LinkEnd defines model for LinkEnd.
 type LinkEnd struct {
+	// AccessVlan VLAN of an access port (untagged)
+	AccessVlan *int32 `json:"accessVlan"`
+
+	// AllowedVlans tagged VLANs of a trunk / hybrid port, e.g. "10,20,30-35"; '' = not restricted (all)
+	AllowedVlans   string              `json:"allowedVlans"`
 	Id             openapi_types.UUID  `json:"id"`
 	InterfaceId    *openapi_types.UUID `json:"interfaceId"`
 	InterfaceKind  string              `json:"interfaceKind"`
 	InterfaceMedia string              `json:"interfaceMedia"`
+	InterfaceMode  InterfaceMode       `json:"interfaceMode"`
 	InterfaceName  string              `json:"interfaceName"`
 	Kind           LinkEndKind         `json:"kind"`
 
+	// LagId the LAG (port-channel) the port belongs to
+	LagId *openapi_types.UUID `json:"lagId"`
+
+	// LagName e.g. Po1
+	LagName string `json:"lagName"`
+
 	// Name device hostname or group name
-	Name     string             `json:"name"`
-	SiteCode string             `json:"siteCode"`
-	SiteId   openapi_types.UUID `json:"siteId"`
+	Name string `json:"name"`
+
+	// NativeVlan untagged VLAN of a trunk / hybrid port; null = the vendor default (1)
+	NativeVlan *int32             `json:"nativeVlan"`
+	SiteCode   string             `json:"siteCode"`
+	SiteId     openapi_types.UUID `json:"siteId"`
 
 	// Type device type, or the group's device type
 	Type string `json:"type"`

@@ -56,6 +56,102 @@ func (q *Queries) DeleteDiagram(ctx context.Context, arg DeleteDiagramParams) (i
 	return result.RowsAffected(), nil
 }
 
+const diagramGateways = `-- name: DiagramGateways :many
+SELECT ip.device_id, v.vid, v.site_id, host(ip.address)::text AS address, COALESCE(i.name, '')::text AS interface_name
+FROM ip_addresses ip
+JOIN subnets s ON s.organization_id = ip.organization_id AND s.gateway IS NOT NULL AND s.vrf = ip.vrf
+  AND host(s.gateway)::inet = host(ip.address)::inet
+JOIN vlans v ON v.id = s.vlan_id AND v.organization_id = ip.organization_id
+LEFT JOIN interfaces i ON i.id = ip.interface_id AND i.organization_id = ip.organization_id
+WHERE ip.organization_id = $1 AND ip.device_id = ANY ($2::uuid[])
+ORDER BY v.vid
+`
+
+type DiagramGatewaysParams struct {
+	OrganizationID pgtype.UUID
+	DeviceIds      []pgtype.UUID
+}
+
+type DiagramGatewaysRow struct {
+	DeviceID      pgtype.UUID
+	Vid           int32
+	SiteID        pgtype.UUID
+	Address       string
+	InterfaceName string
+}
+
+// L2 view: IPs of the given devices that are the gateway of a subnet (same VRF) with a VLAN — where the VLAN is routed.
+func (q *Queries) DiagramGateways(ctx context.Context, arg DiagramGatewaysParams) ([]DiagramGatewaysRow, error) {
+	rows, err := q.db.Query(ctx, diagramGateways, arg.OrganizationID, arg.DeviceIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DiagramGatewaysRow
+	for rows.Next() {
+		var i DiagramGatewaysRow
+		if err := rows.Scan(
+			&i.DeviceID,
+			&i.Vid,
+			&i.SiteID,
+			&i.Address,
+			&i.InterfaceName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const diagramVlans = `-- name: DiagramVlans :many
+SELECT v.vid, v.name, v.color, v.site_id
+FROM vlans v
+WHERE v.organization_id = $1 AND (v.site_id IS NULL OR v.site_id = ANY ($2::uuid[]))
+ORDER BY v.vid, v.site_id NULLS LAST
+`
+
+type DiagramVlansParams struct {
+	OrganizationID pgtype.UUID
+	SiteIds        []pgtype.UUID
+}
+
+type DiagramVlansRow struct {
+	Vid    int32
+	Name   string
+	Color  string
+	SiteID pgtype.UUID
+}
+
+// L2 view (P2-08): VLANs of the given sites and the organization-wide ones (name and colour per VLAN id).
+func (q *Queries) DiagramVlans(ctx context.Context, arg DiagramVlansParams) ([]DiagramVlansRow, error) {
+	rows, err := q.db.Query(ctx, diagramVlans, arg.OrganizationID, arg.SiteIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DiagramVlansRow
+	for rows.Next() {
+		var i DiagramVlansRow
+		if err := rows.Scan(
+			&i.Vid,
+			&i.Name,
+			&i.Color,
+			&i.SiteID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDiagramView = `-- name: GetDiagramView :one
 SELECT view FROM diagrams WHERE id = $1 AND organization_id = $2
 `

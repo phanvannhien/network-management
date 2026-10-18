@@ -66,6 +66,7 @@ import { useChecks } from './checks/useChecks'
 import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { togglePanel, useEditorPrefs } from './workspace/prefs'
+import { VlanLegend } from './l2/VlanLegend'
 import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
@@ -298,6 +299,7 @@ function Workspace({
   const status = useStore(store, (s) => s.status)
   const canUndo = useStore(store, (s) => s.past.length > 0)
   const canRedo = useStore(store, (s) => s.future.length > 0)
+  const lens = useStore(store, (s) => s.lens)
   const width = useFlowStore((s) => s.width)
   const height = useFlowStore((s) => s.height)
   const [prefs, setPrefs] = useEditorPrefs()
@@ -584,6 +586,11 @@ function Workspace({
           setHand(false)
           wiring.toggle()
           break
+        case 'lensPhysical':
+        case 'lensL2':
+          // The overview diagram has sites, not cables with VLANs.
+          if (s.meta?.layer !== 'overview') s.setLens(action === 'lensL2' ? 'l2' : 'physical')
+          break
         case 'hand':
           wiring.cancel()
           setDrawingFrame(false)
@@ -785,6 +792,8 @@ function Workspace({
         orgId={orgId}
         name={meta.name}
         layer={t(`diagrams.layers.${meta.layer}`)}
+        lens={meta.layer === 'overview' ? undefined : lens}
+        onLens={(l) => store.getState().setLens(l)}
         status={status}
         pending={changesOf(doc).length}
         canEdit={canEdit}
@@ -904,6 +913,7 @@ function Workspace({
           </p>
         </div>
       )}
+      {lens === 'l2' && meta.layer !== 'overview' && <VlanLegend left={libraryOpen ? 312 : 12} />}
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}

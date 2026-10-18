@@ -426,7 +426,10 @@ export const GLOSSARY: GlossaryEntry[] = [
     'allowed-vlans',
     'vlan',
     ['VLAN cho phép', 'Allowed VLANs'],
-    ['Trên cổng trunk: danh sách VLAN được đi qua.', 'On a trunk: the VLANs allowed through.'],
+    [
+      'Trên cổng trunk: danh sách VLAN được đi qua. Để trống thì mỗi hãng hiểu khác (Cisco / UniFi / Omada: tất cả; Huawei / H3C: chỉ VLAN 1; FortiSwitch: chỉ native), nên sơ đồ L2 hiện "ALL?". Muốn cho tất cả thì ghi 1-4094.',
+      'On a trunk: the VLANs allowed through. Left empty, vendors differ (Cisco / UniFi / Omada: all; Huawei / H3C: VLAN 1 only; FortiSwitch: the native one only), so the L2 view shows "ALL?". Type 1-4094 to mean all.',
+    ],
     ['10,20-30', '10,20-30'],
   ),
   e(
@@ -455,6 +458,42 @@ export const GLOSSARY: GlossaryEntry[] = [
     [
       'Access: 1 VLAN. Trunk: nhiều VLAN. Routed: cổng có IP như cổng router, không thuộc VLAN nào. Hybrid: kiểu riêng của một số hãng (trộn access + trunk).',
       "Access: one VLAN. Trunk: many VLANs. Routed: the port has an IP like a router port. Hybrid: some vendors' mix of access and trunk.",
+    ],
+  ),
+  e(
+    'hybrid',
+    'vlan',
+    ['Cổng hybrid / general', 'Hybrid / general port'],
+    [
+      'Kiểu cổng của Huawei / H3C / TP-Link / Omada / Cisco SMB: vừa có VLAN gắn nhãn vừa có VLAN không nhãn (PVID). Sơ đồ L2 vẽ như trunk; ghi PVID vào ô native VLAN.',
+      'A port type of Huawei / H3C / TP-Link / Omada / Cisco SMB: tagged VLANs plus an untagged one (PVID). The L2 view draws it as a trunk; put the PVID in the native VLAN field.',
+    ],
+    ['Cổng nối điện thoại IP + PC.', 'A port feeding an IP phone and a PC.'],
+  ),
+  e(
+    'diagram-layers',
+    'vlan',
+    ['Lớp L1 / L2 / L3 của sơ đồ', 'Diagram layers L1 / L2 / L3'],
+    [
+      'Ba cách nhìn cùng một mạng. L1 vật lý: dây thật, cổng, loại cáp. L2: VLAN nào đi trên dây nào (access tô màu VLAN, trunk kèm danh sách VLAN, LAG gộp một dây). L3: subnet và thiết bị định tuyến. L1 và L2 dùng chung bố cục: bấm L1 / L2 trên thanh công cụ (Alt+1 / Alt+2).',
+      'Three ways to look at one network. L1 physical: real cables, ports, cable types. L2: which VLANs ride which cable (access in its VLAN colour, trunks with their VLAN list, a LAG as one line). L3: subnets and routing devices. L1 and L2 share one layout: L1 / L2 on the toolbar (Alt+1 / Alt+2).',
+    ],
+    [
+      'Lọc "VLAN 20 Camera" trên L2 → thấy dây camera đi qua switch nào, gateway ở đâu.',
+      'Pick "VLAN 20 Camera" on L2 → see which switches the camera VLAN crosses and where its gateway is.',
+    ],
+  ),
+  e(
+    'vlan-mismatch',
+    'vlan',
+    ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],
+    [
+      'Hai cổng của cùng một dây khai báo không khớp: access hai đầu khác VLAN, native hai đầu trunk khác nhau, VLAN chỉ một đầu cho phép, access nối vào trunk mà VLAN khác native, một đầu là LAG còn đầu kia là cổng thường. Sơ đồ L2 đánh dấu ⚠ (sai) hoặc ⓘ (nên xem).',
+      'The two ports of one cable disagree: different access VLANs, different native VLANs on a trunk, VLANs allowed at one end only, an access port facing a trunk whose native VLAN differs, a LAG member facing a plain port. The L2 view marks it ⚠ (wrong) or ⓘ (worth a look).',
+    ],
+    [
+      'Access 20 ↔ access 30: hai bên không thấy nhau.',
+      'Access 20 ↔ access 30: the two sides cannot reach each other.',
     ],
   ),
   // --- IP ---

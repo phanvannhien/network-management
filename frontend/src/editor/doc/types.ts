@@ -1,5 +1,6 @@
 import type { components } from '@/api/client'
 import type { PendingPort } from '../library/ports'
+import type { DiagramGateway, DiagramVlan, PortL2 } from '../l2/l2'
 
 // The diagram document the editor works on (P1-13, ADR-015): the stored view plus the inventory it shows, and the
 // inventory changes made in the editor that are not saved yet. Everything here is undoable; saving sends the view and
@@ -76,6 +77,9 @@ export interface LinkCard {
   /** Design status (Phase 3 adds the live one from monitoring). */
   status?: Link['status']
   draft?: boolean
+  /** Switchport facts of each end for the L2 view (P2-08); none on a cable drawn and not saved yet. */
+  aL2?: PortL2
+  bL2?: PortL2
 }
 
 export interface DocState {
@@ -85,6 +89,9 @@ export interface DocState {
   links: Record<string, LinkCard>
   /** Ids the caller may not see: kept on the view untouched. */
   hidden: string[]
+  /** L2 view (P2-08): VLAN names / colours of the sites on the view, and where VLANs are routed. Read-only facts. */
+  vlans?: DiagramVlan[]
+  gateways?: DiagramGateway[]
   // Pending inventory changes, in creation order where order matters (create before link).
   newDevices: Record<string, DeviceInput>
   newDeviceOrder: string[]
@@ -111,6 +118,20 @@ export function linkCard(l: Link): LinkCard {
     aPort: l.a.interfaceName,
     bPort: l.b.interfaceName,
     status: l.status,
+    aL2: portL2(l.a),
+    bL2: portL2(l.b),
+  }
+}
+
+function portL2(e: Link['a']): PortL2 | undefined {
+  if (!e.interfaceId) return undefined
+  return {
+    mode: e.interfaceMode,
+    access: e.accessVlan ?? null,
+    native: e.nativeVlan ?? null,
+    allowed: e.allowedVlans,
+    lagId: e.lagId ?? null,
+    lagName: e.lagName,
   }
 }
 
@@ -180,6 +201,8 @@ export function docFromDetail(d: DiagramDetail): DocState {
     groups,
     links,
     hidden: d.hiddenRefs,
+    vlans: d.vlans ?? [],
+    gateways: d.gateways ?? [],
     newDevices: {},
     newDeviceOrder: [],
     newPorts: {},

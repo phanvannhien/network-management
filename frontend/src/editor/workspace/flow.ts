@@ -3,7 +3,9 @@ import type { Edge, Node } from '@xyflow/react'
 import type { AnnotationData, ClusterData } from './annotationNodes'
 import type { CableData } from './CableEdge'
 import { arrowOrigin, type ClusterBox } from './frames'
-import { ANN, type DiagramNode, type DocState } from '../doc/types'
+import { ANN, type DiagramNode, type DocState, type LinkCard } from '../doc/types'
+import type { Lens } from '../doc/store'
+import { carries, l2Of, vidOfKey, vlanInfo, type Carry, type L2Edge } from '../l2/l2'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
 // ends of a link. Node components read their own card from the store, so a node's data only carries references:
@@ -44,35 +46,58 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
  * Edges whose link ends are both on the view (P1-17: floating "cable" edges between node borders). The line style
  * follows the link kind (SRS §6.2, index.css); cables between the same two nodes are numbered so they spread apart.
  */
+export interface EdgeLens {
+  lens: Lens
+  /** L2 view: the VLAN record picked (`vlanInfo().key`) — cables not carrying it fade. */
+  vlanFilter?: string | null
+}
+
+/** Cables the L2 view leaves out: they carry no VLAN (power, console, stacking / HA heartbeat). */
+const NOT_L2: ReadonlySet<string> = new Set(['power', 'console', 'stack'])
+
 export function toFlowEdges(
   doc: DocState,
   selection: ReadonlySet<string> = new Set(),
+  lens: EdgeLens = { lens: 'physical' },
 ): Edge<CableData>[] {
+  const l2 = lens.lens === 'l2'
+  const filter = l2 ? (lens.vlanFilter ?? null) : null
   const nodeOf = new Map<string, string>()
   for (const n of doc.view.nodes) if (!nodeOf.has(n.refId)) nodeOf.set(n.refId, n.id)
   const out: Edge<CableData>[] = []
   const pairCount = new Map<string, number>()
-  // The cables of an endpoint group to one device are one edge (ports 1–24 of a PoE switch, ADR-036).
+  // The cables of an endpoint group to one device are one edge (ports 1–24 of a PoE switch, ADR-036); on the L2 view
+  // the member cables of a LAG are one edge too ("Po1 · 2 cables").
   const bundles = new Map<string, Edge<CableData>>()
   const bundlePorts = new Map<Edge<CableData>, string[]>()
+  // L1: member cables of one LAG between one pair, for the ring drawn across them.
+  const lagMembers = new Map<string, Edge<CableData>[]>()
   for (const e of doc.view.edges) {
     const l = doc.links[e.linkId]
     if (!l) continue
     const source = nodeOf.get(l.aId)
     const target = nodeOf.get(l.bId)
     if (!source || !target) continue
+    if (l2 && NOT_L2.has(l.kind)) continue
     const pair = source < target ? `${source}|${target}` : `${target}|${source}`
     const groupAt = doc.groups[l.aId] ? 'a' : doc.groups[l.bId] ? 'b' : null
-    const bundleKey = groupAt ? `${pair}|${l.kind}` : null
+    const lagKey =
+      l.aL2?.lagId || l.bL2?.lagId
+        ? `${pair}|lag|${l.aL2?.lagId ?? ''}|${l.bL2?.lagId ?? ''}`
+        : null
+    const bundleKey = groupAt ? `${pair}|${l.kind}` : l2 ? lagKey : null
     const rep = bundleKey ? bundles.get(bundleKey) : undefined
     if (rep) {
       rep.data!.bundle!.push(l.id)
       bundlePorts.get(rep)!.push((groupAt === 'a' ? l.bPort : l.aPort) ?? '')
+      if (rep.data!.lag) rep.data!.lagCount = (rep.data!.lagCount ?? 1) + 1
       if (selection.has(e.id)) rep.selected = true
       continue
     }
     const index = pairCount.get(pair) ?? 0
     pairCount.set(pair, index + 1)
+    const facts = l2 ? l2Of(l) : undefined
+    const carry = facts && filter !== null ? carriesRecord(doc, l, facts, filter) : null
     out.push({
       id: e.id,
       source,
@@ -82,6 +107,9 @@ export function toFlowEdges(
         `ntb-edge-${l.kind}`,
         l.draft && 'ntb-edge-draft',
         l.status && l.status !== 'up' && `ntb-link-${l.status}`,
+        facts && `ntb-l2-${facts.kind}`,
+        carry === 'no' && 'ntb-l2-faded',
+        carry === 'maybe' && 'ntb-l2-maybe',
       ]
         .filter(Boolean)
         .join(' '),
@@ -93,26 +121,86 @@ export function toFlowEdges(
         index,
         count: 0,
         pair,
+        ...(facts && { l2: facts, siteId: siteOf(doc, l.aId) ?? siteOf(doc, l.bId) }),
       },
       selected: selection.has(e.id),
     })
+    const edge = out[out.length - 1]!
     if (bundleKey) {
-      const edge = out[out.length - 1]!
       edge.data!.bundle = [l.id]
       bundles.set(bundleKey, edge)
       bundlePorts.set(edge, [(groupAt === 'a' ? l.bPort : l.aPort) ?? ''])
       edge.data!.groupAt = groupAt
+      if (!groupAt) {
+        edge.data!.lag = l.aL2?.lagName || l.bL2?.lagName || 'LAG'
+        edge.data!.lagCount = 1
+        // The LAG's name at each end instead of one member's port.
+        if (l.aL2?.lagName) edge.data!.aPort = l.aL2.lagName
+        if (l.bL2?.lagName) edge.data!.bPort = l.bL2.lagName
+      }
+    } else if (lagKey) {
+      const members = lagMembers.get(lagKey) ?? []
+      members.push(edge)
+      lagMembers.set(lagKey, members)
     }
+  }
+  // L1: the ring across a LAG's member cables (Cisco / Visio symbol) is drawn by the first member.
+  for (const members of lagMembers.values()) {
+    if (members.length < 2) continue
+    const l = doc.links[members[0]!.data!.linkId]!
+    // Primitive fields, so an unchanged cable stays an unchanged edge for React Flow.
+    members[0]!.data!.ring = l.aL2?.lagName || l.bL2?.lagName || 'LAG'
+    members[0]!.data!.ringFrom = Math.min(...members.map((m) => m.data!.index))
+    members[0]!.data!.ringTo = Math.max(...members.map((m) => m.data!.index))
   }
   for (const e of out) e.data!.count = pairCount.get(e.data!.pair as string) ?? 1
   // A bundle shows its ports as ranges at the device end: "Gi1/0/1–24 (24)".
   for (const [edge, names] of bundlePorts) {
-    if (names.length < 2) continue
+    if (names.length < 2 || edge.data!.lag) continue
     const label = `${portRanges(names.filter(Boolean)) || '—'} (${names.length})`
     if (edge.data!.groupAt === 'a') edge.data!.bPort = label
     else edge.data!.aPort = label
   }
   return out
+}
+
+function siteOf(doc: DocState, refId: string): string | undefined {
+  return doc.devices[refId]?.siteId ?? doc.groups[refId]?.siteId
+}
+
+/**
+ * Does a cable carry the picked VLAN record? The number must be carried and mean that record at one of its ends
+ * (VLAN 20 of another site is another VLAN).
+ */
+function carriesRecord(doc: DocState, l: LinkCard, facts: L2Edge, key: string): Carry {
+  const vid = vidOfKey(key)
+  const c = carries(facts, vid)
+  if (c === 'no') return c
+  const vlans = doc.vlans ?? []
+  const same = [l.aId, l.bId].some((id) => vlanInfo(vid, siteOf(doc, id), vlans).key === key)
+  return same ? c : 'no'
+}
+
+/**
+ * L2 view with a VLAN picked: the view nodes it touches (an end of a cable carrying it, or the device routing it).
+ * null = nothing picked.
+ */
+export function litNodes(doc: DocState, lens: EdgeLens): Set<string> | null {
+  if (lens.lens !== 'l2' || !lens.vlanFilter) return null
+  const key = lens.vlanFilter
+  const lit = new Set<string>()
+  const refs = new Set<string>()
+  for (const l of Object.values(doc.links)) {
+    if (NOT_L2.has(l.kind)) continue
+    if (carriesRecord(doc, l, l2Of(l), key) === 'no') continue
+    refs.add(l.aId)
+    refs.add(l.bId)
+  }
+  const vid = vidOfKey(key)
+  for (const g of doc.gateways ?? [])
+    if (g.vid === vid && `${g.siteId ?? 'org'}:${vid}` === key) refs.add(g.deviceId)
+  for (const n of doc.view.nodes) if (refs.has(n.refId)) lit.add(n.id)
+  return lit
 }
 
 /** Same value one level down: primitives by value, objects and arrays by their own (primitive) members. */

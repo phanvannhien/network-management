@@ -25,6 +25,7 @@ interface PastEntry {
 }
 
 export type SaveStatus = 'clean' | 'dirty' | 'saving' | 'conflict' | 'error'
+export type Lens = 'physical' | 'l2'
 
 export interface DocStore {
   meta: DiagramMeta | null
@@ -48,6 +49,12 @@ export interface DocStore {
   savedDoc: DocState | null
   /** Bumped by every load, so views can reset (e.g. the viewport after reloading on a conflict). */
   loadId: number
+  /** How cables are drawn (P2-08, ADR-047): physical, or the L2 view over the same layout. Editor state, not history. */
+  lens: Lens
+  /** L2 view: the VLAN record picked in the legend (`vlanInfo().key`) — cables carrying it stand out, the rest fade. */
+  vlanFilter: string | null
+  setLens(lens: Lens): void
+  setVlanFilter(key: string | null): void
   setViewport(viewport: DiagramViewport): void
   setSelection(ids: string[]): void
   setEdgeSelection(ids: string[]): void
@@ -115,6 +122,10 @@ export function createDocStore() {
     },
     savedDoc: null,
     loadId: 0,
+    lens: 'physical',
+    vlanFilter: null,
+    setLens: (lens) => set({ lens, vlanFilter: lens === 'l2' ? get().vlanFilter : null }),
+    setVlanFilter: (vlanFilter) => set({ vlanFilter }),
     setViewport: (viewport) => set({ viewport }),
     setSelection: (ids) => {
       const cur = get().selection
@@ -170,11 +181,19 @@ export function createDocStore() {
         selection: [],
         edgeSelection: [],
         loadId: s.loadId + 1,
+        // Another diagram opens with the view of its layer; reloading the same one keeps the current view.
+        ...(s.meta?.id === detail.diagram.id
+          ? {}
+          : {
+              lens: detail.diagram.layer === 'l2' ? ('l2' as const) : ('physical' as const),
+              vlanFilter: null,
+            }),
       }))
     },
     restore: (doc) =>
       set((s) => ({
-        doc,
+        // Drafts kept before the L2 view have no VLAN facts: the loaded diagram's are still right.
+        doc: doc.vlans ? doc : { ...doc, vlans: s.doc?.vlans, gateways: s.doc?.gateways },
         past: [],
         future: [],
         status: 'dirty',

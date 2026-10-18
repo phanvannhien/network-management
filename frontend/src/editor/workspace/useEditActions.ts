@@ -196,7 +196,9 @@ export function useEditActions({
     // Nodes win: cables count only when no node is selected (a stale cable pick never rides along).
     const edges = new Set(selectedNodes().length > 0 ? [] : s.edgeSelection)
     // A bundled edge (an endpoint group on a port range, ADR-036) stands for all of its cables.
-    const bundled = new Map(toFlowEdges(s.doc).map((e) => [e.id, e.data?.bundle]))
+    const bundled = new Map(
+      toFlowEdges(s.doc, undefined, { lens: s.lens }).map((e) => [e.id, e.data?.bundle]),
+    )
     const linkIds = [
       ...new Set(
         s.doc.view.edges

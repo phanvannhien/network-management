@@ -63,8 +63,9 @@ type Querier interface {
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
-	// Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
-	// the same time cannot leave the organization without one.
+	// Owners left besides @user_id whose account is active (signed up, not disabled). Every owner row is locked, in one
+	// order, so two owners demoting each other at the same time wait for each other instead of leaving the organization
+	// without one (or deadlocking).
 	CountOtherActiveOwners(ctx context.Context, arg CountOtherActiveOwnersParams) (int64, error)
 	// Cables that occupy a port (ADR-033): radio, cellular and logical links share their interface.
 	CountPhysicalLinksOnInterface(ctx context.Context, arg CountPhysicalLinksOnInterfaceParams) (int64, error)
@@ -163,6 +164,10 @@ type Querier interface {
 	DeviceDeleteImpact(ctx context.Context, arg DeviceDeleteImpactParams) ([]DeviceDeleteImpactRow, error)
 	// Count per facet value over the result filtered by everything except that facet (FilterBar counts).
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
+	// L2 view: IPs of the given devices that are the gateway of a subnet (same VRF) with a VLAN — where the VLAN is routed.
+	DiagramGateways(ctx context.Context, arg DiagramGatewaysParams) ([]DiagramGatewaysRow, error)
+	// L2 view (P2-08): VLANs of the given sites and the organization-wide ones (name and colour per VLAN id).
+	DiagramVlans(ctx context.Context, arg DiagramVlansParams) ([]DiagramVlansRow, error)
 	// Another live device with the same name, except members of the same cluster and provider clouds (ADR-027, ADR-033).
 	DuplicateHostnames(ctx context.Context, arg DuplicateHostnamesParams) ([]DuplicateHostnamesRow, error)
 	// An address of a device on the diagram that another holder uses in the same VRF. Holders are grouped by owner: the

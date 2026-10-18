@@ -5,6 +5,55 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-08 (bước 1/5) Chế độ xem L2 (ADR-047); sửa thêm P2-01
+- Người dùng chốt 4 câu thiết kế P2-08 theo đề xuất (ADR-047):
+  - lớp gắn theo trang;
+  - một thiết bị được nằm trên nhiều trang;
+  - luôn hiện connector cho dây ra ngoài trang;
+  - MPLS / Metro là segment.
+- Đã làm:
+  - **Nút L1 / L2 trên thanh công cụ (Alt+1 / Alt+2)**, cùng bố cục, không vào lịch sử hoàn tác. Sơ đồ có lớp `l2` mở sẵn chế độ L2; sơ đồ tổng quan không có.
+  - **Cách vẽ dây ở L2** (suy ra từ cấu hình cổng trong kho):
+    - access tô màu VLAN của IPAM (VLAN của site trước, rồi VLAN cấp tổ chức; chưa khai thì xám đứt nét);
+    - trunk nét đậm kèm ô màu các VLAN, `Trunk 10,20,99 · native 99`;
+    - trunk chưa ghi danh sách VLAN hiện `ALL?` (mỗi hãng mặc định khác);
+    - hybrid vẽ như trunk; routed xám đứt nét; chưa khai mode thì chấm mờ.
+  - **LAG:** ở L2 gộp thành một dây `Po1 · 2 dây`, có panel riêng liệt kê dây thành viên. Ở L1 có vòng oval cắt qua các dây thành viên. Cổng thành viên không tự khai thì lấy cấu hình của cổng LAG (kiểu Cisco).
+  - **Dây nguồn / console / stack** ẩn ở L2.
+  - **Dấu lệch trên dây:**
+    - ⚠: access hai đầu khác VLAN; native hai đầu trunk khác; access nối trunk mà VLAN ≠ native; LAG một đầu.
+    - ⓘ: VLAN chỉ một đầu cho phép; native chỉ ghi một đầu.
+    - Chỉ so khi cả hai đầu đều là switchport, nên camera / AP / router không bị báo nhầm.
+  - **Chú giải VLAN** (góc trái dưới), cũng là bộ lọc:
+    - bấm một VLAN thì dây mang nó nổi lên, phần còn lại mờ;
+    - dây chỉ một đầu cho đi hoặc chưa rõ thì vàng đứt nét;
+    - lọc theo đúng bản ghi VLAN (VLAN 20 của site khác không sáng theo);
+    - thiết bị giữ IP gateway của subnet có VLAN hiện badge `GW 20`.
+  - **API:**
+    - `LinkEnd` thêm mode / access / native / allowed VLAN / LAG;
+    - `DiagramDetail` thêm `vlans`, `gateways`.
+  - **Glossary:** hybrid, các lớp L1/L2/L3, lệch VLAN; giải thích allowed VLAN để trống.
+  - **Sửa thêm P2-01** (agent rà soát phát hiện):
+    - sai mật khẩu không còn đăng xuất chủ tài khoản (trước đây ai biết email cũng làm được);
+    - đăng nhập lại không xóa bộ đếm sai mã MFA;
+    - kiểm tra owner cuối không còn deadlock;
+    - log lỗi không chứa token;
+    - body quá lớn trả 413;
+    - timeout request 5 phút.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Go: `TestDiagramL2Facts` (thông tin cổng, LAG cha, VLAN đúng phạm vi site / tổ chức, gateway, chặn tổ chức khác); `TestMFAFailuresSurviveNewSignIn`; lockout không xóa phiên.
+  - Vitest: `l2.test.ts`, `l2flow.test.ts` (phân loại, lệch, lọc theo bản ghi, gộp LAG, không tạo object mới cho dây không đổi).
+  - Trình duyệt thật (API / Vite riêng, sơ đồ "L2 lab"): chú giải, 2 dấu lệch, lọc VLAN 20, badge GW, không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Router-on-a-stick (cổng routed có sub-interface dot1q) chưa suy ra thành trunk: sub-interface chưa có liên kết tới cổng cha.
+  - Trunk giữa hai site cùng số VLAN nhưng khác bản ghi: chưa ghi chú riêng.
+  - Đổi mode cổng trong panel thì cần mở lại sơ đồ mới thấy ở L2.
+  - Các lệch VLAN chưa vào panel Problems (P2-10 sẽ dùng chung logic).
+- Câu hỏi cho người dùng: (từ P2-01, vẫn chờ) chính sách link mời; `user.manage` có được tự nâng vai trò không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 bước 2, nhiều trang trong một sơ đồ.
+
 ## 2026-10-18 — P2-01 Review bảo mật nền tảng (ADR-046)
 - Đã làm:
   - **Rà soát** 3 mảng song song: web, xác thực / phân quyền, cách ly tổ chức.

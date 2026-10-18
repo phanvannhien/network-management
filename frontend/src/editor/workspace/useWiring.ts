@@ -82,7 +82,9 @@ export function useWiring({
     const card = e && doc?.links[e.linkId]
     if (!doc || !card || !canEdit) return
     // A bundled edge (ADR-036) is many cables: it is shown in the panel, not edited as one.
-    const bundle = toFlowEdges(doc).find((x) => x.id === edgeId)?.data?.bundle
+    const bundle = toFlowEdges(doc, undefined, { lens: store.getState().lens }).find(
+      (x) => x.id === edgeId,
+    )?.data?.bundle
     if (bundle && bundle.length > 1) {
       toast.info(t('panel.bundleGuide'))
       return

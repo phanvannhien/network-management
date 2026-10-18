@@ -37,3 +37,21 @@ CROSS JOIN LATERAL (SELECT e ->> 'refId' AS ref_id FROM jsonb_array_elements(COA
 WHERE dg.organization_id = @organization_id AND n.ref_id = ANY (@ids::text[])
 GROUP BY dg.id, dg.name
 ORDER BY lower(dg.name);
+
+-- name: DiagramVlans :many
+-- L2 view (P2-08): VLANs of the given sites and the organization-wide ones (name and colour per VLAN id).
+SELECT v.vid, v.name, v.color, v.site_id
+FROM vlans v
+WHERE v.organization_id = @organization_id AND (v.site_id IS NULL OR v.site_id = ANY (@site_ids::uuid[]))
+ORDER BY v.vid, v.site_id NULLS LAST;
+
+-- name: DiagramGateways :many
+-- L2 view: IPs of the given devices that are the gateway of a subnet (same VRF) with a VLAN — where the VLAN is routed.
+SELECT ip.device_id, v.vid, v.site_id, host(ip.address)::text AS address, COALESCE(i.name, '')::text AS interface_name
+FROM ip_addresses ip
+JOIN subnets s ON s.organization_id = ip.organization_id AND s.gateway IS NOT NULL AND s.vrf = ip.vrf
+  AND host(s.gateway)::inet = host(ip.address)::inet
+JOIN vlans v ON v.id = s.vlan_id AND v.organization_id = ip.organization_id
+LEFT JOIN interfaces i ON i.id = ip.interface_id AND i.organization_id = ip.organization_id
+WHERE ip.organization_id = @organization_id AND ip.device_id = ANY (@device_ids::uuid[])
+ORDER BY v.vid;

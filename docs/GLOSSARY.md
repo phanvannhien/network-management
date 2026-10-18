@@ -59,10 +59,13 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **VLAN** | Chia một switch thành nhiều mạng riêng, mỗi mạng một số (1–4094) | VLAN 10 = quản trị, VLAN 20 = camera, VLAN 30 = văn phòng |
 | **Access** | Cổng mang **1** VLAN, cắm thiết bị đầu cuối | Cổng cắm camera: access VLAN 20 |
 | **Trunk** | Cổng mang **nhiều** VLAN, nối switch–switch, switch–firewall | Uplink: trunk, allowed `10,20,30` |
-| **Allowed VLANs** | Các VLAN được phép đi qua cổng trunk | `10,20-30` |
-| **Native VLAN** | Trên trunk, VLAN đi không gắn nhãn (mặc định VLAN 1) | Native VLAN 1 |
+| **Allowed VLANs** | Các VLAN được phép đi qua cổng trunk. **Để trống thì mỗi hãng hiểu khác**: Cisco / UniFi / Omada cho tất cả, Huawei / H3C chỉ VLAN 1, FortiSwitch chỉ native — sơ đồ L2 hiện `ALL?`. Muốn cho tất cả thì ghi `1-4094` | `10,20-30` |
+| **Native VLAN** | Trên trunk, VLAN đi không gắn nhãn (mặc định VLAN 1). Hai đầu trunk phải giống nhau, lệch thì gói không nhãn lọt sang VLAN khác. Native = VLAN quản trị trên trunk xuống AP là cách làm bình thường | Native VLAN 1; trunk xuống AP native 99 (MGMT) |
+| **Hybrid / General** | Kiểu cổng của Huawei / H3C / TP-Link / Omada / Cisco SMB: vừa có VLAN gắn nhãn vừa có VLAN không nhãn (PVID). Sơ đồ L2 vẽ như trunk, PVID ghi vào ô native | Cổng nối điện thoại IP + PC |
 | **802.1Q / tag / dot1q** | Nhãn VLAN gắn vào gói tin khi đi trên trunk | Sub-interface `Gi0/0.10` → dot1q 10 |
 | **Routed** | Cổng có IP như cổng router, không thuộc VLAN | Cổng WAN của router |
+| **Lớp L1 / L2 / L3 của sơ đồ** | Ba cách nhìn cùng một mạng. **L1 vật lý**: dây thật, cổng hai đầu, loại cáp. **L2**: VLAN nào đi trên dây nào (access tô màu VLAN, trunk kèm danh sách VLAN, LAG gộp một dây). **L3**: subnet và thiết bị định tuyến (gateway, VPN). L1 và L2 dùng chung bố cục, bấm L1 / L2 trên thanh công cụ (Alt+1 / Alt+2) | Lọc "VLAN 20 Camera" trên L2 → thấy dây camera đi qua switch nào, gateway ở đâu | Màn vẽ → L1 / L2 (P2-08) |
+| **Lệch VLAN giữa hai đầu dây** | Hai cổng cùng một dây khai báo không khớp: access hai đầu khác VLAN, native hai đầu trunk khác nhau, VLAN chỉ một đầu cho phép, cổng access nối vào trunk mà VLAN ≠ native, một đầu là LAG còn đầu kia là cổng thường | Access 20 ↔ access 30: hai bên không thấy nhau | Màn vẽ L2: dấu ⚠ (lỗi) / ⓘ (nên xem) trên dây |
 
 ## 4. IP
 

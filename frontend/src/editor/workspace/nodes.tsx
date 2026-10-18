@@ -43,6 +43,7 @@ function Frame({
   color = '',
   problem,
   corner,
+  badge,
   onHover,
 }: {
   selected: boolean
@@ -64,6 +65,8 @@ function Frame({
   problem?: Severity
   /** Bottom-left control (the product photo button, P2-12); the top corners hold the badges. */
   corner?: ReactNode
+  /** Bottom-right mark (L2 view: the VLANs this device is the gateway of, P2-08). */
+  badge?: ReactNode
   onHover?: (on: boolean) => void
 }) {
   const { t } = useTranslation()
@@ -139,6 +142,7 @@ function Frame({
         </span>
       )}
       {corner && <span className="absolute -bottom-2.5 -left-2.5">{corner}</span>}
+      {badge && <span className="absolute -right-2 -bottom-2.5">{badge}</span>}
       {unmanaged && <span className="sr-only">{t('editorCanvas.unmanaged')}</span>}
       {/* Dashed borders are for unmanaged devices (SRS §6.3); a new, unsaved device gets a badge. */}
       {draft && (
@@ -161,6 +165,18 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
   const problem = useDoc((s) => s.problemsByNode[id])
   const card = useDoc((s) => s.doc?.devices[data.refId])
   const template = useDoc((s) => s.doc?.view.labelTemplate)
+  // L2 view: the VLANs this device routes (holds the subnet gateway), as one string so other nodes do not re-render.
+  const gateways = useDoc((s) =>
+    s.lens === 'l2'
+      ? [
+          ...new Set(
+            (s.doc?.gateways ?? []).filter((g) => g.deviceId === data.refId).map((g) => g.vid),
+          ),
+        ]
+          .sort((a, b) => a - b)
+          .join(',')
+      : '',
+  )
   const { orgId = '' } = useParams()
   const store = useDocStoreApi()
   // The photo button exists only while the node is hovered or selected: the catalog lookup is not paid per node.
@@ -185,6 +201,16 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
       color={data.labelColor}
       problem={problem}
       onHover={setHover}
+      badge={
+        gateways ? (
+          <span
+            className="rounded-sm border border-border bg-card px-1 font-mono text-[10px] leading-4"
+            title={t('l2.gateway', { list: gateways })}
+          >
+            GW {gateways}
+          </span>
+        ) : null
+      }
       corner={
         (hover || selected) && showDetails ? (
           <PhotoButton

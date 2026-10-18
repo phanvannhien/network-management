@@ -31,7 +31,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { SeverityIcon } from '../checks/SeverityIcon'
 import type { Severity } from '../checks/types'
-import type { SaveStatus } from '../doc/store'
+import type { Lens, SaveStatus } from '../doc/store'
 import { GRID_SIZES, type GridSize } from './flow'
 import { togglePanel, type EditorPrefs } from './prefs'
 import { keysLabel, shortcutOf, type ShortcutId } from './shortcuts'
@@ -134,6 +134,9 @@ export interface ToolbarProps {
   problems: Record<Severity, number>
   problemsOpen: boolean
   onProblems: () => void
+  /** How cables are drawn (P2-08): physical or the L2 view; absent on the overview diagram. */
+  lens?: Lens
+  onLens?: (lens: Lens) => void
 }
 
 /** Floating toolbar over the canvas (P1-14). */
@@ -232,6 +235,29 @@ export function Toolbar(p: ToolbarProps) {
           <ToolButton label={t('frames.addArrow')} onClick={p.onAddArrow}>
             <MoveUpRight aria-hidden />
           </ToolButton>
+        </>
+      )}
+      {p.lens && p.onLens && (
+        <>
+          <Divider />
+          <div role="group" aria-label={t('l2.lens')} className="flex items-center gap-0.5">
+            <ToolButton
+              label={t('l2.physicalHint')}
+              shortcut="lensPhysical"
+              onClick={() => p.onLens!('physical')}
+              pressed={p.lens === 'physical'}
+            >
+              <span className="text-xs font-semibold">L1</span>
+            </ToolButton>
+            <ToolButton
+              label={t('l2.viewHint')}
+              shortcut="lensL2"
+              onClick={() => p.onLens!('l2')}
+              pressed={p.lens === 'l2'}
+            >
+              <span className="text-xs font-semibold">L2</span>
+            </ToolButton>
+          </div>
         </>
       )}
       <Divider />

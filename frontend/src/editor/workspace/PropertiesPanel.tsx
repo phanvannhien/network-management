@@ -43,6 +43,7 @@ import { wanLabel } from '../overview/labels'
 import { SiteDrillDialog } from '../overview/SiteDrillDialog'
 import { placeMissing, useSiteGraph } from '../overview/siteGraph'
 import type { DocState } from '../doc/types'
+import { l2Of } from '../l2/l2'
 import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId, toFlowEdges } from './flow'
 import { LABEL_PRESETS, presetOf } from './labels'
@@ -74,6 +75,7 @@ export function PropertiesPanel({
   const { t } = useTranslation()
   const selection = useDoc((s) => s.selection)
   const edgeSelection = useDoc((s) => s.edgeSelection)
+  const lens = useDoc((s) => s.lens)
   const doc = useDoc((s) => s.doc)!
   let body: ReactNode
   let title: string = t('panel.diagram')
@@ -111,8 +113,15 @@ export function PropertiesPanel({
     const edge = doc.view.edges.find((e) => e.id === edgeSelection[0])
     // A bundled edge (an endpoint group on a port range, ADR-036) stands for all its cables: show them, do not
     // pretend that editing the first one edits the bundle.
-    const bundle = edge ? toFlowEdges(doc).find((e) => e.id === edge.id)?.data?.bundle : undefined
-    if (edge && bundle && bundle.length > 1) {
+    const flowEdge = edge
+      ? toFlowEdges(doc, undefined, { lens }).find((e) => e.id === edge.id)
+      : undefined
+    const bundle = flowEdge?.data?.bundle
+    if (edge && bundle && bundle.length > 1 && flowEdge?.data?.lag) {
+      // L2 view: a LAG's member cables drawn as one line (P2-08).
+      title = t('panel.lag', { name: flowEdge.data.lag, count: bundle.length })
+      body = <LagPanel linkIds={bundle} />
+    } else if (edge && bundle && bundle.length > 1) {
       title = t('panel.bundle', { count: bundle.length })
       body = <BundlePanel linkIds={bundle} />
     } else if (edge && doc.links[edge.linkId]) {
@@ -803,6 +812,50 @@ function GroupPanel({
           <LabelColorPicker nodeIds={[nodeId]} current={node?.labelStyle?.color ?? ''} />
         </Section>
       )}
+    </>
+  )
+}
+
+/** L2 view: the member cables of a LAG drawn as one line — what they carry, each cable, mismatches (P2-08). */
+function LagPanel({ linkIds }: { linkIds: string[] }) {
+  const { t } = useTranslation()
+  const doc = useDoc((s) => s.doc)!
+  const links = linkIds.map((id) => doc.links[id]).filter(Boolean)
+  const first = links[0]
+  if (!first) return null
+  const name = (id: string) => doc.devices[id]?.hostname ?? doc.groups[id]?.name ?? '?'
+  const issues = [
+    ...new Set(
+      links.flatMap((l) =>
+        l2Of(l).issues.map((i) =>
+          t(`l2.issue.${i.key}` as 'l2.issue.accessDiffers', i.values as { a: string; b: string }),
+        ),
+      ),
+    ),
+  ]
+  return (
+    <>
+      <p>
+        <span className="font-mono">{name(first.aId)}</span>{' '}
+        <span className="font-mono text-muted-foreground">{first.aL2?.lagName}</span> ↔{' '}
+        <span className="font-mono">{name(first.bId)}</span>{' '}
+        <span className="font-mono text-muted-foreground">{first.bL2?.lagName}</span>
+      </p>
+      <ul className="space-y-0.5 font-mono text-xs">
+        {links.map((l) => (
+          <li key={l.id}>
+            {l.aPort || '—'} ↔ {l.bPort || '—'}
+          </li>
+        ))}
+      </ul>
+      {issues.length > 0 && (
+        <ul className="space-y-1 text-xs text-status-warning">
+          {issues.map((i) => (
+            <li key={i}>⚠ {i}</li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted-foreground">{t('panel.lagGuide')}</p>
     </>
   )
 }

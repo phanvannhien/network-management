@@ -27,6 +27,8 @@ export type ShortcutId =
   | 'hand'
   | 'pointer'
   | 'library'
+  | 'lensPhysical'
+  | 'lensL2'
   | 'help'
 
 export interface Shortcut {
@@ -62,6 +64,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'pointer', keys: ['V'], aria: 'V' },
   { id: 'hand', keys: ['H'], aria: 'H' },
   { id: 'library', keys: ['B'], aria: 'B' },
+  { id: 'lensPhysical', keys: ['Alt', '1'], aria: 'Alt+1' },
+  { id: 'lensL2', keys: ['Alt', '2'], aria: 'Alt+2' },
   { id: 'search', keys: ['Ctrl', 'K'] },
   { id: 'help', keys: ['?'], aria: '?' },
 ]
@@ -114,6 +118,9 @@ export function actionFor(
 ): ShortcutId | null {
   const mod = e.ctrlKey || e.metaKey
   const k = e.key.toLowerCase()
+  // Alt+digit types "¡" / "™" on a Mac: match on the physical key (P2-08 views).
+  if (e.altKey && !mod && !e.shiftKey && e.code === 'Digit1') return 'lensPhysical'
+  if (e.altKey && !mod && !e.shiftKey && e.code === 'Digit2') return 'lensL2'
   if (e.altKey) return null
   if (mod) {
     if (k === 's') return 'save'

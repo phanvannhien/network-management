@@ -26,6 +26,7 @@ import {
   fitOptions,
   isAnnotationId,
   isOverlayId,
+  litNodes,
   MAX_ZOOM,
   MIN_ZOOM,
   toAnnotationNodes,
@@ -118,6 +119,12 @@ export function Canvas({
   const resizeKey = useRef<{ id: string; key: string } | null>(null)
   const wireFrom = useRef<string | null>(null)
 
+  const lens = useDoc((s) => s.lens)
+  const vlanFilter = useDoc((s) => s.vlanFilter)
+  const edgeLens = useMemo(() => ({ lens, vlanFilter }), [lens, vlanFilter])
+  // L2 view with a VLAN picked: nodes it does not touch fade.
+  const lit = useMemo(() => (doc ? litNodes(doc, edgeLens) : null), [doc, edgeLens])
+
   const nodes = useMemo(() => {
     if (!doc) return []
     const selected = new Set(selection)
@@ -136,7 +143,13 @@ export function Canvas({
       dataCache.set(n.id, data)
       live.add(n.id)
       // Hand tool / Space: nothing moves under the pointer, the view does.
-      return { ...n, data, draggable: canEdit && !panning && n.draggable, measured: measured[n.id] }
+      return {
+        ...n,
+        data,
+        draggable: canEdit && !panning && n.draggable,
+        measured: measured[n.id],
+        ...(lit && !lit.has(n.id) && { className: 'ntb-l2-faded' }),
+      }
     })
     // Only nodes still on the view are kept.
     for (const id of dataCache.keys()) if (!live.has(id)) dataCache.delete(id)
@@ -148,7 +161,7 @@ export function Canvas({
       ...anns.filter((n) => n.type !== 'frame'),
       ...out,
     ] as Node[])
-  }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning])
+  }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning, lit])
   const edgeSelection = useDoc((s) => s.edgeSelection)
   // Overview (P2-21): links between two sites drawn on the view, derived from the inventory, read-only.
   const { orgId = '' } = useParams()
@@ -181,11 +194,11 @@ export function Canvas({
     () =>
       doc
         ? reuseUnchanged(edgeCache, [
-            ...(toFlowEdges(doc, new Set(edgeSelection)) as Edge[]),
+            ...(toFlowEdges(doc, new Set(edgeSelection), edgeLens) as Edge[]),
             ...siteEdges,
           ])
         : [],
-    [doc, edgeSelection, edgeCache, siteEdges],
+    [doc, edgeSelection, edgeCache, siteEdges, edgeLens],
   )
 
   /** Frame drag: the devices inside it when the drag began move with it (Alt: the frame alone). */

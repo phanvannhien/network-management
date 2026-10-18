@@ -54,15 +54,38 @@ func numericPtr(n pgtype.Numeric) *float32 {
 	return &v
 }
 
+// portL2 is what the L2 view (P2-08) needs of a link end's port.
+type portL2 struct {
+	mode           string
+	access, native pgtype.Int4
+	allowed        string
+	lagID          pgtype.UUID
+	lagName        string
+}
+
+// effectivePortL2: a LAG member follows its LAG when the LAG has a mode (settings on the port-channel), else its own.
+func effectivePortL2(port, lag portL2) portL2 {
+	if port.lagID.Valid && lag.mode != "" {
+		return lag
+	}
+	return port
+}
+
 func toLink(r store.ListLinksRow, level int) apigen.Link {
-	end := func(kind string, id, site pgtype.UUID, name, typ, siteCode string, iface pgtype.UUID, ifName, ifKind, ifMedia string) apigen.LinkEnd {
+	end := func(kind string, id, site pgtype.UUID, name, typ, siteCode string, iface pgtype.UUID, ifName, ifKind, ifMedia string, l2 portL2) apigen.LinkEnd {
 		return apigen.LinkEnd{Kind: apigen.LinkEndKind(kind), Id: uuid.UUID(id.Bytes), Name: name, Type: typ, SiteId: uuid.UUID(site.Bytes),
-			SiteCode: siteCode, InterfaceId: optUUID(iface), InterfaceName: ifName, InterfaceKind: ifKind, InterfaceMedia: ifMedia}
+			SiteCode: siteCode, InterfaceId: optUUID(iface), InterfaceName: ifName, InterfaceKind: ifKind, InterfaceMedia: ifMedia,
+			InterfaceMode: apigen.InterfaceMode(l2.mode), AccessVlan: optInt(l2.access), NativeVlan: optInt(l2.native),
+			AllowedVlans: l2.allowed, LagId: optUUID(l2.lagID), LagName: l2.lagName}
 	}
 	return apigen.Link{
-		Id:   uuid.UUID(r.ID.Bytes),
-		A:    end(r.AKind, r.AID, r.ASiteID, r.AName, r.AType, r.ASiteCode, r.AInterfaceID, r.AInterfaceName, r.AInterfaceKind, r.AInterfaceMedia),
-		B:    end(r.BKind, r.BID, r.BSiteID, r.BName, r.BType, r.BSiteCode, r.BInterfaceID, r.BInterfaceName, r.BInterfaceKind, r.BInterfaceMedia),
+		Id: uuid.UUID(r.ID.Bytes),
+		A: end(r.AKind, r.AID, r.ASiteID, r.AName, r.AType, r.ASiteCode, r.AInterfaceID, r.AInterfaceName, r.AInterfaceKind, r.AInterfaceMedia,
+			effectivePortL2(portL2{r.AMode, r.AAccessVlan, r.ANativeVlan, r.AAllowedVlans, r.ALagID, r.ALagName},
+				portL2{r.ALagMode, r.ALagAccessVlan, r.ALagNativeVlan, r.ALagAllowedVlans, r.ALagID, r.ALagName})),
+		B: end(r.BKind, r.BID, r.BSiteID, r.BName, r.BType, r.BSiteCode, r.BInterfaceID, r.BInterfaceName, r.BInterfaceKind, r.BInterfaceMedia,
+			effectivePortL2(portL2{r.BMode, r.BAccessVlan, r.BNativeVlan, r.BAllowedVlans, r.BLagID, r.BLagName},
+				portL2{r.BLagMode, r.BLagAccessVlan, r.BLagNativeVlan, r.BLagAllowedVlans, r.BLagID, r.BLagName})),
 		Kind: apigen.LinkKind(r.Kind), Medium: r.Medium, Speed: r.Speed, LengthM: numericPtr(r.LengthM), CableId: r.CableID,
 		Status: apigen.LinkStatus(r.Status), FiberMode: apigen.LinkFiberMode(r.FiberMode),
 		Connector: apigen.LinkConnector(r.Connector), Service: apigen.LinkService(r.Service), Provider: r.Provider, CircuitId: r.CircuitID, Bandwidth: r.Bandwidth, Notes: r.Notes,

@@ -4435,6 +4435,26 @@ export interface components {
             interfaceName: string;
             interfaceKind: string;
             interfaceMedia: string;
+            interfaceMode: components["schemas"]["InterfaceMode"];
+            /**
+             * Format: int32
+             * @description VLAN of an access port (untagged)
+             */
+            accessVlan: number | null;
+            /**
+             * Format: int32
+             * @description untagged VLAN of a trunk / hybrid port; null = the vendor default (1)
+             */
+            nativeVlan: number | null;
+            /** @description tagged VLANs of a trunk / hybrid port, e.g. "10,20,30-35"; '' = not restricted (all) */
+            allowedVlans: string;
+            /**
+             * Format: uuid
+             * @description the LAG (port-channel) the port belongs to
+             */
+            lagId: string | null;
+            /** @description e.g. Po1 */
+            lagName: string;
         };
         LinkInput: {
             a: components["schemas"]["LinkEndInput"];
@@ -4600,6 +4620,36 @@ export interface components {
             links: components["schemas"]["Link"][];
             /** @description ids referenced by the view that the caller may not see (kept unchanged when saving) */
             hiddenRefs: string[];
+            /** @description L2 view (P2-08, ADR-047): VLANs of the sites of the devices on the view and the organization-wide ones (name and colour for each VLAN id; a site's own VLAN wins over the organization-wide one) */
+            vlans?: components["schemas"]["DiagramVlan"][];
+            /** @description L2 view — devices on the view holding the gateway IP of a subnet with a VLAN */
+            gateways?: components["schemas"]["DiagramGateway"][];
+        };
+        DiagramVlan: {
+            /** Format: int32 */
+            vid: number;
+            name: string;
+            color: string;
+            /**
+             * Format: uuid
+             * @description null = organization-wide
+             */
+            siteId: string | null;
+        };
+        DiagramGateway: {
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: int32 */
+            vid: number;
+            /**
+             * Format: uuid
+             * @description site of the VLAN (null = organization-wide)
+             */
+            siteId: string | null;
+            /** @description the gateway IP, e.g. 10.1.20.1 */
+            address: string;
+            /** @description e.g. Vlan20, port2.20 */
+            interfaceName: string;
         };
         /** @description One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id. */
         DiagramChange: {

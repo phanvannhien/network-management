@@ -627,7 +627,8 @@ export const vi = {
     mode: 'Access: cổng mang 1 VLAN (cắm PC, camera…). Trunk: cổng mang nhiều VLAN (nối switch–switch, switch–firewall). Routed: cổng có IP như router.',
     accessVlan: 'VLAN của cổng ở mode access.',
     nativeVlan: 'Ở cổng trunk: VLAN đi không gắn tag (mặc định VLAN 1).',
-    allowedVlans: 'Ở cổng trunk: các VLAN được đi qua, vd 10,20-30.',
+    allowedVlans:
+      'Ở cổng trunk: các VLAN được đi qua, vd 10,20-30. Để trống thì tùy hãng (Cisco cho tất cả, Huawei / H3C chỉ VLAN 1); muốn tất cả thì ghi 1-4094.',
     lag: 'Cổng này là thành viên của LAG nào (chọn interface loại LAG).',
     mac: 'Địa chỉ phần cứng của cổng, nhập kiểu nào cũng được: aa:bb:cc:dd:ee:ff, aabb.ccdd.eeff, AA-BB-…',
     vlanTag: 'Chỉ cho sub-interface: số VLAN (802.1Q) mà cổng con xử lý, vd Gi0/0.10 → 10.',
@@ -911,6 +912,40 @@ export const vi = {
     unsaved: 'chưa lưu',
     empty: 'Sơ đồ trống.',
   },
+  l2: {
+    lens: 'Lớp hiển thị',
+    physical: 'L1 vật lý',
+    view: 'L2 VLAN',
+    physicalHint: 'Vẽ dây thật: loại cáp, cổng hai đầu (Alt+1)',
+    viewHint:
+      'Xem VLAN trên cùng bố cục (Alt+2): dây access tô màu VLAN, trunk nét đậm kèm danh sách VLAN, LAG gộp một dây. Lấy từ cấu hình cổng trong kho, không phải vẽ thêm.',
+    cables_one: '{{count}} dây',
+    cables_other: '{{count}} dây',
+    notInIpam: 'chưa khai trong IPAM',
+    accessNoVlan: 'access · chưa khai VLAN',
+    routed: 'routed (không VLAN)',
+    unset: 'chưa khai mode',
+    unspecifiedHint:
+      'Trunk chưa ghi danh sách VLAN cho phép. Mỗi hãng mặc định khác nhau: Cisco / UniFi / Omada cho tất cả, Huawei / H3C chỉ VLAN 1, FortiSwitch chỉ native. Ghi 1-4094 nếu muốn cho tất cả.',
+    legend: 'VLAN trên sơ đồ',
+    legendHint: 'Bấm một VLAN để làm nổi các dây mang nó và thiết bị làm gateway; bấm lại để bỏ.',
+    legendEmpty: 'Chưa có dây nào khai VLAN. Mở cổng của thiết bị để ghi mode và VLAN.',
+    clearFilter: 'Bỏ lọc',
+    gateway: 'Gateway VLAN {{list}}',
+    maybe: 'Nét vàng đứt: chỉ một đầu cho VLAN này đi qua, hoặc một đầu chưa ghi danh sách VLAN.',
+    hidden: 'Ẩn dây nguồn, console, stack (không mang VLAN).',
+    issue: {
+      accessDiffers: 'Hai đầu access khác VLAN ({{a}} ≠ {{b}}): máy hai bên không thấy nhau.',
+      nativeDiffers:
+        'Native VLAN hai đầu trunk lệch ({{a}} ≠ {{b}}): gói không gắn nhãn lọt sang VLAN khác.',
+      nativeOneSide:
+        'Native VLAN chỉ ghi ở một đầu ({{a}} / {{b}} mặc định). Kiểm tra đầu kia có đúng không.',
+      allowedOneSide: 'VLAN chỉ một đầu trunk cho phép: {{vlans}}.',
+      accessToTrunk:
+        'Cổng access VLAN {{access}} nối vào trunk native {{native}}: chỉ native VLAN đi qua được.',
+      lagOneSide: 'Một đầu là thành viên {{lag}}, đầu kia là cổng thường: LAG sẽ không lên.',
+    },
+  },
   editorCanvas: {
     pointer: 'Con trỏ — chọn và kéo thiết bị (V)',
     hand: 'Bàn tay — kéo để di chuyển màn vẽ (H; hoặc giữ Space + kéo)',
@@ -965,6 +1000,8 @@ export const vi = {
       multiSelect: 'Giữ khi click để chọn thêm',
       quickAdd: 'Thêm nhanh thiết bị',
       library: 'Ẩn/hiện thư viện',
+      lensPhysical: 'Xem lớp L1 vật lý (dây thật)',
+      lensL2: 'Xem lớp L2 (VLAN, trunk, LAG)',
       connect: 'Nối dây (bấm 2 thiết bị)',
       pointer: 'Con trỏ: chọn, kéo thiết bị (thoát bàn tay / nối dây)',
       hand: 'Bật/tắt bàn tay: kéo chuột trái để di chuyển màn vẽ',
@@ -1125,6 +1162,9 @@ export const vi = {
     mgmtIpSave: 'Lưu IP',
     mgmtIpSaved: 'Đã lưu IP quản trị {{ip}} trên {{iface}}',
     bundle: 'Nhóm dây ({{count}})',
+    lag: 'LAG {{name}} ({{count}} dây)',
+    lagGuide:
+      'Chế độ xem L2 gộp các dây thành viên của một LAG thành một đường. Chuyển về L1 để sửa từng dây; sửa mode / VLAN ở cổng LAG của thiết bị.',
     bundlePorts: 'Cổng',
     bundleCount: 'Số dây',
     bundleGuide:

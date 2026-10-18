@@ -8869,7 +8869,8 @@ components:
 
     LinkEnd:
       type: object
-      required: [kind, id, name, type, siteId, siteCode, interfaceId, interfaceName, interfaceKind, interfaceMedia]
+      required: [kind, id, name, type, siteId, siteCode, interfaceId, interfaceName, interfaceKind, interfaceMedia,
+                 interfaceMode, accessVlan, nativeVlan, allowedVlans, lagId, lagName]
       properties:
         kind:
           $ref: '#/components/schemas/LinkEndKind'
@@ -8896,6 +8897,26 @@ components:
           type: string
         interfaceMedia:
           type: string
+        interfaceMode:
+          $ref: '#/components/schemas/InterfaceMode'
+        accessVlan:
+          type: [integer, 'null']
+          format: int32
+          description: VLAN of an access port (untagged)
+        nativeVlan:
+          type: [integer, 'null']
+          format: int32
+          description: untagged VLAN of a trunk / hybrid port; null = the vendor default (1)
+        allowedVlans:
+          type: string
+          description: tagged VLANs of a trunk / hybrid port, e.g. "10,20,30-35"; '' = not restricted (all)
+        lagId:
+          type: [string, 'null']
+          format: uuid
+          description: the LAG (port-channel) the port belongs to
+        lagName:
+          type: string
+          description: e.g. Po1
 
     LinkInput:
       type: object
@@ -9241,6 +9262,55 @@ components:
           items:
             type: string
             format: uuid
+        vlans:
+          type: array
+          description: >-
+            L2 view (P2-08, ADR-047): VLANs of the sites of the devices on the view and the organization-wide ones
+            (name and colour for each VLAN id; a site's own VLAN wins over the organization-wide one)
+          items:
+            $ref: '#/components/schemas/DiagramVlan'
+        gateways:
+          type: array
+          description: L2 view — devices on the view holding the gateway IP of a subnet with a VLAN
+          items:
+            $ref: '#/components/schemas/DiagramGateway'
+
+    DiagramVlan:
+      type: object
+      required: [vid, name, color, siteId]
+      properties:
+        vid:
+          type: integer
+          format: int32
+        name:
+          type: string
+        color:
+          type: string
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: null = organization-wide
+
+    DiagramGateway:
+      type: object
+      required: [deviceId, vid, siteId, address, interfaceName]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        vid:
+          type: integer
+          format: int32
+        siteId:
+          type: [string, 'null']
+          format: uuid
+          description: site of the VLAN (null = organization-wide)
+        address:
+          type: string
+          description: the gateway IP, e.g. 10.1.20.1
+        interfaceName:
+          type: string
+          description: e.g. Vlan20, port2.20
 
     DiagramChange:
       type: object

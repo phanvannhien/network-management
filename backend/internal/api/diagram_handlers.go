@@ -214,7 +214,52 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 	for id := range hidden {
 		out.HiddenRefs = append(out.HiddenRefs, id)
 	}
+	if err := diagramL2(ctx, q, m, &out); err != nil {
+		return out, err
+	}
 	return out, nil
+}
+
+// diagramL2 adds what the L2 view (P2-08, ADR-047) colours and marks with: the VLANs of the sites on the view (plus
+// the organization-wide ones) and where each VLAN is routed (a device holding its subnet's gateway IP).
+func diagramL2(ctx context.Context, q store.Querier, m tenant.Membership, out *apigen.DiagramDetail) error {
+	siteIDs, deviceIDs := []pgtype.UUID{}, []pgtype.UUID{}
+	seen := map[uuid.UUID]bool{}
+	addSite := func(id uuid.UUID) {
+		if !seen[id] {
+			seen[id] = true
+			siteIDs = append(siteIDs, pgUUID(id))
+		}
+	}
+	for _, d := range out.Devices {
+		addSite(d.SiteId)
+		deviceIDs = append(deviceIDs, pgUUID(d.Id))
+	}
+	for _, g := range out.EndpointGroups {
+		addSite(g.SiteId)
+	}
+	vlans, err := q.DiagramVlans(ctx, store.DiagramVlansParams{OrganizationID: m.OrgID, SiteIds: siteIDs})
+	if err != nil {
+		return fmt.Errorf("diagram vlans: %w", err)
+	}
+	outVlans := make([]apigen.DiagramVlan, 0, len(vlans))
+	for _, v := range vlans {
+		outVlans = append(outVlans, apigen.DiagramVlan{Vid: v.Vid, Name: v.Name, Color: v.Color, SiteId: optUUID(v.SiteID)})
+	}
+	out.Vlans = &outVlans
+	outGws := []apigen.DiagramGateway{}
+	if len(deviceIDs) > 0 {
+		gws, err := q.DiagramGateways(ctx, store.DiagramGatewaysParams{OrganizationID: m.OrgID, DeviceIds: deviceIDs})
+		if err != nil {
+			return fmt.Errorf("diagram gateways: %w", err)
+		}
+		for _, g := range gws {
+			outGws = append(outGws, apigen.DiagramGateway{DeviceId: uuid.UUID(g.DeviceID.Bytes), Vid: g.Vid, SiteId: optUUID(g.SiteID),
+				Address: g.Address, InterfaceName: g.InterfaceName})
+		}
+	}
+	out.Gateways = &outGws
+	return nil
 }
 
 func (s *Server) ListDiagrams(ctx context.Context, req apigen.ListDiagramsRequestObject) (apigen.ListDiagramsResponseObject, error) {

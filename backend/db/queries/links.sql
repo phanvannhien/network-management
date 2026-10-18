@@ -12,16 +12,28 @@ SELECT l.*,
   COALESCE(bd.site_id, bg.site_id) AS b_site_id,
   COALESCE(bsite.code::text, '')::text AS b_site_code,
   COALESCE(bi.name, '')::text AS b_interface_name, COALESCE(bi.kind, '')::text AS b_interface_kind,
-  COALESCE(bi.media, '')::text AS b_interface_media
+  COALESCE(bi.media, '')::text AS b_interface_media,
+  -- Switchport facts for the L2 view (P2-08); the LAG's own settings too (a member follows its LAG when the LAG has a
+  -- mode: Cisco style puts them on the port-channel).
+  COALESCE(ai.mode, '')::text AS a_mode, ai.access_vlan AS a_access_vlan, ai.native_vlan AS a_native_vlan,
+  COALESCE(ai.allowed_vlans, '')::text AS a_allowed_vlans, ai.lag_id AS a_lag_id, COALESCE(alag.name, '')::text AS a_lag_name,
+  COALESCE(alag.mode, '')::text AS a_lag_mode, alag.access_vlan AS a_lag_access_vlan, alag.native_vlan AS a_lag_native_vlan,
+  COALESCE(alag.allowed_vlans, '')::text AS a_lag_allowed_vlans,
+  COALESCE(bi.mode, '')::text AS b_mode, bi.access_vlan AS b_access_vlan, bi.native_vlan AS b_native_vlan,
+  COALESCE(bi.allowed_vlans, '')::text AS b_allowed_vlans, bi.lag_id AS b_lag_id, COALESCE(blag.name, '')::text AS b_lag_name,
+  COALESCE(blag.mode, '')::text AS b_lag_mode, blag.access_vlan AS b_lag_access_vlan, blag.native_vlan AS b_lag_native_vlan,
+  COALESCE(blag.allowed_vlans, '')::text AS b_lag_allowed_vlans
 FROM links l
 LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.organization_id = l.organization_id AND ad.deleted_at IS NULL
 LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id AND ag.organization_id = l.organization_id
 LEFT JOIN sites asite ON asite.id = COALESCE(ad.site_id, ag.site_id) AND asite.organization_id = l.organization_id AND asite.deleted_at IS NULL
 LEFT JOIN interfaces ai ON ai.id = l.a_interface_id AND ai.organization_id = l.organization_id
+LEFT JOIN interfaces alag ON alag.id = ai.lag_id AND alag.organization_id = l.organization_id
 LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.organization_id = l.organization_id AND bd.deleted_at IS NULL
 LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id AND bg.organization_id = l.organization_id
 LEFT JOIN sites bsite ON bsite.id = COALESCE(bd.site_id, bg.site_id) AND bsite.organization_id = l.organization_id AND bsite.deleted_at IS NULL
 LEFT JOIN interfaces bi ON bi.id = l.b_interface_id AND bi.organization_id = l.organization_id
+LEFT JOIN interfaces blag ON blag.id = bi.lag_id AND blag.organization_id = l.organization_id
 WHERE l.organization_id = @organization_id
   AND (sqlc.narg('link_id')::uuid IS NULL OR l.id = sqlc.narg('link_id'))
   AND (sqlc.narg('link_ids')::uuid[] IS NULL OR l.id = ANY (sqlc.narg('link_ids')::uuid[]))

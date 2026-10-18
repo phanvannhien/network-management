@@ -744,3 +744,36 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Postgres RLS** (ADR-016): khoảng 4–6 ngày, cần tách role DB không phải superuser. Đề xuất làm trước khi chạy production cho nhiều khách hàng.
   - Chính sách link mời / thêm thành viên đã có tài khoản (link qua email, người được thêm phải đồng ý).
   - Xác nhận lại MFA (step-up) cho thao tác admin hệ thống: reset MFA, tạo link đặt lại mật khẩu, khóa tài khoản.
+
+### ADR-047 — Lớp theo trang, L2 là chế độ xem, L3 suy ra từ IPAM, segment cho mạng dùng chung nhiều site (P2-08)
+- **Bối cảnh:** P2-08 cần nhiều trang, lớp L1 / L2 / L3, segment và connector ra ngoài trang.
+  - Hiện `diagrams.layer` chỉ là nhãn: vẽ L2 / L3 không khác L1.
+  - Dây có một đầu không nằm trên sơ đồ bị ẩn hẳn, nên sơ đồ tầng không cho thấy uplink về core.
+  - Người dùng chốt theo đề xuất ngày 2026-10-18.
+- **Quyết định:**
+  - **Lớp là thuộc tính của trang** trong một sơ đồ (`view.pages[].layer` ∈ `physical | l2 | l3`). Không còn mỗi lớp một sơ đồ.
+    - L1 và L2 dùng chung bố cục: **L2 là chế độ xem** (lăng kính) bật / tắt ở toolbar.
+      - Không đổi dữ liệu, không vào lịch sử hoàn tác.
+      - Chỉ đổi cách vẽ dây và badge: màu VLAN, trunk / access / routed, gộp LAG, lọc theo VLAN, chú giải, chấm lệch VLAN.
+      - Tất cả suy ra từ kho (cổng, VLAN của IPAM).
+    - **L3 là trang riêng**, sinh từ IP + subnet: subnet là thanh ngang, thiết bị gắn suy ra từ IP. Chỉ lưu vị trí.
+    - Sơ đồ cũ = một trang ngầm, không migrate JSONB. `diagrams.layer` giữ nghĩa: `overview` = tổng quan; còn lại = lớp của trang đầu.
+  - **Một thiết bị được nằm trên nhiều trang** của cùng sơ đồ (vd core làm mốc ở mỗi trang tầng).
+    - Có badge "cũng ở trang …".
+    - Dây vẽ trên mọi trang có đủ hai đầu.
+  - **Dây có một đầu không nằm trên trang luôn hiện connector / cuống dây**, kể cả sơ đồ cũ. Mặc định bật, tắt được.
+    - Connector tự suy ra (trang khác của sơ đồ này → sơ đồ khác → chưa có trên sơ đồ nào); người dùng chỉ kéo vị trí.
+  - **Segment** = đối tượng kho mới (`segments`, không gắn site) cho mạng dùng chung ≥ 3 bên: MPLS L3VPN, Metro / VPLS, LAN dùng chung.
+    - Link được kết thúc ở segment, không chọn cổng.
+    - Internet riêng của từng site vẫn là `provider_cloud` (ADR-033).
+    - Không tự chuyển dữ liệu cũ.
+  - **Thứ tự làm:** chế độ xem L2 → nhiều trang → connector ngoài trang → trang L3 → segment.
+- **Lý do:**
+  - L2 của một site gần như trùng topology L1: vẽ riêng chỉ sinh hai bản lệch nhau.
+  - L3 có tập node khác hẳn nên cần bố cục riêng.
+  - Trang trong một sơ đồ giữ một lần lưu, một lịch sử hoàn tác, một file `.ntb.json`, và connector giữa các trang tự tính được.
+  - Segment tránh n² cạnh site ↔ site trên sơ đồ tổng quan.
+- **Đánh đổi:**
+  - STP root không hiện được: kho không có priority. Phase 3 đọc qua SNMP.
+  - Không có bảng định tuyến / OSPF / BGP trên L3.
+  - Sơ đồ tổng quan giữ một trang ở P2-08.

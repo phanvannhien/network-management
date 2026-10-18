@@ -306,6 +306,35 @@
 .react-flow__edge.ntb-link-planned .react-flow__edge-path {
   opacity: 0.45;
 }
+/* L2 view (P2-08, ADR-047): width and dash say what a cable carries; an access cable also takes its VLAN colour. */
+.react-flow__edge.ntb-l2-access .react-flow__edge-path {
+  stroke-width: 3;
+}
+.react-flow__edge.ntb-l2-trunk .react-flow__edge-path {
+  stroke-width: 4.5;
+  stroke: var(--foreground);
+}
+.react-flow__edge.ntb-l2-routed .react-flow__edge-path {
+  stroke: var(--muted-foreground);
+  stroke-dasharray: 10 4;
+}
+.react-flow__edge.ntb-l2-unset .react-flow__edge-path {
+  stroke: var(--muted-foreground);
+  stroke-dasharray: 3 4;
+  opacity: 0.7;
+}
+/* Carries the picked VLAN on one end only, or an end does not say (allowed list not filled in). */
+.react-flow__edge.ntb-l2-maybe .react-flow__edge-path {
+  /* Over the access cable's VLAN colour (set inline). */
+  stroke: var(--status-warning) !important;
+  stroke-dasharray: 6 4;
+}
+.react-flow__edge.ntb-l2-faded {
+  opacity: 0.15;
+}
+.react-flow__node.ntb-l2-faded {
+  opacity: 0.25;
+}
 /* Cables attach to these (drawn border to border by CableEdge). */
 .react-flow__handle.ntb-handle {
   opacity: 0;
