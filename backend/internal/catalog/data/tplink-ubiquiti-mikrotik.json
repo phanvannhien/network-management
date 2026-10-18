@@ -537,8 +537,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/T2600G-28TS.yaml",
       "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Legacy JetStream L2+ managed; port layout from memory (24 GbE + 4 SFP + console). Check whether ports 21-24 are combo on your hardware version."
     },
     {
@@ -575,8 +575,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/T2500G-10TS.yaml",
       "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). Legacy name of TL-SG3210 (now SG3210); part number TL-SG3210 kept on the SG3210 entry."
     },
     {
@@ -688,8 +688,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/TL-SG1024D.yaml",
       "notes": "Unmanaged rack/desktop switch; names follow front-panel numbers."
     },
     {
@@ -722,8 +722,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/TL-SG108PE.yaml",
       "notes": "Easy Smart (web only, names as 'Port n' in web UI). Ports 1-4 PoE (802.3af/at), 64 W budget, from memory."
     },
     {
@@ -964,8 +964,8 @@
           "speed": "100M"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/OC200.yaml",
       "notes": "Omada hardware controller (manages EAPs/switches/gateways; could also be typed wireless_controller). 2x 10/100 ports, one PoE-in, from memory."
     },
     {
@@ -991,8 +991,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/OC300.yaml",
       "notes": "Omada hardware controller (could also be typed wireless_controller). 2x GbE from memory; check for console port."
     },
     {
@@ -1072,8 +1072,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/EAP610.yml",
       "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
     },
     {
@@ -1099,8 +1099,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/EAP650.yaml",
       "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
     },
     {
@@ -1659,7 +1659,7 @@
           "speed": "10G"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://techspecs.ui.com/unifi/cloud-gateways/uxg-pro",
       "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 2 GbE (WAN/LAN) + 2 SFP+ (WAN/LAN) from memory; spec page only confirms 2 SFP+ and default WAN roles."
     },
@@ -1692,8 +1692,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USG.yaml",
       "notes": "EdgeOS names eth0 (WAN1), eth1 (LAN1), eth2 (WAN2/LAN2); RJ45 console. End of life."
     },
     {
@@ -1708,7 +1708,7 @@
         "UniFi Cloud Gateway Ultra"
       ],
       "type": "router",
-      "uHeight": 1,
+      "uHeight": 0,
       "ports": [
         {
           "pattern": "Port {n}",
@@ -1778,8 +1778,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/U6-Lite.yaml",
       "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
     },
     {
@@ -1805,8 +1805,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/U6-Pro.yaml",
       "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
     },
     {
@@ -1832,8 +1832,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/U6+.yaml",
       "notes": "Wi-Fi 6 AP, 1 GbE PoE-in (from memory)."
     },
     {
@@ -2237,8 +2237,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "https://mikrotik.com/product/CCR1036-8G-2Splus",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/CCR1036-8G-2S-Plus.yaml",
       "notes": "Counts checked (8 GbE, 2 SFP+, serial console - DB9 on old units, RJ45 on newer). SFP+ interface name sfp-sfpplus1-2 assumed (MTU table only lists the CCR1036-12G-4S row); older RouterOS v6 may show sfpplus1."
     },
     {
@@ -2487,6 +2487,708 @@
       "verified": false,
       "source": "https://mikrotik.com/product/css610_8g_2s_in",
       "notes": "Counts checked (8 GbE + 2 SFP+, SwOS Lite only). SwOS port naming (Port1..Port10, SFP+ as 9-10) not confirmed."
+    },
+    {
+      "id": "mikrotik-crs310-8g-2s-in",
+      "vendor": "MikroTik",
+      "family": "CRS",
+      "model": "CRS310-8G+2S+IN",
+      "partNumbers": [
+        "CRS310-8G+2S+IN"
+      ],
+      "aliases": [
+        "CRS310-8G+2S+"
+      ],
+      "type": "l2_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/CRS310-8G-Plus-2S-Plus-IN.yaml",
+      "notes": "RouterOS interface names. 8x 2.5G RJ45 + 2x 10G SFP+, desktop. RouterOS/SwOS dual boot."
+    },
+    {
+      "id": "mikrotik-crs326-24s-2q-rm",
+      "vendor": "MikroTik",
+      "family": "CRS",
+      "model": "CRS326-24S+2Q+RM",
+      "partNumbers": [
+        "CRS326-24S+2Q+RM"
+      ],
+      "aliases": [
+        "CRS326-24S+2Q+"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 24,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "qsfpplus{n}-1",
+          "start": 1,
+          "count": 2,
+          "media": "QSFP",
+          "speed": "40G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/CRS326-24S-Plus-2Q-Plus-RM.yaml",
+      "notes": "RouterOS interface names. ether1 = 10/100 management port. Each QSFP+ appears as qsfpplusX-1..X-4 (break-out); only -1 listed."
+    },
+    {
+      "id": "mikrotik-crs317-1g-16s-rm",
+      "vendor": "MikroTik",
+      "family": "CRS",
+      "model": "CRS317-1G-16S+RM",
+      "partNumbers": [
+        "CRS317-1G-16S+RM"
+      ],
+      "aliases": [
+        "CRS317-1G-16S+"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 16,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/CRS317-1G-16S-Plus-RM.yaml",
+      "notes": "RouterOS interface names. ether1 = management GbE port; 16x 10G SFP+. RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-crs112-8p-4s-in",
+      "vendor": "MikroTik",
+      "family": "CRS",
+      "model": "CRS112-8P-4S-IN",
+      "partNumbers": [
+        "CRS112-8P-4S-IN"
+      ],
+      "aliases": [
+        "CRS112-8P-4S"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/CRS112-8P-4S-IN.yaml",
+      "notes": "RouterOS interface names. 8x GE PoE-out (802.3af/at + passive) + 4x SFP."
+    },
+    {
+      "id": "mikrotik-l009uigs-rm",
+      "vendor": "MikroTik",
+      "family": "L009",
+      "model": "L009UiGS-RM",
+      "partNumbers": [
+        "L009UiGS-RM"
+      ],
+      "aliases": [
+        "L009"
+      ],
+      "type": "router",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 7,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 8,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/L009UiGS-RM.yaml",
+      "notes": "RouterOS interface names. 8x GE (ether1 PoE-in, ether8 PoE-out) + 1x 2.5G SFP. RJ45 serial console."
+    },
+    {
+      "id": "mikrotik-rb5009upr-s-in",
+      "vendor": "MikroTik",
+      "family": "RB5009",
+      "model": "RB5009UPr+S+IN",
+      "partNumbers": [
+        "RB5009UPr+S+IN"
+      ],
+      "aliases": [
+        "RB5009 PoE"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "ether{n}",
+          "start": 2,
+          "count": 7,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "sfp-sfpplus{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/RB5009UPr-Plus-S-Plus-IN.yaml",
+      "notes": "RouterOS interface names. PoE-out on all 8 RJ45 ports (ether1 2.5G). PoE variant of RB5009UG+S+IN."
+    },
+    {
+      "id": "mikrotik-e50ug",
+      "vendor": "MikroTik",
+      "family": "hEX",
+      "model": "hEX refresh (E50UG)",
+      "partNumbers": [
+        "E50UG"
+      ],
+      "aliases": [
+        "hEX 2024",
+        "hEX refresh"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "ether{n}",
+          "start": 1,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/MikroTik/E50UG.yaml",
+      "notes": "RouterOS interface names. 5x GE; ether1 PoE-in. Successor of RB750Gr3."
+    },
+    {
+      "id": "ubiquiti-usw-pro-max-24-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Pro Max",
+      "model": "USW-Pro-Max-24-PoE",
+      "partNumbers": [
+        "USW-Pro-Max-24-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Pro Max 24 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 17,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 25,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USW-Pro-Max-24-PoE.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 16x GbE PoE+ + 8x 2.5G PoE++ (400 W), 2x SFP+. Layer 3."
+    },
+    {
+      "id": "ubiquiti-usw-pro-max-48-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Pro Max",
+      "model": "USW-Pro-Max-48-PoE",
+      "partNumbers": [
+        "USW-Pro-Max-48-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Pro Max 48 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 32,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 33,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USW-Pro-Max-48-PoE.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 32x GbE + 16x 2.5G, all PoE (720 W), 4x SFP+. Layer 3."
+    },
+    {
+      "id": "ubiquiti-usw-16-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-16-PoE",
+      "partNumbers": [
+        "USW-16-POE"
+      ],
+      "aliases": [
+        "UniFi Switch 16 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 9,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USW-16-PoE.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 8 PoE+ (ports 1-8) of 16 GbE, 42 W; 2x 1G SFP."
+    },
+    {
+      "id": "ubiquiti-usw-enterprise-48-poe",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch Enterprise",
+      "model": "USW-Enterprise-48-PoE",
+      "partNumbers": [
+        "USW-Enterprise-48-PoE"
+      ],
+      "aliases": [
+        "UniFi Switch Enterprise 48 PoE"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USW-Enterprise-48-PoE.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 48x 2.5G PoE+ (720 W) + 4x SFP+. Layer 3."
+    },
+    {
+      "id": "ubiquiti-usw-pro-aggregation",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Switch",
+      "model": "USW-Pro-Aggregation",
+      "partNumbers": [
+        "USW-Pro-Aggregation"
+      ],
+      "aliases": [
+        "UniFi Switch Pro Aggregation"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 28,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 29,
+          "count": 4,
+          "media": "SFP28",
+          "speed": "25G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/USW-Pro-Aggregation.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 28x 10G SFP+ + 4x 25G SFP28. Layer 3."
+    },
+    {
+      "id": "ubiquiti-ucg-fiber",
+      "vendor": "Ubiquiti",
+      "family": "UniFi Cloud Gateway",
+      "model": "UCG-Fiber",
+      "partNumbers": [
+        "UCG-Fiber"
+      ],
+      "aliases": [
+        "UniFi Cloud Gateway Fiber"
+      ],
+      "type": "router",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "Port {n}",
+          "start": 1,
+          "count": 3,
+          "media": "RJ45",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 4,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "2.5G",
+          "poe": true
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 5,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "10G"
+        },
+        {
+          "pattern": "Port {n}",
+          "start": 6,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Ubiquiti/UCG-Fiber.yaml",
+      "notes": "UniFi UI names ports 'Port n'; SFP ports continue numbering after RJ45. 4x 2.5G LAN (one PoE+ out), 1x 10G RJ45 (default WAN), 2x 10G SFP+ (WAN2/LAN). Port numbering assumed from NetBox order; confirm in UniFi UI."
+    },
+    {
+      "id": "tp-link-sg3428x",
+      "vendor": "TP-Link",
+      "family": "Omada SG3",
+      "model": "SG3428X",
+      "partNumbers": [
+        "TL-SG3428X"
+      ],
+      "aliases": [
+        "TL-SG3428X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/TL-SG3428X.yaml",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). L2+ managed; RJ45 + micro-USB console listed once."
+    },
+    {
+      "id": "tp-link-sg3428xmp",
+      "vendor": "TP-Link",
+      "family": "Omada SG3",
+      "model": "SG3428XMP",
+      "partNumbers": [
+        "TL-SG3428XMP"
+      ],
+      "aliases": [
+        "TL-SG3428XMP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/TL-SG3428XMP.yaml",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 24 PoE+ (500 W). L2+."
+    },
+    {
+      "id": "tp-link-sg3452x",
+      "vendor": "TP-Link",
+      "family": "Omada SG3",
+      "model": "SG3452X",
+      "partNumbers": [
+        "TL-SG3452X"
+      ],
+      "aliases": [
+        "TL-SG3452X"
+      ],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ten-gigabitEthernet 1/0/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/TL-SG3452X.yaml",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). L2+ managed."
+    },
+    {
+      "id": "tp-link-sg2016p",
+      "vendor": "TP-Link",
+      "family": "Omada SG2",
+      "model": "SG2016P",
+      "partNumbers": [
+        "SG2016P",
+        "TL-SG2016P"
+      ],
+      "aliases": [
+        "TL-SG2016P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 9,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/SG2016P.yaml",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 8 PoE+ (ports 1-8, 120 W) of 16 GbE; no SFP, no console."
+    },
+    {
+      "id": "tp-link-sg2218p",
+      "vendor": "TP-Link",
+      "family": "Omada SG2",
+      "model": "SG2218P",
+      "partNumbers": [
+        "SG2218P",
+        "TL-SG2218P"
+      ],
+      "aliases": [
+        "TL-SG2218P"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 1,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "gigabitEthernet 1/0/{n}",
+          "start": 17,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/TP-Link/SG2218P.yaml",
+      "notes": "CLI names per TP-Link Omada CLI guide (gigabitEthernet/ten-gigabitEthernet 1/0/x, SFP numbering continues after RJ45). 16 PoE+ (150 W) + 2x SFP; no console."
     }
   ]
 }

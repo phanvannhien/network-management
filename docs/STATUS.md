@@ -5,6 +5,58 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-12 Thư viện model theo hãng: đối chiếu NetBox + ảnh thật (ADR-041)
+- Người dùng chốt:
+  - lấy dữ liệu và ảnh theo NetBox;
+  - ảnh thật xem qua popup khi rê chuột vào thiết bị, không làm sơ đồ nặng thêm;
+  - ưu tiên router / firewall / switch.
+- Đã làm:
+  - **Đối chiếu catalog với NetBox devicetype-library** (CC0, hơn 12.000 model):
+    - so số cổng theo loại;
+    - agent đóng vai kỹ sư mạng xét 86 mục lệch: 71 mục mình đúng, NetBox sai (ví dụ Aruba 1830 uplink là 1G SFP, NetBox ghi SFP+);
+    - **15 mục mình sai, đã sửa:**
+      - Aruba CX 6200F có cổng OOBM `mgmt`;
+      - Juniper EX2300/EX3400 có cổng quản trị `vme` (không phải `me0`);
+      - FortiSwitch 224E/248E-POE có cổng `mgmt`;
+      - CBS250-8T-E-2G có console;
+      - Meraki MX85/MX75 sai thứ tự / số cổng WAN;
+    - thêm **66 model mới**, gồm hãng mới SonicWall, WatchGuard, Zyxel; thêm FortiGate/FortiSwitch, Catalyst, Aruba CX, MikroTik, UniFi…
+    - Kết quả: 428 model, 362 đã đối chiếu (trước: 362 model / 247 đã đối chiếu).
+  - **Ảnh thật:**
+    - 255 ảnh (155 model) lấy từ NetBox, chuyển sang JPEG rộng tối đa 1200 px, tổng 11 MB, nhúng vào binary;
+    - `SOURCES.json` ghi nguồn từng ảnh;
+    - endpoint `GET /device-catalog/images/{file}` (thành viên tổ chức, tên file đúng mẫu, `nosniff`, cache private 1 giờ).
+  - **Giao diện:**
+    - rê chuột hoặc chọn thiết bị trên sơ đồ (zoom ≥ 50 %) → nút máy ảnh → popup ảnh mặt trước / sau, kèm part number và nguồn;
+    - nút "Xem ảnh thật" ở panel thiết bị, trang thiết bị và danh sách template hệ thống;
+    - mở sơ đồ không tải ảnh nào.
+  - Agent rà code đã chỉ ra, và đã sửa:
+    - popup nằm trong node nên click / double-click / phím trong popup lọt xuống node (double-click ảnh mở nhầm màn hình đi sâu, phím mũi tên làm node di chuyển). Giờ có một popup chung gắn ở khung ứng dụng;
+    - popup biến mất khi chuột rời node;
+    - catalog chỉ được kiểm tra trong test, giờ kiểm tra cả lúc khởi động;
+    - thiếu `nosniff`;
+    - comment helper test đặt sai chỗ;
+    - UCG Ultra là thiết bị để bàn.
+  - Tự tìm thêm:
+    - API kẹt lúc khởi động khi Postgres nhận kết nối mà không trả lời (`Ping` không có timeout). Đã thêm timeout 5 giây;
+    - test App "tạo danh mục con rồi thêm site" bị race (bấm "Thêm site" trước khi trang chuyển sang danh mục mới), đã cho chờ đúng chỗ.
+- Test / cách kiểm tra:
+  - `TestCatalogImages`: ảnh trả JPEG, chặn đọc chéo tổ chức, tên lạ / `SOURCES.json` / `..` trả 404, người chưa đăng nhập trả 401.
+  - `TestCatalogData` kiểm tra dữ liệu 428 model; `photos.test.ts` kiểm tra hàm tìm model có ảnh.
+  - Trên trình duyệt (trước khi chuyển popup ra khung ứng dụng): rê chuột FW01 → popup FortiGate 100F, ảnh 1200 px; mở sơ đồ không có request ảnh nào.
+- Còn dở / lỗi đã biết:
+  - **TP-Link chưa có ảnh nào** (NetBox không có); Fortinet có ít ảnh.
+  - 7 mục khớp NetBox vẫn còn nghi ngờ:
+    - C1200: tên cổng `gi1` hay `gi1/0/1`?
+    - USW-Enterprise-24-PoE: cổng 2.5G nằm ở đâu?
+    - T1600G-28PS: có console không?
+    - XG 135 và CSS610: tên cổng SFP.
+  - 11 model mới chưa đối chiếu: FortiGate 50G/70G/100E, TZ470/TZ570 (loại SFP), UCG-Fiber, EX4100-F-12P, T85-PoE, XGS 3300, USG FLEX 200/700.
+  - Một số model mới chưa có part number (SonicWall, WatchGuard, Zyxel, Sophos).
+- Câu hỏi cho người dùng: có ảnh TP-Link / Fortinet tự chụp hoặc hãng cấp cho đối tác không? Phần tải ảnh riêng sẽ làm cùng P2-04.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-22 (ngày EoL / EoS trong thư viện model) hoặc P2-08.
+
 ## 2026-10-18 — Sửa lỗi: không kéo giãn được khung site
 - Đã làm (người dùng báo: chọn khung site rồi nhưng không resize được). Có ba lỗi chồng nhau:
   - Thân khung đặt `pointer-events: none` để chuột xuyên tới thiết bị bên dưới; tay nắm resize kế thừa thuộc tính này nên không bấm được. Đã bật lại cho tay nắm và cạnh.

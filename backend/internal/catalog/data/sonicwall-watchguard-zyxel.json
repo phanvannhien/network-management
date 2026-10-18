@@ -1,0 +1,422 @@
+{
+  "models": [
+    {
+      "id": "sonicwall-tz270",
+      "vendor": "SonicWall",
+      "family": "TZ",
+      "model": "TZ270",
+      "partNumbers": [],
+      "aliases": [
+        "SonicWall TZ270"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "X{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/SonicWall/TZ270.yaml",
+      "notes": "SonicOS names interfaces X0..Xn (X0 default LAN, X1 default WAN). 8x GbE."
+    },
+    {
+      "id": "sonicwall-tz370",
+      "vendor": "SonicWall",
+      "family": "TZ",
+      "model": "TZ370",
+      "partNumbers": [],
+      "aliases": [
+        "SonicWall TZ370"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "X{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/SonicWall/TZ370.yaml",
+      "notes": "SonicOS names interfaces X0..Xn (X0 default LAN, X1 default WAN). 8x GbE."
+    },
+    {
+      "id": "sonicwall-tz470",
+      "vendor": "SonicWall",
+      "family": "TZ",
+      "model": "TZ470",
+      "partNumbers": [],
+      "aliases": [
+        "SonicWall TZ470"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "X{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "X{n}",
+          "start": 8,
+          "count": 2,
+          "media": "SFP",
+          "speed": "2.5G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/SonicWall/TZ470.yaml",
+      "notes": "SonicOS names interfaces X0..Xn (X0 default LAN, X1 default WAN). 8x GbE + 2x 2.5G SFP (datasheet from memory; NetBox types them 1G SFP)."
+    },
+    {
+      "id": "sonicwall-tz570",
+      "vendor": "SonicWall",
+      "family": "TZ",
+      "model": "TZ570",
+      "partNumbers": [],
+      "aliases": [
+        "SonicWall TZ570"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "X{n}",
+          "start": 0,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "X{n}",
+          "start": 8,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/SonicWall/TZ570.yaml",
+      "notes": "SonicOS names interfaces X0..Xn (X0 default LAN, X1 default WAN). 8x GbE + 2x 10G SFP+ (datasheet from memory; NetBox types them 1G SFP)."
+    },
+    {
+      "id": "sonicwall-nsa-2700",
+      "vendor": "SonicWall",
+      "family": "NSa",
+      "model": "NSa 2700",
+      "partNumbers": [],
+      "aliases": [
+        "NSa2700",
+        "SonicWall NSa 2700"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "X{n}",
+          "start": 0,
+          "count": 16,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "X{n}",
+          "start": 16,
+          "count": 3,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "MGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/SonicWall/NSa2700.yaml",
+      "notes": "SonicOS names interfaces X0..Xn (X0 default LAN, X1 default WAN). 16x GbE + 3x 10G SFP+ + dedicated MGMT."
+    },
+    {
+      "id": "watchguard-firebox-t25",
+      "vendor": "WatchGuard",
+      "family": "Firebox T",
+      "model": "Firebox T25",
+      "partNumbers": [],
+      "aliases": [
+        "T25"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "eth{n}",
+          "start": 0,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/WatchGuard/Firebox-T25.yaml",
+      "notes": "Fireware names interfaces eth0..ethN (Interface 0 default External). 5x GbE. Wi-Fi (T25-W) variant not separate."
+    },
+    {
+      "id": "watchguard-firebox-t45",
+      "vendor": "WatchGuard",
+      "family": "Firebox T",
+      "model": "Firebox T45",
+      "partNumbers": [],
+      "aliases": [
+        "T45"
+      ],
+      "type": "firewall",
+      "uHeight": 0,
+      "ports": [
+        {
+          "pattern": "eth{n}",
+          "start": 0,
+          "count": 5,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/WatchGuard/Firebox-T45.yaml",
+      "notes": "Fireware names interfaces eth0..ethN (Interface 0 default External). 5x GbE. T45-PoE adds PoE+ on one port (not this entry)."
+    },
+    {
+      "id": "watchguard-firebox-t85-poe",
+      "vendor": "WatchGuard",
+      "family": "Firebox T",
+      "model": "Firebox T85-PoE",
+      "partNumbers": [],
+      "aliases": [
+        "T85-PoE",
+        "T85"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "eth{n}",
+          "start": 0,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "eth{n}",
+          "start": 6,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/WatchGuard/Firebox-T85-PoE.yaml",
+      "notes": "Fireware names interfaces eth0..ethN (Interface 0 default External). 8x GbE, 2 PoE+ (eth6-7 per NetBox - confirm). Expansion module bay not included."
+    },
+    {
+      "id": "zyxel-usg-flex-200",
+      "vendor": "Zyxel",
+      "family": "USG FLEX",
+      "model": "USG FLEX 200",
+      "partNumbers": [],
+      "aliases": [
+        "USG FLEX 200",
+        "USGFLEX200"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 1,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 2,
+          "count": 6,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Zyxel/USG-FLEX-200.yaml",
+      "notes": "Ports listed by front-panel label P1..Pn (ZLD maps them to interfaces ge1.. / wan/lan roles in the web UI). 7 ports: per NetBox P1 = SFP, P2-P7 GbE (datasheet: 2 WAN + 4 LAN/DMZ + 1 SFP). Confirm which label is the SFP. DB9 console."
+    },
+    {
+      "id": "zyxel-usg-flex-700",
+      "vendor": "Zyxel",
+      "family": "USG FLEX",
+      "model": "USG FLEX 700",
+      "partNumbers": [],
+      "aliases": [
+        "USG FLEX 700",
+        "USGFLEX700"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "P{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "P{n}",
+          "start": 3,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Zyxel/USG-FLEX-700.yaml",
+      "notes": "Ports listed by front-panel label P1..Pn (ZLD maps them to interfaces ge1.. / wan/lan roles in the web UI). 12x GbE + 2x SFP per NetBox (P1-P2 SFP). Confirm label order. DB9 console."
+    },
+    {
+      "id": "zyxel-gs1920-24hpv2",
+      "vendor": "Zyxel",
+      "family": "GS1920",
+      "model": "GS1920-24HPv2",
+      "partNumbers": [],
+      "aliases": [
+        "GS1920-24HP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{n}",
+          "start": 25,
+          "count": 4,
+          "media": "RJ45",
+          "speed": "1G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Zyxel/GS1920-24HPv2.yaml",
+      "notes": "Zyxel smart switch, ports by number. 24 PoE+ (375 W); ports 25-28 are GbE RJ45/SFP combo (listed as RJ45). No console."
+    },
+    {
+      "id": "zyxel-xgs1930-28hp",
+      "vendor": "Zyxel",
+      "family": "XGS1930",
+      "model": "XGS1930-28HP",
+      "partNumbers": [],
+      "aliases": [
+        "XGS1930-28HP"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Zyxel/XGS1930-28HP.yaml",
+      "notes": "Zyxel smart switch, ports by number. 24 PoE+ (375 W; NetBox omits PoE) + 4x 10G SFP+."
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import { DeviceClusterCard } from './DeviceClusterCard'
 import { DeviceFormDialog } from './DeviceFormDialog'
 import { LinksPanel } from './LinksPanel'
 import { InterfacesTab, IpsTab } from './DeviceInterfaces'
+import { PhotoButton } from './PhotoDialog'
 import {
   useCustomFields,
   useDeleteDevices,
@@ -202,6 +203,7 @@ export function DeviceDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <PhotoButton orgId={orgId} subject={d} title={d.hostname} />
           {canEdit ? (
             <>
               <Button variant="outline" onClick={() => setEditing(true)}>

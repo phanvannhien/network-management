@@ -28,6 +28,7 @@ import {
   useLinks,
   type LinkInput,
 } from '@/modules/inventory/links'
+import { PhotoButton } from '@/modules/inventory/PhotoDialog'
 import { useLocations, useSites } from '@/modules/sites/sites'
 import {
   setLabelColor,
@@ -480,6 +481,7 @@ function DevicePanel({
           </a>
         )}
       </div>
+      <PhotoButton orgId={orgId} subject={card} title={card.hostname} />
       <dl className="space-y-1">
         <Row label={t('devices.mgmtIp')} value={card.mgmtIp} mono />
         {base.device && (

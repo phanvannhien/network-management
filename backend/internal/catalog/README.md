@@ -1,8 +1,8 @@
 # Built-in device catalog (ADR-035)
 
 Read-only reference data shipped with the software: common network products with their real port layout, so an
-organization gets correct ports without typing a template. Organizations never use these entries directly — they are
-copied into the organization's own templates (editable, audited).
+organization gets correct ports without typing a template. Entries are system templates used directly (a device keeps
+`catalog_id`); "copy to edit" makes an organization template from one.
 
 One JSON file per vendor group in `data/` (embedded into the binary). Format:
 
@@ -49,3 +49,10 @@ Rules
   - Port names must be unique within a model; at most 1000 ports; pattern ≤ 60 characters.
 - `verified`: true only when port counts / naming were checked against the vendor datasheet or admin guide at
   `source`; otherwise false (the UI shows "cần kiểm tra").
+- `source`: the vendor datasheet, or the NetBox device type library page the entry was checked against (ADR-041).
+
+Photos (P2-12, ADR-041)
+- `images/<id>.front.jpg` / `images/<id>.rear.jpg`: orthogonal front / rear views from the NetBox community device type
+  library (CC0), converted once to JPEG, at most 1200 px wide (never upscaled). No vendor marketing pictures.
+- `images/SOURCES.json` maps every file to the NetBox page it comes from. The loader refuses a photo without a model or a
+  source, and a source without a file.

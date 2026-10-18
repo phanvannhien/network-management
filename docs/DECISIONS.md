@@ -528,3 +528,36 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - gộp danh mục thành một node khi có trên 50 site; bật/tắt đám mây Internet; cờ đường chính/dự phòng; SD-WAN overlay;
   ẩn cạnh giữa các chi nhánh trong mô hình full mesh; số vấn đề trên thẻ site; màu trạng thái thật (Phase 3).
 
+
+### ADR-041 — Thư viện model đối chiếu với NetBox; ảnh thật của thiết bị xem qua popup
+- **Bối cảnh:** P2-12, người dùng chốt ngày 2026-10-18.
+  - Người dùng muốn xem ảnh thật của router / firewall / switch, nhưng không để sơ đồ nặng thêm.
+  - Catalog ADR-035 (362 model) còn 115 mục "chưa đối chiếu".
+  - Kho NetBox devicetype-library (cộng đồng, giấy phép CC0) có hơn 12.000 model, gồm cổng và ảnh mặt trước / mặt sau chụp thẳng.
+- **Quyết định:**
+  - **Nguồn dữ liệu là NetBox, không lấy ảnh quảng cáo trên web hãng** (có bản quyền).
+    - Mỗi ảnh ghi nguồn (trang NetBox) trong `catalog/images/SOURCES.json`.
+    - Model nào không có ảnh trong NetBox thì chưa có ảnh. Ảnh do người dùng tải lên sẽ làm cùng phần lưu file đính kèm (P2-04).
+  - **Ảnh đóng gói trong binary** cùng catalog.
+    - Tên file là `<catalog id>.front.jpg` / `.rear.jpg`.
+    - Ảnh được chuyển một lần sang JPEG, rộng tối đa 1200 px, không phóng to ảnh nhỏ.
+    - Ảnh được phục vụ qua `GET /orgs/{orgId}/device-catalog/images/{file}`: cần là thành viên tổ chức, tên file phải đúng mẫu, cache `private`.
+    - Loader kiểm tra mỗi ảnh khớp một model và có nguồn; sai thì không khởi động được.
+  - **Ảnh chỉ tải khi người dùng mở:**
+    - Trên sơ đồ, nút máy ảnh chỉ hiện khi rê chuột hoặc chọn node, và khi zoom từ 50 % trở lên.
+    - Panel thiết bị, trang thiết bị và danh sách template hệ thống có nút "Xem ảnh thật".
+    - Model được xác định theo `catalogId`, nếu không có thì theo model / part number (giống tự nhận template).
+  - **Đối chiếu dữ liệu với NetBox:**
+    - So số cổng theo loại (RJ45 / SFP / SFP+…).
+    - Mục khớp và tên cổng đúng thì được đánh dấu đã đối chiếu, `source` trỏ tới NetBox.
+    - Mục lệch được kỹ sư mạng (agent) xét từng cái: sửa theo datasheet hoặc giữ nguyên.
+    - Model mới chuyển từ NetBox sang định dạng nhóm cổng của mình.
+  - YAML của NetBox được chuyển sang JSON bằng script ngoài repo, chạy một lần mỗi đợt cập nhật. Backend và frontend không thêm thư viện.
+- **Lý do:** ảnh thật giúp nhận diện thiết bị ngoài hiện trường. Nguồn CC0 tránh rủi ro bản quyền. Tải khi cần thì sơ đồ lớn không chậm.
+  NetBox là nguồn đối chiếu độc lập cho tên cổng.
+- **Đánh đổi:**
+  - Repo nặng thêm khoảng 10–15 MB ảnh.
+  - Độ phủ ảnh không đều: Cisco / Aruba nhiều, Fortinet / TP-Link ít.
+  - Ảnh trong NetBox do cộng đồng đóng góp, có thể đã lấy từ hãng. Rủi ro này thấp hơn tự lấy ảnh từ web hãng, nhưng không bằng không.
+- **Để sau:** người dùng tải ảnh riêng cho model / thiết bị (cùng P2-04); sơ đồ tủ rack dùng ảnh mặt trước; chế độ hiển thị "Ảnh thật"
+  trên sơ đồ khi phóng to.

@@ -2023,6 +2023,18 @@ export const en: Strings = {
     label: 'Filter by category',
     all: 'Whole organization',
   },
+  photos: {
+    view: 'View photo',
+    viewFor: 'View photo of {{name}}',
+    side: 'Side of the device',
+    front: 'Front',
+    rear: 'Rear',
+    alt: '{{side}} of {{name}}',
+    failed: 'The photo could not be loaded.',
+    credit: 'Photo: NetBox community device type library (CC0) —',
+    creditLink: 'source',
+    column: 'Photo',
+  },
   catalog: {
     open: 'Add from catalog',
     title: 'Built-in device catalog',

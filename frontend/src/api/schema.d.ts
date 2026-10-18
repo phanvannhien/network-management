@@ -642,6 +642,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/device-catalog/images/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                file: string;
+            };
+            cookie?: never;
+        };
+        /** Front / rear photo of a catalog model (P2-12) — from the NetBox device type library (CC0), shipped in the binary */
+        get: operations["getCatalogImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/device-templates/from-catalog": {
         parameters: {
             query?: never;
@@ -2869,6 +2890,14 @@ export interface components {
             verified: boolean;
             source: string;
             notes: string;
+            images: components["schemas"]["CatalogImages"];
+        };
+        /** @description Photos of the model (P2-12); file names for getCatalogImage, empty when there is none */
+        CatalogImages: {
+            front: string;
+            rear: string;
+            /** @description where the photos come from (NetBox device type library page) */
+            source: string;
         };
         MgmtIpResult: {
             mgmtIp: string;
@@ -5374,6 +5403,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceCatalog"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCatalogImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG photo */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
                 };
             };
             401: components["responses"]["Unauthorized"];

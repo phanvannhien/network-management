@@ -1171,6 +1171,41 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/device-catalog/images/{file}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 120
+          pattern: '^[a-z0-9][a-z0-9.-]*\.(front|rear)\.jpg$'
+    get:
+      operationId: getCatalogImage
+      summary: Front / rear photo of a catalog model (P2-12) — from the NetBox device type library (CC0), shipped in the binary
+      responses:
+        '200':
+          description: JPEG photo
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            X-Content-Type-Options:
+              schema:
+                type: string
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/device-templates/from-catalog:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -5732,7 +5767,7 @@ components:
 
     CatalogModel:
       type: object
-      required: [id, vendor, family, model, partNumbers, aliases, type, uHeight, ports, portCount, verified, source, notes]
+      required: [id, vendor, family, model, partNumbers, aliases, type, uHeight, ports, portCount, verified, source, notes, images]
       properties:
         id:
           type: string
@@ -5769,6 +5804,21 @@ components:
           type: string
         notes:
           type: string
+        images:
+          $ref: '#/components/schemas/CatalogImages'
+
+    CatalogImages:
+      type: object
+      description: Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
+      required: [front, rear, source]
+      properties:
+        front:
+          type: string
+        rear:
+          type: string
+        source:
+          type: string
+          description: where the photos come from (NetBox device type library page)
 
     MgmtIpResult:
       type: object

@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { describeGroup } from '@/editor/workspace/portGuess'
 import { templateFromCatalog, useCatalog, type DeviceTemplate } from './devices'
 import { norm } from './import/parse'
+import { PhotoButton } from './PhotoDialog'
 
 /**
  * System templates (ADR-035): the device models shipped with the software, read only. A device whose model matches
@@ -115,6 +116,12 @@ export function SystemTemplates({
                   </span>
                 </span>
               </button>
+              <PhotoButton
+                orgId={orgId}
+                subject={{ catalogId: m.id }}
+                title={`${m.vendor} ${m.model}`}
+                variant="icon"
+              />
               {canEdit && (
                 <Button size="sm" variant="ghost" disabled={busy} onClick={() => void copy(m.id)}>
                   <Copy aria-hidden /> {t('templates.copyToEdit')}

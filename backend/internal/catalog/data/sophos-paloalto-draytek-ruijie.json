@@ -1176,8 +1176,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "https://docs.paloaltonetworks.com/hardware/pa-220-hardware-reference",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Palo Alto Networks/PA-220.yaml",
       "notes": "End of sale. Port counts from memory, not re-checked against the datasheet."
     },
     {
@@ -2584,6 +2584,131 @@
       "verified": true,
       "source": "https://www.vnpt-technology.vn/vi/product_detail/gpon-ont-igate-gw040-h",
       "notes": "VNPT GPON ONT: 4 x 10/100/1000 LAN, 1 x SC/APC GPON, USB, Wi-Fi 5 dual-band."
+    },
+    {
+      "id": "sophos-xgs-3300",
+      "vendor": "Sophos",
+      "family": "XGS",
+      "model": "XGS 3300",
+      "partNumbers": [],
+      "aliases": [
+        "XGS3300"
+      ],
+      "type": "firewall",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "Port{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 1,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "PortF{n}",
+          "start": 3,
+          "count": 2,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "PortMGMT",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Sophos/XGS-3300.yaml",
+      "notes": "SFOS names copper ports PortN and SFP ports PortFN. 8x GE + 2x SFP+ + 2x SFP + MGMT per NetBox; Flexi Port slot not listed."
+    },
+    {
+      "id": "paloalto-pa-3220",
+      "vendor": "Palo Alto Networks",
+      "family": "PA-3200",
+      "model": "PA-3220",
+      "partNumbers": [
+        "PAN-PA-3220"
+      ],
+      "aliases": [
+        "PA3220"
+      ],
+      "type": "firewall",
+      "uHeight": 2,
+      "ports": [
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 1,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 13,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ethernet1/{n}",
+          "start": 17,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "ha1-a",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "ha1-b",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "hsci",
+          "start": 1,
+          "count": 1,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Palo%20Alto%20Networks/PA-3220.yaml",
+      "notes": "12x RJ45, 4x SFP, 4x SFP+, dedicated HA1-A/HA1-B (RJ45) and HSCI (SFP+, HA2/HA3), MGMT. End of sale (replaced by PA-3400)."
     }
   ]
 }

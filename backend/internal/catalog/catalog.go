@@ -19,6 +19,12 @@ import (
 //go:embed data/*.json
 var data embed.FS
 
+// Photos (P2-12): images/<id>.front.jpg / <id>.rear.jpg, from the NetBox device type library (CC0); SOURCES.json
+// gives the page each one comes from.
+//
+//go:embed images
+var images embed.FS
+
 var (
 	once    sync.Once
 	models  []apigen.CatalogModel
@@ -42,13 +48,26 @@ func Get(id string) (apigen.CatalogModel, bool) {
 	return models[i], true
 }
 
+// Image returns a photo by file name ("<id>.front.jpg").
+func Image(file string) ([]byte, bool) {
+	once.Do(load)
+	if !imageRe.MatchString(file) {
+		return nil, false
+	}
+	b, err := images.ReadFile("images/" + file)
+	return b, err == nil
+}
+
 // Load parses the embedded files and reports the first problem (used by tests and at startup).
 func Load() error {
 	once.Do(load)
 	return loadErr
 }
 
-var idRe = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9.]+)*$`)
+var (
+	idRe    = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9.]+)*$`)
+	imageRe = regexp.MustCompile(`^([a-z0-9][a-z0-9.-]*)\.(front|rear)\.jpg$`)
+)
 
 func load() {
 	byID = map[string]int{}
@@ -101,9 +120,13 @@ func load() {
 				n += g.Count
 			}
 			m.PortCount = n
+			m.Images = apigen.CatalogImages{}
 			byID[m.Id] = len(models)
 			models = append(models, m)
 		}
+	}
+	if loadErr = attachImages(); loadErr != nil {
+		return
 	}
 	slices.SortFunc(models, func(a, b apigen.CatalogModel) int {
 		return strings.Compare(strings.ToLower(a.Vendor+" "+a.Model), strings.ToLower(b.Vendor+" "+b.Model))
@@ -111,4 +134,50 @@ func load() {
 	for i, m := range models {
 		byID[m.Id] = i
 	}
+}
+
+// attachImages links each photo to its model; a photo of no model, or without a source, is a packaging mistake.
+func attachImages() error {
+	raw, err := images.ReadFile("images/SOURCES.json")
+	if err != nil {
+		return fmt.Errorf("read image sources: %w", err)
+	}
+	var sources map[string]string
+	if err := json.Unmarshal(raw, &sources); err != nil {
+		return fmt.Errorf("parse image sources: %w", err)
+	}
+	entries, err := fs.ReadDir(images, "images")
+	if err != nil {
+		return fmt.Errorf("list images: %w", err)
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if name == "SOURCES.json" {
+			continue
+		}
+		p := imageRe.FindStringSubmatch(name)
+		if p == nil {
+			return fmt.Errorf("image %q: name must be <catalog id>.front.jpg or .rear.jpg", name)
+		}
+		i, ok := byID[p[1]]
+		if !ok {
+			return fmt.Errorf("image %q: no catalog model %q", name, p[1])
+		}
+		src := sources[name]
+		if src == "" {
+			return fmt.Errorf("image %q: missing from SOURCES.json", name)
+		}
+		if p[2] == "front" {
+			models[i].Images.Front = name
+		} else {
+			models[i].Images.Rear = name
+		}
+		models[i].Images.Source = src
+	}
+	for name := range sources {
+		if _, err := fs.Stat(images, "images/"+name); err != nil {
+			return fmt.Errorf("SOURCES.json lists %q, which is not shipped", name)
+		}
+	}
+	return nil
 }

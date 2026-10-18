@@ -19,6 +19,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
@@ -69,8 +70,16 @@ func serve(logger *slog.Logger) error {
 		return fmt.Errorf("configure database pool: %w", err)
 	}
 	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
+	// Bounded: a database that accepts the connection but never answers must not keep the API from listening.
+	pingCtx, cancelPing := context.WithTimeout(ctx, 5*time.Second)
+	if err := pool.Ping(pingCtx); err != nil {
 		logger.Warn("database not reachable at startup", "error", err)
+	}
+	cancelPing()
+
+	// The built-in catalog (data + photos) is checked once: a packaging mistake stops the release here, not later.
+	if err := catalog.Load(); err != nil {
+		return fmt.Errorf("device catalog: %w", err)
 	}
 
 	masterKey, err := secrets.ParseMasterKey(cfg.MasterKey)

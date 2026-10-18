@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -23,6 +24,21 @@ func (s *Server) ListDeviceCatalog(ctx context.Context, req apigen.ListDeviceCat
 		return nil, err
 	}
 	return apigen.ListDeviceCatalog200JSONResponse{Models: catalog.All()}, nil
+}
+
+// GetCatalogImage serves a model photo (P2-12). Same for every organization; any member may look.
+func (s *Server) GetCatalogImage(ctx context.Context, req apigen.GetCatalogImageRequestObject) (apigen.GetCatalogImageResponseObject, error) {
+	if _, err := tenant.Require(ctx, req.OrgId); err != nil {
+		return nil, err
+	}
+	b, ok := catalog.Image(req.File)
+	if !ok {
+		return apigen.GetCatalogImage404JSONResponse{NotFoundJSONResponse: notFoundBody("Không có ảnh này")}, nil
+	}
+	// Photos change only with a new release (an hour keeps an upgrade visible soon); behind a login, so private only.
+	cache, nosniff := "private, max-age=3600", "nosniff"
+	return apigen.GetCatalogImage200ImagejpegResponse{Body: bytes.NewReader(b), ContentLength: int64(len(b)),
+		Headers: apigen.GetCatalogImage200ResponseHeaders{CacheControl: &cache, XContentTypeOptions: &nosniff}}, nil
 }
 
 func (s *Server) CreateTemplateFromCatalog(ctx context.Context, req apigen.CreateTemplateFromCatalogRequestObject) (apigen.CreateTemplateFromCatalogResponseObject, error) {

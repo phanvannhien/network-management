@@ -6,13 +6,15 @@ import {
   type Node,
 } from '@xyflow/react'
 import { CircleHelp, Lock } from 'lucide-react'
-import { memo, type ReactNode } from 'react'
+import { memo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router'
 import { cn } from '@/lib/utils'
+import { PhotoButton } from '@/modules/inventory/PhotoDialog'
 import { DeviceIcon } from '../catalog/icons'
 import { SeverityIcon } from '../checks/SeverityIcon'
 import type { Severity } from '../checks/types'
-import { useDoc } from './context'
+import { useDoc, useDocStoreApi } from './context'
 import type { RefData } from './flow'
 import { renderLabel, tagColor, type LabelLine } from './labels'
 
@@ -40,6 +42,8 @@ function Frame({
   unmanaged = false,
   color = '',
   problem,
+  corner,
+  onHover,
 }: {
   selected: boolean
   connectable?: boolean
@@ -58,6 +62,9 @@ function Frame({
   color?: string
   /** Worst check result on this node (P1-20). */
   problem?: Severity
+  /** Bottom-left control (the product photo button, P2-12); the top corners hold the badges. */
+  corner?: ReactNode
+  onHover?: (on: boolean) => void
 }) {
   const { t } = useTranslation()
   const showDetails = useShowDetails()
@@ -69,6 +76,8 @@ function Frame({
         selected ? 'border-primary ring-2 ring-primary' : 'border-border-control',
         unmanaged && 'border-dashed',
       )}
+      onMouseEnter={onHover && (() => onHover(true))}
+      onMouseLeave={onHover && (() => onHover(false))}
     >
       {/* Cables are drawn border to border (CableEdge); these anchor them, and on hover start a new cable (P1-17). */}
       <Handle type="target" position={Position.Top} isConnectable={false} className="ntb-handle" />
@@ -129,6 +138,7 @@ function Frame({
           <span className="sr-only">{t(`checks.severity.${problem}`)}</span>
         </span>
       )}
+      {corner && <span className="absolute -bottom-2.5 -left-2.5">{corner}</span>}
       {unmanaged && <span className="sr-only">{t('editorCanvas.unmanaged')}</span>}
       {/* Dashed borders are for unmanaged devices (SRS §6.3); a new, unsaved device gets a badge. */}
       {draft && (
@@ -151,6 +161,11 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
   const problem = useDoc((s) => s.problemsByNode[id])
   const card = useDoc((s) => s.doc?.devices[data.refId])
   const template = useDoc((s) => s.doc?.view.labelTemplate)
+  const { orgId = '' } = useParams()
+  const store = useDocStoreApi()
+  // The photo button exists only while the node is hovered or selected: the catalog lookup is not paid per node.
+  const [hover, setHover] = useState(false)
+  const showDetails = useShowDetails()
   if (!card) return <HiddenFrame selected={selected} />
   const type = t(`devices.types.${card.type}`)
   const [, ...details] = renderLabel(card, type, template)
@@ -169,6 +184,19 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
       unmanaged={card.managed === false}
       color={data.labelColor}
       problem={problem}
+      onHover={setHover}
+      corner={
+        (hover || selected) && showDetails ? (
+          <PhotoButton
+            orgId={orgId}
+            subject={card}
+            title={card.hostname}
+            variant="icon"
+            // Selected, the button stays while the photo is open, and focus comes back to it.
+            onOpen={() => store.getState().setSelection([id])}
+          />
+        ) : null
+      }
     />
   )
 }

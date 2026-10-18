@@ -64,7 +64,7 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://arubanetworking.hpe.com/techdocs/hardware/switches/1830/1830_IGSG.pdf",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port."
     },
@@ -105,8 +105,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "https://arubanetworking.hpe.com/techdocs/hardware/switches/1830/1830_IGSG.pdf",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-1830-24G-2SFP-PoE.yaml",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port. Assumes PoE on ports 1-12."
     },
     {
@@ -146,7 +146,7 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://arubanetworking.hpe.com/techdocs/hardware/switches/1830/1830_IGSG.pdf",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port. Assumes PoE on ports 1-24."
     },
@@ -389,8 +389,8 @@
           "speed": "10G"
         }
       ],
-      "verified": false,
-      "source": "https://arubanetworking.hpe.com/techdocs/InstantOn_1960_Switch/igsg_1960.pdf",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-1960-24G-2XGT-2SFPP.yaml",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port. Order of uplinks assumed: 10GBASE-T first, then SFP+ (check on device). Stackable up to 4 via app (port names unchanged)."
     },
     {
@@ -430,8 +430,8 @@
           "speed": "10G"
         }
       ],
-      "verified": false,
-      "source": "https://arubanetworking.hpe.com/techdocs/InstantOn_1960_Switch/igsg_1960.pdf",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-1960-24G-PoE-2XGT-2SFPP-370W.yaml",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port. Order of uplinks assumed: 10GBASE-T first, then SFP+ (check on device). Stackable up to 4 via app (port names unchanged). 20 Class4 + 4 Class6 PoE ports."
     },
     {
@@ -470,8 +470,8 @@
           "speed": "10G"
         }
       ],
-      "verified": false,
-      "source": "https://arubanetworking.hpe.com/techdocs/InstantOn_1960_Switch/igsg_1960.pdf",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-1960-48G-2XGT-2SFPP.yaml",
       "notes": "Instant On switches have no CLI; ports are numbered 1..N in the web UI/app; no console port. Order of uplinks assumed: 10GBASE-T first, then SFP+ (check on device). Stackable up to 4 via app (port names unchanged)."
     },
     {
@@ -840,6 +840,13 @@
           "speed": "10G"
         },
         {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
           "pattern": "console",
           "start": 1,
           "count": 1,
@@ -848,7 +855,7 @@
       ],
       "verified": true,
       "source": "https://support.hpe.com/hpesc/public/docDisplay?docId=a00099581en_us&docLocale=en_US",
-      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. No dedicated OOBM port on 6200F. Console is USB-C."
+      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. Dedicated 10/100/1000 OOBM port (mgmt). Console is USB-C."
     },
     {
       "id": "aruba-cx-6200f-24g-poe-4sfpp",
@@ -882,6 +889,13 @@
           "speed": "10G"
         },
         {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
           "pattern": "console",
           "start": 1,
           "count": 1,
@@ -890,7 +904,7 @@
       ],
       "verified": true,
       "source": "https://support.hpe.com/hpesc/public/docDisplay?docId=a00099581en_us&docLocale=en_US",
-      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. No dedicated OOBM port on 6200F. Console is USB-C."
+      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. Dedicated 10/100/1000 OOBM port (mgmt). Console is USB-C."
     },
     {
       "id": "aruba-cx-6200f-48g-poe-4sfpp-370w",
@@ -925,6 +939,13 @@
           "speed": "10G"
         },
         {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
           "pattern": "console",
           "start": 1,
           "count": 1,
@@ -933,7 +954,7 @@
       ],
       "verified": true,
       "source": "https://support.hpe.com/hpesc/public/docDisplay?docId=a00099581en_us&docLocale=en_US",
-      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. No dedicated OOBM port on 6200F. Console is USB-C."
+      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. Dedicated 10/100/1000 OOBM port (mgmt). Console is USB-C."
     },
     {
       "id": "aruba-cx-6200f-48g-poe-4sfpp-740w",
@@ -967,6 +988,13 @@
           "speed": "10G"
         },
         {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
           "pattern": "console",
           "start": 1,
           "count": 1,
@@ -975,7 +1003,7 @@
       ],
       "verified": true,
       "source": "https://support.hpe.com/hpesc/public/docDisplay?docId=a00099581en_us&docLocale=en_US",
-      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. No dedicated OOBM port on 6200F. Console is USB-C."
+      "notes": "AOS-CX naming member/1/port; VSF stacking up to 8. Dedicated 10/100/1000 OOBM port (mgmt). Console is USB-C."
     },
     {
       "id": "aruba-cx-6300m-24sfpp-4sfp56",
@@ -1461,8 +1489,8 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
-      "source": "https://www.hpe.com/us/en/networking/instant-on.html",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-AP22.yaml",
       "notes": "AP uplink is PoE-powered (PD), not PoE-sourcing, so poe is not set. No console. Part numbers vary by region."
     },
     {
@@ -1488,8 +1516,8 @@
           "speed": "2.5G"
         }
       ],
-      "verified": false,
-      "source": "https://www.hpe.com/us/en/networking/instant-on.html",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-AP25.yaml",
       "notes": "AP uplink is PoE-powered (PD), not PoE-sourcing, so poe is not set. No console. Part numbers vary by region."
     },
     {
@@ -1522,7 +1550,7 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.arubanetworks.com/products/wireless/access-points/indoor-access-points/500-series/",
       "notes": "AP uplink is PoE-powered (PD), not PoE-sourcing, so poe is not set. Console is a micro-USB style jack."
     },
@@ -1563,7 +1591,7 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.arubanetworks.com/products/wireless/access-points/indoor-access-points/510-series/",
       "notes": "AP uplink is PoE-powered (PD), not PoE-sourcing, so poe is not set. eth0 Smart Rate 2.5G PoE-in, eth1 1G."
     },
@@ -1604,7 +1632,7 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.arubanetworks.com/products/wireless/access-points/indoor-access-points/530-series/",
       "notes": "AP uplink is PoE-powered (PD), not PoE-sourcing, so poe is not set. Two Smart Rate 5G ports."
     },
@@ -1762,7 +1790,7 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://support.huawei.com/enterprise/en/doc/EDOC1000013597/",
       "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. Part number not verified."
     },
@@ -2043,7 +2071,7 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.router-switch.com/s6730-h24x6c.html",
       "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. QSFP28 ports default 40GE; 100GE by license - interface may show as 40GE0/0/x. Console/MEth on rear. Counts from reseller datasheet."
     },
@@ -2595,7 +2623,7 @@
           "speed": "10G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2610,7 +2638,7 @@
       ],
       "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex2300-24p",
@@ -2642,7 +2670,7 @@
           "speed": "10G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2657,7 +2685,7 @@
       ],
       "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex2300-48p",
@@ -2689,7 +2717,7 @@
           "speed": "10G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2704,7 +2732,7 @@
       ],
       "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex2300-c-12p",
@@ -2736,7 +2764,7 @@
           "speed": "10G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2749,9 +2777,9 @@
           "media": "Console"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs. Compact fanless; management port presence/name on EX2300-C to be confirmed."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Uplinks on PIC 1; can be VCPs. Compact fanless. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex3400-24t",
@@ -2789,7 +2817,7 @@
           "speed": "40G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2804,7 +2832,7 @@
       ],
       "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex3400/ex3400.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear 40G QSFP+ (PIC 1) are VCPs by default; front SFP+ uplinks on PIC 2."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear 40G QSFP+ (PIC 1) are VCPs by default; front SFP+ uplinks on PIC 2. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex3400-48p",
@@ -2843,7 +2871,7 @@
           "speed": "40G"
         },
         {
-          "pattern": "me0",
+          "pattern": "vme",
           "start": 1,
           "count": 1,
           "media": "RJ45",
@@ -2858,7 +2886,7 @@
       ],
       "verified": true,
       "source": "https://www.juniper.net/documentation/us/en/hardware/ex3400/ex3400.pdf",
-      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear 40G QSFP+ (PIC 1) are VCPs by default; front SFP+ uplinks on PIC 2."
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear 40G QSFP+ (PIC 1) are VCPs by default; front SFP+ uplinks on PIC 2. Management port is vme (not me0) on EX2300/EX3400."
     },
     {
       "id": "juniper-ex4300-48p",
@@ -3279,8 +3307,8 @@
           "media": "Console"
         }
       ],
-      "verified": false,
-      "source": "https://www.juniper.net/documentation/us/en/hardware/srx380/srx380.pdf",
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/SRX380.yaml",
       "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. 16 PoE+ GE + 4 SFP+ confirmed; interface numbering (xe-0/0/16-19) assumed. 4 Mini-PIM slots not listed."
     },
     {
@@ -3368,7 +3396,7 @@
           "speed": "1G"
         }
       ],
-      "verified": false,
+      "verified": true,
       "source": "https://www.juniper.net/us/en/products/access-points/ap43-access-point.html",
       "notes": "eth0 2.5G PoE-in (PD), eth1 1G. No console."
     },
@@ -3406,6 +3434,746 @@
       "verified": false,
       "source": "https://www.juniper.net/us/en/products/access-points/ap32-access-point.html",
       "notes": "eth0 1G PoE-in (PD); second port eth1 to be confirmed. No console."
+    },
+    {
+      "id": "aruba-2930f-48g-4sfpp",
+      "vendor": "HPE Aruba",
+      "family": "Aruba 2930F",
+      "model": "Aruba 2930F-48G-4SFP+",
+      "partNumbers": [
+        "JL254A"
+      ],
+      "aliases": [
+        "2930F-48G-4SFP+"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-2930F-48G-4SFPP.yaml",
+      "notes": "ArubaOS-Switch names ports by number when standalone; in a VSF/backplane stack names become member/port. Dual-personality console (RJ-45 or micro-USB). No Ethernet OOBM on 2930F (NetBox 'Management' port is wrong)."
+    },
+    {
+      "id": "aruba-2930f-48g-poeplus-4sfpp",
+      "vendor": "HPE Aruba",
+      "family": "Aruba 2930F",
+      "model": "Aruba 2930F-48G-PoE+-4SFP+",
+      "partNumbers": [
+        "JL256A"
+      ],
+      "aliases": [
+        "2930F-48G-PoE+-4SFP+"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-2930F-48G-PoEP-4SFPP.yaml",
+      "notes": "ArubaOS-Switch names ports by number when standalone; in a VSF/backplane stack names become member/port. Dual-personality console (RJ-45 or micro-USB). 48 PoE+ (370 W). No Ethernet OOBM."
+    },
+    {
+      "id": "aruba-2930m-24g",
+      "vendor": "HPE Aruba",
+      "family": "Aruba 2930M",
+      "model": "Aruba 2930M-24G",
+      "partNumbers": [
+        "JL319A"
+      ],
+      "aliases": [
+        "2930M-24G"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "oobm",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-2930M-24G.yaml",
+      "notes": "ArubaOS-Switch names ports by number when standalone; in a VSF/backplane stack names become member/port. Dual-personality console (RJ-45 or micro-USB). Uplink module slot (JL078A/JL081A/JL083A) and stacking module not included. Dedicated OOBM port."
+    },
+    {
+      "id": "aruba-2930m-48g-poeplus",
+      "vendor": "HPE Aruba",
+      "family": "Aruba 2930M",
+      "model": "Aruba 2930M-48G-PoE+",
+      "partNumbers": [
+        "JL322A"
+      ],
+      "aliases": [
+        "2930M-48G-PoE+"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "oobm",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "100M"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-2930M-48G-PoEP.yaml",
+      "notes": "ArubaOS-Switch names ports by number when standalone; in a VSF/backplane stack names become member/port. Dual-personality console (RJ-45 or micro-USB). Uplink module slot not included. Dedicated OOBM port."
+    },
+    {
+      "id": "aruba-cx-6300f-24g-poe-4sfp56",
+      "vendor": "HPE Aruba",
+      "family": "Aruba CX 6300F",
+      "model": "Aruba 6300F 24G Class4 PoE 4SFP56",
+      "partNumbers": [
+        "JL666A"
+      ],
+      "aliases": [
+        "6300F-24G-POE4-4SFP56"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP28",
+          "speed": "25G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-6300F-24G-POE4-4SFP56.yaml",
+      "notes": "AOS-CX naming member/1/port. Console is USB-C. VSF up to 10. SFP56 uplinks recorded as SFP28/25G (catalog convention). OOBM 'mgmt'."
+    },
+    {
+      "id": "aruba-cx-6300f-48g-poe-4sfp56",
+      "vendor": "HPE Aruba",
+      "family": "Aruba CX 6300F",
+      "model": "Aruba 6300F 48G Class4 PoE 4SFP56",
+      "partNumbers": [
+        "JL665A"
+      ],
+      "aliases": [
+        "6300F-48G-POE4-4SFP56"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 49,
+          "count": 4,
+          "media": "SFP28",
+          "speed": "25G"
+        },
+        {
+          "pattern": "mgmt",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-6300F-48G-POE4-4SFP56.yaml",
+      "notes": "AOS-CX naming member/1/port. Console is USB-C. VSF up to 10. SFP56 uplinks recorded as SFP28/25G. OOBM 'mgmt'."
+    },
+    {
+      "id": "aruba-cx-6100-24g-poe-4sfpp",
+      "vendor": "HPE Aruba",
+      "family": "Aruba CX 6100",
+      "model": "Aruba 6100 24G Class4 PoE 4SFP+ 370W",
+      "partNumbers": [
+        "JL677A"
+      ],
+      "aliases": [
+        "6100-24G-POE4-4SFP+"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{m}/1/{n}",
+          "start": 25,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-6100-24G-POE4-4SFPP.yaml",
+      "notes": "AOS-CX naming member/1/port. Console is USB-C. No OOBM port on 6100."
+    },
+    {
+      "id": "aruba-io-1960-48g-poe-2xgt-2sfpp",
+      "vendor": "HPE Aruba",
+      "family": "Aruba Instant On 1960",
+      "model": "Aruba Instant On 1960 48G 40p Class4 8p Class6 PoE 2XGT 2SFP+ 600W",
+      "partNumbers": [
+        "JL809A"
+      ],
+      "aliases": [
+        "1960 48G PoE 600W"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "{n}",
+          "start": 1,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "{n}",
+          "start": 49,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "10G"
+        },
+        {
+          "pattern": "{n}",
+          "start": 51,
+          "count": 2,
+          "media": "SFP+",
+          "speed": "10G"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/HPE/Aruba-1960-48G-PoE-2XGT-2SFPP-600W.yaml",
+      "notes": "Instant On switches have no CLI; ports numbered 1..N in the web UI/app; no console. 10GBASE-T 49-50, SFP+ 51-52."
+    },
+    {
+      "id": "juniper-ex2300-48t",
+      "vendor": "Juniper",
+      "family": "EX2300",
+      "model": "EX2300-48T",
+      "partNumbers": [
+        "EX2300-48T"
+      ],
+      "aliases": [],
+      "type": "l2_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ge-0/0/{n}",
+          "start": 0,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "xe-0/1/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "vme",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/EX2300-48T.yaml",
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Management port is vme on EX2300 (Quick Start)."
+    },
+    {
+      "id": "juniper-ex3400-48t",
+      "vendor": "Juniper",
+      "family": "EX3400",
+      "model": "EX3400-48T",
+      "partNumbers": [
+        "EX3400-48T"
+      ],
+      "aliases": [],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ge-0/0/{n}",
+          "start": 0,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "xe-0/2/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "et-0/1/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "QSFP",
+          "speed": "40G"
+        },
+        {
+          "pattern": "vme",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/EX3400-48T.yaml",
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear 40G QSFP+ (PIC 1) are VC ports by default. Management port configured as vme (Quick Start)."
+    },
+    {
+      "id": "juniper-ex4300-48t",
+      "vendor": "Juniper",
+      "family": "EX4300",
+      "model": "EX4300-48T",
+      "partNumbers": [
+        "EX4300-48T"
+      ],
+      "aliases": [],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ge-0/0/{n}",
+          "start": 0,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "et-0/1/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "QSFP",
+          "speed": "40G"
+        },
+        {
+          "pattern": "me0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/EX4300-48T.yaml",
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Rear QSFP+ are VCPs by default. Uplink module slot (PIC 2) not included."
+    },
+    {
+      "id": "juniper-ex4400-48p",
+      "vendor": "Juniper",
+      "family": "EX4400",
+      "model": "EX4400-48P",
+      "partNumbers": [
+        "EX4400-48P"
+      ],
+      "aliases": [],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ge-0/0/{n}",
+          "start": 0,
+          "count": 48,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "et-0/1/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "QSFP",
+          "speed": "100G"
+        },
+        {
+          "pattern": "me0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/EX4400-48P.yaml",
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. PoE-bt. Rear QSFP28 are VCPs by default. Uplink module slot not included."
+    },
+    {
+      "id": "juniper-ex4100-f-12p",
+      "vendor": "Juniper",
+      "family": "EX4100-F",
+      "model": "EX4100-F-12P",
+      "partNumbers": [
+        "EX4100-F-12P"
+      ],
+      "aliases": [],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "ge-0/0/{n}",
+          "start": 0,
+          "count": 12,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "xe-0/1/{n}",
+          "start": 0,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "mge-0/2/{n}",
+          "start": 0,
+          "count": 2,
+          "media": "RJ45",
+          "speed": "10G",
+          "poe": true
+        },
+        {
+          "pattern": "me0",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": false,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Juniper/EX4100-F-12P.yaml",
+      "notes": "Junos names type-fpc/pic/port, zero-based; FPC is the Virtual Chassis member (0 standalone), so a literal 0 is used. A 1G optic in a 10G uplink shows as ge- instead of xe-. Per NetBox: 12x GE PoE+, 4x SFP+, 2x mGig RJ45 (mge-0/2/0-1). Confirm mGig ports and mgmt name on datasheet."
+    },
+    {
+      "id": "huawei-s5735-l8p4s-a1",
+      "vendor": "Huawei",
+      "family": "CloudEngine S5735-L",
+      "model": "S5735-L8P4S-A1",
+      "partNumbers": [
+        "98011295"
+      ],
+      "aliases": [
+        "S5735-L8P4S-A1"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 8,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 9,
+          "count": 4,
+          "media": "SFP",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Huawei/S5735-L8P4S-A1.yaml",
+      "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. 8x GE PoE+ + 4x GE SFP; no ETH management port."
+    },
+    {
+      "id": "huawei-s5735-l24p4x-a1",
+      "vendor": "Huawei",
+      "family": "CloudEngine S5735-L",
+      "model": "S5735-L24P4X-A1",
+      "partNumbers": [
+        "98011318"
+      ],
+      "aliases": [
+        "S5735-L24P4X-A1"
+      ],
+      "type": "poe_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G",
+          "poe": true
+        },
+        {
+          "pattern": "XGigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Huawei/S5735-L24P4X-A1.yaml",
+      "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. 24x GE PoE+ + 4x 10G SFP+; no ETH management port."
+    },
+    {
+      "id": "huawei-s5731-h24t4xc",
+      "vendor": "Huawei",
+      "family": "CloudEngine S5731-H",
+      "model": "S5731-H24T4XC",
+      "partNumbers": [
+        "02352QPP"
+      ],
+      "aliases": [
+        "S5731-H24T4XC"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "GigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 24,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "XGigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 4,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "MEth0/0/1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Huawei/S5731-H24T4XC.yaml",
+      "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. Expansion card slot not included."
+    },
+    {
+      "id": "huawei-s6730-h48x6c",
+      "vendor": "Huawei",
+      "family": "CloudEngine S6730-H",
+      "model": "S6730-H48X6C",
+      "partNumbers": [],
+      "aliases": [
+        "S6730-H48X6C"
+      ],
+      "type": "l3_switch",
+      "uHeight": 1,
+      "ports": [
+        {
+          "pattern": "XGigabitEthernet0/0/{n}",
+          "start": 1,
+          "count": 48,
+          "media": "SFP+",
+          "speed": "10G"
+        },
+        {
+          "pattern": "100GE0/0/{n}",
+          "start": 1,
+          "count": 6,
+          "media": "QSFP",
+          "speed": "100G"
+        },
+        {
+          "pattern": "MEth0/0/1",
+          "start": 1,
+          "count": 1,
+          "media": "RJ45",
+          "speed": "1G"
+        },
+        {
+          "pattern": "console",
+          "start": 1,
+          "count": 1,
+          "media": "Console"
+        }
+      ],
+      "verified": true,
+      "source": "https://github.com/netbox-community/devicetype-library/blob/master/device-types/Huawei/S6730-H48X6C.yaml",
+      "notes": "Huawei VRP names ports slot/subcard/port; standalone slot is 0 (in an iStack/CSS the slot becomes the stack ID), so a literal 0 is used. GE and 10GE ports are numbered separately. 48x 10G SFP+ + 6x 40/100G QSFP28."
     }
   ]
 }

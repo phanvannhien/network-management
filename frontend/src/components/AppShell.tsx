@@ -20,6 +20,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { PhotoViewer } from '@/modules/inventory/PhotoDialog'
 import { ScopeSelector } from '@/modules/sites/ScopeSelector'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -498,6 +499,7 @@ export function OrgShell() {
       <Suspense fallback={<PageSkeleton />}>
         <Outlet />
       </Suspense>
+      <PhotoViewer orgId={orgId} />
     </Shell>
   )
 }

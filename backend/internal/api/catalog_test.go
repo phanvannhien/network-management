@@ -2,10 +2,12 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 )
 
@@ -85,5 +87,41 @@ func TestDeviceFromSystemTemplate(t *testing.T) {
 	bare := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW3", "type": "l2_switch", "siteId": site}))
 	if status, body := fx.A.Do("POST", devicePath(org, bare)+"/apply-template", map[string]any{"catalogId": c.Id}); status != http.StatusOK || body["added"] != float64(c.PortCount) {
 		t.Errorf("apply system template: %d %v", status, body)
+	}
+}
+
+// P2-12: model photos ship with the catalog; any member may fetch them, nobody else; odd names are refused.
+func TestCatalogImages(t *testing.T) {
+	var withPhoto apigen.CatalogModel
+	n := 0
+	for _, c := range catalog.All() {
+		if c.Images.Front != "" || c.Images.Rear != "" {
+			n++
+			if withPhoto.Id == "" && c.Images.Front != "" {
+				withPhoto = c
+			}
+			if !strings.HasPrefix(c.Images.Source, "https://github.com/netbox-community/devicetype-library/") {
+				t.Errorf("%s: photo source %q", c.Id, c.Images.Source)
+			}
+		}
+	}
+	if n < 100 {
+		t.Fatalf("only %d models have a photo", n)
+	}
+	fx := newOrgFixture(t)
+	img := func(o uuid.UUID) string { return orgPath(o) + "/device-catalog/images/" + withPhoto.Images.Front }
+	fx.AssertCrossTenantDenied(t, "GET", img, nil)
+	resp, body := fx.A.Raw(img(fx.OrgA))
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "image/jpeg" ||
+		!strings.HasPrefix(resp.Header.Get("Cache-Control"), "private") || resp.Header.Get("X-Content-Type-Options") != "nosniff" || len(body) < 1000 || body[0] != 0xFF || body[1] != 0xD8 {
+		t.Fatalf("photo: %d %v %d bytes", resp.StatusCode, resp.Header, len(body))
+	}
+	for _, bad := range []string{"no-such-model.front.jpg", "SOURCES.json", "..%2Fdata%2Fother.json", withPhoto.Id + ".side.jpg"} {
+		if resp, _ := fx.A.Raw(orgPath(fx.OrgA) + "/device-catalog/images/" + bad); resp.StatusCode != http.StatusNotFound && resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("%s: %d", bad, resp.StatusCode)
+		}
+	}
+	if resp, _ := fx.NewAnonymous().Raw(img(fx.OrgA)); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous: %d", resp.StatusCode)
 	}
 }

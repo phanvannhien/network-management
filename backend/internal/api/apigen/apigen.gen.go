@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -1663,20 +1664,32 @@ type AuthSession struct {
 	User CurrentUser `json:"user"`
 }
 
+// CatalogImages Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
+type CatalogImages struct {
+	Front string `json:"front"`
+	Rear  string `json:"rear"`
+
+	// Source where the photos come from (NetBox device type library page)
+	Source string `json:"source"`
+}
+
 // CatalogModel defines model for CatalogModel.
 type CatalogModel struct {
-	Aliases     []string    `json:"aliases"`
-	Family      string      `json:"family"`
-	Id          string      `json:"id"`
-	Model       string      `json:"model"`
-	Notes       string      `json:"notes"`
-	PartNumbers []string    `json:"partNumbers"`
-	PortCount   int32       `json:"portCount"`
-	Ports       []PortGroup `json:"ports"`
-	Source      string      `json:"source"`
-	Type        DeviceType  `json:"type"`
-	UHeight     int32       `json:"uHeight"`
-	Vendor      string      `json:"vendor"`
+	Aliases []string `json:"aliases"`
+	Family  string   `json:"family"`
+	Id      string   `json:"id"`
+
+	// Images Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
+	Images      CatalogImages `json:"images"`
+	Model       string        `json:"model"`
+	Notes       string        `json:"notes"`
+	PartNumbers []string      `json:"partNumbers"`
+	PortCount   int32         `json:"portCount"`
+	Ports       []PortGroup   `json:"ports"`
+	Source      string        `json:"source"`
+	Type        DeviceType    `json:"type"`
+	UHeight     int32         `json:"uHeight"`
+	Vendor      string        `json:"vendor"`
 
 	// Verified port layout checked against the vendor datasheet at source
 	Verified bool `json:"verified"`
@@ -5051,6 +5064,9 @@ type ServerInterface interface {
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// GetCatalogImage Front / rear photo of a catalog model (P2-12) — from the NetBox device type library (CC0), shipped in the binary
+	// (GET /orgs/{orgId}/device-catalog/images/{file})
+	GetCatalogImage(w http.ResponseWriter, r *http.Request, orgId OrgId, file string)
 	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
 	// (POST /orgs/{orgId}/device-imports)
 	ImportDevices(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportDevicesParams)
@@ -5567,6 +5583,12 @@ func (_ Unimplemented) PreviewDesignTemplate(w http.ResponseWriter, r *http.Requ
 // ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 // (GET /orgs/{orgId}/device-catalog)
 func (_ Unimplemented) ListDeviceCatalog(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetCatalogImage Front / rear photo of a catalog model (P2-12) — from the NetBox device type library (CC0), shipped in the binary
+// (GET /orgs/{orgId}/device-catalog/images/{file})
+func (_ Unimplemented) GetCatalogImage(w http.ResponseWriter, r *http.Request, orgId OrgId, file string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8071,6 +8093,41 @@ func (siw *ServerInterfaceWrapper) ListDeviceCatalog(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListDeviceCatalog(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCatalogImage operation middleware
+func (siw *ServerInterfaceWrapper) GetCatalogImage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "file" -------------
+	var file string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "file", chi.URLParam(r, "file"), &file, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "file", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCatalogImage(w, r, orgId, file)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13181,6 +13238,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/orgs/{orgId}/device-catalog", wrapper.ListDeviceCatalog)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/device-catalog/images/{file}", wrapper.GetCatalogImage)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/device-templates/from-catalog", wrapper.CreateTemplateFromCatalog)
 	})
 	r.Group(func(r chi.Router) {
@@ -16271,6 +16331,89 @@ func (response ListDeviceCatalog403JSONResponse) VisitListDeviceCatalogResponse(
 type ListDeviceCatalog404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response ListDeviceCatalog404JSONResponse) VisitListDeviceCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCatalogImageRequestObject struct {
+	OrgId OrgId  `json:"orgId"`
+	File  string `json:"file"`
+}
+
+type GetCatalogImageResponseObject interface {
+	VisitGetCatalogImageResponse(w http.ResponseWriter) error
+}
+
+type GetCatalogImage200ResponseHeaders struct {
+	CacheControl        *string
+	XContentTypeOptions *string
+}
+
+type GetCatalogImage200ImagejpegResponse struct {
+	Body          io.Reader
+	Headers       GetCatalogImage200ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetCatalogImage200ImagejpegResponse) VisitGetCatalogImageResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.XContentTypeOptions != nil {
+		w.Header().Set("X-Content-Type-Options", fmt.Sprint(*response.Headers.XContentTypeOptions))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetCatalogImage401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCatalogImage401JSONResponse) VisitGetCatalogImageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCatalogImage403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetCatalogImage403JSONResponse) VisitGetCatalogImageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCatalogImage404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCatalogImage404JSONResponse) VisitGetCatalogImageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -23406,6 +23549,9 @@ type StrictServerInterface interface {
 	// ListDeviceCatalog The built-in device catalog (ADR-035) — read only, the same for every organization
 	// (GET /orgs/{orgId}/device-catalog)
 	ListDeviceCatalog(ctx context.Context, request ListDeviceCatalogRequestObject) (ListDeviceCatalogResponseObject, error)
+	// GetCatalogImage Front / rear photo of a catalog model (P2-12) — from the NetBox device type library (CC0), shipped in the binary
+	// (GET /orgs/{orgId}/device-catalog/images/{file})
+	GetCatalogImage(ctx context.Context, request GetCatalogImageRequestObject) (GetCatalogImageResponseObject, error)
 	// ImportDevices Import devices from a spreadsheet (P1-21) — dry run for the preview, then the real run in chunks
 	// (POST /orgs/{orgId}/device-imports)
 	ImportDevices(ctx context.Context, request ImportDevicesRequestObject) (ImportDevicesResponseObject, error)
@@ -24944,6 +25090,33 @@ func (sh *strictHandler) ListDeviceCatalog(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListDeviceCatalogResponseObject); ok {
 		if err := validResponse.VisitListDeviceCatalogResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCatalogImage operation middleware
+func (sh *strictHandler) GetCatalogImage(w http.ResponseWriter, r *http.Request, orgId OrgId, file string) {
+	var request GetCatalogImageRequestObject
+
+	request.OrgId = orgId
+	request.File = file
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCatalogImage(ctx, request.(GetCatalogImageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCatalogImage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCatalogImageResponseObject); ok {
+		if err := validResponse.VisitGetCatalogImageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

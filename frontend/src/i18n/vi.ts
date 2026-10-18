@@ -2009,6 +2009,18 @@ export const vi = {
     label: 'Lọc theo danh mục',
     all: 'Toàn tổ chức',
   },
+  photos: {
+    view: 'Xem ảnh thật',
+    viewFor: 'Xem ảnh thật của {{name}}',
+    side: 'Mặt thiết bị',
+    front: 'Mặt trước',
+    rear: 'Mặt sau',
+    alt: 'Ảnh {{side}} của {{name}}',
+    failed: 'Không tải được ảnh.',
+    credit: 'Ảnh: thư viện thiết bị cộng đồng NetBox (CC0) —',
+    creditLink: 'nguồn',
+    column: 'Ảnh',
+  },
   catalog: {
     open: 'Thêm từ thư viện',
     title: 'Thư viện thiết bị có sẵn',

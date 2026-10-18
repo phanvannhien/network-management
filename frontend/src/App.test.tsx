@@ -1160,6 +1160,8 @@ describe('categories & sites (P1-27, ADR-032)', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Thêm danh mục' })).not.toBeInTheDocument(),
     )
+    // The page moves to the new category once the refetched tree has it (the site dialog starts there).
+    expect(await screen.findByText('Mẫu Agri › Văn phòng', { selector: 'p' })).toBeInTheDocument()
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Thêm site' })[0]!)
     const site = await screen.findByRole('dialog', { name: /^Thêm site/ })

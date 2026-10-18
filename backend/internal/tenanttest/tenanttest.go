@@ -131,6 +131,23 @@ func (c *Client) Do(method, path string, body any) (int, map[string]any) {
 	return resp.StatusCode, out
 }
 
+// Raw sends a GET and returns the response with its body read (binary endpoints: images, files).
+func (c *Client) Raw(path string) (*http.Response, []byte) {
+	c.t.Helper()
+	req, _ := http.NewRequest("GET", c.base+path, nil)
+	req.Header.Set("Origin", c.base)
+	if c.token != "" {
+		req.AddCookie(&http.Cookie{Name: "ntb_session", Value: c.token})
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.t.Fatalf("GET %s: %v", path, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	b, _ := io.ReadAll(resp.Body)
+	return resp, b
+}
+
 // AssertCrossTenantDenied: A calling the endpoint for OrgB gets 404 (existence not revealed), while
 // B calling it for OrgB is not refused by tenancy (any status except 401/404). Use it for every
 // tenant-scoped endpoint; then also assert B's data is unchanged where the method writes.
