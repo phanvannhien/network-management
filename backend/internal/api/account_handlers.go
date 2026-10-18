@@ -47,8 +47,10 @@ func (s *Server) AcceptAccountToken(ctx context.Context, req apigen.AcceptAccoun
 	switch {
 	case errors.Is(err, auth.ErrWeakPassword):
 		return apigen.AcceptAccountToken400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{
-			Message: fmt.Sprintf("Mật khẩu tối thiểu %d ký tự", auth.MinPasswordLength),
+			Message: fmt.Sprintf("Mật khẩu từ %d đến %d ký tự", auth.MinPasswordLength, auth.MaxPasswordLength),
 		}}, nil
+	case errors.Is(err, auth.ErrRateLimited):
+		return apigen.AcceptAccountToken429JSONResponse{Message: "Thử quá nhiều lần, vui lòng đợi một phút"}, nil
 	case errors.Is(err, auth.ErrTokenInvalid):
 		return apigen.AcceptAccountToken404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: msgLinkInvalid}}, nil
 	case err != nil:

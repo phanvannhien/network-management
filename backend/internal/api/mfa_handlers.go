@@ -44,6 +44,8 @@ func (s *Server) EnableMfa(ctx context.Context, req apigen.EnableMfaRequestObjec
 	}
 	codes, err := s.auth.EnableTOTP(ctx, sess, code, infoFrom(ctx).meta)
 	switch {
+	case errors.Is(err, auth.ErrRateLimited):
+		return apigen.EnableMfa429JSONResponse{Message: "Nhập sai quá nhiều lần, vui lòng đợi một phút"}, nil
 	case errors.Is(err, auth.ErrInvalidMFACode):
 		return apigen.EnableMfa400JSONResponse{InvalidCodeJSONResponse: apigen.InvalidCodeJSONResponse{Message: msgInvalidCode}}, nil
 	case errors.Is(err, auth.ErrMFAAlreadyEnabled):
@@ -99,6 +101,8 @@ func (s *Server) DisableMfa(ctx context.Context, req apigen.DisableMfaRequestObj
 	}
 	err := s.auth.DisableTOTP(ctx, sess, code, infoFrom(ctx).meta)
 	switch {
+	case errors.Is(err, auth.ErrRateLimited):
+		return apigen.DisableMfa429JSONResponse{Message: "Nhập sai quá nhiều lần, vui lòng đợi một phút"}, nil
 	case errors.Is(err, auth.ErrInvalidMFACode):
 		return apigen.DisableMfa400JSONResponse{InvalidCodeJSONResponse: apigen.InvalidCodeJSONResponse{Message: msgInvalidCode}}, nil
 	case errors.Is(err, auth.ErrMFARequired):

@@ -13,6 +13,9 @@ import (
 // spoof it by sending its own header (the reason chi's RealIP was dropped in P0-01).
 type ClientIPResolver struct {
 	trusted []netip.Prefix
+	// ForceSecure marks every request as HTTPS (NTB_COOKIE_SECURE), for installations behind a TLS terminator that
+	// does not send X-Forwarded-Proto.
+	ForceSecure bool
 }
 
 // NewClientIPResolver parses a comma-separated CIDR list such as "127.0.0.1/32,172.16.0.0/12".
@@ -54,7 +57,7 @@ func (c *ClientIPResolver) Resolve(r *http.Request) netip.Addr {
 
 // IsSecure reports whether the original request used HTTPS (directly or via a trusted proxy).
 func (c *ClientIPResolver) IsSecure(r *http.Request) bool {
-	if r.TLS != nil {
+	if r.TLS != nil || c.ForceSecure {
 		return true
 	}
 	peer := parseHostAddr(r.RemoteAddr)

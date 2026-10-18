@@ -4981,6 +4981,15 @@ export interface operations {
             400: components["responses"]["InvalidCode"];
             401: components["responses"]["Unauthorized"];
             409: components["responses"]["Conflict"];
+            /** @description Too many attempts */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     verifyMfa: {
@@ -5054,6 +5063,15 @@ export interface operations {
                 };
             };
             409: components["responses"]["Conflict"];
+            /** @description Too many attempts */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listMyOrganizations: {
@@ -5438,6 +5456,15 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+            /** @description Too many attempts from this address */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listCategories: {

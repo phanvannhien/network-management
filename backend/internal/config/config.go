@@ -31,6 +31,8 @@ type Config struct {
 	// TrustedProxies are CIDRs whose X-Forwarded-For / X-Forwarded-Proto headers are honoured
 	// (loopback for the Vite dev proxy; Compose adds the Docker network for nginx).
 	TrustedProxies string
+	// CookieSecure always sets the Secure flag on the session cookie (production behind HTTPS).
+	CookieSecure bool
 }
 
 // Load reads settings from the environment, falling back to dev defaults.
@@ -42,6 +44,7 @@ func Load() Config {
 		DatabaseURL:      getenv("NTB_DATABASE_URL", "postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable"),
 		MigrateOnStart:   getbool("NTB_MIGRATE_ON_START", false),
 		TrustedProxies:   getenv("NTB_TRUSTED_PROXIES", "127.0.0.1/32,::1/128"),
+		CookieSecure:     getbool("NTB_COOKIE_SECURE", false),
 		Timezone:         getenv("NTB_TIMEZONE", "Asia/Ho_Chi_Minh"),
 		MasterKeyVersion: getenv("NTB_MASTER_KEY_VERSION", "1"),
 		MasterKey:        os.Getenv("NTB_MASTER_KEY"), // no default: the server refuses to start without it

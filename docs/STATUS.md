@@ -5,6 +5,43 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-01 Review bảo mật nền tảng (ADR-046)
+- Đã làm:
+  - **Rà soát** 3 mảng song song: web, xác thực / phân quyền, cách ly tổ chức.
+    - 309 query đều lọc theo tổ chức; không có handler thiếu kiểm tra quyền; không có lỗ XSS.
+    - `govulncheck` sạch; `npm audit --omit=dev` = 0 (shadcn chuyển sang devDependencies).
+  - **Header bảo mật:**
+    - nginx (`deploy/security-headers.conf`): CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP / CORP; `server_tokens off`; image nginx 1.30;
+    - API: `no-store`, nosniff, CSP `default-src 'none'`.
+  - **Giới hạn request:** body tối đa 4 MiB (import / file 26 MiB); timeout server.
+  - **Log không chứa token** mời / đặt lại mật khẩu (nginx + API).
+  - **Migration 027:** khóa ngoại ghép `(id, organization_id)` cho cổng, link, nhà cung cấp, hợp đồng, mật khẩu, tài khoản cloud, thông báo. DB không cho dữ liệu trỏ chéo tổ chức. Join theo id còn lại được thêm điều kiện tổ chức.
+  - **Tài khoản:**
+    - sai mã MFA cũng tính vào khóa tài khoản; khi khóa thì đăng xuất mọi phiên;
+    - bật / tắt MFA có giới hạn riêng;
+    - link mời giới hạn theo IP; mật khẩu tối đa 1024 ký tự;
+    - MFA bắt buộc cho người có `credential.*` / `user.manage`.
+  - **Owner cuối cùng:** owner bị khóa tài khoản không được tính; khóa dòng khi đếm.
+  - **Import `.ntb.json`:** site đích của tổ chức khác thì trả 400.
+  - **Compose:**
+    - `POSTGRES_PASSWORD` bắt buộc;
+    - `NTB_TRUSTED_PROXIES` chỉnh được qua `.env`;
+    - `NTB_COOKIE_SECURE`.
+  - **Test cách ly tổ chức bổ sung:** đánh dấu đã đọc thông báo, liên hệ nhà cung cấp, gợi ý mã site, thiết kế mẫu vào danh mục tổ chức khác.
+- Test / cách kiểm tra:
+  - `make check` pass; `go test ./... -count=1` pass.
+  - CSP kiểm tra trên bản build production qua nginx tạm: 0 vi phạm.
+  - Migration 027 chạy up / down / up.
+- Còn dở / lỗi đã biết:
+  - `style-src 'unsafe-inline'` còn (thư viện vẽ sơ đồ cần).
+  - Chưa có step-up MFA cho thao tác admin hệ thống.
+- Câu hỏi cho người dùng:
+  - Chính sách link mời: gửi qua email khi có SMTP và không hiện cho admin tổ chức? Thêm người đã có tài khoản vào tổ chức khác thì cần họ đồng ý?
+  - Người có quyền `user.manage` (vd viewer) có được tự nâng vai trò của mình không?
+- Đề xuất quyết định cần chốt:
+  - Postgres RLS: làm trước khi chạy production nhiều khách hàng (khoảng 4–6 ngày).
+- Task tiếp theo đề xuất: P2-08 (nhiều trang / L1-L2-L3 / segment / off-page). Thiết kế chờ chốt 4 câu hỏi.
+
 ## 2026-10-18 — P2-02 + P2-03 Kho mật khẩu và tài khoản cloud (ADR-045); P2-05 hoàn tất
 - Người dùng chốt: làm chung P2-02 + P2-03; chỉ lưu mã hóa trong hệ thống, Bitwarden / HashiCorp Vault để sau.
 - Đã làm:

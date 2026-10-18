@@ -710,3 +710,36 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - SNMPv3 đủ trường;
   - cảnh báo "một mật khẩu dùng cho quá nhiều thiết bị" (thuộc P2-10);
   - lịch sử mật khẩu cũ.
+
+### ADR-046 — Rà soát bảo mật nền tảng (P2-01): header, khóa ngoại cùng tổ chức, khóa tài khoản, RLS để sau
+- **Bối cảnh:** rà soát toàn bộ nền tảng trước khi dùng cho nhiều khách hàng.
+  - Ba bản rà soát song song: web (header, XSS, phụ thuộc), xác thực / phân quyền, cách ly tổ chức.
+  - Kết quả: 309 query đều lọc theo tổ chức; không có handler thiếu kiểm tra quyền; không có lỗ XSS; `govulncheck` sạch; `npm audit --omit=dev` = 0.
+- **Quyết định:**
+  - **Header:**
+    - nginx: CSP chặt (`script-src 'self'`; chỉ `style-src` có `'unsafe-inline'` vì thư viện vẽ sơ đồ ghi style trực tiếp), `frame-ancestors 'none'`, HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP / CORP; `server_tokens off`;
+    - API: mọi phản hồi `Cache-Control: no-store`, nosniff, CSP `default-src 'none'`.
+    - Đã kiểm tra trên bản build production: không có vi phạm CSP ở dashboard, kho mật khẩu, nhà cung cấp, màn vẽ, xuất PNG.
+  - **Giới hạn request:** body tối đa 4 MiB (import / file hợp đồng 26 MiB); timeout đọc 60 giây, ghi 90 giây, nghỉ 120 giây.
+  - **Log không chứa token:** link mời / đặt lại mật khẩu bị cắt trong log nginx và log API.
+  - **Khóa ngoại cùng tổ chức** (migration 027): mọi tham chiếu giữa bảng nghiệp vụ dùng khóa ghép `(id, organization_id)`. Dù code có lỗi, DB cũng không cho dòng của tổ chức A trỏ sang tổ chức B. Join theo id còn lại được thêm điều kiện tổ chức.
+  - **Khóa tài khoản:**
+    - sai mã MFA tính như sai mật khẩu; đủ số lần thì khóa và đăng xuất mọi phiên;
+    - đang bị khóa thì không đếm thêm, hết khóa thì đếm lại từ đầu;
+    - bật / tắt MFA có giới hạn riêng 5 lần / phút, không chung với lần nhập mã khi đăng nhập.
+  - **Link mời / đặt lại mật khẩu:** giới hạn theo IP, mật khẩu từ 12 đến 1024 ký tự (chặn hash chuỗi khổng lồ).
+  - **MFA bắt buộc** thêm cho người có quyền `credential.reveal`, `credential.manage`, `user.manage`.
+  - **Owner cuối cùng:** chỉ tính owner còn hoạt động; khóa dòng khi đếm để hai owner không hạ quyền nhau cùng lúc.
+  - **Import `.ntb.json`:** site đích phải là site còn sống của tổ chức, nếu không thì trả 400.
+  - **Cấu hình triển khai:**
+    - `POSTGRES_PASSWORD` bắt buộc;
+    - `NTB_TRUSTED_PROXIES` chỉnh được (thêm đúng địa chỉ reverse proxy TLS phía trước, không bao giờ cả dải mạng);
+    - `NTB_COOKIE_SECURE=true` ép cookie Secure khi chỉ truy cập qua HTTPS.
+- **Lý do:** cách ly tổ chức phải đúng ở cả hai tầng, code và DB. Header và giới hạn kích thước là phòng thủ rẻ, không đổi trải nghiệm.
+- **Đánh đổi:**
+  - `style-src 'unsafe-inline'` vẫn còn.
+  - Không đặt `limit_req` ở nginx: sau reverse proxy mọi người dùng chung một IP. Giới hạn do API làm theo IP thật.
+- **Để sau / cần chốt:**
+  - **Postgres RLS** (ADR-016): khoảng 4–6 ngày, cần tách role DB không phải superuser. Đề xuất làm trước khi chạy production cho nhiều khách hàng.
+  - Chính sách link mời / thêm thành viên đã có tài khoản (link qua email, người được thêm phải đồng ý).
+  - Xác nhận lại MFA (step-up) cho thao tác admin hệ thống: reset MFA, tạo link đặt lại mật khẩu, khóa tài khoản.

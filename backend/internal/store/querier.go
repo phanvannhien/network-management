@@ -41,8 +41,6 @@ type Querier interface {
 	// Master key rotation (ntb rotate-master-key): every stored secret of the installation, across organizations.
 	AllSealedCredentials(ctx context.Context) ([]AllSealedCredentialsRow, error)
 	AllSealedTOTP(ctx context.Context) ([]AllSealedTOTPRow, error)
-	CategoryPath(ctx context.Context, id pgtype.UUID) (string, error)
-	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	ClearDeviceSupplier(ctx context.Context, arg ClearDeviceSupplierParams) error
@@ -65,7 +63,9 @@ type Querier interface {
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
 	CountLocationChildren(ctx context.Context, arg CountLocationChildrenParams) (CountLocationChildrenRow, error)
 	CountOrgAudit(ctx context.Context, arg CountOrgAuditParams) (int64, error)
-	CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	// Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
+	// the same time cannot leave the organization without one.
+	CountOtherActiveOwners(ctx context.Context, arg CountOtherActiveOwnersParams) (int64, error)
 	// Cables that occupy a port (ADR-033): radio, cellular and logical links share their interface.
 	CountPhysicalLinksOnInterface(ctx context.Context, arg CountPhysicalLinksOnInterfaceParams) (int64, error)
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
@@ -349,7 +349,8 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	// Live devices placed in a rack (for U overlap checks and the rack view).
 	RackOccupancy(ctx context.Context, arg RackOccupancyParams) ([]RackOccupancyRow, error)
-	// Increments the failure counter and locks the account once it reaches the threshold.
+	// Counts a failure and locks the account once it reaches the threshold. While locked nothing is counted (no row back),
+	// so nobody can keep an account locked forever; once a lock has expired the count starts over.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error

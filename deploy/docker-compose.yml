@@ -27,13 +27,16 @@ services:
       NTB_HTTP_ADDR: ":8069"
       NTB_VERSION: ${NTB_VERSION:-dev}
       NTB_ENV: ${NTB_ENV:-production}
-      NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:-ntb_dev_password}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
+      NTB_DATABASE_URL: postgres://${POSTGRES_USER:-ntb}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env (a strong one in production)}@db:5432/${POSTGRES_DB:-ntb}?sslmode=disable
       NTB_MIGRATE_ON_START: "true"
       NTB_TIMEZONE: ${NTB_TIMEZONE:-Asia/Ho_Chi_Minh}
       NTB_MASTER_KEY_VERSION: ${NTB_MASTER_KEY_VERSION:-1}
-      # Trust X-Forwarded-For only from the nginx container. Never trust whole private ranges:
-      # LAN clients (often 192.168.x.x) could then spoof their IP and bypass per-IP rate limits.
-      NTB_TRUSTED_PROXIES: "172.30.68.10/32"
+      # Trust X-Forwarded-For only from the nginx container (plus, if any, the exact address of a TLS reverse proxy
+      # in front of it). Never trust whole private ranges: LAN clients (often 192.168.x.x) could then spoof their IP
+      # and bypass per-IP rate limits.
+      NTB_TRUSTED_PROXIES: ${NTB_TRUSTED_PROXIES:-172.30.68.10/32}
+      # true = the session cookie is always Secure (set it when users reach the app over HTTPS only).
+      NTB_COOKIE_SECURE: ${NTB_COOKIE_SECURE:-false}
       # Envelope-encryption master key for secrets (MFA seeds now, credentials later). Required:
       # compose refuses to start without it. Create deploy/.env with `make dev-env`.
       NTB_MASTER_KEY: ${NTB_MASTER_KEY:?Set NTB_MASTER_KEY in deploy/.env (run make dev-env, or openssl rand -base64 32)}
@@ -55,7 +58,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ntb}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ntb_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env (a strong one in production)}
       POSTGRES_DB: ${POSTGRES_DB:-ntb}
     ports:
       # Host port for local dev (make dev-api, make test). 5468 avoids a local Postgres on 5432.

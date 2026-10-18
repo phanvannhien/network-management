@@ -316,3 +316,25 @@ func TestMFAGatePendingVerification(t *testing.T) {
 		t.Fatalf("verify: %d %v", resp.StatusCode, body)
 	}
 }
+
+// P2-01: API answers carry no-store / nosniff / a CSP that never renders them as a page; handlers may still override
+// Cache-Control (catalog photos, files).
+func TestSecurityHeaders(t *testing.T) {
+	c := newClient(t, newRouter(t, fakePinger{}, nil))
+	resp, _ := c.do("GET", "/api/healthz", nil, nil)
+	for k, want := range map[string]string{
+		"Cache-Control":           "no-store",
+		"X-Content-Type-Options":  "nosniff",
+		"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+	} {
+		if got := resp.Header.Get(k); got != want {
+			t.Errorf("%s = %q, want %q", k, got, want)
+		}
+	}
+}
+
+func TestRedactPath(t *testing.T) {
+	if got := redactPath("/api/account-tokens/GdYFanUo5iDkskWw1RAi7fnlHIkVcZ_5IAAnuN-MC_o/accept"); got != "/api/account-tokens/GdYF…/accept" {
+		t.Errorf("redact: %s", got)
+	}
+}

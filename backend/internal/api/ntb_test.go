@@ -71,8 +71,8 @@ func TestNtbExportImport(t *testing.T) {
 		t.Errorf("import without a target site: %d %v", status, body)
 	}
 	// A's site id is refused as a target in B (it is not B's).
-	if status, _ := fx.B.Do("POST", orgPath(fx.OrgB)+"/ntb-imports", map[string]any{"file": file, "siteMap": map[string]any{siteRef: site}, "deviceActions": map[string]any{}, "diagramName": "CCTV"}); status == http.StatusOK {
-		t.Errorf("import into another organization's site accepted")
+	if status, _ := fx.B.Do("POST", orgPath(fx.OrgB)+"/ntb-imports", map[string]any{"file": file, "siteMap": map[string]any{siteRef: site}, "deviceActions": map[string]any{}, "diagramName": "CCTV"}); status != http.StatusBadRequest {
+		t.Errorf("import into another organization's site: %d, want 400", status)
 	}
 	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "SGN01", "name": "Saigon"}))
 	status, res := fx.B.Do("POST", orgPath(fx.OrgB)+"/ntb-imports", map[string]any{"file": file, "siteMap": map[string]any{siteRef: siteB}, "deviceActions": map[string]any{}, "diagramName": "CCTV"})

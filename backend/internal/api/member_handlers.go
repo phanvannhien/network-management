@@ -228,9 +228,9 @@ func (s *Server) UpdateMember(ctx context.Context, req apigen.UpdateMemberReques
 			return errRollback
 		}
 		if before.Role == tenant.RoleOwner && role != tenant.RoleOwner {
-			if n, err := q.CountOwners(ctx, m.OrgID); err != nil {
+			if n, err := q.CountOtherActiveOwners(ctx, store.CountOtherActiveOwnersParams{OrganizationID: m.OrgID, UserID: before.UserID}); err != nil {
 				return fmt.Errorf("count owners: %w", err)
-			} else if n <= 1 {
+			} else if n < 1 {
 				conflict = "Tổ chức phải còn ít nhất một owner"
 				return errRollback
 			}
@@ -293,9 +293,9 @@ func (s *Server) RemoveMember(ctx context.Context, req apigen.RemoveMemberReques
 			}
 		}
 		if before.Role == tenant.RoleOwner {
-			if n, err := q.CountOwners(ctx, m.OrgID); err != nil {
+			if n, err := q.CountOtherActiveOwners(ctx, store.CountOtherActiveOwnersParams{OrganizationID: m.OrgID, UserID: before.UserID}); err != nil {
 				return fmt.Errorf("count owners: %w", err)
-			} else if n <= 1 {
+			} else if n < 1 {
 				conflict = "Không thể gỡ owner cuối cùng của tổ chức"
 				return errRollback
 			}

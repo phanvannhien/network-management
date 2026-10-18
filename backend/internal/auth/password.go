@@ -15,6 +15,9 @@ import (
 // MinPasswordLength is enforced when passwords are set (CLI, later user management).
 const MinPasswordLength = 12
 
+// MaxPasswordLength bounds what is hashed (argon2 on megabytes of input is a cheap way to burn CPU).
+const MaxPasswordLength = 1024
+
 // Argon2Params controls argon2id cost. Defaults follow OWASP guidance with headroom.
 type Argon2Params struct {
 	MemoryKiB   uint32

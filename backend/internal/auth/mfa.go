@@ -110,6 +110,10 @@ func (s *Service) SetupTOTP(ctx context.Context, sess Session, meta RequestMeta)
 // EnableTOTP confirms enrollment with a valid code, issues recovery codes (returned once) and marks
 // the current session as MFA-verified — all in one transaction.
 func (s *Service) EnableTOTP(ctx context.Context, sess Session, code string, meta RequestMeta) ([]string, error) {
+	// Own bucket (also for disabling): setting MFA up must not use the attempts the next sign-in needs.
+	if !s.mfaLimit.Allow("mfa-setup:" + uuidString(sess.UserID.Bytes)) {
+		return nil, ErrRateLimited
+	}
 	row, err := s.q.GetTOTP(ctx, sess.UserID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrMFANotPending
@@ -200,7 +204,14 @@ func (s *Service) VerifyMFA(ctx context.Context, sess Session, code, recoveryCod
 	}
 	if !ok {
 		s.audit(ctx, sess.UserID, "mfa.verify_failed", sess.Email, meta)
+		// Wrong codes count like wrong passwords: enough of them lock the account and end its sessions.
+		if _, err := s.recordFailure(ctx, sess.UserID); err != nil {
+			return err
+		}
 		return ErrInvalidMFACode
+	}
+	if err := s.q.ResetLoginFailures(ctx, sess.UserID); err != nil {
+		return fmt.Errorf("reset failures: %w", err)
 	}
 	if err := s.q.MarkSessionMFAVerified(ctx, sess.TokenHash); err != nil {
 		return fmt.Errorf("mark session verified: %w", err)
@@ -213,6 +224,9 @@ func (s *Service) VerifyMFA(ctx context.Context, sess Session, code, recoveryCod
 func (s *Service) DisableTOTP(ctx context.Context, sess Session, code string, meta RequestMeta) error {
 	if !sess.MFAEnabled {
 		return ErrMFANotEnabled
+	}
+	if !s.mfaLimit.Allow("mfa-setup:" + uuidString(sess.UserID.Bytes)) {
+		return ErrRateLimited
 	}
 	if sess.MFARequired {
 		return ErrMFARequired
@@ -234,6 +248,9 @@ func (s *Service) DisableTOTP(ctx context.Context, sess Session, code string, me
 	}
 	if !match {
 		s.audit(ctx, sess.UserID, "mfa.disable_failed", sess.Email, meta)
+		if _, err := s.recordFailure(ctx, sess.UserID); err != nil {
+			return err
+		}
 		return ErrInvalidMFACode
 	}
 	err = s.withTx(ctx, func(q store.Querier) error {

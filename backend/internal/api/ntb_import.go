@@ -194,6 +194,14 @@ func (s *Server) ImportNtb(ctx context.Context, req apigen.ImportNtbRequestObjec
 			return bad(fmt.Sprintf("Chọn site đích cho %s", code))
 		}
 	}
+	// A target must be a live site of this organization.
+	for _, id := range sites {
+		if _, err := s.q.GetSite(ctx, store.GetSiteParams{ID: id, OrganizationID: m.OrgID}); errors.Is(err, pgx.ErrNoRows) {
+			return bad("Site đích không tồn tại")
+		} else if err != nil {
+			return nil, fmt.Errorf("get target site: %w", err)
+		}
+	}
 	existing, err := s.q.ListDiagrams(ctx, store.ListDiagramsParams{OrganizationID: m.OrgID})
 	if err != nil {
 		return nil, fmt.Errorf("list diagrams: %w", err)

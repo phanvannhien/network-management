@@ -112,12 +112,23 @@ func (q *Queries) CountActiveSystemAdmins(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countOwners = `-- name: CountOwners :one
-SELECT count(*) FROM memberships WHERE organization_id = $1 AND role = 'owner'
+const countOtherActiveOwners = `-- name: CountOtherActiveOwners :one
+SELECT count(*) FROM (
+  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id AND u.disabled_at IS NULL
+  WHERE m.organization_id = $1 AND m.role = 'owner' AND m.user_id <> $2
+  FOR UPDATE OF m
+) o
 `
 
-func (q *Queries) CountOwners(ctx context.Context, organizationID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countOwners, organizationID)
+type CountOtherActiveOwnersParams struct {
+	OrganizationID pgtype.UUID
+	UserID         pgtype.UUID
+}
+
+// Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
+// the same time cannot leave the organization without one.
+func (q *Queries) CountOtherActiveOwners(ctx context.Context, arg CountOtherActiveOwnersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOtherActiveOwners, arg.OrganizationID, arg.UserID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

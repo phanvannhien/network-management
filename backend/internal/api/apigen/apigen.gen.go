@@ -17003,6 +17003,20 @@ func (response AcceptAccountToken404JSONResponse) VisitAcceptAccountTokenRespons
 	return err
 }
 
+type AcceptAccountToken429JSONResponse Error
+
+func (response AcceptAccountToken429JSONResponse) VisitAcceptAccountTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSystemAuditRequestObject struct {
 	Params ListSystemAuditParams
 }
@@ -17933,6 +17947,20 @@ func (response DisableMfa409JSONResponse) VisitDisableMfaResponse(w http.Respons
 	return err
 }
 
+type DisableMfa429JSONResponse Error
+
+func (response DisableMfa429JSONResponse) VisitDisableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type EnableMfaRequestObject struct {
 	Params EnableMfaParams
 	Body   *EnableMfaJSONRequestBody
@@ -17994,6 +18022,20 @@ func (response EnableMfa409JSONResponse) VisitEnableMfaResponse(w http.ResponseW
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMfa429JSONResponse Error
+
+func (response EnableMfa429JSONResponse) VisitEnableMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
 	_, err := buf.WriteTo(w)
 	return err
 }

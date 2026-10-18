@@ -80,8 +80,20 @@ func (s *Service) InspectAccountToken(ctx context.Context, token string) (Accoun
 // AcceptAccountToken sets the password (and display name for invitations), consumes the link and
 // signs the user out everywhere — one transaction.
 func (s *Service) AcceptAccountToken(ctx context.Context, token, displayName, password string, meta RequestMeta) error {
+	// Unauthenticated: bounded per IP, and the (cheap) token lookup comes before the (costly) password hash.
+	if !s.ipLimit.Allow("token-ip:" + meta.IP.String()) {
+		return ErrRateLimited
+	}
 	if len(password) < MinPasswordLength {
 		return ErrWeakPassword
+	}
+	if len(password) > MaxPasswordLength {
+		return ErrWeakPassword
+	}
+	if _, err := s.q.GetUserToken(ctx, HashToken(token)); errors.Is(err, pgx.ErrNoRows) {
+		return ErrTokenInvalid
+	} else if err != nil {
+		return fmt.Errorf("load token: %w", err)
 	}
 	displayName = strings.TrimSpace(displayName)
 	if utf8.RuneCountInString(displayName) > maxDisplayName {

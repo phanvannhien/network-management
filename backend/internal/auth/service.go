@@ -153,11 +153,9 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 	}
 	locked := user.LockedUntil.Valid && user.LockedUntil.Time.After(s.now())
 	if !ok || locked || user.DisabledAt.Valid {
-		if !ok {
-			if _, err := s.q.RecordLoginFailure(ctx, store.RecordLoginFailureParams{
-				ID: user.ID, MaxFailures: MaxFailedLogins, LockSeconds: int32(LockDuration / time.Second),
-			}); err != nil {
-				return LoginResult{}, fmt.Errorf("record login failure: %w", err)
+		if !ok && !locked {
+			if _, err := s.recordFailure(ctx, user.ID); err != nil {
+				return LoginResult{}, err
 			}
 		}
 		s.audit(ctx, user.ID, "auth.login_failed", user.Email, meta)
@@ -270,3 +268,24 @@ func (s *Service) audit(ctx context.Context, actor pgtype.UUID, action, email st
 
 // Keyring is the envelope-encryption keyring of the installation (other stored secrets use it too: SMTP password).
 func (s *Service) Keyring() *secrets.Keyring { return s.keys }
+
+// recordFailure counts a failed password or MFA code; true when it just locked the account (its sessions are then
+// ended, so a stolen session cannot keep guessing MFA codes).
+func (s *Service) recordFailure(ctx context.Context, user pgtype.UUID) (bool, error) {
+	r, err := s.q.RecordLoginFailure(ctx, store.RecordLoginFailureParams{
+		ID: user, MaxFailures: MaxFailedLogins, LockSeconds: int32(LockDuration / time.Second),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil // already locked: not counted
+	}
+	if err != nil {
+		return false, fmt.Errorf("record login failure: %w", err)
+	}
+	if !r.LockedUntil.Valid {
+		return false, nil
+	}
+	if err := s.q.DeleteUserSessions(ctx, user); err != nil {
+		return true, fmt.Errorf("end sessions of locked account: %w", err)
+	}
+	return true, nil
+}

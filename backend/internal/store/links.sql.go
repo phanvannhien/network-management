@@ -234,14 +234,14 @@ SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.
   COALESCE(bi.name, '')::text AS b_interface_name, COALESCE(bi.kind, '')::text AS b_interface_kind,
   COALESCE(bi.media, '')::text AS b_interface_media
 FROM links l
-LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.deleted_at IS NULL
-LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id
-LEFT JOIN sites asite ON asite.id = COALESCE(ad.site_id, ag.site_id) AND asite.deleted_at IS NULL
-LEFT JOIN interfaces ai ON ai.id = l.a_interface_id
-LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.deleted_at IS NULL
-LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id
-LEFT JOIN sites bsite ON bsite.id = COALESCE(bd.site_id, bg.site_id) AND bsite.deleted_at IS NULL
-LEFT JOIN interfaces bi ON bi.id = l.b_interface_id
+LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.organization_id = l.organization_id AND ad.deleted_at IS NULL
+LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id AND ag.organization_id = l.organization_id
+LEFT JOIN sites asite ON asite.id = COALESCE(ad.site_id, ag.site_id) AND asite.organization_id = l.organization_id AND asite.deleted_at IS NULL
+LEFT JOIN interfaces ai ON ai.id = l.a_interface_id AND ai.organization_id = l.organization_id
+LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.organization_id = l.organization_id AND bd.deleted_at IS NULL
+LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id AND bg.organization_id = l.organization_id
+LEFT JOIN sites bsite ON bsite.id = COALESCE(bd.site_id, bg.site_id) AND bsite.organization_id = l.organization_id AND bsite.deleted_at IS NULL
+LEFT JOIN interfaces bi ON bi.id = l.b_interface_id AND bi.organization_id = l.organization_id
 WHERE l.organization_id = $1
   AND ($2::uuid IS NULL OR l.id = $2)
   AND ($3::uuid[] IS NULL OR l.id = ANY ($3::uuid[]))

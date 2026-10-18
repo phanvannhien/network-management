@@ -21,8 +21,14 @@ JOIN users u ON u.id = m.user_id
 LEFT JOIN mfa_totp t ON t.user_id = u.id
 WHERE m.organization_id = $1 AND m.user_id = $2;
 
--- name: CountOwners :one
-SELECT count(*) FROM memberships WHERE organization_id = $1 AND role = 'owner';
+-- name: CountOtherActiveOwners :one
+-- Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
+-- the same time cannot leave the organization without one.
+SELECT count(*) FROM (
+  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id AND u.disabled_at IS NULL
+  WHERE m.organization_id = @organization_id AND m.role = 'owner' AND m.user_id <> @user_id
+  FOR UPDATE OF m
+) o;
 
 -- name: UpdateMembership :one
 UPDATE memberships

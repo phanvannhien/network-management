@@ -175,7 +175,7 @@ func (q *Queries) UseRecoveryCode(ctx context.Context, arg UseRecoveryCodeParams
 const userRequiresMFA = `-- name: UserRequiresMFA :one
 SELECT (u.is_system_admin OR EXISTS (
           SELECT 1 FROM memberships m WHERE m.user_id = u.id
-            AND (m.role IN ('owner', 'admin') OR 'credential.reveal' = ANY (m.permissions))
+            AND (m.role IN ('owner', 'admin') OR m.permissions && ARRAY['credential.reveal', 'credential.manage', 'user.manage']::text[])
         ))::boolean AS required
 FROM users u WHERE u.id = $1
 `

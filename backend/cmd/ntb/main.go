@@ -121,6 +121,7 @@ func serve(logger *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("NTB_TRUSTED_PROXIES: %w", err)
 	}
+	resolver.ForceSecure = cfg.CookieSecure
 	queries := store.New(pool)
 	authSvc, err := auth.NewService(pool, keys, logger, auth.DefaultArgon2)
 	if err != nil {
@@ -131,6 +132,10 @@ func serve(logger *slog.Logger) error {
 		Addr:              cfg.HTTPAddr,
 		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
+		// A whole request (uploads up to 25 MB through nginx) within a minute; idle keep-alives do not linger.
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 90 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	go cleanupExpiredSessions(ctx, logger, queries)

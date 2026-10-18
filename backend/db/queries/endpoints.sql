@@ -45,8 +45,8 @@ DELETE FROM endpoint_groups WHERE id = @id AND organization_id = @organization_i
 SELECT em.*, COALESCE(i.name, '')::text AS interface_name, i.device_id AS port_device_id,
        COALESCE(d.hostname, '')::text AS port_hostname
 FROM endpoint_members em
-LEFT JOIN interfaces i ON i.id = em.interface_id
-LEFT JOIN devices d ON d.id = i.device_id AND d.deleted_at IS NULL
+LEFT JOIN interfaces i ON i.id = em.interface_id AND i.organization_id = em.organization_id
+LEFT JOIN devices d ON d.id = i.device_id AND d.organization_id = em.organization_id AND d.deleted_at IS NULL
 WHERE em.organization_id = @organization_id AND em.group_id = @group_id
 ORDER BY em.ip NULLS LAST, lower(em.name);
 

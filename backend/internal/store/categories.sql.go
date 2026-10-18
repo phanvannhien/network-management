@@ -11,41 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const categoryPath = `-- name: CategoryPath :one
-SELECT category_path($1::uuid)::text AS path
-`
-
-func (q *Queries) CategoryPath(ctx context.Context, id pgtype.UUID) (string, error) {
-	row := q.db.QueryRow(ctx, categoryPath, id)
-	var path string
-	err := row.Scan(&path)
-	return path, err
-}
-
-const categorySubtree = `-- name: CategorySubtree :many
-SELECT category_subtree($1::uuid)::uuid AS id
-`
-
-func (q *Queries) CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error) {
-	rows, err := q.db.Query(ctx, categorySubtree, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []pgtype.UUID
-	for rows.Next() {
-		var id pgtype.UUID
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const createCategory = `-- name: CreateCategory :one
 INSERT INTO categories (organization_id, parent_id, code, name, contact_name, contact_phone, contact_email, notes)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

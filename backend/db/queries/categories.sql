@@ -24,12 +24,6 @@ WHERE id = @id AND organization_id = @organization_id AND version = @version;
 -- name: DeleteCategory :execrows
 DELETE FROM categories WHERE id = @id AND organization_id = @organization_id;
 
--- name: CategorySubtree :many
-SELECT category_subtree(@id::uuid)::uuid AS id;
-
--- name: CategoryPath :one
-SELECT category_path(@id::uuid)::text AS path;
-
 -- name: ListSiteCodes :many
 -- Live sites with what their full code is made of, for re-coding after a tree change.
 SELECT id, category_id, local_code, code::text AS code, name FROM sites

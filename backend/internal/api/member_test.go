@@ -195,6 +195,14 @@ func TestRoleRulesAndLastOwner(t *testing.T) {
 	if status, _ := fx.A.Do("DELETE", memberPath(fx.OrgA, fx.A.UserID), nil); status != http.StatusConflict {
 		t.Errorf("last owner leaving: %d, want 409", status)
 	}
+	// A second owner whose account is disabled does not count: nobody could sign in to run the organization.
+	owner2 := fx.NewUser(t, "owner2-a@example.com", false, tenanttest.Member{Org: fx.OrgA, Role: "owner"})
+	if _, err := fx.Pool.Exec(context.Background(), "UPDATE users SET disabled_at = now() WHERE id = $1", owner2.UserID); err != nil {
+		t.Fatal(err)
+	}
+	if s := patch(fx.A, fx.A.UserID, "admin", []string{}); s != http.StatusConflict {
+		t.Errorf("last active owner demoting self next to a disabled owner: %d, want 409", s)
+	}
 	// Stale version → 409.
 	if status, _ := admin.Do("PATCH", memberPath(fx.OrgA, viewer.UserID), map[string]any{"role": "viewer", "permissions": []string{}, "version": 1}); status != http.StatusConflict {
 		t.Errorf("stale version: %d, want 409", status)

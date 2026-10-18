@@ -105,7 +105,7 @@ SELECT s.token_hash, s.csrf_token, s.created_at, s.last_seen_at, s.expires_at, s
        (t.enabled_at IS NOT NULL)::boolean AS mfa_enabled,
        (u.is_system_admin OR EXISTS (
           SELECT 1 FROM memberships m WHERE m.user_id = u.id
-            AND (m.role IN ('owner', 'admin') OR 'credential.reveal' = ANY (m.permissions))
+            AND (m.role IN ('owner', 'admin') OR m.permissions && ARRAY['credential.reveal', 'credential.manage', 'user.manage']::text[])
         ))::boolean AS mfa_required
 FROM sessions s
 JOIN users u ON u.id = s.user_id
@@ -235,13 +235,13 @@ func (q *Queries) InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) 
 
 const recordLoginFailure = `-- name: RecordLoginFailure :one
 UPDATE users
-SET failed_login_count = failed_login_count + 1,
+SET failed_login_count = CASE WHEN locked_until IS NOT NULL THEN 1 ELSE failed_login_count + 1 END,
     locked_until = CASE
-      WHEN failed_login_count + 1 >= $1::int
+      WHEN (CASE WHEN locked_until IS NOT NULL THEN 1 ELSE failed_login_count + 1 END) >= $1::int
         THEN now() + make_interval(secs => $2::int)
-      ELSE locked_until
+      ELSE NULL
     END
-WHERE id = $3
+WHERE id = $3 AND (locked_until IS NULL OR locked_until <= now())
 RETURNING failed_login_count, locked_until
 `
 
@@ -256,7 +256,8 @@ type RecordLoginFailureRow struct {
 	LockedUntil      pgtype.Timestamptz
 }
 
-// Increments the failure counter and locks the account once it reaches the threshold.
+// Counts a failure and locks the account once it reaches the threshold. While locked nothing is counted (no row back),
+// so nobody can keep an account locked forever; once a lock has expired the count starts over.
 func (q *Queries) RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error) {
 	row := q.db.QueryRow(ctx, recordLoginFailure, arg.MaxFailures, arg.LockSeconds, arg.ID)
 	var i RecordLoginFailureRow

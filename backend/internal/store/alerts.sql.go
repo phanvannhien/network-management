@@ -43,26 +43,26 @@ func (q *Queries) AlertAdminEmails(ctx context.Context, organizationID pgtype.UU
 const alertCandidates = `-- name: AlertCandidates :many
 WITH dates AS (
   SELECT d.id, 'warranty'::text AS kind, d.warranty_end AS day FROM devices d
-  WHERE d.organization_id = $3 AND d.warranty_end IS NOT NULL
+  WHERE d.organization_id = $1 AND d.warranty_end IS NOT NULL
   UNION ALL
   SELECT d.id, 'license', d.license_end FROM devices d
-  WHERE d.organization_id = $3 AND d.license_end IS NOT NULL
+  WHERE d.organization_id = $1 AND d.license_end IS NOT NULL
   UNION ALL
   SELECT d.id, 'eos', d.eos_date FROM devices d
-  WHERE d.organization_id = $3 AND d.eos_date IS NOT NULL
+  WHERE d.organization_id = $1 AND d.eos_date IS NOT NULL
 )
 SELECT d.id AS device_id, dates.kind::text AS kind, dates.day::date AS day
 FROM dates
-JOIN devices d ON d.id = dates.id
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN devices d ON d.id = dates.id AND d.organization_id = $1
+JOIN sites s ON s.id = d.site_id AND s.organization_id = $1 AND s.deleted_at IS NULL
 WHERE d.deleted_at IS NULL AND d.lifecycle IN ('active', 'spare') AND NOT d.alerts_muted
-  AND dates.day >= $1::date AND dates.day <= $2::date
+  AND dates.day >= $2::date AND dates.day <= $3::date
 `
 
 type AlertCandidatesParams struct {
+	OrganizationID pgtype.UUID
 	Since          pgtype.Date
 	Until          pgtype.Date
-	OrganizationID pgtype.UUID
 }
 
 type AlertCandidatesRow struct {
@@ -74,7 +74,7 @@ type AlertCandidatesRow struct {
 // Dates of devices in use (or spare) of an organization up to @until; muted devices and retired / planned ones are
 // left out, like the dashboard's expiry block.
 func (q *Queries) AlertCandidates(ctx context.Context, arg AlertCandidatesParams) ([]AlertCandidatesRow, error) {
-	rows, err := q.db.Query(ctx, alertCandidates, arg.Since, arg.Until, arg.OrganizationID)
+	rows, err := q.db.Query(ctx, alertCandidates, arg.OrganizationID, arg.Since, arg.Until)
 	if err != nil {
 		return nil, err
 	}
@@ -482,12 +482,12 @@ SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contr
        COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
        COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place
 FROM notifications n
-LEFT JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
-LEFT JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-LEFT JOIN contracts k ON k.id = n.contract_id AND k.deleted_at IS NULL
-LEFT JOIN vendors v ON v.id = k.vendor_id
-LEFT JOIN credentials c ON c.id = n.credential_id AND c.deleted_at IS NULL
-LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.deleted_at IS NULL
+LEFT JOIN devices d ON d.id = n.device_id AND d.organization_id = n.organization_id AND d.deleted_at IS NULL
+LEFT JOIN sites s ON s.id = d.site_id AND s.organization_id = n.organization_id AND s.deleted_at IS NULL
+LEFT JOIN contracts k ON k.id = n.contract_id AND k.organization_id = n.organization_id AND k.deleted_at IS NULL
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = n.organization_id
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.organization_id = n.organization_id AND c.deleted_at IS NULL
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.organization_id = n.organization_id AND a.deleted_at IS NULL
 WHERE n.organization_id = $1
   AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL OR c.id IS NOT NULL OR a.id IS NOT NULL)
 ORDER BY n.created_at DESC, n.due_date
@@ -688,12 +688,12 @@ SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id, n.cred
                   AND (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END)
                       IS NOT DISTINCT FROM n.due_date END)::boolean AS current
 FROM notifications n
-LEFT JOIN devices d ON d.id = n.device_id
-LEFT JOIN sites s ON s.id = d.site_id
-LEFT JOIN contracts k ON k.id = n.contract_id
-LEFT JOIN vendors v ON v.id = k.vendor_id
-LEFT JOIN credentials c ON c.id = n.credential_id
-LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id
+LEFT JOIN devices d ON d.id = n.device_id AND d.organization_id = n.organization_id
+LEFT JOIN sites s ON s.id = d.site_id AND s.organization_id = n.organization_id
+LEFT JOIN contracts k ON k.id = n.contract_id AND k.organization_id = n.organization_id
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = n.organization_id
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.organization_id = n.organization_id
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.organization_id = n.organization_id
 WHERE n.organization_id = $1 AND n.emailed_at IS NULL
 ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, c.name, a.name, '')), n.kind
 `

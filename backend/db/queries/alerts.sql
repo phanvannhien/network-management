@@ -62,8 +62,8 @@ WITH dates AS (
 )
 SELECT d.id AS device_id, dates.kind::text AS kind, dates.day::date AS day
 FROM dates
-JOIN devices d ON d.id = dates.id
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN devices d ON d.id = dates.id AND d.organization_id = @organization_id
+JOIN sites s ON s.id = d.site_id AND s.organization_id = @organization_id AND s.deleted_at IS NULL
 WHERE d.deleted_at IS NULL AND d.lifecycle IN ('active', 'spare') AND NOT d.alerts_muted
   AND dates.day >= @since::date AND dates.day <= @until::date;
 
@@ -127,12 +127,12 @@ SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id, n.cred
                   AND (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END)
                       IS NOT DISTINCT FROM n.due_date END)::boolean AS current
 FROM notifications n
-LEFT JOIN devices d ON d.id = n.device_id
-LEFT JOIN sites s ON s.id = d.site_id
-LEFT JOIN contracts k ON k.id = n.contract_id
-LEFT JOIN vendors v ON v.id = k.vendor_id
-LEFT JOIN credentials c ON c.id = n.credential_id
-LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id
+LEFT JOIN devices d ON d.id = n.device_id AND d.organization_id = n.organization_id
+LEFT JOIN sites s ON s.id = d.site_id AND s.organization_id = n.organization_id
+LEFT JOIN contracts k ON k.id = n.contract_id AND k.organization_id = n.organization_id
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = n.organization_id
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.organization_id = n.organization_id
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.organization_id = n.organization_id
 WHERE n.organization_id = @organization_id AND n.emailed_at IS NULL
 ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, c.name, a.name, '')), n.kind;
 
@@ -158,12 +158,12 @@ SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contr
        COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
        COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place
 FROM notifications n
-LEFT JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
-LEFT JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-LEFT JOIN contracts k ON k.id = n.contract_id AND k.deleted_at IS NULL
-LEFT JOIN vendors v ON v.id = k.vendor_id
-LEFT JOIN credentials c ON c.id = n.credential_id AND c.deleted_at IS NULL
-LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.deleted_at IS NULL
+LEFT JOIN devices d ON d.id = n.device_id AND d.organization_id = n.organization_id AND d.deleted_at IS NULL
+LEFT JOIN sites s ON s.id = d.site_id AND s.organization_id = n.organization_id AND s.deleted_at IS NULL
+LEFT JOIN contracts k ON k.id = n.contract_id AND k.organization_id = n.organization_id AND k.deleted_at IS NULL
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = n.organization_id
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.organization_id = n.organization_id AND c.deleted_at IS NULL
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.organization_id = n.organization_id AND a.deleted_at IS NULL
 WHERE n.organization_id = @organization_id
   AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL OR c.id IS NOT NULL OR a.id IS NOT NULL)
 ORDER BY n.created_at DESC, n.due_date

@@ -96,7 +96,7 @@ Phase hiện tại: **Phase 0**
 
 ## Phase 2 — Enterprise
 
-- [ ] **P2-01 Review bảo mật nền tảng**: tenant isolation, RBAC, session, CSRF, header, rate limit; cân nhắc Postgres RLS (ADR-016).
+- [x] **P2-01 Review bảo mật nền tảng**: tenant isolation, RBAC, session, CSRF, header, rate limit; cân nhắc Postgres RLS (ADR-016). — xong (ADR-046); RLS, chính sách link mời, step-up MFA cho admin hệ thống: chờ chốt.
 - [x] **P2-02 Kho mật khẩu** (ADR-045; kho ngoài để sau theo người dùng): credentials local (envelope encryption, xoay master key) + external reference (Bitwarden/Vaultwarden, HashiCorp Vault, khác); gắn thiết bị; reveal/copy với quyền + MFA 5 phút + audit; clipboard tự xóa; cảnh báo dùng chung/quá hạn đổi.
 - [x] **P2-03 Tài khoản cloud** (ADR-045): CRUD, liên kết credential, thiết bị được quản lý, người giữ MFA, ngày hết hạn.
 - [x] **P2-04 Nhà cung cấp & hợp đồng** (ADR-044): vendors, vendor_contacts, contracts + đính kèm file; liên kết thiết bị/link WAN; trường mua sắm/hỗ trợ của thiết bị trỏ tới nhà cung cấp/hợp đồng. *(đổi tên từ "Đối tác & hợp đồng" — ADR-031)*

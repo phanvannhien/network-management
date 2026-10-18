@@ -92,6 +92,10 @@ func TestIsSecureOnlyFromTrustedProxy(t *testing.T) {
 	if r.IsSecure(req) {
 		t.Fatal("untrusted X-Forwarded-Proto honoured")
 	}
+	r.ForceSecure = true // NTB_COOKIE_SECURE
+	if !r.IsSecure(req) {
+		t.Fatal("ForceSecure ignored")
+	}
 }
 
 func TestInvalidTrustedProxyCIDR(t *testing.T) {

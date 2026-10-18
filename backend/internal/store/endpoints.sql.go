@@ -411,8 +411,8 @@ const listEndpointMembers = `-- name: ListEndpointMembers :many
 SELECT em.id, em.organization_id, em.group_id, em.name, em.ip, em.mac, em.interface_id, em.notes, em.created_at, em.updated_at, em.version, COALESCE(i.name, '')::text AS interface_name, i.device_id AS port_device_id,
        COALESCE(d.hostname, '')::text AS port_hostname
 FROM endpoint_members em
-LEFT JOIN interfaces i ON i.id = em.interface_id
-LEFT JOIN devices d ON d.id = i.device_id AND d.deleted_at IS NULL
+LEFT JOIN interfaces i ON i.id = em.interface_id AND i.organization_id = em.organization_id
+LEFT JOIN devices d ON d.id = i.device_id AND d.organization_id = em.organization_id AND d.deleted_at IS NULL
 WHERE em.organization_id = $1 AND em.group_id = $2
 ORDER BY em.ip NULLS LAST, lower(em.name)
 `
