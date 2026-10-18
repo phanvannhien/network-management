@@ -2695,6 +2695,7 @@ export const en: Strings = {
     title: 'Reports',
     description:
       'Summaries of the inventory and IPAM to read here or download as Excel for customers / partners. No password is in any report.',
+    auditFailed: 'The file was downloaded but the audit entry failed — tell an administrator.',
     loadFailed: 'The report could not be loaded',
     site: 'Site',
     allSites: 'Every site in scope',

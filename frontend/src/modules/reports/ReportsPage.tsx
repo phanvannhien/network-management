@@ -188,10 +188,11 @@ export function ReportsPage() {
         sheets,
         fileNameOf(`${t(`reports.tabs.${tab}`)} ${site?.code ?? ''}`, 'xlsx'),
       )
-      await api.POST('/orgs/{orgId}/export-events', {
+      const r = await api.POST('/orgs/{orgId}/export-events', {
         params: { ...csrfParam, path: { orgId } },
         body: { kind: EXPORT_KIND[tab], count: rowCount },
       })
+      if (r.error) toast.warning(t('reports.auditFailed'))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('reports.loadFailed'))
     } finally {

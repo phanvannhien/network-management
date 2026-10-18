@@ -2679,6 +2679,7 @@ export const vi = {
     title: 'Báo cáo',
     description:
       'Bảng tổng hợp từ kho thiết bị và IPAM, xem ngay hoặc tải Excel để gửi khách / đối tác. Không có mật khẩu trong báo cáo.',
+    auditFailed: 'Đã tải file nhưng chưa ghi được vào nhật ký — báo quản trị viên.',
     loadFailed: 'Không tải được báo cáo',
     site: 'Site',
     allSites: 'Tất cả site trong phạm vi',

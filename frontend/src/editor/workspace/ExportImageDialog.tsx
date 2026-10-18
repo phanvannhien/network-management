@@ -273,6 +273,11 @@ export function ExportImageDialog({
       toast.error(err instanceof Error ? err.message : t('exportImage.failed'))
     } finally {
       if (dark) root.classList.add('dark')
+      // Views fitted for the capture go: pages never opened before keep no remembered view.
+      const before = new Set(savedViews.map(([k]) => k))
+      for (const k of Object.keys(localStorage))
+        if ((k === prefix || k.startsWith(`${prefix}:`)) && !before.has(k))
+          localStorage.removeItem(k)
       for (const [k, v] of savedViews) if (v !== null) localStorage.setItem(k, v)
       const s = store.getState()
       if (s.page !== startPage) {

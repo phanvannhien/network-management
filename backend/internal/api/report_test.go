@@ -49,6 +49,11 @@ func TestReports(t *testing.T) {
 	port(sw1, "Gi1/0/1", map[string]any{"mode": "access", "accessVlan": 20, "description": "CAM-01"})
 	port(sw1, "Gi1/0/2", map[string]any{}) // free
 	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw1, up1), "b": devEnd(sw2, up2), "kind": "ethernet", "cableId": "C-001"})
+	// A logical link (VPN) on the same port as the cable: the port map shows the cable.
+	mustCreate(t, fx.A, linksPath(org), map[string]any{"a": devEnd(sw1, up1), "b": devEnd(sw2, ""), "kind": "logical"})
+	// Same part number, model spelled differently, same site: one BOQ line, the site column adds up.
+	mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "HN-SW4", "type": "poe_switch", "siteId": hn,
+		"lifecycle": "active", "vendor": "Cisco", "model": "Catalyst 9200L", "partNumber": "C9200L-24P-4G-E "})
 
 	// IP plan: the site's subnet with its VLAN, mask and pool; the category keeps HCM out.
 	status, ip := fx.A.Do("GET", reportPath(org, "ip-plan")+"?categoryId="+catA, nil)
@@ -111,8 +116,16 @@ func TestReports(t *testing.T) {
 			t.Errorf("unmanaged box in the BOQ: %v", l)
 		}
 	}
-	if l := lines["active/C9200L-24P-4G-E"]; l == nil || l["quantity"] != float64(3) || len(l["sites"].([]any)) != 2 {
+	if l := lines["active/C9200L-24P-4G-E"]; l == nil || l["quantity"] != float64(4) || len(l["sites"].([]any)) != 2 {
 		t.Errorf("active line: %v", l)
+	} else {
+		sum := 0.0
+		for _, st := range l["sites"].([]any) {
+			sum += st.(map[string]any)["quantity"].(float64)
+		}
+		if sum != 4 {
+			t.Errorf("site columns add up to %v: %v", sum, l["sites"])
+		}
 	}
 	if l := lines["planned/C9200L-24P-4G-E"]; l == nil || l["quantity"] != float64(1) {
 		t.Errorf("planned line: %v", l)

@@ -158,6 +158,8 @@ describe('report workbooks (P2-11)', () => {
     expect(sheetName('CORE/SW:01', taken)).toBe('CORE-SW-01')
     expect(sheetName('core/sw:01', taken)).toBe('core-sw-01~2')
     expect(sheetName('x'.repeat(40), taken)).toHaveLength(31)
+    expect(sheetName('History', taken)).toBe('History~')
+    expect(sheetName("'SW'", taken)).toBe('SW')
   })
 
   it('expiry: overdue / 30 / 60 / 90-day groups, kinds and status in words', () => {

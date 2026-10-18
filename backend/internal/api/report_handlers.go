@@ -108,9 +108,10 @@ func (s *Server) GetIpPlanReport(ctx context.Context, req apigen.GetIpPlanReport
 	return apigen.GetIpPlanReport200JSONResponse(out), nil
 }
 
-// vlanListHas: whether an allowed-VLAN list ("10,20,30-39") names vid. An empty list means different things per
-// vendor (all VLANs on Cisco, VLAN 1 on Huawei / H3C — GLOSSARY), so it names nothing here.
-func vlanListHas(list string, vid int) bool {
+// vlanSpans parses an allowed-VLAN list ("10,20,30-39") into ranges. An empty list means different things per vendor
+// (all VLANs on Cisco, VLAN 1 on Huawei / H3C — GLOSSARY), so it names nothing here.
+func vlanSpans(list string) [][2]int {
+	var out [][2]int
 	for _, part := range strings.Split(strings.ReplaceAll(list, " ", ""), ",") {
 		lo, hi, isRange := strings.Cut(part, "-")
 		a, err := strconv.Atoi(lo)
@@ -123,7 +124,15 @@ func vlanListHas(list string, vid int) bool {
 				continue
 			}
 		}
-		if vid >= a && vid <= b {
+		out = append(out, [2]int{a, b})
+	}
+	return out
+}
+
+// vlanListHas: whether an allowed-VLAN list names vid.
+func vlanListHas(list string, vid int) bool {
+	for _, sp := range vlanSpans(list) {
+		if vid >= sp[0] && vid <= sp[1] {
 			return true
 		}
 	}
@@ -150,35 +159,78 @@ func (s *Server) GetVlanReport(ctx context.Context, req apigen.GetVlanReportRequ
 	if err != nil {
 		return nil, fmt.Errorf("report vlan ports: %w", err)
 	}
+	// Ports grouped by site, each trunk's allowed list parsed once (an organization may have 100k ports).
+	type trunk struct {
+		native int32
+		spans  [][2]int
+	}
+	type siteVid struct {
+		site pgtype.UUID
+		vid  int32
+	}
+	accessBy := map[siteVid]int{}
+	trunks := map[pgtype.UUID][]trunk{}
+	for _, p := range ports {
+		if p.Mode == "access" {
+			if p.AccessVlan.Valid {
+				accessBy[siteVid{p.SiteID, p.AccessVlan.Int32}]++
+			}
+			continue
+		}
+		t := trunk{native: -1, spans: vlanSpans(p.AllowedVlans)}
+		if p.NativeVlan.Valid {
+			t.native = p.NativeVlan.Int32
+		}
+		trunks[p.SiteID] = append(trunks[p.SiteID], t)
+	}
+	carries := func(t trunk, vid int32) bool {
+		if t.native == vid {
+			return true
+		}
+		for _, sp := range t.spans {
+			if int(vid) >= sp[0] && int(vid) <= sp[1] {
+				return true
+			}
+		}
+		return false
+	}
 	// A site with its own VLAN 10 uses that one; the organization-wide VLAN 10 counts the other sites' ports.
-	own := map[string]bool{}
+	own := map[siteVid]bool{}
 	for _, v := range vlans {
 		if v.SiteID.Valid {
-			own[fmt.Sprintf("%s/%d", uuidStr(v.SiteID), v.Vid)] = true
+			own[siteVid{v.SiteID, v.Vid}] = true
 		}
 	}
 	out := apigen.VlanReport{Vlans: make([]apigen.VlanReportRow, 0, len(vlans))}
 	for _, v := range vlans {
-		access, trunk := 0, 0
-		for _, p := range ports {
-			if v.SiteID.Valid && p.SiteID != v.SiteID {
-				continue
-			}
-			if !v.SiteID.Valid && own[fmt.Sprintf("%s/%d", uuidStr(p.SiteID), v.Vid)] {
-				continue
-			}
-			switch {
-			case p.Mode == "access":
-				if p.AccessVlan.Valid && p.AccessVlan.Int32 == v.Vid {
-					access++
+		access, trunkCount := 0, 0
+		count := func(site pgtype.UUID) {
+			access += accessBy[siteVid{site, v.Vid}]
+			for _, t := range trunks[site] {
+				if carries(t, v.Vid) {
+					trunkCount++
 				}
-			case (p.NativeVlan.Valid && p.NativeVlan.Int32 == v.Vid) || vlanListHas(p.AllowedVlans, int(v.Vid)):
-				trunk++
+			}
+		}
+		if v.SiteID.Valid {
+			count(v.SiteID)
+		} else {
+			sites := map[pgtype.UUID]bool{}
+			for k := range accessBy {
+				sites[k.site] = true
+			}
+			for site := range trunks {
+				sites[site] = true
+			}
+			for site := range sites {
+				if !own[siteVid{site, v.Vid}] {
+					count(site)
+				}
 			}
 		}
 		out.Vlans = append(out.Vlans, apigen.VlanReportRow{
 			Id: uuid.UUID(v.ID.Bytes), Vid: v.Vid, Name: v.Name, Description: v.Description, SiteCode: v.SiteCode,
-			Subnets: v.Subnets, Gateways: v.Gateways, AccessPorts: access, TrunkPorts: trunk,
+			Subnets: v.Subnets, Gateways: v.Gateways, AccessPorts: access, TrunkPorts: trunkCount,
 		})
 	}
 	return apigen.GetVlanReport200JSONResponse(out), nil
@@ -208,15 +260,33 @@ func (s *Server) GetPortMapReport(ctx context.Context, req apigen.GetPortMapRepo
 	if err != nil {
 		return nil, fmt.Errorf("report port links: %w", err)
 	}
-	// The far end of each cabled port.
+	// The far end of each cabled port. A cable wins over a logical link on the same port (a VPN bound to the WAN port
+	// is not what is plugged in); several cables (a PON port's ONTs) are listed together.
 	type far struct{ kind, name, port, cable, linkKind, status string }
 	peer := map[pgtype.UUID]far{}
+	add := func(port pgtype.UUID, f far) {
+		cur, ok := peer[port]
+		switch {
+		case !ok || (cur.linkKind == "logical" && f.linkKind != "logical"):
+			peer[port] = f
+		case f.linkKind == "logical" || cur.linkKind == "logical":
+		default:
+			cur.name += ", " + f.name
+			if f.port != "" {
+				cur.port = strings.TrimPrefix(cur.port+", "+f.port, ", ")
+			}
+			if f.cable != "" {
+				cur.cable = strings.TrimPrefix(cur.cable+", "+f.cable, ", ")
+			}
+			peer[port] = cur
+		}
+	}
 	for _, l := range links {
 		if l.AInterfaceID.Valid {
-			peer[l.AInterfaceID] = far{l.BKind, l.BName, l.BPort, l.CableID, l.Kind, l.Status}
+			add(l.AInterfaceID, far{l.BKind, l.BName, l.BPort, l.CableID, l.Kind, l.Status})
 		}
 		if l.BInterfaceID.Valid {
-			peer[l.BInterfaceID] = far{l.AKind, l.AName, l.APort, l.CableID, l.Kind, l.Status}
+			add(l.BInterfaceID, far{l.AKind, l.AName, l.APort, l.CableID, l.Kind, l.Status})
 		}
 	}
 	out := apigen.PortMapReport{Devices: []apigen.PortMapDevice{}}
@@ -260,9 +330,10 @@ func (s *Server) GetBoqReport(ctx context.Context, req apigen.GetBoqReportReques
 	out := apigen.BoqReport{Lines: []apigen.BoqLine{}}
 	index := map[string]int{}
 	for _, r := range rows {
-		item := strings.ToLower(r.Vendor) + "\x00" + strings.ToLower(r.PartNumber)
-		if r.PartNumber == "" {
-			item = strings.ToLower(r.Vendor) + "\x00\x00" + strings.ToLower(r.Model) + "\x00" + r.Type
+		norm := func(v string) string { return strings.ToLower(strings.TrimSpace(v)) }
+		item := norm(r.Vendor) + "\x00" + norm(r.PartNumber)
+		if norm(r.PartNumber) == "" {
+			item = norm(r.Vendor) + "\x00\x00" + norm(r.Model) + "\x00" + r.Type
 		}
 		key := r.Lifecycle + "\x00" + item
 		i, ok := index[key]
@@ -283,10 +354,20 @@ func (s *Server) GetBoqReport(ctx context.Context, req apigen.GetBoqReportReques
 		}
 		l.Quantity += int(r.Quantity)
 		l.Clustered += int(r.Clustered)
-		l.Sites = append(l.Sites, struct {
-			Quantity int    `json:"quantity"`
-			SiteCode string `json:"siteCode"`
-		}{int(r.Quantity), r.SiteCode})
+		// Rows of one item can differ in model spelling: add up per site.
+		merged := false
+		for k := range l.Sites {
+			if l.Sites[k].SiteCode == r.SiteCode {
+				l.Sites[k].Quantity += int(r.Quantity)
+				merged = true
+			}
+		}
+		if !merged {
+			l.Sites = append(l.Sites, struct {
+				Quantity int    `json:"quantity"`
+				SiteCode string `json:"siteCode"`
+			}{int(r.Quantity), r.SiteCode})
+		}
 	}
 	return apigen.GetBoqReport200JSONResponse(out), nil
 }

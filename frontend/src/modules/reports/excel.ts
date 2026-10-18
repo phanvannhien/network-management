@@ -23,9 +23,17 @@ export interface SheetData {
 type Cell = string | number
 type Col = keyof (typeof vi)['reports']['cols']
 
-/** Excel sheet names: ≤ 31 characters, none of []:*?/\, unique in the workbook. */
+/**
+ * Excel sheet names: ≤ 31 characters, none of []:*?/\, no quote at either end, not "History" (reserved), unique in
+ * the workbook.
+ */
 export function sheetName(raw: string, taken: Set<string>): string {
-  const base = raw.replace(/[[\]:*?/\\]/g, '-').slice(0, 31) || 'Sheet'
+  let base =
+    raw
+      .replace(/[[\]:*?/\\]/g, '-')
+      .replace(/^'+|'+$/g, '')
+      .slice(0, 31) || 'Sheet'
+  if (base.toLowerCase() === 'history') base = `${base}~`
   let name = base
   for (let i = 2; taken.has(name.toLowerCase()); i++)
     name = `${base.slice(0, 31 - `~${i}`.length)}~${i}`
