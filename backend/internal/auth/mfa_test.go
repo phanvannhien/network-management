@@ -187,3 +187,51 @@ func TestMFASecretBoundToUser(t *testing.T) {
 		t.Fatal("seed copied from another user was accepted")
 	}
 }
+
+// Someone holding the password cannot reset the wrong-code count by signing in again: the count only resets after a
+// right code, so enough wrong codes across sign-ins lock the account and end its sessions.
+func TestMFAFailuresSurviveNewSignIn(t *testing.T) {
+	svc, q, _ := newTestService(t)
+	ctx := context.Background()
+	clock := time.Now()
+	svc.now = func() time.Time { return clock }
+	for _, l := range []*RateLimiter{svc.idLimit, svc.ipLimit, svc.mfaLimit} {
+		l.now = func() time.Time { return clock }
+	}
+	user, _ := svc.CreateUser(ctx, "g@example.com", "G", "a-strong-password", false)
+	sess := loginAs(t, svc, "g@example.com", "a-strong-password")
+	setup, err := svc.SetupTOTP(ctx, sess, meta)
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if _, err := svc.EnableTOTP(ctx, sess, codeAt(t, setup.Secret, clock), meta); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	wrong := func(s Session, n int) {
+		for i := 0; i < n; i++ {
+			clock = clock.Add(time.Minute)
+			if err := svc.VerifyMFA(ctx, s, "000000", "", meta); !errors.Is(err, ErrInvalidMFACode) {
+				t.Fatalf("wrong code: %v", err)
+			}
+		}
+	}
+	clock = clock.Add(time.Minute)
+	wrong(loginAs(t, svc, "g@example.com", "a-strong-password"), MaxFailedLogins-1)
+	clock = clock.Add(time.Minute)
+	res, err := svc.Login(ctx, "g@example.com", "a-strong-password", meta)
+	if err != nil {
+		t.Fatalf("second sign-in: %v", err)
+	}
+	if u, _ := q.GetUserByID(ctx, user.ID); u.FailedLoginCount != int32(MaxFailedLogins-1) {
+		t.Fatalf("signing in reset the wrong-code count: %d", u.FailedLoginCount)
+	}
+	second, _ := svc.Lookup(ctx, res.Token)
+	wrong(second, 1)
+	if _, err := svc.Lookup(ctx, res.Token); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("session survived the MFA lockout: %v", err)
+	}
+	clock = clock.Add(time.Minute)
+	if _, err := svc.Login(ctx, "g@example.com", "a-strong-password", meta); !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("locked account signed in: %v", err)
+	}
+}

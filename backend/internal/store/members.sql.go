@@ -113,22 +113,25 @@ func (q *Queries) CountActiveSystemAdmins(ctx context.Context) (int64, error) {
 }
 
 const countOtherActiveOwners = `-- name: CountOtherActiveOwners :one
-SELECT count(*) FROM (
-  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id AND u.disabled_at IS NULL
-  WHERE m.organization_id = $1 AND m.role = 'owner' AND m.user_id <> $2
+SELECT count(*) FILTER (WHERE owners.user_id <> $1::uuid AND owners.active)::bigint AS count FROM (
+  SELECT m.user_id, (u.disabled_at IS NULL AND u.password_hash <> '') AS active
+  FROM memberships m JOIN users u ON u.id = m.user_id
+  WHERE m.organization_id = $2::uuid AND m.role = 'owner'
+  ORDER BY m.user_id
   FOR UPDATE OF m
-) o
+) AS owners
 `
 
 type CountOtherActiveOwnersParams struct {
-	OrganizationID pgtype.UUID
 	UserID         pgtype.UUID
+	OrganizationID pgtype.UUID
 }
 
-// Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
-// the same time cannot leave the organization without one.
+// Owners left besides @user_id whose account is active (signed up, not disabled). Every owner row is locked, in one
+// order, so two owners demoting each other at the same time wait for each other instead of leaving the organization
+// without one (or deadlocking).
 func (q *Queries) CountOtherActiveOwners(ctx context.Context, arg CountOtherActiveOwnersParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countOtherActiveOwners, arg.OrganizationID, arg.UserID)
+	row := q.db.QueryRow(ctx, countOtherActiveOwners, arg.UserID, arg.OrganizationID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

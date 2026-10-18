@@ -205,7 +205,7 @@ func (s *Service) VerifyMFA(ctx context.Context, sess Session, code, recoveryCod
 	if !ok {
 		s.audit(ctx, sess.UserID, "mfa.verify_failed", sess.Email, meta)
 		// Wrong codes count like wrong passwords: enough of them lock the account and end its sessions.
-		if _, err := s.recordFailure(ctx, sess.UserID); err != nil {
+		if _, err := s.recordFailure(ctx, sess.UserID, true); err != nil {
 			return err
 		}
 		return ErrInvalidMFACode
@@ -248,7 +248,7 @@ func (s *Service) DisableTOTP(ctx context.Context, sess Session, code string, me
 	}
 	if !match {
 		s.audit(ctx, sess.UserID, "mfa.disable_failed", sess.Email, meta)
-		if _, err := s.recordFailure(ctx, sess.UserID); err != nil {
+		if _, err := s.recordFailure(ctx, sess.UserID, true); err != nil {
 			return err
 		}
 		return ErrInvalidMFACode

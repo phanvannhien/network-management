@@ -22,13 +22,16 @@ LEFT JOIN mfa_totp t ON t.user_id = u.id
 WHERE m.organization_id = $1 AND m.user_id = $2;
 
 -- name: CountOtherActiveOwners :one
--- Owners left besides @user_id whose account is active. Their rows are locked so two owners demoting each other at
--- the same time cannot leave the organization without one.
-SELECT count(*) FROM (
-  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id AND u.disabled_at IS NULL
-  WHERE m.organization_id = @organization_id AND m.role = 'owner' AND m.user_id <> @user_id
+-- Owners left besides @user_id whose account is active (signed up, not disabled). Every owner row is locked, in one
+-- order, so two owners demoting each other at the same time wait for each other instead of leaving the organization
+-- without one (or deadlocking).
+SELECT count(*) FILTER (WHERE owners.user_id <> @user_id::uuid AND owners.active)::bigint AS count FROM (
+  SELECT m.user_id, (u.disabled_at IS NULL AND u.password_hash <> '') AS active
+  FROM memberships m JOIN users u ON u.id = m.user_id
+  WHERE m.organization_id = @organization_id::uuid AND m.role = 'owner'
+  ORDER BY m.user_id
   FOR UPDATE OF m
-) o;
+) AS owners;
 
 -- name: UpdateMembership :one
 UPDATE memberships

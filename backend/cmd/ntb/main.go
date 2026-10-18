@@ -132,9 +132,10 @@ func serve(logger *slog.Logger) error {
 		Addr:              cfg.HTTPAddr,
 		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
-		// A whole request (uploads up to 25 MB through nginx) within a minute; idle keep-alives do not linger.
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 90 * time.Second,
+		// Headers must come fast (slow-header clients are cut off); a whole upload / download (contract files up to
+		// 25 MB) gets 5 minutes, enough over a slow site VPN. Idle keep-alives do not linger.
+		ReadTimeout:  5 * time.Minute,
+		WriteTimeout: 5 * time.Minute,
 		IdleTimeout:  120 * time.Second,
 	}
 

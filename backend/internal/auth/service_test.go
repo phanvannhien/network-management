@@ -49,6 +49,10 @@ func TestLockoutAfterRepeatedFailures(t *testing.T) {
 	clock := time.Now()
 	svc.idLimit.now = func() time.Time { return clock }
 	svc.ipLimit.now = func() time.Time { return clock }
+	live, err := svc.Login(ctx, "lock@example.com", "a-strong-password", meta)
+	if err != nil {
+		t.Fatalf("login: %v", err)
+	}
 
 	for i := 0; i < MaxFailedLogins; i++ {
 		clock = clock.Add(time.Minute)
@@ -59,6 +63,10 @@ func TestLockoutAfterRepeatedFailures(t *testing.T) {
 	clock = clock.Add(time.Minute)
 	if _, err := svc.Login(ctx, "lock@example.com", "a-strong-password", meta); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("locked account accepted the correct password: %v", err)
+	}
+	// Wrong passwords from someone else do not sign the owner out (only wrong MFA codes end sessions).
+	if _, err := svc.Lookup(ctx, live.Token); err != nil {
+		t.Fatalf("password lockout ended an existing session: %v", err)
 	}
 
 	// Simulate the lock expiring; the correct password works again and the counter resets.

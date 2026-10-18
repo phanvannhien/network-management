@@ -720,16 +720,17 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - nginx: CSP chặt (`script-src 'self'`; chỉ `style-src` có `'unsafe-inline'` vì thư viện vẽ sơ đồ ghi style trực tiếp), `frame-ancestors 'none'`, HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP / CORP; `server_tokens off`;
     - API: mọi phản hồi `Cache-Control: no-store`, nosniff, CSP `default-src 'none'`.
     - Đã kiểm tra trên bản build production: không có vi phạm CSP ở dashboard, kho mật khẩu, nhà cung cấp, màn vẽ, xuất PNG.
-  - **Giới hạn request:** body tối đa 4 MiB (import / file hợp đồng 26 MiB); timeout đọc 60 giây, ghi 90 giây, nghỉ 120 giây.
+  - **Giới hạn request:** body tối đa 4 MiB (import / file hợp đồng 26 MiB), vượt thì trả 413; header phải tới trong 10 giây, cả request / phản hồi tối đa 5 phút (đủ cho file 25 MB qua VPN chậm).
   - **Log không chứa token:** link mời / đặt lại mật khẩu bị cắt trong log nginx và log API.
   - **Khóa ngoại cùng tổ chức** (migration 027): mọi tham chiếu giữa bảng nghiệp vụ dùng khóa ghép `(id, organization_id)`. Dù code có lỗi, DB cũng không cho dòng của tổ chức A trỏ sang tổ chức B. Join theo id còn lại được thêm điều kiện tổ chức.
   - **Khóa tài khoản:**
-    - sai mã MFA tính như sai mật khẩu; đủ số lần thì khóa và đăng xuất mọi phiên;
+    - sai mã MFA tính như sai mật khẩu; đủ số lần thì khóa. Khóa vì sai **mã MFA** thì đăng xuất mọi phiên; khóa vì sai **mật khẩu** chỉ chặn đăng nhập mới (để người biết email không đá chủ tài khoản ra được);
+    - tài khoản có MFA: đăng nhập đúng mật khẩu **không** xóa bộ đếm, chỉ nhập đúng mã MFA mới xóa (đăng nhập lại không giúp đoán mã tiếp);
     - đang bị khóa thì không đếm thêm, hết khóa thì đếm lại từ đầu;
     - bật / tắt MFA có giới hạn riêng 5 lần / phút, không chung với lần nhập mã khi đăng nhập.
   - **Link mời / đặt lại mật khẩu:** giới hạn theo IP, mật khẩu từ 12 đến 1024 ký tự (chặn hash chuỗi khổng lồ).
   - **MFA bắt buộc** thêm cho người có quyền `credential.reveal`, `credential.manage`, `user.manage`.
-  - **Owner cuối cùng:** chỉ tính owner còn hoạt động; khóa dòng khi đếm để hai owner không hạ quyền nhau cùng lúc.
+  - **Owner cuối cùng:** chỉ tính owner còn hoạt động (đã kích hoạt, không bị khóa); khóa mọi dòng owner theo một thứ tự khi đếm, để hai owner hạ quyền nhau cùng lúc phải chờ nhau (không mất owner, không deadlock).
   - **Import `.ntb.json`:** site đích phải là site còn sống của tổ chức, nếu không thì trả 400.
   - **Cấu hình triển khai:**
     - `POSTGRES_PASSWORD` bắt buộc;

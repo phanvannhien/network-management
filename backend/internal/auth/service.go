@@ -147,14 +147,18 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 		s.audit(ctx, user.ID, "auth.login_failed", user.Email, meta)
 		return LoginResult{}, ErrInvalidCredentials
 	}
-	ok, err := VerifyPassword(password, user.PasswordHash)
-	if err != nil {
-		return LoginResult{}, fmt.Errorf("verify password: %w", err)
+	ok := false
+	if len(password) <= MaxPasswordLength {
+		if ok, err = VerifyPassword(password, user.PasswordHash); err != nil {
+			return LoginResult{}, fmt.Errorf("verify password: %w", err)
+		}
 	}
 	locked := user.LockedUntil.Valid && user.LockedUntil.Time.After(s.now())
 	if !ok || locked || user.DisabledAt.Valid {
 		if !ok && !locked {
-			if _, err := s.recordFailure(ctx, user.ID); err != nil {
+			// Wrong passwords lock new sign-ins only: ending the sessions too would let anyone who knows an e-mail
+			// sign its owner out every 15 minutes.
+			if _, err := s.recordFailure(ctx, user.ID, false); err != nil {
 				return LoginResult{}, err
 			}
 		}
@@ -162,9 +166,6 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
-	if err := s.q.ResetLoginFailures(ctx, user.ID); err != nil {
-		return LoginResult{}, fmt.Errorf("reset login failures: %w", err)
-	}
 	token, err := NewToken()
 	if err != nil {
 		return LoginResult{}, err
@@ -194,7 +195,14 @@ func (s *Service) Login(ctx context.Context, email, password string, meta Reques
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("load new session: %w", err)
 	}
-	return LoginResult{Token: token, Session: sessionFromRow(row)}, nil
+	sess := sessionFromRow(row)
+	// With MFA the count is reset once the code is right (VerifyMFA): signing in again must not wipe the wrong codes.
+	if !sess.MFAEnabled {
+		if err := s.q.ResetLoginFailures(ctx, user.ID); err != nil {
+			return LoginResult{}, fmt.Errorf("reset login failures: %w", err)
+		}
+	}
+	return LoginResult{Token: token, Session: sess}, nil
 }
 
 // Lookup resolves a cookie token to a live session and slides its idle expiry (capped by SessionAbsolute).
@@ -269,9 +277,9 @@ func (s *Service) audit(ctx context.Context, actor pgtype.UUID, action, email st
 // Keyring is the envelope-encryption keyring of the installation (other stored secrets use it too: SMTP password).
 func (s *Service) Keyring() *secrets.Keyring { return s.keys }
 
-// recordFailure counts a failed password or MFA code; true when it just locked the account (its sessions are then
-// ended, so a stolen session cannot keep guessing MFA codes).
-func (s *Service) recordFailure(ctx context.Context, user pgtype.UUID) (bool, error) {
+// recordFailure counts a failed password or MFA code; true when it just locked the account. endSessions (wrong MFA
+// codes) also ends the account's sessions then, so a stolen session cannot keep guessing codes.
+func (s *Service) recordFailure(ctx context.Context, user pgtype.UUID, endSessions bool) (bool, error) {
 	r, err := s.q.RecordLoginFailure(ctx, store.RecordLoginFailureParams{
 		ID: user, MaxFailures: MaxFailedLogins, LockSeconds: int32(LockDuration / time.Second),
 	})
@@ -281,8 +289,8 @@ func (s *Service) recordFailure(ctx context.Context, user pgtype.UUID) (bool, er
 	if err != nil {
 		return false, fmt.Errorf("record login failure: %w", err)
 	}
-	if !r.LockedUntil.Valid {
-		return false, nil
+	if !r.LockedUntil.Valid || !endSessions {
+		return r.LockedUntil.Valid, nil
 	}
 	if err := s.q.DeleteUserSessions(ctx, user); err != nil {
 		return true, fmt.Errorf("end sessions of locked account: %w", err)

@@ -2,6 +2,7 @@
 package api
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -34,12 +35,16 @@ func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResol
 	strict := apigen.NewStrictHandlerWithOptions(server, nil, apigen.StrictHTTPServerOptions{
 		// Malformed JSON / params: generic 400, no parser internals echoed back.
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			logger.InfoContext(r.Context(), "bad request", "error", err, "path", r.URL.Path)
+			logger.InfoContext(r.Context(), "bad request", "error", err, "path", redactPath(r.URL.Path))
+			if tooBig := (*http.MaxBytesError)(nil); errors.As(err, &tooBig) {
+				writeError(w, http.StatusRequestEntityTooLarge, "Dữ liệu gửi lên quá lớn")
+				return
+			}
 			writeError(w, http.StatusBadRequest, "Yêu cầu không hợp lệ")
 		},
 		// Handler errors: log the detail, return a generic 500 (never leak DB errors to clients).
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			logger.ErrorContext(r.Context(), "handler error", "error", err, "path", r.URL.Path)
+			logger.ErrorContext(r.Context(), "handler error", "error", err, "path", redactPath(r.URL.Path))
 			writeError(w, http.StatusInternalServerError, "Lỗi máy chủ")
 		},
 	})
@@ -48,7 +53,7 @@ func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResol
 		BaseRouter: r,
 		// Bad path / query parameters: logged, a generic answer (no binder internals echoed back).
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			logger.InfoContext(r.Context(), "bad parameter", "error", err, "path", r.URL.Path)
+			logger.InfoContext(r.Context(), "bad parameter", "error", err, "path", redactPath(r.URL.Path))
 			writeError(w, http.StatusBadRequest, "Tham số không hợp lệ")
 		},
 	})
