@@ -9,7 +9,7 @@ export type VlanReportRow = components['schemas']['VlanReportRow']
 export type PortMapDevice = components['schemas']['PortMapDevice']
 export type BoqLine = components['schemas']['BoqLine']
 
-export type ReportKind = 'ip-plan' | 'vlans' | 'port-map' | 'boq'
+export type ReportKind = 'ip-plan' | 'vlans' | 'port-map' | 'boq' | 'missing-info' | 'inventory'
 
 export interface ReportScope {
   categoryId: string | null
@@ -76,6 +76,46 @@ export function useBoqReport(orgId: string, scope: ReportScope, enabled = true) 
       params: { path: { orgId }, query: query(scope) },
     })
     if (r.data) return r.data.lines
+    fail(r.error, r.response.status)
+  })
+}
+
+export type ExpiringReport = components['schemas']['ExpiringReport']
+export type ExpiringItem = components['schemas']['ExpiringItem']
+export type MissingInfoRow = components['schemas']['MissingInfoRow']
+export type InventoryRow = components['schemas']['InventoryRow']
+
+export function useExpiringReport(orgId: string, scope: ReportScope, days: number, enabled = true) {
+  return useQuery({
+    queryKey: ['orgs', orgId, 'reports', 'expiring', scope.categoryId, scope.siteId, days],
+    enabled: enabled && orgId !== '',
+    staleTime: 30_000,
+    queryFn: async () => {
+      const r = await api.GET('/orgs/{orgId}/reports/expiring', {
+        params: { path: { orgId }, query: { ...query(scope), days } },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status)
+    },
+  })
+}
+
+export function useMissingInfoReport(orgId: string, scope: ReportScope, enabled = true) {
+  return useReport(orgId, 'missing-info', scope, enabled, async () => {
+    const r = await api.GET('/orgs/{orgId}/reports/missing-info', {
+      params: { path: { orgId }, query: query(scope) },
+    })
+    if (r.data) return r.data.devices
+    fail(r.error, r.response.status)
+  })
+}
+
+export function useInventoryReport(orgId: string, scope: ReportScope, enabled = true) {
+  return useReport(orgId, 'inventory', scope, enabled, async () => {
+    const r = await api.GET('/orgs/{orgId}/reports/inventory', {
+      params: { path: { orgId }, query: query(scope) },
+    })
+    if (r.data) return r.data.rows
     fail(r.error, r.response.status)
   })
 }

@@ -76,23 +76,15 @@ func (s *Server) GetDashboard(ctx context.Context, req apigen.GetDashboardReques
 		out.ByType = append(out.ByType, apigen.DashboardTypeCount{Type: apigen.DeviceType(r.Type), Count: int(r.Total)})
 	}
 
-	missing, err := s.q.DashboardMissingInfo(ctx, store.DashboardMissingInfoParams{OrganizationID: org, CategoryFilter: cat, Lim: missingShown})
+	missing, err := s.q.DashboardMissingInfo(ctx, store.DashboardMissingInfoParams{OrganizationID: org, CategoryFilter: cat, Lim: pgtype.Int4{Int32: missingShown, Valid: true}})
 	if err != nil {
 		return nil, fmt.Errorf("dashboard missing info: %w", err)
 	}
 	for _, r := range missing {
 		t.MissingInfo = int(r.Total)
 		var what []apigen.DashboardMissingMissing
-		for _, x := range []struct {
-			on   bool
-			name apigen.DashboardMissingMissing
-		}{
-			{r.NoSerial, apigen.DashboardMissingMissingSerial}, {r.NoPart, apigen.DashboardMissingMissingPartNumber},
-			{r.NoModel, apigen.DashboardMissingMissingModel}, {r.NoLocation, apigen.DashboardMissingMissingLocation},
-		} {
-			if x.on {
-				what = append(what, x.name)
-			}
+		for _, f := range missingFields(r) {
+			what = append(what, apigen.DashboardMissingMissing(f))
 		}
 		out.MissingInfo = append(out.MissingInfo, apigen.DashboardMissing{Id: uuid.UUID(r.ID.Bytes), Hostname: r.Hostname, SiteCode: r.SiteCode, Missing: what})
 	}
@@ -215,4 +207,19 @@ func (s *Server) dashboardProblems(ctx context.Context, org, cat pgtype.UUID) ([
 		add(apigen.DashboardProblem{Kind: apigen.NoMgmt, Severity: apigen.DashboardProblemSeverityInfo, Count: int(counts.NoMgmt)})
 	}
 	return append(append(append([]apigen.DashboardProblem{}, errs...), warns...), infos...), nil
+}
+
+// missingFields names what a device lacks (ADR-052): serial, model (no model and no part number), location.
+func missingFields(r store.DashboardMissingInfoRow) []string {
+	var out []string
+	if r.NoSerial {
+		out = append(out, "serial")
+	}
+	if r.NoModel {
+		out = append(out, "model")
+	}
+	if r.NoLocation {
+		out = append(out, "location")
+	}
+	return out
 }

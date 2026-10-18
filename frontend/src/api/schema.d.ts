@@ -887,6 +887,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/reports/expiring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Expiry report (P2-11) — warranty / licence / end-of-support of devices in use or spare, and contracts, overdue or within the window */
+        get: operations["getExpiringReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/missing-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Missing information (P2-11, ADR-052) — devices in use lacking S/N, model / part number or location */
+        get: operations["getMissingInfoReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Device counts (P2-11) by site / type / vendor / status */
+        get: operations["getInventoryReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/design-templates/preview": {
         parameters: {
             query?: never;
@@ -3905,7 +3965,7 @@ export interface components {
         };
         ExportEvent: {
             /** @enum {string} */
-            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb" | "diagram_pdf" | "ipplan_xlsx" | "vlans_xlsx" | "portmap_xlsx" | "boq_xlsx";
+            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb" | "diagram_pdf" | "ipplan_xlsx" | "vlans_xlsx" | "portmap_xlsx" | "boq_xlsx" | "expiring_xlsx" | "missing_xlsx" | "inventory_xlsx";
             /**
              * Format: uuid
              * @description the exported diagram (diagram_png / diagram_svg / diagram_pdf)
@@ -4087,6 +4147,61 @@ export interface components {
                 siteCode: string;
                 quantity: number;
             }[];
+        };
+        ExpiringReport: {
+            /** Format: date */
+            today: string;
+            items: components["schemas"]["ExpiringItem"][];
+        };
+        ExpiringItem: {
+            /** @enum {string} */
+            kind: "warranty" | "license" | "eos" | "contract";
+            /**
+             * Format: uuid
+             * @description the device
+             */
+            subjectId: string;
+            /** @description hostname or contract name */
+            subject: string;
+            /** @description device: vendor model; contract: number */
+            detail: string;
+            /** @description '' for a contract */
+            siteCode: string;
+            /** @description device status; '' for a contract */
+            lifecycle: string;
+            /** @description reminders muted for the device */
+            muted: boolean;
+            /** @description device supplier / contract vendor */
+            vendor: string;
+            /** Format: date */
+            date: string;
+            /** @description days from today (negative = overdue) */
+            days: number;
+        };
+        MissingInfoReport: {
+            devices: components["schemas"]["MissingInfoRow"][];
+        };
+        MissingInfoRow: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            vendor: string;
+            model: string;
+            siteCode: string;
+            missing: ("serial" | "model" | "location")[];
+        };
+        InventoryReport: {
+            rows: components["schemas"]["InventoryRow"][];
+        };
+        InventoryRow: {
+            siteCode: string;
+            siteName: string;
+            type: components["schemas"]["DeviceType"];
+            vendor: string;
+            /** @enum {string} */
+            lifecycle: "planned" | "active" | "spare" | "rma" | "retired";
+            quantity: number;
         };
         Dashboard: {
             /** Format: date-time */
@@ -7186,6 +7301,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoqReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getExpiringReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+                /** @description window ahead (default 90); overdue dates are always in */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpiringReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getMissingInfoReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissingInfoReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getInventoryReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryReport"];
                 };
             };
             400: components["responses"]["BadRequest"];

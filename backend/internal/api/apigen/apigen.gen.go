@@ -904,17 +904,44 @@ func (e EndpointKind) Valid() bool {
 	}
 }
 
+// Defines values for ExpiringItemKind.
+const (
+	ExpiringItemKindContract ExpiringItemKind = "contract"
+	ExpiringItemKindEos      ExpiringItemKind = "eos"
+	ExpiringItemKindLicense  ExpiringItemKind = "license"
+	ExpiringItemKindWarranty ExpiringItemKind = "warranty"
+)
+
+// Valid indicates whether the value is a known member of the ExpiringItemKind enum.
+func (e ExpiringItemKind) Valid() bool {
+	switch e {
+	case ExpiringItemKindContract:
+		return true
+	case ExpiringItemKindEos:
+		return true
+	case ExpiringItemKindLicense:
+		return true
+	case ExpiringItemKindWarranty:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExportEventKind.
 const (
-	BoqXlsx     ExportEventKind = "boq_xlsx"
-	DevicesXlsx ExportEventKind = "devices_xlsx"
-	DiagramNtb  ExportEventKind = "diagram_ntb"
-	DiagramPdf  ExportEventKind = "diagram_pdf"
-	DiagramPng  ExportEventKind = "diagram_png"
-	DiagramSvg  ExportEventKind = "diagram_svg"
-	IpplanXlsx  ExportEventKind = "ipplan_xlsx"
-	PortmapXlsx ExportEventKind = "portmap_xlsx"
-	VlansXlsx   ExportEventKind = "vlans_xlsx"
+	BoqXlsx       ExportEventKind = "boq_xlsx"
+	DevicesXlsx   ExportEventKind = "devices_xlsx"
+	DiagramNtb    ExportEventKind = "diagram_ntb"
+	DiagramPdf    ExportEventKind = "diagram_pdf"
+	DiagramPng    ExportEventKind = "diagram_png"
+	DiagramSvg    ExportEventKind = "diagram_svg"
+	ExpiringXlsx  ExportEventKind = "expiring_xlsx"
+	InventoryXlsx ExportEventKind = "inventory_xlsx"
+	IpplanXlsx    ExportEventKind = "ipplan_xlsx"
+	MissingXlsx   ExportEventKind = "missing_xlsx"
+	PortmapXlsx   ExportEventKind = "portmap_xlsx"
+	VlansXlsx     ExportEventKind = "vlans_xlsx"
 )
 
 // Valid indicates whether the value is a known member of the ExportEventKind enum.
@@ -932,7 +959,13 @@ func (e ExportEventKind) Valid() bool {
 		return true
 	case DiagramSvg:
 		return true
+	case ExpiringXlsx:
+		return true
+	case InventoryXlsx:
+		return true
 	case IpplanXlsx:
+		return true
+	case MissingXlsx:
 		return true
 	case PortmapXlsx:
 		return true
@@ -1159,6 +1192,33 @@ func (e InterfaceUpdateDuplex) Valid() bool {
 	case InterfaceUpdateDuplexFull:
 		return true
 	case InterfaceUpdateDuplexHalf:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InventoryRowLifecycle.
+const (
+	InventoryRowLifecycleActive  InventoryRowLifecycle = "active"
+	InventoryRowLifecyclePlanned InventoryRowLifecycle = "planned"
+	InventoryRowLifecycleRetired InventoryRowLifecycle = "retired"
+	InventoryRowLifecycleRma     InventoryRowLifecycle = "rma"
+	InventoryRowLifecycleSpare   InventoryRowLifecycle = "spare"
+)
+
+// Valid indicates whether the value is a known member of the InventoryRowLifecycle enum.
+func (e InventoryRowLifecycle) Valid() bool {
+	switch e {
+	case InventoryRowLifecycleActive:
+		return true
+	case InventoryRowLifecyclePlanned:
+		return true
+	case InventoryRowLifecycleRetired:
+		return true
+	case InventoryRowLifecycleRma:
+		return true
+	case InventoryRowLifecycleSpare:
 		return true
 	default:
 		return false
@@ -1441,6 +1501,27 @@ func (e LocationKind) Valid() bool {
 	case Floor:
 		return true
 	case Room:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MissingInfoRowMissing.
+const (
+	MissingInfoRowMissingLocation MissingInfoRowMissing = "location"
+	MissingInfoRowMissingModel    MissingInfoRowMissing = "model"
+	MissingInfoRowMissingSerial   MissingInfoRowMissing = "serial"
+)
+
+// Valid indicates whether the value is a known member of the MissingInfoRowMissing enum.
+func (e MissingInfoRowMissing) Valid() bool {
+	switch e {
+	case MissingInfoRowMissingLocation:
+		return true
+	case MissingInfoRowMissingModel:
+		return true
+	case MissingInfoRowMissingSerial:
 		return true
 	default:
 		return false
@@ -2618,7 +2699,7 @@ type DashboardMissing struct {
 	SiteCode string                    `json:"siteCode"`
 }
 
-// DashboardMissingMissing defines model for DashboardMissing.Missing.
+// DashboardMissingMissing model = neither model nor part number (ADR-052); partNumber is no longer reported
 type DashboardMissingMissing string
 
 // DashboardProblem defines model for DashboardProblem.
@@ -3613,6 +3694,45 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// ExpiringItem defines model for ExpiringItem.
+type ExpiringItem struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Days days from today (negative = overdue)
+	Days int `json:"days"`
+
+	// Detail device: vendor model; contract: number
+	Detail string           `json:"detail"`
+	Kind   ExpiringItemKind `json:"kind"`
+
+	// Lifecycle device status; '' for a contract
+	Lifecycle string `json:"lifecycle"`
+
+	// Muted reminders muted for the device
+	Muted bool `json:"muted"`
+
+	// SiteCode '' for a contract
+	SiteCode string `json:"siteCode"`
+
+	// Subject hostname or contract name
+	Subject string `json:"subject"`
+
+	// SubjectId the device
+	SubjectId openapi_types.UUID `json:"subjectId"`
+
+	// Vendor device supplier / contract vendor
+	Vendor string `json:"vendor"`
+}
+
+// ExpiringItemKind defines model for ExpiringItem.Kind.
+type ExpiringItemKind string
+
+// ExpiringReport defines model for ExpiringReport.
+type ExpiringReport struct {
+	Items []ExpiringItem     `json:"items"`
+	Today openapi_types.Date `json:"today"`
+}
+
 // ExportEvent defines model for ExportEvent.
 type ExportEvent struct {
 	// Count rows exported (devices_xlsx, reports); sheets (diagram_pdf)
@@ -3770,6 +3890,24 @@ type InterfaceUpdate struct {
 
 // InterfaceUpdateDuplex defines model for InterfaceUpdate.Duplex.
 type InterfaceUpdateDuplex string
+
+// InventoryReport defines model for InventoryReport.
+type InventoryReport struct {
+	Rows []InventoryRow `json:"rows"`
+}
+
+// InventoryRow defines model for InventoryRow.
+type InventoryRow struct {
+	Lifecycle InventoryRowLifecycle `json:"lifecycle"`
+	Quantity  int                   `json:"quantity"`
+	SiteCode  string                `json:"siteCode"`
+	SiteName  string                `json:"siteName"`
+	Type      DeviceType            `json:"type"`
+	Vendor    string                `json:"vendor"`
+}
+
+// InventoryRowLifecycle defines model for InventoryRow.Lifecycle.
+type InventoryRowLifecycle string
 
 // InviteLink defines model for InviteLink.
 type InviteLink struct {
@@ -4282,6 +4420,25 @@ type MgmtIpResult struct {
 	MgmtIp        string   `json:"mgmtIp"`
 	Warnings      []string `json:"warnings"`
 }
+
+// MissingInfoReport defines model for MissingInfoReport.
+type MissingInfoReport struct {
+	Devices []MissingInfoRow `json:"devices"`
+}
+
+// MissingInfoRow defines model for MissingInfoRow.
+type MissingInfoRow struct {
+	Hostname string                  `json:"hostname"`
+	Id       openapi_types.UUID      `json:"id"`
+	Missing  []MissingInfoRowMissing `json:"missing"`
+	Model    string                  `json:"model"`
+	SiteCode string                  `json:"siteCode"`
+	Type     DeviceType              `json:"type"`
+	Vendor   string                  `json:"vendor"`
+}
+
+// MissingInfoRowMissing defines model for MissingInfoRow.Missing.
+type MissingInfoRowMissing string
 
 // MyOrganizations defines model for MyOrganizations.
 type MyOrganizations struct {
@@ -6053,8 +6210,38 @@ type GetBoqReportParams struct {
 	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
 }
 
+// GetExpiringReportParams defines parameters for GetExpiringReport.
+type GetExpiringReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+
+	// Days window ahead (default 90); overdue dates are always in
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetInventoryReportParams defines parameters for GetInventoryReport.
+type GetInventoryReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
 // GetIpPlanReportParams defines parameters for GetIpPlanReport.
 type GetIpPlanReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// GetMissingInfoReportParams defines parameters for GetMissingInfoReport.
+type GetMissingInfoReportParams struct {
 	// CategoryId topbar category (with its subtree); none = whole organization
 	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
 
@@ -6906,9 +7093,18 @@ type ServerInterface interface {
 	// GetBoqReport Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
 	// (GET /orgs/{orgId}/reports/boq)
 	GetBoqReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetBoqReportParams)
+	// GetExpiringReport Expiry report (P2-11) — warranty / licence / end-of-support of devices in use or spare, and contracts, overdue or within the window
+	// (GET /orgs/{orgId}/reports/expiring)
+	GetExpiringReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetExpiringReportParams)
+	// GetInventoryReport Device counts (P2-11) by site / type / vendor / status
+	// (GET /orgs/{orgId}/reports/inventory)
+	GetInventoryReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetInventoryReportParams)
 	// GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
 	// (GET /orgs/{orgId}/reports/ip-plan)
 	GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams)
+	// GetMissingInfoReport Missing information (P2-11, ADR-052) — devices in use lacking S/N, model / part number or location
+	// (GET /orgs/{orgId}/reports/missing-info)
+	GetMissingInfoReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetMissingInfoReportParams)
 	// GetPortMapReport Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
 	// (GET /orgs/{orgId}/reports/port-map)
 	GetPortMapReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetPortMapReportParams)
@@ -7836,9 +8032,27 @@ func (_ Unimplemented) GetBoqReport(w http.ResponseWriter, r *http.Request, orgI
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetExpiringReport Expiry report (P2-11) — warranty / licence / end-of-support of devices in use or spare, and contracts, overdue or within the window
+// (GET /orgs/{orgId}/reports/expiring)
+func (_ Unimplemented) GetExpiringReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetExpiringReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetInventoryReport Device counts (P2-11) by site / type / vendor / status
+// (GET /orgs/{orgId}/reports/inventory)
+func (_ Unimplemented) GetInventoryReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetInventoryReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
 // (GET /orgs/{orgId}/reports/ip-plan)
 func (_ Unimplemented) GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetMissingInfoReport Missing information (P2-11, ADR-052) — devices in use lacking S/N, model / part number or location
+// (GET /orgs/{orgId}/reports/missing-info)
+func (_ Unimplemented) GetMissingInfoReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetMissingInfoReportParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -15001,6 +15215,129 @@ func (siw *ServerInterfaceWrapper) GetBoqReport(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetExpiringReport operation middleware
+func (siw *ServerInterfaceWrapper) GetExpiringReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetExpiringReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "days" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "days", r.URL.Query(), &params.Days, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "days"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "days", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetExpiringReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetInventoryReport operation middleware
+func (siw *ServerInterfaceWrapper) GetInventoryReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetInventoryReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInventoryReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetIpPlanReport operation middleware
 func (siw *ServerInterfaceWrapper) GetIpPlanReport(w http.ResponseWriter, r *http.Request) {
 
@@ -15047,6 +15384,61 @@ func (siw *ServerInterfaceWrapper) GetIpPlanReport(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetIpPlanReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMissingInfoReport operation middleware
+func (siw *ServerInterfaceWrapper) GetMissingInfoReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetMissingInfoReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMissingInfoReport(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -17849,6 +18241,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/reports/boq", wrapper.GetBoqReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/expiring", wrapper.GetExpiringReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/missing-info", wrapper.GetMissingInfoReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/inventory", wrapper.GetInventoryReport)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/design-templates/preview", wrapper.PreviewDesignTemplate)
@@ -27972,6 +28373,136 @@ func (response GetBoqReport404JSONResponse) VisitGetBoqReportResponse(w http.Res
 	return err
 }
 
+type GetExpiringReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetExpiringReportParams
+}
+
+type GetExpiringReportResponseObject interface {
+	VisitGetExpiringReportResponse(w http.ResponseWriter) error
+}
+
+type GetExpiringReport200JSONResponse ExpiringReport
+
+func (response GetExpiringReport200JSONResponse) VisitGetExpiringReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExpiringReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetExpiringReport400JSONResponse) VisitGetExpiringReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExpiringReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetExpiringReport401JSONResponse) VisitGetExpiringReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExpiringReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetExpiringReport404JSONResponse) VisitGetExpiringReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInventoryReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetInventoryReportParams
+}
+
+type GetInventoryReportResponseObject interface {
+	VisitGetInventoryReportResponse(w http.ResponseWriter) error
+}
+
+type GetInventoryReport200JSONResponse InventoryReport
+
+func (response GetInventoryReport200JSONResponse) VisitGetInventoryReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInventoryReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetInventoryReport400JSONResponse) VisitGetInventoryReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInventoryReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetInventoryReport401JSONResponse) VisitGetInventoryReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInventoryReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetInventoryReport404JSONResponse) VisitGetInventoryReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetIpPlanReportRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params GetIpPlanReportParams
@@ -28026,6 +28557,71 @@ func (response GetIpPlanReport401JSONResponse) VisitGetIpPlanReportResponse(w ht
 type GetIpPlanReport404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response GetIpPlanReport404JSONResponse) VisitGetIpPlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMissingInfoReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetMissingInfoReportParams
+}
+
+type GetMissingInfoReportResponseObject interface {
+	VisitGetMissingInfoReportResponse(w http.ResponseWriter) error
+}
+
+type GetMissingInfoReport200JSONResponse MissingInfoReport
+
+func (response GetMissingInfoReport200JSONResponse) VisitGetMissingInfoReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMissingInfoReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetMissingInfoReport400JSONResponse) VisitGetMissingInfoReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMissingInfoReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetMissingInfoReport401JSONResponse) VisitGetMissingInfoReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMissingInfoReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetMissingInfoReport404JSONResponse) VisitGetMissingInfoReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -32179,9 +32775,18 @@ type StrictServerInterface interface {
 	// GetBoqReport Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
 	// (GET /orgs/{orgId}/reports/boq)
 	GetBoqReport(ctx context.Context, request GetBoqReportRequestObject) (GetBoqReportResponseObject, error)
+	// GetExpiringReport Expiry report (P2-11) — warranty / licence / end-of-support of devices in use or spare, and contracts, overdue or within the window
+	// (GET /orgs/{orgId}/reports/expiring)
+	GetExpiringReport(ctx context.Context, request GetExpiringReportRequestObject) (GetExpiringReportResponseObject, error)
+	// GetInventoryReport Device counts (P2-11) by site / type / vendor / status
+	// (GET /orgs/{orgId}/reports/inventory)
+	GetInventoryReport(ctx context.Context, request GetInventoryReportRequestObject) (GetInventoryReportResponseObject, error)
 	// GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
 	// (GET /orgs/{orgId}/reports/ip-plan)
 	GetIpPlanReport(ctx context.Context, request GetIpPlanReportRequestObject) (GetIpPlanReportResponseObject, error)
+	// GetMissingInfoReport Missing information (P2-11, ADR-052) — devices in use lacking S/N, model / part number or location
+	// (GET /orgs/{orgId}/reports/missing-info)
+	GetMissingInfoReport(ctx context.Context, request GetMissingInfoReportRequestObject) (GetMissingInfoReportResponseObject, error)
 	// GetPortMapReport Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
 	// (GET /orgs/{orgId}/reports/port-map)
 	GetPortMapReport(ctx context.Context, request GetPortMapReportRequestObject) (GetPortMapReportResponseObject, error)
@@ -36340,6 +36945,60 @@ func (sh *strictHandler) GetBoqReport(w http.ResponseWriter, r *http.Request, or
 	}
 }
 
+// GetExpiringReport operation middleware
+func (sh *strictHandler) GetExpiringReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetExpiringReportParams) {
+	var request GetExpiringReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetExpiringReport(ctx, request.(GetExpiringReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetExpiringReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetExpiringReportResponseObject); ok {
+		if err := validResponse.VisitGetExpiringReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInventoryReport operation middleware
+func (sh *strictHandler) GetInventoryReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetInventoryReportParams) {
+	var request GetInventoryReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInventoryReport(ctx, request.(GetInventoryReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInventoryReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInventoryReportResponseObject); ok {
+		if err := validResponse.VisitGetInventoryReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetIpPlanReport operation middleware
 func (sh *strictHandler) GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams) {
 	var request GetIpPlanReportRequestObject
@@ -36360,6 +37019,33 @@ func (sh *strictHandler) GetIpPlanReport(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetIpPlanReportResponseObject); ok {
 		if err := validResponse.VisitGetIpPlanReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMissingInfoReport operation middleware
+func (sh *strictHandler) GetMissingInfoReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetMissingInfoReportParams) {
+	var request GetMissingInfoReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMissingInfoReport(ctx, request.(GetMissingInfoReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMissingInfoReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMissingInfoReportResponseObject); ok {
+		if err := validResponse.VisitGetMissingInfoReportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

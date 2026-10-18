@@ -2,14 +2,19 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
+	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
@@ -24,15 +29,26 @@ type reportScope struct {
 	site, category pgtype.UUID
 }
 
-func scopeOf(site *uuid.UUID, category *uuid.UUID) reportScope {
-	var s reportScope
+// reportScopeOf checks that the site / category asked for are the organization's (404 otherwise, like the dashboard).
+func (s *Server) reportScopeOf(ctx context.Context, m tenant.Membership, site, category *uuid.UUID) (reportScope, string, error) {
+	var sc reportScope
 	if site != nil {
-		s.site = pgUUID(*site)
+		sc.site = pgUUID(*site)
+		if _, err := s.q.GetSite(ctx, store.GetSiteParams{ID: sc.site, OrganizationID: m.OrgID}); errors.Is(err, pgx.ErrNoRows) {
+			return sc, "Không tìm thấy site", nil
+		} else if err != nil {
+			return sc, "", fmt.Errorf("report site: %w", err)
+		}
 	}
 	if category != nil {
-		s.category = pgUUID(*category)
+		sc.category = pgUUID(*category)
+		if _, err := s.q.GetCategory(ctx, store.GetCategoryParams{ID: sc.category, OrganizationID: m.OrgID}); errors.Is(err, pgx.ErrNoRows) {
+			return sc, "Không tìm thấy danh mục", nil
+		} else if err != nil {
+			return sc, "", fmt.Errorf("report category: %w", err)
+		}
 	}
-	return s
+	return sc, "", nil
 }
 
 // dottedMask: 255.255.255.0 for an IPv4 prefix, "/64" for IPv6 (nobody writes IPv6 masks dotted).
@@ -48,7 +64,13 @@ func (s *Server) GetIpPlanReport(ctx context.Context, req apigen.GetIpPlanReport
 	if err != nil {
 		return nil, err
 	}
-	sc := scopeOf(req.Params.SiteId, req.Params.CategoryId)
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetIpPlanReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
 	rows, err := s.q.ReportSubnets(ctx, store.ReportSubnetsParams{OrganizationID: m.OrgID, SiteFilter: sc.site, CategoryFilter: sc.category})
 	if err != nil {
 		return nil, fmt.Errorf("report subnets: %w", err)
@@ -113,7 +135,13 @@ func (s *Server) GetVlanReport(ctx context.Context, req apigen.GetVlanReportRequ
 	if err != nil {
 		return nil, err
 	}
-	sc := scopeOf(req.Params.SiteId, req.Params.CategoryId)
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetVlanReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
 	vlans, err := s.q.ReportVlans(ctx, store.ReportVlansParams{OrganizationID: m.OrgID, SiteFilter: sc.site, CategoryFilter: sc.category})
 	if err != nil {
 		return nil, fmt.Errorf("report vlans: %w", err)
@@ -161,7 +189,13 @@ func (s *Server) GetPortMapReport(ctx context.Context, req apigen.GetPortMapRepo
 	if err != nil {
 		return nil, err
 	}
-	sc := scopeOf(req.Params.SiteId, req.Params.CategoryId)
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetPortMapReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
 	rows, err := s.q.ReportPorts(ctx, store.ReportPortsParams{OrganizationID: m.OrgID, SiteFilter: sc.site, CategoryFilter: sc.category})
 	if err != nil {
 		return nil, fmt.Errorf("report ports: %w", err)
@@ -210,7 +244,13 @@ func (s *Server) GetBoqReport(ctx context.Context, req apigen.GetBoqReportReques
 	if err != nil {
 		return nil, err
 	}
-	sc := scopeOf(req.Params.SiteId, req.Params.CategoryId)
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetBoqReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
 	rows, err := s.q.ReportBoq(ctx, store.ReportBoqParams{OrganizationID: m.OrgID, SiteFilter: sc.site, CategoryFilter: sc.category})
 	if err != nil {
 		return nil, fmt.Errorf("report boq: %w", err)
@@ -249,4 +289,113 @@ func (s *Server) GetBoqReport(ctx context.Context, req apigen.GetBoqReportReques
 		}{int(r.Quantity), r.SiteCode})
 	}
 	return apigen.GetBoqReport200JSONResponse(out), nil
+}
+
+// reportDays: the expiry window (default 90 days, at most a year).
+func reportDays(d *int) int {
+	if d == nil || *d < 1 {
+		return 90
+	}
+	return min(*d, 365)
+}
+
+func (s *Server) GetExpiringReport(ctx context.Context, req apigen.GetExpiringReportRequestObject) (apigen.GetExpiringReportResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetExpiringReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
+	today := calendarToday()
+	until := pgtype.Date{Time: today.AddDate(0, 0, reportDays(req.Params.Days)), Valid: true}
+	days := func(d time.Time) int { return int(d.Sub(today).Hours() / 24) }
+	rows, err := s.q.ReportExpiring(ctx, store.ReportExpiringParams{OrganizationID: m.OrgID, Until: until, SiteFilter: sc.site, CategoryFilter: sc.category})
+	if err != nil {
+		return nil, fmt.Errorf("report expiring: %w", err)
+	}
+	out := apigen.ExpiringReport{Today: openapi_types.Date{Time: today}, Items: []apigen.ExpiringItem{}}
+	for _, r := range rows {
+		out.Items = append(out.Items, apigen.ExpiringItem{
+			Kind: apigen.ExpiringItemKind(r.Kind), SubjectId: uuid.UUID(r.ID.Bytes), Subject: r.Hostname,
+			Detail: strings.TrimSpace(r.Vendor + " " + r.Model), SiteCode: r.SiteCode, Lifecycle: r.Lifecycle, Muted: r.AlertsMuted,
+			Vendor: r.Supplier, Date: openapi_types.Date{Time: r.Day.Time}, Days: days(r.Day.Time),
+		})
+	}
+	// Contracts belong to the organization: listed whatever the site / category, ended up to a year ago.
+	contracts, err := s.q.ReportExpiringContracts(ctx, store.ReportExpiringContractsParams{
+		OrganizationID: m.OrgID, Since: pgtype.Date{Time: today.AddDate(-1, 0, 0), Valid: true}, Until: until,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("report expiring contracts: %w", err)
+	}
+	for _, k := range contracts {
+		out.Items = append(out.Items, apigen.ExpiringItem{
+			Kind: apigen.ExpiringItemKindContract, SubjectId: uuid.UUID(k.ID.Bytes), Subject: k.Name, Detail: k.Number,
+			Vendor: k.VendorName, Date: openapi_types.Date{Time: k.Day.Time}, Days: days(k.Day.Time),
+		})
+	}
+	slices.SortStableFunc(out.Items, func(a, b apigen.ExpiringItem) int { return a.Date.Compare(b.Date.Time) })
+	return apigen.GetExpiringReport200JSONResponse(out), nil
+}
+
+func (s *Server) GetMissingInfoReport(ctx context.Context, req apigen.GetMissingInfoReportRequestObject) (apigen.GetMissingInfoReportResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetMissingInfoReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
+	// The dashboard's query without its limit: one definition (ADR-052).
+	rows, err := s.q.DashboardMissingInfo(ctx, store.DashboardMissingInfoParams{OrganizationID: m.OrgID, CategoryFilter: sc.category, SiteFilter: sc.site})
+	if err != nil {
+		return nil, fmt.Errorf("report missing info: %w", err)
+	}
+	out := apigen.MissingInfoReport{Devices: make([]apigen.MissingInfoRow, 0, len(rows))}
+	for _, r := range rows {
+		what := []apigen.MissingInfoRowMissing{}
+		for _, f := range missingFields(r) {
+			what = append(what, apigen.MissingInfoRowMissing(f))
+		}
+		out.Devices = append(out.Devices, apigen.MissingInfoRow{
+			Id: uuid.UUID(r.ID.Bytes), Hostname: r.Hostname, Type: apigen.DeviceType(r.Type), Vendor: r.Vendor, Model: r.Model,
+			SiteCode: r.SiteCode, Missing: what,
+		})
+	}
+	return apigen.GetMissingInfoReport200JSONResponse(out), nil
+}
+
+func (s *Server) GetInventoryReport(ctx context.Context, req apigen.GetInventoryReportRequestObject) (apigen.GetInventoryReportResponseObject, error) {
+	m, err := tenant.Require(ctx, req.OrgId)
+	if err != nil {
+		return nil, err
+	}
+	sc, missing, err := s.reportScopeOf(ctx, m, req.Params.SiteId, req.Params.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if missing != "" {
+		return apigen.GetInventoryReport404JSONResponse{NotFoundJSONResponse: notFoundBody(missing)}, nil
+	}
+	rows, err := s.q.ReportInventory(ctx, store.ReportInventoryParams{OrganizationID: m.OrgID, SiteFilter: sc.site, CategoryFilter: sc.category})
+	if err != nil {
+		return nil, fmt.Errorf("report inventory: %w", err)
+	}
+	out := apigen.InventoryReport{Rows: make([]apigen.InventoryRow, 0, len(rows))}
+	for _, r := range rows {
+		out.Rows = append(out.Rows, apigen.InventoryRow{
+			SiteCode: r.SiteCode, SiteName: r.SiteName, Type: apigen.DeviceType(r.Type), Vendor: r.Vendor,
+			Lifecycle: apigen.InventoryRowLifecycle(r.Lifecycle), Quantity: int(r.Quantity),
+		})
+	}
+	return apigen.GetInventoryReport200JSONResponse(out), nil
 }

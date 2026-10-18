@@ -1891,8 +1891,14 @@ export const en: Strings = {
     missingGuide:
       'Active devices without S/N, part number, model or location — needed for warranty claims and to find the box on site.',
     noMissing: 'Every active device is complete.',
+    fullList: 'See the full list in Reports',
     moreMissing: 'And {{count}} more devices',
-    field: { serial: 'S/N', partNumber: 'Part number', model: 'Model', location: 'Location' },
+    field: {
+      serial: 'S/N',
+      partNumber: 'Part number',
+      model: 'Model / part number',
+      location: 'Location',
+    },
   },
   home: {
     code: 'Organization code',
@@ -2705,8 +2711,37 @@ export const en: Strings = {
     clustered: '{{count}} in a stack / HA cluster',
     noModel: 'No model / part number — fill it in the inventory',
     portsUsed: '{{used}} of {{total}} ports cabled',
-    tabs: { ipPlan: 'IP plan', vlans: 'VLANs', portMap: 'Port map', boq: 'BOQ' },
+    window: 'Window',
+    windowDays: 'Next {{count}} days',
+    buckets: {
+      overdue: 'Overdue',
+      d30: 'Within 30 days',
+      d60: 'Within 60 days',
+      d90: 'Within 90 days',
+      later: 'After 90 days',
+    },
+    expiryKinds: {
+      warranty: 'Warranty',
+      license: 'Licence',
+      eos: 'End of support',
+      contract: 'Contract',
+    },
+    tabs: {
+      ipPlan: 'IP plan',
+      vlans: 'VLANs',
+      portMap: 'Port map',
+      boq: 'BOQ',
+      expiring: 'Expiring',
+      missing: 'Missing info',
+      inventory: 'Device counts',
+    },
     guides: {
+      expiring:
+        'Warranty, licence and end-of-support dates of devices in use / spare, and vendor contracts: overdue or coming within the chosen window. Devices with reminders muted are still here. Contracts belong to the whole organization, so they always show, whatever the site.',
+      missing:
+        'Devices in use (ours; not PCs / phones / printers, VMs, patch panels) still missing: S/N, both model and part number, or location (where the site has locations). Counted the same way as the dashboard and the diagram Problems panel.',
+      inventory:
+        'Device counts by site (a column per status), by type and by vendor (retired devices left out).',
       ipPlan:
         'One row per subnet: site, VLAN, gateway, DHCP / static ranges, usage. The Excel file uses the column names of IPAM "Import from Excel", so it can be edited and imported back.',
       vlans:
@@ -2715,9 +2750,28 @@ export const en: Strings = {
         'Port map: every port of every device, free ones too, with mode, VLANs and the far end of the cable. The Excel file has an "All" sheet to filter and one sheet per switch / router / firewall / patch panel to print.',
       boq: 'Bill of quantities: devices grouped by part number (else vendor + model), each stack / HA member counted. Planned, in use and spare stay apart — never summed. Optics and licences are not in it yet (not in the inventory).',
     },
-    sheets: { ipPlan: 'IP plan', ranges: 'IP ranges', allPorts: 'All ports' },
+    sheets: {
+      ipPlan: 'IP plan',
+      ranges: 'IP ranges',
+      allPorts: 'All ports',
+      bySite: 'By site',
+      byType: 'By type',
+      byVendor: 'By vendor',
+    },
     boqSheets: { planned: 'Planned', active: 'In use', spare: 'Spare' },
     cols: {
+      bucket: 'Group',
+      kind: 'Kind',
+      subject: 'Device / contract',
+      detail: 'Detail',
+      status: 'Status',
+      supplier: 'Supplier',
+      date: 'Date',
+      daysLeft: 'Days left',
+      muted: 'Reminders muted',
+      missing: 'Missing',
+      siteName: 'Site name',
+      inUseTotal: 'Total (not retired)',
       site: 'Site',
       vlan: 'VLAN',
       vlanName: 'VLAN name',
@@ -2923,7 +2977,7 @@ export const en: Strings = {
     failed: 'Device import failed',
   },
   checks: {
-    fields: { serial: 'S/N', part: 'part number', location: 'location' },
+    fields: { serial: 'S/N', part: 'model / part number', location: 'location' },
     title: 'Problems',
     toolbar: 'Diagram problems: {{error}} errors, {{warning}} warnings, {{info}} notes',
     filter: 'Filter by level',

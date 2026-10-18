@@ -26,26 +26,29 @@ GROUP BY d.type
 ORDER BY count(*) DESC, d.type;
 
 -- name: DashboardMissingInfo :many
--- Active devices lacking S/N, part number, model or location (SRS §7, Info). Location only counts where the site has
--- locations; provider clouds, passive kit, ISP boxes and end-user devices are not asked. total = all such devices;
--- rows = the first @lim.
+-- Devices in use lacking the facts warranty / support needs (SRS §7, Info) — one definition for the dashboard, the
+-- missing-info report and the diagram check (frontend rules.ts NO_ASSET, ADR-052):
+--   in use (active) and ours (managed); not the provider cloud, VMs, patch panels or end-user devices;
+--   missing: S/N; model AND part number (either one names the product); location where the site has locations.
+-- total = all such devices; rows = the first @lim (NULL = all).
 WITH m AS (
-  SELECT d.id, d.hostname, s.code::text AS site_code,
-         (btrim(d.serial_number) = '') AS no_serial, (btrim(d.part_number) = '') AS no_part,
-         (btrim(d.model) = '') AS no_model,
+  SELECT d.id, d.hostname, d.type, d.vendor, d.model, s.code::text AS site_code,
+         (btrim(d.serial_number) = '') AS no_serial,
+         (btrim(d.model) = '' AND btrim(d.part_number) = '') AS no_model,
          (d.location_id IS NULL AND EXISTS (SELECT 1 FROM locations l WHERE l.site_id = s.id)) AS no_location
   FROM devices d
   JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-  WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL AND d.lifecycle = 'active'
-    AND d.type NOT IN ('provider_cloud', 'patch_panel', 'media_converter', 'modem', 'ont', 'vm', 'pc', 'laptop', 'ip_phone', 'iot', 'other')
+  WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL AND d.lifecycle = 'active' AND d.managed
+    AND d.type NOT IN ('provider_cloud', 'vm', 'patch_panel', 'pc', 'laptop', 'ip_phone', 'iot', 'printer', 'other')
     AND (sqlc.narg('category_filter')::uuid IS NULL OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
+    AND (sqlc.narg('site_filter')::uuid IS NULL OR d.site_id = sqlc.narg('site_filter'))
 )
-SELECT id, hostname, site_code, no_serial::boolean AS no_serial, no_part::boolean AS no_part,
+SELECT id, hostname, type, vendor, model, site_code, no_serial::boolean AS no_serial,
        no_model::boolean AS no_model, no_location::boolean AS no_location, count(*) OVER ()::bigint AS total
 FROM m
-WHERE no_serial OR no_part OR no_model OR no_location
+WHERE no_serial OR no_model OR no_location
 ORDER BY site_code, lower(hostname)
-LIMIT @lim;
+LIMIT sqlc.narg('lim')::int;
 
 -- name: DashboardExpiring :many
 -- Warranty / end-of-support dates for devices still in use: those from @today to @until first (soonest first), then

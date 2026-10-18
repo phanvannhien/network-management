@@ -1882,8 +1882,14 @@ export const vi = {
     missingGuide:
       'Thiết bị đang dùng chưa có S/N, part number, model hoặc vị trí (location) — cần khi báo bảo hành hay đi tìm thiết bị tại site.',
     noMissing: 'Thiết bị đang dùng đều đủ thông tin.',
+    fullList: 'Xem đủ trong Báo cáo',
     moreMissing: 'Và {{count}} thiết bị khác',
-    field: { serial: 'S/N', partNumber: 'Part number', model: 'Model', location: 'Vị trí' },
+    field: {
+      serial: 'S/N',
+      partNumber: 'Part number',
+      model: 'Model / part number',
+      location: 'Vị trí',
+    },
   },
   home: {
     code: 'Mã tổ chức',
@@ -2689,8 +2695,37 @@ export const vi = {
     clustered: '{{count}} thuộc stack / cụm HA',
     noModel: 'Chưa ghi model / part number — bổ sung trong kho',
     portsUsed: 'Đã nối {{used}} / {{total}} cổng',
-    tabs: { ipPlan: 'IP plan', vlans: 'VLAN', portMap: 'Port map', boq: 'BOQ' },
+    window: 'Khoảng thời gian',
+    windowDays: '{{count}} ngày tới',
+    buckets: {
+      overdue: 'Đã quá hạn',
+      d30: 'Trong 30 ngày',
+      d60: 'Trong 60 ngày',
+      d90: 'Trong 90 ngày',
+      later: 'Sau 90 ngày',
+    },
+    expiryKinds: {
+      warranty: 'Bảo hành',
+      license: 'License',
+      eos: 'Hãng ngừng hỗ trợ',
+      contract: 'Hợp đồng',
+    },
+    tabs: {
+      ipPlan: 'IP plan',
+      vlans: 'VLAN',
+      portMap: 'Port map',
+      boq: 'BOQ',
+      expiring: 'Sắp hết hạn',
+      missing: 'Thiếu thông tin',
+      inventory: 'Thống kê thiết bị',
+    },
     guides: {
+      expiring:
+        'Bảo hành, license, ngày hãng ngừng hỗ trợ (EoS) của thiết bị đang dùng / dự phòng, và hợp đồng nhà cung cấp: đã quá hạn hoặc sắp tới trong khoảng đã chọn. Thiết bị đã tắt nhắc vẫn có ở đây. Hợp đồng là của cả tổ chức nên luôn hiện, không lọc theo site.',
+      missing:
+        'Thiết bị đang dùng (của mình, không tính PC / điện thoại / máy in, VM, patch panel) còn thiếu: S/N, model lẫn part number, hoặc vị trí (khi site đã khai vị trí). Cùng cách đếm với Dashboard và panel Vấn đề trên sơ đồ.',
+      inventory:
+        'Đếm thiết bị theo site (mỗi trạng thái một cột), theo loại và theo hãng (không tính thiết bị đã thanh lý).',
       ipPlan:
         'Mỗi subnet một dòng: site, VLAN, gateway, dải DHCP / tĩnh, mức đã dùng. File Excel dùng đúng tên cột của "Nhập từ Excel" bên IPAM nên sửa xong nhập lại được.',
       vlans:
@@ -2699,9 +2734,28 @@ export const vi = {
         'Bảng cổng (port map): mọi cổng của mọi thiết bị, kể cả cổng còn trống, kèm mode, VLAN và đầu kia của dây. File Excel có sheet "Tất cả" để lọc và mỗi switch / router / firewall / patch panel một sheet riêng để in.',
       boq: 'Bảng khối lượng (BOQ): thiết bị gộp theo part number (thiếu thì theo hãng + model), đếm từng thành viên stack / HA. Dự kiến, đang dùng, dự phòng tách riêng — không cộng chung. Chưa có module quang và license (kho chưa quản lý).',
     },
-    sheets: { ipPlan: 'IP plan', ranges: 'Dải IP', allPorts: 'Tất cả cổng' },
+    sheets: {
+      ipPlan: 'IP plan',
+      ranges: 'Dải IP',
+      allPorts: 'Tất cả cổng',
+      bySite: 'Theo site',
+      byType: 'Theo loại',
+      byVendor: 'Theo hãng',
+    },
     boqSheets: { planned: 'Dự kiến', active: 'Đang dùng', spare: 'Dự phòng' },
     cols: {
+      bucket: 'Nhóm',
+      kind: 'Loại',
+      subject: 'Thiết bị / hợp đồng',
+      detail: 'Chi tiết',
+      status: 'Trạng thái',
+      supplier: 'Nhà cung cấp',
+      date: 'Ngày',
+      daysLeft: 'Còn (ngày)',
+      muted: 'Đã tắt nhắc',
+      missing: 'Còn thiếu',
+      siteName: 'Tên site',
+      inUseTotal: 'Tổng (trừ thanh lý)',
       site: 'Site',
       vlan: 'VLAN',
       vlanName: 'Tên VLAN',
@@ -2906,7 +2960,7 @@ export const vi = {
     failed: 'Nhập thiết bị không thành công',
   },
   checks: {
-    fields: { serial: 'S/N', part: 'part number', location: 'location' },
+    fields: { serial: 'S/N', part: 'model / part number', location: 'location' },
     title: 'Vấn đề',
     toolbar: 'Vấn đề trên sơ đồ: {{error}} lỗi, {{warning}} cảnh báo, {{info}} ghi chú',
     filter: 'Lọc theo mức',

@@ -124,9 +124,11 @@ type Querier interface {
 	// Warranty / end-of-support dates for devices still in use: those from @today to @until first (soonest first), then
 	// those already past (latest first). total / overdue count every such date, rows are the first 50.
 	DashboardExpiring(ctx context.Context, arg DashboardExpiringParams) ([]DashboardExpiringRow, error)
-	// Active devices lacking S/N, part number, model or location (SRS §7, Info). Location only counts where the site has
-	// locations; provider clouds, passive kit, ISP boxes and end-user devices are not asked. total = all such devices;
-	// rows = the first @lim.
+	// Devices in use lacking the facts warranty / support needs (SRS §7, Info) — one definition for the dashboard, the
+	// missing-info report and the diagram check (frontend rules.ts NO_ASSET, ADR-052):
+	//   in use (active) and ours (managed); not the provider cloud, VMs, patch panels or end-user devices;
+	//   missing: S/N; model AND part number (either one names the product); location where the site has locations.
+	// total = all such devices; rows = the first @lim (NULL = all).
 	DashboardMissingInfo(ctx context.Context, arg DashboardMissingInfoParams) ([]DashboardMissingInfoRow, error)
 	// Physical ports with more than one cable of a kind that occupies the port (link rules; a PON port feeds a splitter).
 	// Cable ends are counted first (a few thousand links), then joined to their ports — not every port scanned for an OR.
@@ -380,6 +382,13 @@ type Querier interface {
 	// Our physical boxes in scope by status / vendor / model / part number / type / site. Not counted: retired / RMA,
 	// someone else's (managed = false: ISP modem…), the provider cloud and VMs.
 	ReportBoq(ctx context.Context, arg ReportBoqParams) ([]ReportBoqRow, error)
+	// Warranty / licence / end-of-support dates up to @until of devices in use or spare, overdue ones included (still a
+	// risk). Muted devices are in: muting stops reminders, not reports.
+	ReportExpiring(ctx context.Context, arg ReportExpiringParams) ([]ReportExpiringRow, error)
+	// Live contracts ending in [@since, @until] (organization-level: not narrowed by site / category).
+	ReportExpiringContracts(ctx context.Context, arg ReportExpiringContractsParams) ([]ReportExpiringContractsRow, error)
+	// Device counts by site / type / vendor / status (retired included: the by-site table shows them apart).
+	ReportInventory(ctx context.Context, arg ReportInventoryParams) ([]ReportInventoryRow, error)
 	// Cables ending on the given ports, with both ends named (device hostname, endpoint group or shared network name).
 	ReportPortLinks(ctx context.Context, arg ReportPortLinksParams) ([]ReportPortLinksRow, error)
 	// Every port of every device in scope (not retired), free ones too, in the device's port order.

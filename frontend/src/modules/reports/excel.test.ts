@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import i18n from '@/i18n'
 import { detectColumns, ipamRows } from '@/modules/ipam/ipamImport'
-import { boqSheets, ipPlanSheets, portMapSheets, sheetName } from './excel'
-import type { BoqLine, IpPlanRow, PortMapDevice } from './reports'
+import {
+  boqSheets,
+  expiringSheets,
+  expiryBucket,
+  inventorySheets,
+  ipPlanSheets,
+  portMapSheets,
+  sheetName,
+} from './excel'
+import type { BoqLine, ExpiringItem, InventoryRow, IpPlanRow, PortMapDevice } from './reports'
 
 const t = i18n.getFixedT('vi')
 const asSheet = (rows: (string | number)[][]) => ({
@@ -150,5 +158,87 @@ describe('report workbooks (P2-11)', () => {
     expect(sheetName('CORE/SW:01', taken)).toBe('CORE-SW-01')
     expect(sheetName('core/sw:01', taken)).toBe('core-sw-01~2')
     expect(sheetName('x'.repeat(40), taken)).toHaveLength(31)
+  })
+
+  it('expiry: overdue / 30 / 60 / 90-day groups, kinds and status in words', () => {
+    expect([-1, 0, 30, 31, 60, 90, 91].map(expiryBucket)).toEqual([
+      'overdue',
+      'd30',
+      'd30',
+      'd60',
+      'd60',
+      'd90',
+      'later',
+    ])
+    const items: ExpiringItem[] = [
+      {
+        kind: 'license',
+        subjectId: 'd1',
+        subject: 'FW1',
+        detail: 'Fortinet FG-60F',
+        siteCode: 'HN01',
+        lifecycle: 'active',
+        muted: true,
+        vendor: 'FPT',
+        date: '2026-10-13',
+        days: -5,
+      },
+      {
+        kind: 'contract',
+        subjectId: 'k1',
+        subject: 'Internet HN',
+        detail: 'HD-01',
+        siteCode: '',
+        lifecycle: '',
+        muted: false,
+        vendor: 'FPT',
+        date: '2026-12-02',
+        days: 45,
+      },
+    ]
+    const [sheet] = expiringSheets(items, t)
+    expect(sheet!.rows[1]!.slice(0, 3)).toEqual(['Đã quá hạn', 'License', 'FW1'])
+    expect(sheet!.rows[1]).toContain('Đang dùng')
+    expect(sheet!.rows[1]!.at(-1)).toBe('Có')
+    expect(sheet!.rows[2]!.slice(0, 2)).toEqual(['Trong 60 ngày', 'Hợp đồng'])
+  })
+
+  it('device counts: by site with a column per status, by type and vendor without retired ones', () => {
+    const rows: InventoryRow[] = [
+      {
+        siteCode: 'HN01',
+        siteName: 'HN',
+        type: 'l2_switch',
+        vendor: 'Cisco',
+        lifecycle: 'active',
+        quantity: 3,
+      },
+      {
+        siteCode: 'HN01',
+        siteName: 'HN',
+        type: 'l2_switch',
+        vendor: 'Cisco',
+        lifecycle: 'retired',
+        quantity: 2,
+      },
+      {
+        siteCode: 'HCM01',
+        siteName: 'HCM',
+        type: 'firewall',
+        vendor: 'Fortinet',
+        lifecycle: 'planned',
+        quantity: 1,
+      },
+    ]
+    const [bySite, byType, byVendor] = inventorySheets(rows, t)
+    expect(bySite!.rows[1]).toEqual(['HN01', 'HN', '', 3, '', '', 2, 3])
+    expect(byType!.rows.slice(1)).toEqual([
+      ['Switch L2', 3],
+      ['Firewall', 1],
+    ])
+    expect(byVendor!.rows.slice(1)).toEqual([
+      ['Cisco', 3],
+      ['Fortinet', 1],
+    ])
   })
 })

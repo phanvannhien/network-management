@@ -92,3 +92,47 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (sqlc.narg('category_filter')::uuid IS NULL OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
 GROUP BY d.lifecycle, d.vendor, d.model, d.part_number, d.type, s.code
 ORDER BY d.lifecycle, d.vendor, d.model, d.part_number, s.code;
+
+-- name: ReportExpiring :many
+-- Warranty / licence / end-of-support dates up to @until of devices in use or spare, overdue ones included (still a
+-- risk). Muted devices are in: muting stops reminders, not reports.
+WITH dates AS (
+  SELECT d.id, 'warranty'::text AS kind, d.warranty_end AS day FROM devices d
+  WHERE d.organization_id = @organization_id AND d.warranty_end IS NOT NULL
+  UNION ALL
+  SELECT d.id, 'license', d.license_end FROM devices d
+  WHERE d.organization_id = @organization_id AND d.license_end IS NOT NULL
+  UNION ALL
+  SELECT d.id, 'eos', d.eos_date FROM devices d
+  WHERE d.organization_id = @organization_id AND d.eos_date IS NOT NULL
+)
+SELECT d.id, d.hostname, d.type, d.vendor, d.model, d.lifecycle, d.alerts_muted, s.code::text AS site_code,
+       COALESCE(v.name, '')::text AS supplier, dates.kind::text AS kind, dates.day::date AS day
+FROM dates
+JOIN devices d ON d.id = dates.id AND d.organization_id = @organization_id
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+LEFT JOIN vendors v ON v.id = d.supplier_id AND v.organization_id = d.organization_id
+WHERE d.deleted_at IS NULL AND d.lifecycle IN ('active', 'spare') AND dates.day <= @until::date
+  AND (sqlc.narg('site_filter')::uuid IS NULL OR d.site_id = sqlc.narg('site_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
+ORDER BY dates.day, lower(d.hostname);
+
+-- name: ReportExpiringContracts :many
+-- Live contracts ending in [@since, @until] (organization-level: not narrowed by site / category).
+SELECT k.id, k.name, k.number, k.kind, k.end_date::date AS day, COALESCE(v.name, '')::text AS vendor_name
+FROM contracts k
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = k.organization_id
+WHERE k.organization_id = @organization_id AND k.deleted_at IS NULL AND k.end_date IS NOT NULL
+  AND k.end_date >= @since::date AND k.end_date <= @until::date
+ORDER BY k.end_date, lower(k.name);
+
+-- name: ReportInventory :many
+-- Device counts by site / type / vendor / status (retired included: the by-site table shows them apart).
+SELECT s.code::text AS site_code, s.name AS site_name, d.type, d.vendor, d.lifecycle, count(*)::bigint AS quantity
+FROM devices d
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
+  AND (sqlc.narg('site_filter')::uuid IS NULL OR d.site_id = sqlc.narg('site_filter'))
+  AND (sqlc.narg('category_filter')::uuid IS NULL OR s.category_id IN (SELECT category_subtree(sqlc.narg('category_filter')::uuid)))
+GROUP BY s.code, s.name, d.type, d.vendor, d.lifecycle
+ORDER BY s.code, d.type, d.vendor, d.lifecycle;

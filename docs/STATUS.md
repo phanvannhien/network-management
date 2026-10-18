@@ -5,6 +5,31 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-11 Báo cáo & export, bước 3: hết hạn, thiếu thông tin, thống kê (ADR-052) — xong P2-11
+- Người dùng chốt: một định nghĩa "thiếu thông tin" chung cho Dashboard, báo cáo và panel Vấn đề.
+- Đã làm:
+  - **Báo cáo "Sắp hết hạn":**
+    - bảo hành / license / EoS của thiết bị đang dùng / dự phòng và hợp đồng;
+    - chọn 30 / 60 / 90 ngày; ô đếm theo nhóm quá hạn / 30 / 60 / 90 ngày (đỏ / vàng);
+    - thiết bị đã tắt nhắc vẫn có; tải Excel.
+  - **Báo cáo "Thiếu thông tin":** danh sách đầy đủ (Dashboard chỉ 20 dòng, nay có link "Xem đủ trong Báo cáo").
+  - **"Thống kê thiết bị":** theo site / loại / hãng.
+  - **Định nghĩa "thiếu thông tin":**
+    - Dashboard dùng định nghĩa mới: không đòi part number khi đã có model; không bỏ qua modem / ONT nếu là của mình.
+    - Nhãn hiển thị: "Model / part number".
+  - **Lọc báo cáo** theo site / danh mục của tổ chức khác: trả 404.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Go: `TestReportLists` (khoảng ngày, quá hạn, đã tắt nhắc, hợp đồng, thiết bị thanh lý bị loại, thiếu thông tin trùng với Dashboard, thống kê), `TestReports` (404 cho site / danh mục của tổ chức khác ở cả 7 báo cáo), `TestDashboard` cập nhật.
+  - Vitest: nhóm hạn, sheet hết hạn, sheet thống kê.
+  - Trình duyệt thật: 3 tab mới, tải Excel, link từ Dashboard, không lỗi console.
+- Còn dở / lỗi đã biết:
+  - BOQ chưa có module quang / license / đơn giá.
+  - Chưa có báo cáo PDF (chỉ sơ đồ có PDF).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-13 Vận hành (script backup / khôi phục, hướng dẫn giữ master key, tài liệu cài đặt / nâng cấp). Hoặc P2-06 link chia sẻ nếu cần gửi đối tác.
+
 ## 2026-10-18 — P2-11 Báo cáo & export, bước 2: trang Báo cáo + Excel IP plan / VLAN / port map / BOQ (ADR-051)
 - Đã làm:
   - **Menu "Báo cáo"** có 4 tab: IP plan, VLAN, Port map, BOQ.

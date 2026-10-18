@@ -391,46 +391,59 @@ func (q *Queries) DashboardExpiring(ctx context.Context, arg DashboardExpiringPa
 
 const dashboardMissingInfo = `-- name: DashboardMissingInfo :many
 WITH m AS (
-  SELECT d.id, d.hostname, s.code::text AS site_code,
-         (btrim(d.serial_number) = '') AS no_serial, (btrim(d.part_number) = '') AS no_part,
-         (btrim(d.model) = '') AS no_model,
+  SELECT d.id, d.hostname, d.type, d.vendor, d.model, s.code::text AS site_code,
+         (btrim(d.serial_number) = '') AS no_serial,
+         (btrim(d.model) = '' AND btrim(d.part_number) = '') AS no_model,
          (d.location_id IS NULL AND EXISTS (SELECT 1 FROM locations l WHERE l.site_id = s.id)) AS no_location
   FROM devices d
   JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-  WHERE d.organization_id = $2 AND d.deleted_at IS NULL AND d.lifecycle = 'active'
-    AND d.type NOT IN ('provider_cloud', 'patch_panel', 'media_converter', 'modem', 'ont', 'vm', 'pc', 'laptop', 'ip_phone', 'iot', 'other')
+  WHERE d.organization_id = $2 AND d.deleted_at IS NULL AND d.lifecycle = 'active' AND d.managed
+    AND d.type NOT IN ('provider_cloud', 'vm', 'patch_panel', 'pc', 'laptop', 'ip_phone', 'iot', 'printer', 'other')
     AND ($3::uuid IS NULL OR s.category_id IN (SELECT category_subtree($3::uuid)))
+    AND ($4::uuid IS NULL OR d.site_id = $4)
 )
-SELECT id, hostname, site_code, no_serial::boolean AS no_serial, no_part::boolean AS no_part,
+SELECT id, hostname, type, vendor, model, site_code, no_serial::boolean AS no_serial,
        no_model::boolean AS no_model, no_location::boolean AS no_location, count(*) OVER ()::bigint AS total
 FROM m
-WHERE no_serial OR no_part OR no_model OR no_location
+WHERE no_serial OR no_model OR no_location
 ORDER BY site_code, lower(hostname)
-LIMIT $1
+LIMIT $1::int
 `
 
 type DashboardMissingInfoParams struct {
-	Lim            int32
+	Lim            pgtype.Int4
 	OrganizationID pgtype.UUID
 	CategoryFilter pgtype.UUID
+	SiteFilter     pgtype.UUID
 }
 
 type DashboardMissingInfoRow struct {
 	ID         pgtype.UUID
 	Hostname   string
+	Type       string
+	Vendor     string
+	Model      string
 	SiteCode   string
 	NoSerial   bool
-	NoPart     bool
 	NoModel    bool
 	NoLocation bool
 	Total      int64
 }
 
-// Active devices lacking S/N, part number, model or location (SRS §7, Info). Location only counts where the site has
-// locations; provider clouds, passive kit, ISP boxes and end-user devices are not asked. total = all such devices;
-// rows = the first @lim.
+// Devices in use lacking the facts warranty / support needs (SRS §7, Info) — one definition for the dashboard, the
+// missing-info report and the diagram check (frontend rules.ts NO_ASSET, ADR-052):
+//
+//	in use (active) and ours (managed); not the provider cloud, VMs, patch panels or end-user devices;
+//	missing: S/N; model AND part number (either one names the product); location where the site has locations.
+//
+// total = all such devices; rows = the first @lim (NULL = all).
 func (q *Queries) DashboardMissingInfo(ctx context.Context, arg DashboardMissingInfoParams) ([]DashboardMissingInfoRow, error) {
-	rows, err := q.db.Query(ctx, dashboardMissingInfo, arg.Lim, arg.OrganizationID, arg.CategoryFilter)
+	rows, err := q.db.Query(ctx, dashboardMissingInfo,
+		arg.Lim,
+		arg.OrganizationID,
+		arg.CategoryFilter,
+		arg.SiteFilter,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -441,9 +454,11 @@ func (q *Queries) DashboardMissingInfo(ctx context.Context, arg DashboardMissing
 		if err := rows.Scan(
 			&i.ID,
 			&i.Hostname,
+			&i.Type,
+			&i.Vendor,
+			&i.Model,
 			&i.SiteCode,
 			&i.NoSerial,
-			&i.NoPart,
 			&i.NoModel,
 			&i.NoLocation,
 			&i.Total,

@@ -79,8 +79,9 @@ func TestDashboard(t *testing.T) {
 			t.Errorf("totals.%s = %v, want %v (%v)", k, tot[k], v, tot)
 		}
 	}
-	// SW2 lacks a part number; locations are only asked where the site has some. Planned / retired are not asked.
-	if tot["missingInfo"] != 1.0 {
+	// SW2 lacks only a part number: its model names the product (ADR-052). Locations are only asked where the site has
+	// some; planned / retired devices are not asked.
+	if tot["missingInfo"] != 0.0 {
 		t.Errorf("missing info: %v %v", tot["missingInfo"], d["missingInfo"])
 	}
 	sites := d["bySite"].([]any)

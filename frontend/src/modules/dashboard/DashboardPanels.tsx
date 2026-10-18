@@ -319,7 +319,10 @@ function MissingBlock({ base, data }: { base: string; data: Dashboard }) {
       )}
       {data.totals.missingInfo > data.missingInfo.length && (
         <p className="pt-2 text-xs text-muted-foreground">
-          {t('dashboard.moreMissing', { count: data.totals.missingInfo - data.missingInfo.length })}
+          {t('dashboard.moreMissing', { count: data.totals.missingInfo - data.missingInfo.length })}{' '}
+          <Link to={`${base}/reports?tab=missing`} className="text-primary hover:underline">
+            {t('dashboard.fullList')}
+          </Link>
         </p>
       )}
     </Block>

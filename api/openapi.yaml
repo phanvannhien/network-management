@@ -1545,6 +1545,83 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/reports/expiring:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getExpiringReport
+      summary: Expiry report (P2-11) — warranty / licence / end-of-support of devices in use or spare, and contracts, overdue or within the window
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+        - name: days
+          in: query
+          required: false
+          description: window ahead (default 90); overdue dates are always in
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpiringReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/reports/missing-info:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getMissingInfoReport
+      summary: Missing information (P2-11, ADR-052) — devices in use lacking S/N, model / part number or location
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MissingInfoReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/reports/inventory:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getInventoryReport
+      summary: Device counts (P2-11) by site / type / vendor / status
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/design-templates/preview:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -7971,7 +8048,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb, diagram_pdf, ipplan_xlsx, vlans_xlsx, portmap_xlsx, boq_xlsx]
+          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb, diagram_pdf, ipplan_xlsx, vlans_xlsx, portmap_xlsx, boq_xlsx, expiring_xlsx, missing_xlsx, inventory_xlsx]
         diagramId:
           type: string
           format: uuid
@@ -8236,6 +8313,76 @@ components:
               siteCode: {type: string}
               quantity: {type: integer}
 
+    ExpiringReport:
+      type: object
+      required: [today, items]
+      properties:
+        today: {type: string, format: date}
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpiringItem'
+
+    ExpiringItem:
+      type: object
+      required: [kind, subjectId, subject, detail, siteCode, lifecycle, muted, vendor, date, days]
+      properties:
+        kind: {type: string, enum: [warranty, license, eos, contract]}
+        subjectId: {type: string, format: uuid, description: the device, or the contract}
+        subject: {type: string, description: hostname or contract name}
+        detail: {type: string, description: "device: vendor model; contract: number"}
+        siteCode: {type: string, description: "'' for a contract"}
+        lifecycle: {type: string, description: "device status; '' for a contract"}
+        muted: {type: boolean, description: reminders muted for the device}
+        vendor: {type: string, description: "device supplier / contract vendor"}
+        date: {type: string, format: date}
+        days: {type: integer, description: days from today (negative = overdue)}
+
+    MissingInfoReport:
+      type: object
+      required: [devices]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/MissingInfoRow'
+
+    MissingInfoRow:
+      type: object
+      required: [id, hostname, type, vendor, model, siteCode, missing]
+      properties:
+        id: {type: string, format: uuid}
+        hostname: {type: string}
+        type: {$ref: '#/components/schemas/DeviceType'}
+        vendor: {type: string}
+        model: {type: string}
+        siteCode: {type: string}
+        missing:
+          type: array
+          items:
+            type: string
+            enum: [serial, model, location]
+
+    InventoryReport:
+      type: object
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryRow'
+
+    InventoryRow:
+      type: object
+      required: [siteCode, siteName, type, vendor, lifecycle, quantity]
+      properties:
+        siteCode: {type: string}
+        siteName: {type: string}
+        type: {$ref: '#/components/schemas/DeviceType'}
+        vendor: {type: string}
+        lifecycle: {type: string, enum: [planned, active, spare, rma, retired]}
+        quantity: {type: integer}
+
     Dashboard:
       type: object
       required: [generatedAt, totals, bySite, byType, problems, missingInfo, expiring]
@@ -8318,6 +8465,7 @@ components:
           items:
             type: string
             enum: [serial, partNumber, model, location]
+            description: "model = neither model nor part number (ADR-052); partNumber is no longer reported"
 
     DashboardExpiry:
       type: object

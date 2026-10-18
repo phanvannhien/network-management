@@ -2,7 +2,15 @@ import type { TFunction } from 'i18next'
 import * as XLSX from 'xlsx'
 import type { vi } from '@/i18n/vi'
 import type { LinkKind } from '@/modules/inventory/links'
-import type { BoqLine, IpPlanRow, PortMapDevice, VlanReportRow } from './reports'
+import type {
+  BoqLine,
+  ExpiringItem,
+  InventoryRow,
+  IpPlanRow,
+  MissingInfoRow,
+  PortMapDevice,
+  VlanReportRow,
+} from './reports'
 
 // Report workbooks (P2-11, SRS §12): built in the browser from the report data with SheetJS. No secret is in any
 // report. The IP plan keeps the column names the IPAM import reads (P2-09), so the file goes out and comes back in.
@@ -261,4 +269,113 @@ export function boqSheets(lines: BoqLine[], t: TFunction): SheetData[] {
     })
   }
   return out
+}
+
+/** Bucket of an expiry date: overdue, then within 30 / 60 / 90 days (beyond: the window asked for). */
+export function expiryBucket(days: number): 'overdue' | 'd30' | 'd60' | 'd90' | 'later' {
+  if (days < 0) return 'overdue'
+  if (days <= 30) return 'd30'
+  if (days <= 60) return 'd60'
+  if (days <= 90) return 'd90'
+  return 'later'
+}
+
+export function expiringSheets(items: ExpiringItem[], t: TFunction): SheetData[] {
+  const h = (k: Col): string => t(`reports.cols.${k}`)
+  return [
+    {
+      name: t('reports.tabs.expiring'),
+      rows: [
+        [
+          h('bucket'),
+          h('kind'),
+          h('subject'),
+          h('detail'),
+          h('site'),
+          h('status'),
+          h('supplier'),
+          h('date'),
+          h('daysLeft'),
+          h('muted'),
+        ],
+        ...items.map((i) => [
+          t(`reports.buckets.${expiryBucket(i.days)}`),
+          t(`reports.expiryKinds.${i.kind}`),
+          i.subject,
+          i.detail,
+          i.siteCode,
+          i.lifecycle ? t(`devices.lifecycleValues.${i.lifecycle as Lifecycle}`) : '',
+          i.vendor,
+          i.date,
+          i.days,
+          i.muted ? t('reports.yes') : '',
+        ]),
+      ],
+    },
+  ]
+}
+
+export function missingSheets(rows: MissingInfoRow[], t: TFunction): SheetData[] {
+  const h = (k: Col): string => t(`reports.cols.${k}`)
+  return [
+    {
+      name: t('reports.tabs.missing'),
+      rows: [
+        [h('device'), h('site'), h('type'), h('vendor'), h('model'), h('missing')],
+        ...rows.map((d) => [
+          d.hostname,
+          d.siteCode,
+          t(`devices.types.${d.type}`),
+          d.vendor,
+          d.model,
+          d.missing.map((m) => t(`dashboard.field.${m}`)).join(', '),
+        ]),
+      ],
+    },
+  ]
+}
+
+const LIFECYCLES = ['planned', 'active', 'spare', 'rma', 'retired'] as const
+type Lifecycle = (typeof LIFECYCLES)[number]
+
+/** Counts by site (a column per status), by type and by vendor (devices not retired). */
+export function inventorySheets(rows: InventoryRow[], t: TFunction): SheetData[] {
+  const h = (k: Col): string => t(`reports.cols.${k}`)
+  const live = rows.filter((r) => r.lifecycle !== 'retired')
+  const sum = (list: InventoryRow[]) => list.reduce((n, r) => n + r.quantity, 0)
+  const group = (list: InventoryRow[], key: (r: InventoryRow) => string) => {
+    const m = new Map<string, InventoryRow[]>()
+    for (const r of list) m.set(key(r), [...(m.get(key(r)) ?? []), r])
+    return m
+  }
+  const bySite = [...group(rows, (r) => r.siteCode)].map(([code, list]) => [
+    code,
+    list[0]!.siteName,
+    ...LIFECYCLES.map((l) => sum(list.filter((r) => r.lifecycle === l)) || ''),
+    sum(list.filter((r) => r.lifecycle !== 'retired')),
+  ])
+  const byType = [...group(live, (r) => r.type)]
+    .map(
+      ([type, list]) => [t(`devices.types.${type as InventoryRow['type']}`), sum(list)] as Cell[],
+    )
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+  const byVendor = [...group(live, (r) => r.vendor || '—')]
+    .map(([vendor, list]) => [vendor, sum(list)] as Cell[])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+  return [
+    {
+      name: t('reports.sheets.bySite'),
+      rows: [
+        [
+          h('site'),
+          h('siteName'),
+          ...LIFECYCLES.map((l) => t(`devices.lifecycleValues.${l}`)),
+          h('inUseTotal'),
+        ],
+        ...bySite,
+      ],
+    },
+    { name: t('reports.sheets.byType'), rows: [[h('type'), h('quantity')], ...byType] },
+    { name: t('reports.sheets.byVendor'), rows: [[h('vendor'), h('quantity')], ...byVendor] },
+  ]
 }

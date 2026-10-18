@@ -895,3 +895,20 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - dòng thiếu model / part number có ghi chú nhắc bổ sung.
 - **Để sau:** module quang và license trong BOQ (kho chưa quản lý); đơn giá / thành tiền.
 
+### ADR-052 — Một định nghĩa "thiếu thông tin"; báo cáo hết hạn và thống kê (P2-11)
+- **Bối cảnh:** "Thiếu thông tin" đang hiểu khác nhau giữa panel kiểm tra trên sơ đồ và Dashboard: một thiết bị có thể vừa "đủ" vừa "thiếu".
+- **Quyết định (người dùng đồng ý, 2026-10-18):**
+  - **Một định nghĩa dùng chung** cho Dashboard, báo cáo "Thiếu thông tin" và panel Vấn đề:
+    - xét thiết bị đang dùng (`active`) do mình quản lý (`managed`);
+    - bỏ qua đám mây nhà mạng, VM, patch panel, thiết bị đầu cuối (PC, laptop, điện thoại IP, IoT, máy in) và loại "khác";
+    - thiếu khi: không có S/N; không có cả model lẫn part number (một trong hai đã đủ để tra sản phẩm); chưa gán vị trí khi site đã khai vị trí.
+    - Một truy vấn SQL `DashboardMissingInfo` (Dashboard lấy 20 dòng, báo cáo lấy hết). Danh sách loại bỏ qua trùng với `NO_ASSET` trong `rules.ts`.
+  - **Báo cáo hết hạn:**
+    - bảo hành / license / EoS của thiết bị đang dùng hoặc dự phòng;
+    - ngày đã quá hạn luôn có mặt, vì vẫn là rủi ro;
+    - thiết bị đã tắt nhắc vẫn có, vì tắt nhắc chỉ dừng thông báo;
+    - hợp đồng còn hiệu lực hoặc mới hết trong vòng một năm; hợp đồng là của tổ chức nên không lọc theo site / danh mục;
+    - khoảng 30 / 60 / 90 ngày, chia nhóm "Đã quá hạn / Trong 30 / 60 / 90 ngày".
+  - **Thống kê thiết bị:** theo site (mỗi trạng thái một cột, tổng không tính thanh lý), theo loại, theo hãng.
+  - **Phạm vi:** site / danh mục lọc báo cáo phải thuộc tổ chức (404 nếu không), giống Dashboard.
+

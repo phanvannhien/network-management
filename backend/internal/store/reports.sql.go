@@ -73,6 +73,195 @@ func (q *Queries) ReportBoq(ctx context.Context, arg ReportBoqParams) ([]ReportB
 	return items, nil
 }
 
+const reportExpiring = `-- name: ReportExpiring :many
+WITH dates AS (
+  SELECT d.id, 'warranty'::text AS kind, d.warranty_end AS day FROM devices d
+  WHERE d.organization_id = $1 AND d.warranty_end IS NOT NULL
+  UNION ALL
+  SELECT d.id, 'license', d.license_end FROM devices d
+  WHERE d.organization_id = $1 AND d.license_end IS NOT NULL
+  UNION ALL
+  SELECT d.id, 'eos', d.eos_date FROM devices d
+  WHERE d.organization_id = $1 AND d.eos_date IS NOT NULL
+)
+SELECT d.id, d.hostname, d.type, d.vendor, d.model, d.lifecycle, d.alerts_muted, s.code::text AS site_code,
+       COALESCE(v.name, '')::text AS supplier, dates.kind::text AS kind, dates.day::date AS day
+FROM dates
+JOIN devices d ON d.id = dates.id AND d.organization_id = $1
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+LEFT JOIN vendors v ON v.id = d.supplier_id AND v.organization_id = d.organization_id
+WHERE d.deleted_at IS NULL AND d.lifecycle IN ('active', 'spare') AND dates.day <= $2::date
+  AND ($3::uuid IS NULL OR d.site_id = $3)
+  AND ($4::uuid IS NULL OR s.category_id IN (SELECT category_subtree($4::uuid)))
+ORDER BY dates.day, lower(d.hostname)
+`
+
+type ReportExpiringParams struct {
+	OrganizationID pgtype.UUID
+	Until          pgtype.Date
+	SiteFilter     pgtype.UUID
+	CategoryFilter pgtype.UUID
+}
+
+type ReportExpiringRow struct {
+	ID          pgtype.UUID
+	Hostname    string
+	Type        string
+	Vendor      string
+	Model       string
+	Lifecycle   string
+	AlertsMuted bool
+	SiteCode    string
+	Supplier    string
+	Kind        string
+	Day         pgtype.Date
+}
+
+// Warranty / licence / end-of-support dates up to @until of devices in use or spare, overdue ones included (still a
+// risk). Muted devices are in: muting stops reminders, not reports.
+func (q *Queries) ReportExpiring(ctx context.Context, arg ReportExpiringParams) ([]ReportExpiringRow, error) {
+	rows, err := q.db.Query(ctx, reportExpiring,
+		arg.OrganizationID,
+		arg.Until,
+		arg.SiteFilter,
+		arg.CategoryFilter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReportExpiringRow
+	for rows.Next() {
+		var i ReportExpiringRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Hostname,
+			&i.Type,
+			&i.Vendor,
+			&i.Model,
+			&i.Lifecycle,
+			&i.AlertsMuted,
+			&i.SiteCode,
+			&i.Supplier,
+			&i.Kind,
+			&i.Day,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const reportExpiringContracts = `-- name: ReportExpiringContracts :many
+SELECT k.id, k.name, k.number, k.kind, k.end_date::date AS day, COALESCE(v.name, '')::text AS vendor_name
+FROM contracts k
+LEFT JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = k.organization_id
+WHERE k.organization_id = $1 AND k.deleted_at IS NULL AND k.end_date IS NOT NULL
+  AND k.end_date >= $2::date AND k.end_date <= $3::date
+ORDER BY k.end_date, lower(k.name)
+`
+
+type ReportExpiringContractsParams struct {
+	OrganizationID pgtype.UUID
+	Since          pgtype.Date
+	Until          pgtype.Date
+}
+
+type ReportExpiringContractsRow struct {
+	ID         pgtype.UUID
+	Name       string
+	Number     string
+	Kind       string
+	Day        pgtype.Date
+	VendorName string
+}
+
+// Live contracts ending in [@since, @until] (organization-level: not narrowed by site / category).
+func (q *Queries) ReportExpiringContracts(ctx context.Context, arg ReportExpiringContractsParams) ([]ReportExpiringContractsRow, error) {
+	rows, err := q.db.Query(ctx, reportExpiringContracts, arg.OrganizationID, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReportExpiringContractsRow
+	for rows.Next() {
+		var i ReportExpiringContractsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Number,
+			&i.Kind,
+			&i.Day,
+			&i.VendorName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const reportInventory = `-- name: ReportInventory :many
+SELECT s.code::text AS site_code, s.name AS site_name, d.type, d.vendor, d.lifecycle, count(*)::bigint AS quantity
+FROM devices d
+JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+WHERE d.organization_id = $1 AND d.deleted_at IS NULL
+  AND ($2::uuid IS NULL OR d.site_id = $2)
+  AND ($3::uuid IS NULL OR s.category_id IN (SELECT category_subtree($3::uuid)))
+GROUP BY s.code, s.name, d.type, d.vendor, d.lifecycle
+ORDER BY s.code, d.type, d.vendor, d.lifecycle
+`
+
+type ReportInventoryParams struct {
+	OrganizationID pgtype.UUID
+	SiteFilter     pgtype.UUID
+	CategoryFilter pgtype.UUID
+}
+
+type ReportInventoryRow struct {
+	SiteCode  string
+	SiteName  string
+	Type      string
+	Vendor    string
+	Lifecycle string
+	Quantity  int64
+}
+
+// Device counts by site / type / vendor / status (retired included: the by-site table shows them apart).
+func (q *Queries) ReportInventory(ctx context.Context, arg ReportInventoryParams) ([]ReportInventoryRow, error) {
+	rows, err := q.db.Query(ctx, reportInventory, arg.OrganizationID, arg.SiteFilter, arg.CategoryFilter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReportInventoryRow
+	for rows.Next() {
+		var i ReportInventoryRow
+		if err := rows.Scan(
+			&i.SiteCode,
+			&i.SiteName,
+			&i.Type,
+			&i.Vendor,
+			&i.Lifecycle,
+			&i.Quantity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const reportPortLinks = `-- name: ReportPortLinks :many
 SELECT l.kind, l.cable_id, l.status, l.a_kind, l.a_interface_id, l.b_kind, l.b_interface_id,
        COALESCE(ad.hostname, ag.name, asg.name, '')::text AS a_name, COALESCE(ai.name, '')::text AS a_port,

@@ -107,7 +107,7 @@ Phase hiện tại: **Phase 0**
   - Thiết kế + quyết định: ADR-047. Thứ tự: [x] chế độ xem L2 · [x] nhiều trang · [x] connector ra ngoài trang · [x] trang L3 · [x] segment.
 - [x] **P2-09 IPAM đầy đủ**: import subnet/dải từ Excel, bảng IP plan đặt lên sơ đồ, rule chồng lấn và IP tĩnh trong DHCP.
 - [x] **P2-10 Validation Phase 2** theo SRS §7.
-- [ ] **P2-11 Báo cáo & export**: PDF A4/A3 có title block; Excel IP plan, port map, BOQ, VLAN; báo cáo hết hạn, thiếu thông tin.
+- [x] **P2-11 Báo cáo & export**: PDF A4/A3 có title block; Excel IP plan, port map, BOQ, VLAN; báo cáo hết hạn, thiếu thông tin.
 - [x] **P2-12 Model library theo hãng** (ADR-041): catalog đối chiếu với thư viện NetBox (CC0), thêm model mới, ảnh thật mặt trước/sau xem qua popup.
 - [ ] **P2-13 Vận hành**: script backup/khôi phục, hướng dẫn giữ master key, tài liệu cài đặt/nâng cấp.
 - [ ] **P2-14 Gate Enterprise**: review bảo mật kho mật khẩu & phân quyền; kiểm thử xâm nhập cơ bản.

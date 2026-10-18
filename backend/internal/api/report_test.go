@@ -1,9 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -16,7 +18,7 @@ func reportPath(org uuid.UUID, kind string) string { return orgPath(org) + "/rep
 func TestReports(t *testing.T) {
 	fx := newOrgFixture(t)
 	org := fx.OrgA
-	for _, kind := range []string{"ip-plan", "vlans", "port-map", "boq"} {
+	for _, kind := range []string{"ip-plan", "vlans", "port-map", "boq", "expiring", "missing-info", "inventory"} {
 		fx.AssertCrossTenantDenied(t, "GET", func(o uuid.UUID) string { return reportPath(o, kind) }, nil)
 	}
 	catA := mustCategory(t, fx.A, org, "NORTH")
@@ -123,8 +125,14 @@ func TestReports(t *testing.T) {
 	}
 	// Scoping by another organization's site or category finds nothing of A's either.
 	siteB := idOf(t, mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "B01", "name": "B"}))
-	if _, r := fx.A.Do("GET", reportPath(org, "port-map")+"?siteId="+siteB, nil); len(r["devices"].([]any)) != 0 {
-		t.Errorf("A's report scoped to B's site: %v", r)
+	catB := mustCategory(t, fx.B, fx.OrgB, "BCAT")
+	for _, kind := range []string{"ip-plan", "vlans", "port-map", "boq", "expiring", "missing-info", "inventory"} {
+		if status, _ := fx.A.Do("GET", reportPath(org, kind)+"?siteId="+siteB, nil); status != http.StatusNotFound {
+			t.Errorf("%s scoped to B's site: %d, want 404", kind, status)
+		}
+		if status, _ := fx.A.Do("GET", reportPath(org, kind)+"?categoryId="+catB, nil); status != http.StatusNotFound {
+			t.Errorf("%s scoped to B's category: %d, want 404", kind, status)
+		}
 	}
 }
 
@@ -142,5 +150,73 @@ func TestVlanListHas(t *testing.T) {
 		if got := vlanListHas(c.list, c.vid); got != c.want {
 			t.Errorf("vlanListHas(%q, %d) = %v", c.list, c.vid, got)
 		}
+	}
+}
+
+// P2-11: expiry (overdue and within the window, muted devices too, contracts), missing information with one
+// definition (ADR-052), device counts.
+func TestReportLists(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HN01", "name": "HN"}))
+	day := func(d int) string { return time.Now().AddDate(0, 0, d).Format("2006-01-02") }
+	mk := func(body map[string]any) string {
+		body["siteId"] = site
+		if body["lifecycle"] == nil {
+			body["lifecycle"] = "active"
+		}
+		return idOf(t, mustCreate(t, fx.A, devicesPath(org), body))
+	}
+	fw := mk(map[string]any{"hostname": "FW1", "type": "firewall", "vendor": "Fortinet", "model": "FG-60F", "serialNumber": "S1",
+		"warrantyEnd": day(20), "licenseEnd": day(-5)})
+	mk(map[string]any{"hostname": "SW1", "type": "l2_switch", "eosDate": day(80)})                          // missing S/N and model
+	mk(map[string]any{"hostname": "SW2", "type": "l2_switch", "warrantyEnd": day(200), "partNumber": "P1"}) // out of the window; missing S/N only
+	mk(map[string]any{"hostname": "PC1", "type": "pc"})                                                     // end-user device: not asked
+	mk(map[string]any{"hostname": "OLD", "type": "router", "lifecycle": "retired", "warrantyEnd": day(1)})
+	if status, _ := fx.A.Do("PUT", devicePath(org, fw)+"/alerts-muted", map[string]any{"muted": true}); status >= 300 {
+		t.Fatalf("mute: %d", status)
+	}
+	vendor := idOf(t, mustCreate(t, fx.A, vendorsPath(org), map[string]any{"name": "FPT", "kind": "isp"}))
+	mustCreate(t, fx.A, contractsPath(org), map[string]any{"vendorId": vendor, "name": "Internet HN", "kind": "isp", "endDate": day(45)})
+
+	_, ex := fx.A.Do("GET", reportPath(org, "expiring")+"?days=90", nil)
+	var got []string
+	for _, it := range ex["items"].([]any) {
+		it := it.(map[string]any)
+		got = append(got, fmt.Sprintf("%s:%s:%v", it["subject"], it["kind"], it["days"]))
+	}
+	want := []string{"FW1:license:-5", "FW1:warranty:20", "Internet HN:contract:45", "SW1:eos:80"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("expiring: %v, want %v", got, want)
+	}
+	if _, ex30 := fx.A.Do("GET", reportPath(org, "expiring")+"?days=30", nil); len(ex30["items"].([]any)) != 2 {
+		t.Errorf("30-day window: %v", ex30["items"])
+	}
+
+	_, mi := fx.A.Do("GET", reportPath(org, "missing-info"), nil)
+	miss := map[string]string{}
+	for _, d := range mi["devices"].([]any) {
+		d := d.(map[string]any)
+		var f []string
+		for _, x := range d["missing"].([]any) {
+			f = append(f, x.(string))
+		}
+		miss[d["hostname"].(string)] = strings.Join(f, ",")
+	}
+	if len(miss) != 2 || miss["SW1"] != "serial,model" || miss["SW2"] != "serial" {
+		t.Errorf("missing info: %v", miss)
+	}
+	// The dashboard counts the same devices.
+	if _, dash := fx.A.Do("GET", dashboardPath(org), nil); dash["totals"].(map[string]any)["missingInfo"] != float64(2) {
+		t.Errorf("dashboard missing info: %v", dash["totals"])
+	}
+
+	_, inv := fx.A.Do("GET", reportPath(org, "inventory"), nil)
+	total := 0
+	for _, r := range inv["rows"].([]any) {
+		total += int(r.(map[string]any)["quantity"].(float64))
+	}
+	if total != 5 {
+		t.Errorf("inventory rows: %v", inv["rows"])
 	}
 }
