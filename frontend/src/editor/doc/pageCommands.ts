@@ -152,3 +152,29 @@ export function sendToPage(
     },
   }
 }
+
+/** Keep where the user put an off-page connector (P2-08); a drag sends many with one mergeKey. */
+export function setStub(
+  key: string,
+  pageId: string,
+  x: number,
+  y: number,
+  mergeKey?: string,
+): DocCommand {
+  return {
+    label: 'moveConnector',
+    mergeKey,
+    apply(d) {
+      const multi = Boolean(d.view.pages && d.view.pages.length > 1)
+      const first = firstPageId(d.view)
+      const stubs = (d.view.stubs ??= [])
+      const s = stubs.find((x) => x.key === key && (x.pageId || first) === pageId)
+      if (s) {
+        if (s.x !== x || s.y !== y) {
+          s.x = x
+          s.y = y
+        }
+      } else stubs.push(multi ? { key, pageId, x, y } : { key, x, y })
+    },
+  }
+}

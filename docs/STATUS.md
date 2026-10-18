@@ -5,6 +5,27 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-08 (bước 3/5) Connector cho dây đi ra ngoài trang
+- Đã làm:
+  - **Không còn dây bị giấu:** dây có một đầu trên trang mà đầu kia không ở đây thì hiện mốc hình mũi tên cạnh thiết bị:
+    - `→ Tầng 2 · ACC02 g0/5`: đầu kia ở trang khác; bấm vào thì chuyển trang, chọn và zoom tới thiết bị đó;
+    - `→ Sơ đồ "WAN" · RTR g0/1`: đầu kia ở sơ đồ khác (chỉ những sơ đồ người xem mở được); bấm vào thì mở sơ đồ đó, chọn sẵn thiết bị;
+    - `Chưa có trên sơ đồ nào · NVR LAN1` kèm nút **Đặt vào đây**: đưa thiết bị đó lên trang, dây tự vẽ.
+  - **Gom:** nhiều dây từ cùng thiết bị tới cùng trang / sơ đồ là một mốc, ghi `(3 dây)`.
+  - **Vị trí:** tự xếp bên phải thiết bị; kéo được, chỗ mới lưu cùng sơ đồ (`view.stubs`, hoàn tác được).
+  - **Bật / tắt** trên thanh công cụ, mặc định bật.
+  - **Server:** `DiagramDetail` thêm `externalLinks` (tối đa 2000) và `elsewhere`; kiểm tra `stubs` khi lưu.
+  - **Glossary:** connector ra ngoài trang.
+- Test / cách kiểm tra:
+  - `make check` pass. Go: `TestDiagramExternalLinks`. Vitest: connector trong `pages.test.ts`.
+  - Trình duyệt thật: mốc ở trang 1 và trang 2; bấm sang trang chọn đúng thiết bị; "Đặt vào đây"; mở sơ đồ khác chọn sẵn router; bật / tắt; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Mốc không theo hướng đầu kia (luôn xếp bên phải).
+  - `.ntb.json` không mang vị trí mốc (tự xếp lại sau khi nhập).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 bước 4, trang L3 sinh từ IPAM.
+
 ## 2026-10-18 — P2-08 (bước 2/5) Nhiều trang trong một sơ đồ; sửa lỗ hổng link mời và lỗi L2
 - Đã làm:
   - **Trang trong sơ đồ** (như sheet Excel):

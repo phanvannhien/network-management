@@ -89,3 +89,11 @@ WHERE organization_id = @organization_id AND a_id = ANY (@ids::uuid[]) AND b_id 
 
 -- name: LinkExists :one
 SELECT EXISTS (SELECT 1 FROM links WHERE id = @id AND organization_id = @organization_id)::boolean;
+
+-- name: ListLinkIDsTouching :many
+-- Links with exactly one end among the given objects: off-page connectors of a diagram (P2-08), capped.
+SELECT id FROM links
+WHERE organization_id = @organization_id
+  AND ((a_id = ANY (@ids::uuid[])) <> (b_id = ANY (@ids::uuid[])))
+ORDER BY id
+LIMIT 2000;

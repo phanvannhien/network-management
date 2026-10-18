@@ -218,7 +218,87 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 	if err := diagramL2(ctx, q, m, &out); err != nil {
 		return out, err
 	}
+	if err := diagramExternal(ctx, q, m, d.ID, endIDs, &out); err != nil {
+		return out, err
+	}
 	return out, nil
+}
+
+// diagramExternal adds what off-page connectors (P2-08, ADR-047) need: the links with one end on the diagram and the
+// other diagrams — those the caller may open — that place their far ends.
+func diagramExternal(ctx context.Context, q store.Querier, m tenant.Membership, self pgtype.UUID, endIDs []pgtype.UUID,
+	out *apigen.DiagramDetail) error {
+	ext, elsewhere := []apigen.Link{}, []apigen.DiagramElsewhere{}
+	out.ExternalLinks, out.Elsewhere = &ext, &elsewhere
+	if len(endIDs) == 0 {
+		return nil
+	}
+	ids, err := q.ListLinkIDsTouching(ctx, store.ListLinkIDsTouchingParams{OrganizationID: m.OrgID, Ids: endIDs})
+	if err != nil || len(ids) == 0 {
+		if err != nil {
+			return fmt.Errorf("external links: %w", err)
+		}
+		return nil
+	}
+	rows, err := q.ListLinks(ctx, store.ListLinksParams{OrganizationID: m.OrgID, LinkIds: ids})
+	if err != nil {
+		return fmt.Errorf("external links: %w", err)
+	}
+	if ext, err = visibleLinks(ctx, q, m, rows); err != nil {
+		return err
+	}
+	out.ExternalLinks = &ext
+	onView := map[uuid.UUID]bool{}
+	for _, id := range endIDs {
+		onView[uuid.UUID(id.Bytes)] = true
+	}
+	far := []string{}
+	seen := map[uuid.UUID]bool{}
+	for _, l := range ext {
+		for _, e := range []apigen.LinkEnd{l.A, l.B} {
+			if !onView[e.Id] && !seen[e.Id] {
+				seen[e.Id] = true
+				far = append(far, e.Id.String())
+			}
+		}
+	}
+	if len(far) == 0 {
+		return nil
+	}
+	shows, err := q.ListDiagramsShowing(ctx, store.ListDiagramsShowingParams{OrganizationID: m.OrgID, Ids: far})
+	if err != nil {
+		return fmt.Errorf("far end diagrams: %w", err)
+	}
+	all, err := q.ListDiagrams(ctx, store.ListDiagramsParams{OrganizationID: m.OrgID})
+	if err != nil {
+		return fmt.Errorf("list diagrams: %w", err)
+	}
+	byID := map[pgtype.UUID]store.ListDiagramsRow{}
+	for _, d := range all {
+		byID[d.ID] = d
+	}
+	where := map[string][]apigen.DiagramRef{}
+	for _, sh := range shows {
+		d, ok := byID[sh.ID]
+		if !ok || sh.ID == self {
+			continue
+		}
+		if lv, err := diagramLevel(ctx, q, m, d); err != nil {
+			return err
+		} else if lv == tenant.LevelNone {
+			continue
+		}
+		for _, ref := range sh.RefIds {
+			where[ref] = append(where[ref], apigen.DiagramRef{Id: uuid.UUID(sh.ID.Bytes), Name: sh.Name})
+		}
+	}
+	for _, ref := range far {
+		if ds := where[ref]; len(ds) > 0 {
+			elsewhere = append(elsewhere, apigen.DiagramElsewhere{RefId: uuid.MustParse(ref), Diagrams: ds})
+		}
+	}
+	out.Elsewhere = &elsewhere
+	return nil
 }
 
 // diagramL2 adds what the L2 view (P2-08, ADR-047) colours and marks with: the VLANs of the sites on the view (plus
@@ -586,6 +666,15 @@ func checkPages(v apigen.DiagramView) string {
 	for _, a := range v.Annotations {
 		if _, ok := page(a.PageId); !ok {
 			return "Chú thích nằm trên trang không tồn tại"
+		}
+	}
+	stubs := ptrSlice(v.Stubs)
+	if len(stubs) > 2000 {
+		return "Sơ đồ tối đa 2000 vị trí connector"
+	}
+	for _, st := range stubs {
+		if _, ok := page(st.PageId); !ok || st.Key == "" || len(st.Key) > 200 || !finite(st.X, st.Y) {
+			return "Vị trí connector không hợp lệ"
 		}
 	}
 	return ""

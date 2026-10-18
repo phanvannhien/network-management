@@ -209,6 +209,9 @@ export function deleteDevice(id: string): DocCommand {
         delete d.linkEdits[l.id]
         delete d.links[l.id]
       }
+      // Its off-page connectors go with it (the server deletes those links too).
+      for (const l of Object.values(d.external ?? {}))
+        if (l.aId === id || l.bId === id) delete d.external![l.id]
       const drop = new Set(nodeIdsOf(d, id))
       d.view.nodes = d.view.nodes.filter((n) => !drop.has(n.id))
       d.view.edges = d.view.edges.filter((e) => d.links[e.linkId] || d.hidden.includes(e.linkId))
@@ -286,6 +289,7 @@ export function deleteLink(id: string): DocCommand {
       } else if (!d.deletedLinks.includes(id)) d.deletedLinks.push(id)
       delete d.linkEdits[id]
       delete d.links[id]
+      if (d.external) delete d.external[id]
       d.view.edges = d.view.edges.filter((e) => e.linkId !== id)
     },
   }

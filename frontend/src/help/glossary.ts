@@ -497,6 +497,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'off-page-connector',
+    'org',
+    ['Connector ra ngoài trang', 'Off-page connector'],
+    [
+      'Mốc hình mũi tên cạnh thiết bị cho dây có đầu kia không nằm trên trang: ở trang khác, ở sơ đồ khác, hoặc chưa vẽ ở đâu (có nút "Đặt vào đây"). Tự tính từ kho, không vẽ tay; kéo được để đặt lại chỗ. Sơ đồ không bao giờ giấu dây uplink.',
+      'An arrow tag next to a device for a cable whose other end is not on the page: on another page, on another diagram, or not drawn yet ("Place here"). Derived from the inventory, never drawn by hand; drag it to move it. A diagram never hides an uplink.',
+    ],
+    ['→ Phòng server · CORE-SW01 Te1/1/2', '→ Server room · CORE-SW01 Te1/1/2'],
+  ),
+  e(
     'vlan-mismatch',
     'vlan',
     ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],

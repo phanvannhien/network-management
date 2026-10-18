@@ -13,7 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -32,12 +32,13 @@ import {
   useDiagramMutations,
   useDiagrams,
 } from './doc/api'
-import { createDevice, createGroup, newId } from './doc/commands'
+import { addNode, createDevice, createGroup, newId } from './doc/commands'
 import { expandTemplatePorts } from './library/ports'
 import { useTemplateChoices } from '@/modules/inventory/TemplatePicker'
 import { draftStore, type Draft } from './doc/drafts'
 import { createDocStore, type DocStoreApi } from './doc/store'
-import { changesOf } from './doc/types'
+import { changesOf, type DeviceCard, type GroupCard } from './doc/types'
+import type { Connector } from './doc/offpage'
 import type { DeviceType, LibraryItem } from './library/items'
 import { LibraryPanel } from './library/LibraryPanel'
 import { defaultSiteFor } from './library/placement'
@@ -392,6 +393,7 @@ function Workspace({
     if (!focusRef || !nodesReady || meta.id !== diagramId) return
     // The object may be on another page: open that page first (this runs again once it is drawn).
     const anywhere =
+      pageDoc.view.nodes.find((n) => n.refId === focusRef) ??
       doc.view.nodes.find((n) => n.refId === focusRef) ??
       doc.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef) ??
       doc.view.annotations.find((a) => a.kind === 'zone' && a.siteId === focusRef)
@@ -756,14 +758,11 @@ function Workspace({
   }, [meta.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (meta.id !== diagramId) return
-    setParams(
-      (p) => {
-        if (page === firstPageId(doc.view)) p.delete('page')
-        else p.set('page', page)
-        return p
-      },
-      { replace: true },
-    )
+    // From the address bar as it is now: a ?focus= set in the same click (connector) must survive.
+    const p = new URLSearchParams(window.location.search)
+    if (page === firstPageId(doc.view)) p.delete('page')
+    else p.set('page', page)
+    setParams(p, { replace: true })
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
   const pageJump = useStore(store, (s) => s.pageJump)
   useEffect(() => {
@@ -771,6 +770,59 @@ function Workspace({
     const target = pages.find((x) => x.id === pageJump.pageId)
     if (target) toast.info(t('pages.jumped', { name: pageLabel(target, pages.indexOf(target), t) }))
   }, [pageJump]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Off-page connectors (P2-08): go where the cables continue, or place the far end on this page.
+  const openConnector = useCallback(
+    (c: Connector) => {
+      const far = c.far[0]
+      if (!far) return
+      if (c.target.kind === 'page') {
+        store.getState().setPage(c.target.pageId)
+        const p = new URLSearchParams(window.location.search)
+        p.set('focus', far.id)
+        p.set('page', c.target.pageId)
+        setParams(p)
+      } else if (c.target.kind === 'diagram')
+        void navigate(`/o/${orgId}/diagrams/${c.target.id}?from=${diagramId}&focus=${far.id}`)
+    },
+    [store, setParams, navigate, orgId, diagramId],
+  )
+  const placeConnector = useCallback(
+    (c: Connector) => {
+      const s = store.getState()
+      const far = c.far[0]
+      const info = far && s.doc?.farEnds?.[far.id]
+      if (!far || !info || !canEdit) return
+      const at = { x: c.x + 40, y: c.y - 20 }
+      s.dispatch(
+        info.kind === 'device'
+          ? addNode('device', far.id, at.x, at.y, {
+              device: {
+                id: far.id,
+                hostname: info.name,
+                type: info.type as DeviceCard['type'],
+                siteId: info.siteId,
+                siteCode: info.siteCode,
+              },
+              links: c.links,
+            })
+          : addNode('endpoint_group', far.id, at.x, at.y, {
+              group: {
+                id: far.id,
+                name: info.name,
+                kind: info.type as GroupCard['kind'],
+                siteId: info.siteId,
+                expectedCount: null,
+                ipRangeId: null,
+                range: '',
+                notes: '',
+              },
+              links: c.links,
+            }),
+      )
+    },
+    [store, canEdit],
+  )
 
   const menuItems = (m: { kind: 'node' | 'edge' | 'pane'; id?: string }): MenuItem[] => {
     const keys = (id: Parameters<typeof keysLabel>[0]) => keysLabel(id)
@@ -920,6 +972,9 @@ function Workspace({
     <div ref={root} className="contents">
       <Canvas
         key={page}
+        showOffPage={prefs.offPage}
+        onConnectorOpen={openConnector}
+        onConnectorPlace={placeConnector}
         focusing={openedFocused}
         onNodeOpen={openNode}
         diagramId={diagramId}

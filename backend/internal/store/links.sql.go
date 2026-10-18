@@ -220,6 +220,40 @@ func (q *Queries) ListLinkIDsAmong(ctx context.Context, arg ListLinkIDsAmongPara
 	return items, nil
 }
 
+const listLinkIDsTouching = `-- name: ListLinkIDsTouching :many
+SELECT id FROM links
+WHERE organization_id = $1
+  AND ((a_id = ANY ($2::uuid[])) <> (b_id = ANY ($2::uuid[])))
+ORDER BY id
+LIMIT 2000
+`
+
+type ListLinkIDsTouchingParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []pgtype.UUID
+}
+
+// Links with exactly one end among the given objects: off-page connectors of a diagram (P2-08), capped.
+func (q *Queries) ListLinkIDsTouching(ctx context.Context, arg ListLinkIDsTouchingParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listLinkIDsTouching, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLinks = `-- name: ListLinks :many
 
 SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version, l.fiber_mode, l.connector, l.service,

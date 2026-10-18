@@ -9254,6 +9254,12 @@ components:
             name their page (pageId); without one they are on the first page.
           items:
             $ref: '#/components/schemas/DiagramPage'
+        stubs:
+          type: array
+          maxItems: 2000
+          description: positions of off-page connectors the user moved (P2-08); the others are placed automatically
+          items:
+            $ref: '#/components/schemas/DiagramStub'
 
     DiagramPage:
       type: object
@@ -9310,6 +9316,56 @@ components:
           description: L2 view — devices on the view holding the gateway IP of a subnet with a VLAN
           items:
             $ref: '#/components/schemas/DiagramGateway'
+        externalLinks:
+          type: array
+          description: >-
+            Off-page connectors (P2-08, ADR-047): links with exactly one end on the diagram (at most 2000); the other
+            end is drawn elsewhere or nowhere
+          items:
+            $ref: '#/components/schemas/Link'
+        elsewhere:
+          type: array
+          description: the other diagrams (the caller may open) that place the far ends of externalLinks
+          items:
+            $ref: '#/components/schemas/DiagramElsewhere'
+
+    DiagramElsewhere:
+      type: object
+      required: [refId, diagrams]
+      properties:
+        refId:
+          type: string
+          format: uuid
+        diagrams:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagramRef'
+
+    DiagramRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    DiagramStub:
+      type: object
+      required: [key, x, y]
+      description: where the user dragged an off-page connector (key = view node > target)
+      properties:
+        key:
+          type: string
+          maxLength: 200
+        pageId:
+          type: string
+          maxLength: 64
+        x:
+          type: number
+        y:
+          type: number
 
     DiagramVlan:
       type: object

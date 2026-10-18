@@ -328,7 +328,10 @@ export type GridSize = (typeof GRID_SIZES)[number]
 export { ANN }
 export const CLUSTER = 'c:'
 export const isAnnotationId = (id: string) => id.startsWith(ANN)
-export const isOverlayId = (id: string) => id.startsWith(ANN) || id.startsWith(CLUSTER)
+/** Off-page connectors (P2-08): derived nodes, never selected or deleted. */
+export const OFFPAGE = 'o:'
+export const isOverlayId = (id: string) =>
+  id.startsWith(ANN) || id.startsWith(CLUSTER) || id.startsWith(OFFPAGE)
 
 /**
  * Annotations as React Flow nodes (P1-19): frames under everything (only their title bar is grabbable, so the

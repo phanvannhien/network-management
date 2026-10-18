@@ -14,6 +14,8 @@ export interface EditorPrefs {
   /** Library / property panel folded to a slim rail at the canvas edge (still open, one click to unfold). */
   libraryMin: boolean
   panelMin: boolean
+  /** Off-page connectors (P2-08). */
+  offPage: boolean
 }
 
 const KEY = 'ntb-editor-prefs-v1'
@@ -26,6 +28,7 @@ const DEFAULTS: EditorPrefs = {
   panel: true,
   libraryMin: false,
   panelMin: false,
+  offPage: true,
 }
 
 export function readPrefs(): EditorPrefs {
@@ -40,6 +43,7 @@ export function readPrefs(): EditorPrefs {
       panel: typeof raw.panel === 'boolean' ? raw.panel : DEFAULTS.panel,
       libraryMin: raw.libraryMin === true,
       panelMin: raw.panelMin === true,
+      offPage: raw.offPage !== false,
     }
   } catch {
     return DEFAULTS

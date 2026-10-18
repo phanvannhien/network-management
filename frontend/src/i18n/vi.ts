@@ -912,6 +912,17 @@ export const vi = {
     unsaved: 'chưa lưu',
     empty: 'Sơ đồ trống.',
   },
+  offPage: {
+    diagram: 'Sơ đồ "{{name}}"',
+    nowhere: 'Chưa có trên sơ đồ nào',
+    nowhereHint:
+      'Đầu kia của dây chưa được vẽ ở đâu. Bấm "Đặt vào đây" để đưa thiết bị đó lên trang này.',
+    open: 'Bấm để sang nơi có đầu kia của dây',
+    place: 'Đặt vào đây',
+    toggle: 'Hiện dây đi ra ngoài trang',
+    toggleHint:
+      'Dây có một đầu ở trang khác, sơ đồ khác hoặc chưa vẽ ở đâu hiện thành mốc mũi tên cạnh thiết bị. Kéo mốc để đặt lại chỗ.',
+  },
   pages: {
     title: 'Trang của sơ đồ',
     untitled: 'Trang {{n}}',

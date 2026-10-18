@@ -20,7 +20,10 @@ import { edgeLabel } from '../overview/labels'
 import { useSiteGraph } from '../overview/siteGraph'
 import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
-import { useDoc, useDocStoreApi } from './context'
+import { ConnectorContext, useDoc, useDocStoreApi, type ConnectorActions } from './context'
+import { offPageConnectors, type Connector } from '../doc/offpage'
+import { setStub } from '../doc/pageCommands'
+import type { OffPageData } from './OffPageNode'
 import { docOnPage, firstPageId } from '../doc/pages'
 import {
   ANN,
@@ -28,6 +31,7 @@ import {
   isAnnotationId,
   isOverlayId,
   litNodes,
+  OFFPAGE,
   MAX_ZOOM,
   MIN_ZOOM,
   toAnnotationNodes,
@@ -76,6 +80,9 @@ export function Canvas({
   hand,
   focusing = false,
   onNodeOpen,
+  showOffPage = true,
+  onConnectorOpen,
+  onConnectorPlace,
 }: {
   diagramId: string
   canEdit: boolean
@@ -98,6 +105,10 @@ export function Canvas({
   focusing?: boolean
   /** Double click on a node: a site opens its detail diagram (P2-21). */
   onNodeOpen?: (nodeId: string) => void
+  /** Off-page connectors (P2-08): shown (default), and what using one does. */
+  showOffPage?: boolean
+  onConnectorOpen?: (c: Connector) => void
+  onConnectorPlace?: (c: Connector) => void
 }) {
   const { t } = useTranslation()
   const store = useDocStoreApi()
@@ -129,6 +140,21 @@ export function Canvas({
   const resizeKey = useRef<{ id: string; key: string } | null>(null)
   const wireFrom = useRef<string | null>(null)
 
+  // Off-page connectors need the whole diagram (where else each far end is drawn).
+  const fullDoc = useDoc((s) => s.doc)
+  const page = useDoc((s) => s.page)
+  const connectors = useMemo(
+    () => (fullDoc && showOffPage ? offPageConnectors(fullDoc, page) : []),
+    [fullDoc, page, showOffPage],
+  )
+  const connectorActions = useMemo<ConnectorActions>(
+    () => ({
+      open: (c) => onConnectorOpen?.(c),
+      place: (c) => onConnectorPlace?.(c),
+      canEdit,
+    }),
+    [onConnectorOpen, onConnectorPlace, canEdit],
+  )
   const lens = useDoc((s) => s.lens)
   const vlanFilter = useDoc((s) => s.vlanFilter)
   const edgeLens = useMemo(() => ({ lens, vlanFilter }), [lens, vlanFilter])
@@ -170,8 +196,17 @@ export function Canvas({
       ...toClusterNodes(clusterBoxes(doc, measured)),
       ...anns.filter((n) => n.type !== 'frame'),
       ...out,
+      ...connectors.map((c): Node<OffPageData> => ({
+        id: OFFPAGE + c.key,
+        type: 'offpage',
+        position: { x: c.x, y: c.y },
+        data: { connector: c },
+        draggable: canEdit && !panning,
+        selectable: false,
+        zIndex: 4,
+      })),
     ] as Node[])
-  }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning, lit])
+  }, [doc, selection, measured, canEdit, dataCache, nodeCache, panning, lit, connectors])
   const edgeSelection = useDoc((s) => s.edgeSelection)
   // Overview (P2-21): links between two sites drawn on the view, derived from the inventory, read-only.
   const { orgId = '' } = useParams()
@@ -206,9 +241,32 @@ export function Canvas({
         ? reuseUnchanged(edgeCache, [
             ...(toFlowEdges(doc, new Set(edgeSelection), edgeLens) as Edge[]),
             ...siteEdges,
+            ...connectors.map((c): Edge => {
+              const l = c.links[0]!
+              const here = doc.view.nodes.find((n) => n.id === c.nodeId)
+              const port = here?.refId === l.aId ? l.aPort : l.bPort
+              return {
+                id: `oe:${c.key}`,
+                source: c.nodeId,
+                target: OFFPAGE + c.key,
+                type: 'cable',
+                className: `ntb-edge-${l.kind} ntb-edge-offpage`,
+                selectable: false,
+                focusable: false,
+                deletable: false,
+                data: {
+                  linkId: l.id,
+                  aPort: c.links.length === 1 ? port : '',
+                  bPort: '',
+                  status: l.status ?? 'up',
+                  index: 0,
+                  count: 1,
+                },
+              }
+            }),
           ])
         : [],
-    [doc, edgeSelection, edgeCache, siteEdges, edgeLens],
+    [doc, edgeSelection, edgeCache, siteEdges, edgeLens, connectors],
   )
 
   /** Frame drag: the devices inside it when the drag began move with it (Alt: the frame alone). */
@@ -290,6 +348,20 @@ export function Canvas({
       const picked = new Map<string, boolean>()
       const sizes: Record<string, { width: number; height: number }> = {}
       for (const c of changes) {
+        // A moved off-page connector keeps its place (one undo step per drag).
+        if ('id' in c && c.id.startsWith(OFFPAGE)) {
+          if (c.type === 'position' && c.position && canEdit)
+            dispatch(
+              setStub(
+                c.id.slice(OFFPAGE.length),
+                store.getState().page,
+                Math.round(c.position.x),
+                Math.round(c.position.y),
+                dragKey.current ?? undefined,
+              ),
+            )
+          continue
+        }
         if ('id' in c && isOverlayId(c.id)) {
           if (canEdit) annotationChange(c)
           if (c.type === 'select') picked.set(c.id, c.selected)
@@ -354,165 +426,168 @@ export function Canvas({
   )
 
   return (
-    <ReactFlow
-      aria-label={t('editorCanvas.canvas')}
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={NODE_TYPES}
-      edgeTypes={EDGE_TYPES}
-      onNodesChange={onNodesChange}
-      elevateNodesOnSelect={false}
-      onEdgesChange={(changes) => {
-        const s = store.getState()
-        const next = new Set(s.edgeSelection)
-        let touched = false
-        for (const c of changes)
-          if (c.type === 'select') {
-            touched = true
-            if (c.selected) next.add(c.id)
-            else next.delete(c.id)
+    <ConnectorContext.Provider value={connectorActions}>
+      <ReactFlow
+        aria-label={t('editorCanvas.canvas')}
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
+        onNodesChange={onNodesChange}
+        elevateNodesOnSelect={false}
+        onEdgesChange={(changes) => {
+          const s = store.getState()
+          const next = new Set(s.edgeSelection)
+          let touched = false
+          for (const c of changes)
+            if (c.type === 'select') {
+              touched = true
+              if (c.selected) next.add(c.id)
+              else next.delete(c.id)
+            }
+          if (touched) s.setEdgeSelection([...next])
+        }}
+        onNodeContextMenu={(e, node) => {
+          e.preventDefault()
+          // Right-clicking outside the selection selects that node, like file managers do.
+          const s = store.getState()
+          if (!s.selection.includes(node.id)) s.setSelection([node.id])
+          // Acting on nodes must not touch cables picked earlier (and the other way round).
+          s.setEdgeSelection([])
+          onMenu({ kind: 'node', id: node.id }, e.clientX, e.clientY)
+        }}
+        onEdgeContextMenu={(e, edge) => {
+          e.preventDefault()
+          if (edge.type === 'site') return
+          store.getState().setEdgeSelection([edge.id])
+          store.getState().setSelection([])
+          onMenu({ kind: 'edge', id: edge.id }, e.clientX, e.clientY)
+        }}
+        onPaneContextMenu={(e) => {
+          e.preventDefault()
+          onMenu({ kind: 'pane' }, e.clientX, e.clientY)
+        }}
+        onNodeDragStart={(e, node) => {
+          dragKey.current = `drag:${crypto.randomUUID()}`
+          const st = store.getState()
+          // Geometry of this page only: frames hold the devices drawn on the same page.
+          const s = { ...st, doc: st.doc ? docOnPage(st.doc, st.page) : null }
+          // Dragging devices: the site frames holding any of them will wrap around their devices.
+          fitPlan.current = null
+          if (s.doc && !isOverlayId(node.id)) {
+            const moved = new Set([node.id, ...s.selection])
+            const plan = new Map(
+              [...siteFrameMembers(s.doc, measured)].filter(([, members]) =>
+                members.some((m) => moved.has(m)),
+              ),
+            )
+            if (plan.size > 0) fitPlan.current = plan
           }
-        if (touched) s.setEdgeSelection([...next])
-      }}
-      onNodeContextMenu={(e, node) => {
-        e.preventDefault()
-        // Right-clicking outside the selection selects that node, like file managers do.
-        const s = store.getState()
-        if (!s.selection.includes(node.id)) s.setSelection([node.id])
-        // Acting on nodes must not touch cables picked earlier (and the other way round).
-        s.setEdgeSelection([])
-        onMenu({ kind: 'node', id: node.id }, e.clientX, e.clientY)
-      }}
-      onEdgeContextMenu={(e, edge) => {
-        e.preventDefault()
-        if (edge.type === 'site') return
-        store.getState().setEdgeSelection([edge.id])
-        store.getState().setSelection([])
-        onMenu({ kind: 'edge', id: edge.id }, e.clientX, e.clientY)
-      }}
-      onPaneContextMenu={(e) => {
-        e.preventDefault()
-        onMenu({ kind: 'pane' }, e.clientX, e.clientY)
-      }}
-      onNodeDragStart={(e, node) => {
-        dragKey.current = `drag:${crypto.randomUUID()}`
-        const st = store.getState()
-        // Geometry of this page only: frames hold the devices drawn on the same page.
-        const s = { ...st, doc: st.doc ? docOnPage(st.doc, st.page) : null }
-        // Dragging devices: the site frames holding any of them will wrap around their devices.
-        fitPlan.current = null
-        if (s.doc && !isOverlayId(node.id)) {
-          const moved = new Set([node.id, ...s.selection])
-          const plan = new Map(
-            [...siteFrameMembers(s.doc, measured)].filter(([, members]) =>
-              members.some((m) => moved.has(m)),
-            ),
-          )
-          if (plan.size > 0) fitPlan.current = plan
-        }
-        const a = isAnnotationId(node.id)
-          ? s.doc?.view.annotations.find((x) => ANN + x.id === node.id)
-          : undefined
-        frameDrag.current =
-          a?.kind === 'zone' && s.doc && !e.altKey
-            ? {
-                id: a.id,
-                x0: a.x,
-                y0: a.y,
-                // Every selected frame moves together (React Flow drags the selected frames); their devices follow the
-                // grabbed one's delta. Selected devices are moved by React Flow already.
-                carried: [
-                  ...new Set(
-                    s.doc.view.annotations
-                      .filter(
-                        (x) =>
-                          x.kind === 'zone' && (x.id === a.id || s.selection.includes(ANN + x.id)),
-                      )
-                      .flatMap((x) => nodesInFrame(s.doc!, x, measured)),
-                  ),
-                ]
-                  .filter((id) => !s.selection.includes(id))
-                  .map((id) => {
-                    const n = s.doc!.view.nodes.find((v) => v.id === id)!
-                    return { id, x: n.x, y: n.y }
-                  }),
-              }
-            : null
-      }}
-      onNodeDragStop={() => {
-        dragKey.current = null
-        fitPlan.current = null
-        frameDrag.current = null
-      }}
-      onMoveEnd={(_e, vp: Viewport) => {
-        store.getState().setViewport(vp)
-        try {
-          localStorage.setItem(VIEWPORT_KEY(viewKey), JSON.stringify(vp))
-        } catch {
-          // storage full or blocked
-        }
-      }}
-      onDragOver={(e) => {
-        if (!canEdit || !e.dataTransfer.types.includes(LIBRARY_MIME)) return
-        e.preventDefault()
-        e.dataTransfer.dropEffect = 'copy'
-      }}
-      onDrop={(e) => {
-        if (!canEdit) return
-        const item = decodeItem(e.dataTransfer.getData(LIBRARY_MIME))
-        if (!item) return
-        e.preventDefault()
-        onDropItem(item, flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }))
-      }}
-      defaultViewport={initialViewport ?? undefined}
-      fitView={!initialViewport && !focusing}
-      fitViewOptions={fitOptions(libraryOpen, prefs.panel && !prefs.panelMin)}
-      minZoom={MIN_ZOOM}
-      maxZoom={MAX_ZOOM}
-      snapToGrid={prefs.snap}
-      snapGrid={[prefs.grid, prefs.grid]}
-      nodesDraggable={canEdit && !panning}
-      nodesConnectable={canEdit}
-      connectionMode={ConnectionMode.Loose}
-      className={cn(wiring && 'ntb-connecting', panning && 'ntb-panning')}
-      onConnectStart={(_e, p) => {
-        wireFrom.current = p.nodeId ?? null
-      }}
-      onConnectEnd={(e) => {
-        // The cable ends on whatever node is under the pointer (not only on a connection point).
-        const from = wireFrom.current
-        wireFrom.current = null
-        if (!from) return
-        const pt = 'changedTouches' in e ? e.changedTouches[0] : e
-        if (!pt) return
-        const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__node')
-        const to = el?.getAttribute('data-id')
-        if (to && to !== from && !isOverlayId(to)) onWire(from, to)
-      }}
-      onNodeClick={(_e, node) => {
-        if (wiring && !isOverlayId(node.id)) onNodePick(node.id)
-      }}
-      onEdgeDoubleClick={(_e, edge) => edge.type !== 'site' && onEditCable(edge.id)}
-      onNodeDoubleClick={(_e, node) => !isOverlayId(node.id) && onNodeOpen?.(node.id)}
-      elementsSelectable
-      // Hand tool or Space held: the left button moves the view (also over devices); otherwise it draws a selection box
-      // and the middle button pans.
-      selectionOnDrag={!panning}
-      selectionMode={SelectionMode.Partial}
-      panOnDrag={panning ? true : [1]}
-      panOnScroll
-      zoomOnPinch
-      panActivationKeyCode="Space"
-      multiSelectionKeyCode="Shift"
-      selectionKeyCode={null}
-      deleteKeyCode={null}
-      zoomOnDoubleClick={false}
-      onlyRenderVisibleElements
-      ariaLabelConfig={ariaLabels}
-    >
-      <Background variant={BackgroundVariant.Dots} gap={prefs.grid} size={1.5} />
-      {prefs.minimap && <MiniMap pannable zoomable position="bottom-right" />}
-    </ReactFlow>
+          const a = isAnnotationId(node.id)
+            ? s.doc?.view.annotations.find((x) => ANN + x.id === node.id)
+            : undefined
+          frameDrag.current =
+            a?.kind === 'zone' && s.doc && !e.altKey
+              ? {
+                  id: a.id,
+                  x0: a.x,
+                  y0: a.y,
+                  // Every selected frame moves together (React Flow drags the selected frames); their devices follow the
+                  // grabbed one's delta. Selected devices are moved by React Flow already.
+                  carried: [
+                    ...new Set(
+                      s.doc.view.annotations
+                        .filter(
+                          (x) =>
+                            x.kind === 'zone' &&
+                            (x.id === a.id || s.selection.includes(ANN + x.id)),
+                        )
+                        .flatMap((x) => nodesInFrame(s.doc!, x, measured)),
+                    ),
+                  ]
+                    .filter((id) => !s.selection.includes(id))
+                    .map((id) => {
+                      const n = s.doc!.view.nodes.find((v) => v.id === id)!
+                      return { id, x: n.x, y: n.y }
+                    }),
+                }
+              : null
+        }}
+        onNodeDragStop={() => {
+          dragKey.current = null
+          fitPlan.current = null
+          frameDrag.current = null
+        }}
+        onMoveEnd={(_e, vp: Viewport) => {
+          store.getState().setViewport(vp)
+          try {
+            localStorage.setItem(VIEWPORT_KEY(viewKey), JSON.stringify(vp))
+          } catch {
+            // storage full or blocked
+          }
+        }}
+        onDragOver={(e) => {
+          if (!canEdit || !e.dataTransfer.types.includes(LIBRARY_MIME)) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+        }}
+        onDrop={(e) => {
+          if (!canEdit) return
+          const item = decodeItem(e.dataTransfer.getData(LIBRARY_MIME))
+          if (!item) return
+          e.preventDefault()
+          onDropItem(item, flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }))
+        }}
+        defaultViewport={initialViewport ?? undefined}
+        fitView={!initialViewport && !focusing}
+        fitViewOptions={fitOptions(libraryOpen, prefs.panel && !prefs.panelMin)}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
+        snapToGrid={prefs.snap}
+        snapGrid={[prefs.grid, prefs.grid]}
+        nodesDraggable={canEdit && !panning}
+        nodesConnectable={canEdit}
+        connectionMode={ConnectionMode.Loose}
+        className={cn(wiring && 'ntb-connecting', panning && 'ntb-panning')}
+        onConnectStart={(_e, p) => {
+          wireFrom.current = p.nodeId ?? null
+        }}
+        onConnectEnd={(e) => {
+          // The cable ends on whatever node is under the pointer (not only on a connection point).
+          const from = wireFrom.current
+          wireFrom.current = null
+          if (!from) return
+          const pt = 'changedTouches' in e ? e.changedTouches[0] : e
+          if (!pt) return
+          const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__node')
+          const to = el?.getAttribute('data-id')
+          if (to && to !== from && !isOverlayId(to)) onWire(from, to)
+        }}
+        onNodeClick={(_e, node) => {
+          if (wiring && !isOverlayId(node.id)) onNodePick(node.id)
+        }}
+        onEdgeDoubleClick={(_e, edge) => edge.type !== 'site' && onEditCable(edge.id)}
+        onNodeDoubleClick={(_e, node) => !isOverlayId(node.id) && onNodeOpen?.(node.id)}
+        elementsSelectable
+        // Hand tool or Space held: the left button moves the view (also over devices); otherwise it draws a selection box
+        // and the middle button pans.
+        selectionOnDrag={!panning}
+        selectionMode={SelectionMode.Partial}
+        panOnDrag={panning ? true : [1]}
+        panOnScroll
+        zoomOnPinch
+        panActivationKeyCode="Space"
+        multiSelectionKeyCode="Shift"
+        selectionKeyCode={null}
+        deleteKeyCode={null}
+        zoomOnDoubleClick={false}
+        onlyRenderVisibleElements
+        ariaLabelConfig={ariaLabels}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={prefs.grid} size={1.5} />
+        {prefs.minimap && <MiniMap pannable zoomable position="bottom-right" />}
+      </ReactFlow>
+    </ConnectorContext.Provider>
   )
 }
 

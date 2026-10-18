@@ -288,6 +288,8 @@ type Querier interface {
 	ListInterfaces(ctx context.Context, arg ListInterfacesParams) ([]ListInterfacesRow, error)
 	// Links whose both ends are among the given objects (the nodes of a diagram).
 	ListLinkIDsAmong(ctx context.Context, arg ListLinkIDsAmongParams) ([]pgtype.UUID, error)
+	// Links with exactly one end among the given objects: off-page connectors of a diagram (P2-08), capped.
+	ListLinkIDsTouching(ctx context.Context, arg ListLinkIDsTouchingParams) ([]pgtype.UUID, error)
 	// Links (P1-12, SRS §6.2). Every query takes organization_id. Each row carries both ends' names, ownership and
 	// interface so the API can check visibility per end (an end is visible like its device / group, ADR-031).
 	ListLinks(ctx context.Context, arg ListLinksParams) ([]ListLinksRow, error)

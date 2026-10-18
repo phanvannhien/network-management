@@ -214,6 +214,7 @@ describe('folding side panels', () => {
       panel: true,
       libraryMin: false,
       panelMin: false,
+      offPage: true,
     }
     expect(togglePanel({ ...base, libraryMin: true }, 'library')).toEqual({ libraryMin: false })
     expect(togglePanel(base, 'library')).toEqual({ library: false, libraryMin: false })

@@ -148,3 +148,77 @@ describe('pages', () => {
     expect(s.getState().saveRequest()!.view.viewport).toEqual({ x: 1, y: 1, zoom: 1 })
   })
 })
+
+describe('off-page connectors', () => {
+  it('names where each cable continues, groups per node and target, keeps a moved connector', async () => {
+    const { offPageConnectors } = await import('./offpage')
+    const { setStub } = await import('./pageCommands')
+    const s = loaded()
+    s.getState().dispatch(addPage('p2', 'Tầng 2', 'physical', 'Phòng server', 'physical'))
+    s.getState().setPage('p2')
+    s.getState().dispatch(
+      createDevice({ hostname: 'ACC', type: 'poe_switch', siteId: SITE }, 200, 0, ACC),
+    )
+    const link = (id: string, a: string, b: string) =>
+      createLink({ a: { kind: 'device', id: a }, b: { kind: 'device', id: b }, kind: 'fiber' }, id)
+    s.getState().dispatch(link(LINK, CORE, ACC))
+    s.getState().dispatch(link('bbbbbbbb-0000-4000-8000-000000000002', CORE, ACC))
+    // Two cables from the core (page 1) to the access switch (page 2): one connector on each page.
+    const onP1 = offPageConnectors(s.getState().doc!, 'p1')
+    expect(onP1).toHaveLength(1)
+    expect(onP1[0]).toMatchObject({ nodeId: 'n-core', target: { kind: 'page', pageId: 'p2' } })
+    expect(onP1[0]!.links).toHaveLength(2)
+    expect(offPageConnectors(s.getState().doc!, 'p2')[0]!.target).toEqual({
+      kind: 'page',
+      pageId: 'p1',
+    })
+
+    // Cables to devices not on this diagram: to another diagram, or nowhere yet.
+    const X = 'aaaaaaaa-0000-4000-8000-0000000000aa'
+    const Y = 'aaaaaaaa-0000-4000-8000-0000000000bb'
+    s.setState((st) => ({
+      doc: {
+        ...st.doc!,
+        external: {
+          e1: { id: 'e1', aId: CORE, bId: X, kind: 'ethernet', aPort: 'Gi1', bPort: 'Gi9' },
+          e2: { id: 'e2', aId: Y, bId: CORE, kind: 'ethernet', aPort: 'eth0', bPort: 'Gi2' },
+        },
+        farEnds: {
+          [X]: {
+            id: X,
+            kind: 'device',
+            name: 'FW',
+            type: 'firewall',
+            siteId: SITE,
+            siteCode: 'HQ',
+          },
+          [Y]: {
+            id: Y,
+            kind: 'device',
+            name: 'CAM',
+            type: 'ip_camera',
+            siteId: SITE,
+            siteCode: 'HQ',
+          },
+        },
+        elsewhere: { [X]: [{ id: 'dg-edge', name: 'WAN' }] },
+      },
+    }))
+    const all = offPageConnectors(s.getState().doc!, 'p1')
+    const byKind = Object.fromEntries(all.map((c) => [c.target.kind, c]))
+    expect(byKind.diagram).toMatchObject({
+      target: { id: 'dg-edge', name: 'WAN' },
+      far: [{ name: 'FW', port: 'Gi9' }],
+    })
+    expect(byKind.none).toMatchObject({ far: [{ name: 'CAM', port: 'eth0' }] })
+
+    // Moving a connector keeps it there.
+    s.getState().setPage('p1')
+    const c = byKind.none!
+    s.getState().dispatch(setStub(c.key, 'p1', 900, 40))
+    expect(offPageConnectors(s.getState().doc!, 'p1').find((x) => x.key === c.key)).toMatchObject({
+      x: 900,
+      y: 40,
+    })
+  })
+})

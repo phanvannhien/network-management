@@ -92,6 +92,13 @@ export interface DocState {
   /** L2 view (P2-08): VLAN names / colours of the sites on the view, and where VLANs are routed. Read-only facts. */
   vlans?: DiagramVlan[]
   gateways?: DiagramGateway[]
+  /**
+   * Off-page connectors (P2-08): links with one end on the diagram and the other off it, the far ends (what they are,
+   * to name them or place them here) and the other diagrams placing them. Read-only facts.
+   */
+  external?: Record<string, LinkCard>
+  farEnds?: Record<string, FarEnd>
+  elsewhere?: Record<string, { id: string; name: string }[]>
   // Pending inventory changes, in creation order where order matters (create before link).
   newDevices: Record<string, DeviceInput>
   newDeviceOrder: string[]
@@ -107,6 +114,16 @@ export interface DocState {
   newGroups?: Record<string, EndpointGroupInput>
   newGroupOrder?: string[]
   groupEdits?: Record<string, EndpointGroupUpdate>
+}
+
+/** The end of an external link that is not on the diagram. */
+export interface FarEnd {
+  id: string
+  kind: 'device' | 'endpoint_group'
+  name: string
+  type: string
+  siteId: string
+  siteCode: string
 }
 
 export function linkCard(l: Link): LinkCard {
@@ -203,6 +220,7 @@ export function docFromDetail(d: DiagramDetail): DocState {
     hidden: d.hiddenRefs,
     vlans: d.vlans ?? [],
     gateways: d.gateways ?? [],
+    ...externalFacts(d),
     newDevices: {},
     newDeviceOrder: [],
     newPorts: {},
@@ -261,3 +279,26 @@ export function hasChanges(doc: DocState): boolean {
 
 /** React Flow id prefix of annotations (frames, text, arrows), apart from view node ids. */
 export const ANN = 'a:'
+
+/** External links, their far ends and where else those are drawn (off-page connectors, P2-08). */
+function externalFacts(d: DiagramDetail): Pick<DocState, 'external' | 'farEnds' | 'elsewhere'> {
+  const external: Record<string, LinkCard> = {}
+  const farEnds: Record<string, FarEnd> = {}
+  const onView = new Set((d.view.nodes ?? []).map((n) => n.refId))
+  for (const l of d.externalLinks ?? []) {
+    external[l.id] = linkCard(l)
+    for (const e of [l.a, l.b])
+      if (!onView.has(e.id))
+        farEnds[e.id] = {
+          id: e.id,
+          kind: e.kind,
+          name: e.name,
+          type: e.type,
+          siteId: e.siteId,
+          siteCode: e.siteCode,
+        }
+  }
+  const elsewhere: Record<string, { id: string; name: string }[]> = {}
+  for (const w of d.elsewhere ?? []) elsewhere[w.refId] = w.diagrams
+  return { external, farEnds, elsewhere }
+}

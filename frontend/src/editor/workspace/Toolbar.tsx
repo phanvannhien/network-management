@@ -19,6 +19,7 @@ import {
   Plus,
   Redo2,
   Save,
+  SquareArrowOutUpRight,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -311,6 +312,13 @@ export function Toolbar(p: ToolbarProps) {
         pressed={p.prefs.panel && !p.prefs.panelMin}
       >
         <PanelRight aria-hidden />
+      </ToolButton>
+      <ToolButton
+        label={t('offPage.toggle')}
+        onClick={() => p.onPrefs({ offPage: !p.prefs.offPage })}
+        pressed={p.prefs.offPage}
+      >
+        <SquareArrowOutUpRight aria-hidden />
       </ToolButton>
       <ToolButton
         label={t('editorCanvas.minimap')}

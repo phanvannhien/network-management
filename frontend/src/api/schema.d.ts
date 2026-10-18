@@ -4618,6 +4618,8 @@ export interface components {
             portStyle?: "compact" | "cisco" | "full";
             /** @description P2-08 (ADR-047): the pages of the diagram in tab order; absent = one page. Nodes, edges and annotations name their page (pageId); without one they are on the first page. */
             pages?: components["schemas"]["DiagramPage"][];
+            /** @description positions of off-page connectors the user moved (P2-08); the others are placed automatically */
+            stubs?: components["schemas"]["DiagramStub"][];
         };
         DiagramPage: {
             id: string;
@@ -4641,6 +4643,27 @@ export interface components {
             vlans?: components["schemas"]["DiagramVlan"][];
             /** @description L2 view — devices on the view holding the gateway IP of a subnet with a VLAN */
             gateways?: components["schemas"]["DiagramGateway"][];
+            /** @description Off-page connectors (P2-08, ADR-047): links with exactly one end on the diagram (at most 2000); the other end is drawn elsewhere or nowhere */
+            externalLinks?: components["schemas"]["Link"][];
+            /** @description the other diagrams (the caller may open) that place the far ends of externalLinks */
+            elsewhere?: components["schemas"]["DiagramElsewhere"][];
+        };
+        DiagramElsewhere: {
+            /** Format: uuid */
+            refId: string;
+            diagrams: components["schemas"]["DiagramRef"][];
+        };
+        DiagramRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description where the user dragged an off-page connector (key = view node > target) */
+        DiagramStub: {
+            key: string;
+            pageId?: string;
+            x: number;
+            y: number;
         };
         DiagramVlan: {
             /** Format: int32 */

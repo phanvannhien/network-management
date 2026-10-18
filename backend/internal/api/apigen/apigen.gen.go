@@ -3065,9 +3065,15 @@ type DiagramChangeOp string
 
 // DiagramDetail defines model for DiagramDetail.
 type DiagramDetail struct {
-	Devices        []Device        `json:"devices"`
-	Diagram        Diagram         `json:"diagram"`
-	EndpointGroups []EndpointGroup `json:"endpointGroups"`
+	Devices []Device `json:"devices"`
+	Diagram Diagram  `json:"diagram"`
+
+	// Elsewhere the other diagrams (the caller may open) that place the far ends of externalLinks
+	Elsewhere      *[]DiagramElsewhere `json:"elsewhere,omitempty"`
+	EndpointGroups []EndpointGroup     `json:"endpointGroups"`
+
+	// ExternalLinks Off-page connectors (P2-08, ADR-047): links with exactly one end on the diagram (at most 2000); the other end is drawn elsewhere or nowhere
+	ExternalLinks *[]Link `json:"externalLinks,omitempty"`
 
 	// Gateways L2 view — devices on the view holding the gateway IP of a subnet with a VLAN
 	Gateways *[]DiagramGateway `json:"gateways,omitempty"`
@@ -3096,6 +3102,12 @@ type DiagramEdge struct {
 
 // DiagramEdgeRouting defines model for DiagramEdge.Routing.
 type DiagramEdgeRouting string
+
+// DiagramElsewhere defines model for DiagramElsewhere.
+type DiagramElsewhere struct {
+	Diagrams []DiagramRef       `json:"diagrams"`
+	RefId    openapi_types.UUID `json:"refId"`
+}
 
 // DiagramGateway defines model for DiagramGateway.
 type DiagramGateway struct {
@@ -3175,6 +3187,12 @@ type DiagramPoint struct {
 	Y float32 `json:"y"`
 }
 
+// DiagramRef defines model for DiagramRef.
+type DiagramRef struct {
+	Id   openapi_types.UUID `json:"id"`
+	Name string             `json:"name"`
+}
+
 // DiagramSave defines model for DiagramSave.
 type DiagramSave struct {
 	Changes *[]DiagramChange `json:"changes,omitempty"`
@@ -3197,6 +3215,14 @@ type DiagramShowing struct {
 	Name      string               `json:"name"`
 }
 
+// DiagramStub where the user dragged an off-page connector (key = view node > target)
+type DiagramStub struct {
+	Key    string  `json:"key"`
+	PageId *string `json:"pageId,omitempty"`
+	X      float32 `json:"x"`
+	Y      float32 `json:"y"`
+}
+
 // DiagramView defines model for DiagramView.
 type DiagramView struct {
 	Annotations   []DiagramAnnotation `json:"annotations"`
@@ -3209,7 +3235,10 @@ type DiagramView struct {
 
 	// PortStyle port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
 	PortStyle *DiagramViewPortStyle `json:"portStyle,omitempty"`
-	Viewport  *DiagramViewport      `json:"viewport,omitempty"`
+
+	// Stubs positions of off-page connectors the user moved (P2-08); the others are placed automatically
+	Stubs    *[]DiagramStub   `json:"stubs,omitempty"`
+	Viewport *DiagramViewport `json:"viewport,omitempty"`
 }
 
 // DiagramViewPortStyle port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24

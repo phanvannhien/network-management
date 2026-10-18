@@ -1,6 +1,7 @@
 import { CableEdge } from './CableEdge'
 import { ArrowNode, ClusterNode, FrameNode, TextNode } from './annotationNodes'
 import { DeviceNode, GroupNode, RefNode } from './nodes'
+import { OffPageNode } from './OffPageNode'
 import { SiteEdge } from '../overview/SiteEdge'
 import { SiteNode } from '../overview/SiteNode'
 
@@ -14,6 +15,7 @@ export const NODE_TYPES = {
   text: TextNode,
   arrow: ArrowNode,
   cluster: ClusterNode,
+  offpage: OffPageNode,
 }
 
 /** React Flow edge types (P1-17): every cable is a floating straight line. */

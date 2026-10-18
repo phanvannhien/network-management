@@ -918,6 +918,17 @@ export const en: Strings = {
     unsaved: 'unsaved',
     empty: 'The diagram is empty.',
   },
+  offPage: {
+    diagram: 'Diagram "{{name}}"',
+    nowhere: 'Not on any diagram',
+    nowhereHint:
+      'The far end of the cable is not drawn anywhere. "Place here" puts that device on this page.',
+    open: 'Click to go where the cable continues',
+    place: 'Place here',
+    toggle: 'Show cables leaving the page',
+    toggleHint:
+      'Cables whose other end is on another page, another diagram or not drawn yet show as an arrow tag next to the device. Drag a tag to move it.',
+  },
   pages: {
     title: 'Diagram pages',
     untitled: 'Page {{n}}',

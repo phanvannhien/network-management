@@ -97,7 +97,10 @@ function liveEdges(selection: string[], doc: DocState): string[] {
   return live.length === selection.length ? selection : live
 }
 
-/** A draft from before the L2 view: the loaded VLANs, gateways and the switchport facts of unchanged cables. */
+/**
+ * A draft from before the L2 view / off-page connectors: the loaded VLANs, gateways, external links and the switchport
+ * facts of unchanged cables.
+ */
 function withLoadedFacts(draft: DocState, loaded: DocState | null): DocState {
   if (!loaded) return draft
   const links = { ...draft.links }
@@ -106,7 +109,15 @@ function withLoadedFacts(draft: DocState, loaded: DocState | null): DocState {
     if (!l.aL2 && !l.bL2 && was && was.aPort === l.aPort && was.bPort === l.bPort)
       links[id] = { ...l, aL2: was.aL2, bL2: was.bL2 }
   }
-  return { ...draft, links, vlans: loaded.vlans, gateways: loaded.gateways }
+  return {
+    ...draft,
+    links,
+    vlans: draft.vlans ?? loaded.vlans,
+    gateways: draft.gateways ?? loaded.gateways,
+    external: draft.external ?? loaded.external,
+    farEnds: draft.farEnds ?? loaded.farEnds,
+    elsewhere: draft.elsewhere ?? loaded.elsewhere,
+  }
 }
 
 /** The view of a page as it opens: an L2 page opens in the L2 view (ADR-047). */
@@ -275,7 +286,7 @@ export function createDocStore() {
     restore: (doc) =>
       set((s) => ({
         // Drafts kept before the L2 view have no VLAN facts: the loaded diagram's are still right.
-        doc: doc.vlans ? doc : withLoadedFacts(doc, s.doc),
+        doc: doc.vlans && doc.external ? doc : withLoadedFacts(doc, s.doc),
         past: [],
         future: [],
         status: 'dirty',
