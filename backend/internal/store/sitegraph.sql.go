@@ -150,6 +150,53 @@ func (q *Queries) SiteGraphLinks(ctx context.Context, organizationID pgtype.UUID
 	return items, nil
 }
 
+const siteGraphSegments = `-- name: SiteGraphSegments :many
+SELECT sg.id, sg.name, sg.kind, d.site_id, count(*)::bigint AS links
+FROM links l
+JOIN segments sg ON sg.organization_id = l.organization_id
+  AND ((l.a_kind = 'segment' AND sg.id = l.a_id) OR (l.b_kind = 'segment' AND sg.id = l.b_id))
+JOIN devices d ON d.organization_id = l.organization_id AND d.deleted_at IS NULL
+  AND ((l.a_kind = 'device' AND d.id = l.a_id) OR (l.b_kind = 'device' AND d.id = l.b_id))
+WHERE l.organization_id = $1
+GROUP BY sg.id, sg.name, sg.kind, d.site_id
+ORDER BY lower(sg.name), d.site_id
+`
+
+type SiteGraphSegmentsRow struct {
+	ID     pgtype.UUID
+	Name   string
+	Kind   string
+	SiteID pgtype.UUID
+	Links  int64
+}
+
+// Shared networks (P2-08): each with the sites whose devices are cabled into it, and how many cables.
+func (q *Queries) SiteGraphSegments(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphSegmentsRow, error) {
+	rows, err := q.db.Query(ctx, siteGraphSegments, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SiteGraphSegmentsRow
+	for rows.Next() {
+		var i SiteGraphSegmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.SiteID,
+			&i.Links,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const siteGraphSites = `-- name: SiteGraphSites :many
 
 SELECT s.id, s.code::text AS code, s.local_code, s.name, s.kind, s.category_id,

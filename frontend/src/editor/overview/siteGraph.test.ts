@@ -46,6 +46,7 @@ describe('overview (P2-21)', () => {
           site('C', { categoryPath: 'Agri' }),
         ],
         edges: [],
+        segments: [],
       },
       ['HQ'],
       true,

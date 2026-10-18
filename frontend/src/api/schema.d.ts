@@ -1087,6 +1087,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Shared networks of the organization (P2-08) — MPLS, Metro, shared LANs */
+        get: operations["listSegments"];
+        put?: never;
+        /** Add a shared network (editors) */
+        post: operations["createSegment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/segments/{segmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                segmentId: components["parameters"]["SegmentId"];
+            };
+            cookie?: never;
+        };
+        /** One shared network */
+        get: operations["getSegment"];
+        put?: never;
+        post?: never;
+        /** Delete a shared network no cable ends in (editors) */
+        delete: operations["deleteSegment"];
+        options?: never;
+        head?: never;
+        /** Edit a shared network (editors; optimistic lock) */
+        patch: operations["updateSegment"];
+        trace?: never;
+    };
     "/orgs/{orgId}/vendors": {
         parameters: {
             query?: never;
@@ -3966,6 +4010,19 @@ export interface components {
         SiteGraph: {
             sites: components["schemas"]["SiteCard"][];
             edges: components["schemas"]["SiteEdge"][];
+            /** @description shared networks (P2-08) with the sites (in the filter) cabled into them — one cloud, not n² edges */
+            segments: components["schemas"]["SiteSegment"][];
+        };
+        SiteSegment: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["SegmentKind"];
+            sites: {
+                /** Format: uuid */
+                siteId: string;
+                links: number;
+            }[];
         };
         SiteCard: {
             /** Format: uuid */
@@ -4382,8 +4439,11 @@ export interface components {
             /** @description the new device's hostname; defaults to the member name */
             hostname?: string;
         };
-        /** @enum {string} */
-        LinkEndKind: "device" | "endpoint_group";
+        /**
+         * @description segment = a shared network (MPLS, Metro, shared LAN; P2-08) — no port at that end
+         * @enum {string}
+         */
+        LinkEndKind: "device" | "endpoint_group" | "segment";
         /**
          * @description ADR-033. ethernet (copper incl. DAC), fiber (incl. AOC), wireless, serial, console, power (UPS/PDU → device), stack (stacking / HA heartbeat), dsl (DSL, coax), cellular (4G/5G, satellite) are physical; logical (VPN/IPsec, GRE) uses virtual interfaces or no port. A LAG is drawn as its member cables; MPLS is a WAN `service`.
          * @enum {string}
@@ -4427,8 +4487,11 @@ export interface components {
             name: string;
             /** @description device type, or the group's device type */
             type: string;
-            /** Format: uuid */
-            siteId: string;
+            /**
+             * Format: uuid
+             * @description null for a segment end (it spans sites)
+             */
+            siteId: string | null;
             siteCode: string;
             /** Format: uuid */
             interfaceId: string | null;
@@ -4546,10 +4609,10 @@ export interface components {
         DiagramNode: {
             id: string;
             /**
-             * @description subnet = a subnet bar on an L3 page (P2-08)
+             * @description subnet = a subnet bar on an L3 page; segment = a shared network (P2-08)
              * @enum {string}
              */
-            refKind: "device" | "endpoint_group" | "site" | "diagram" | "subnet";
+            refKind: "device" | "endpoint_group" | "site" | "diagram" | "subnet" | "segment";
             /** Format: uuid */
             refId: string;
             x: number;
@@ -4651,6 +4714,47 @@ export interface components {
             /** @description the other diagrams (the caller may open) that place the far ends of externalLinks */
             elsewhere?: components["schemas"]["DiagramElsewhere"][];
             l3?: components["schemas"]["DiagramL3"];
+            /** @description segments placed on the view (P2-08) */
+            segments?: components["schemas"]["Segment"][];
+        };
+        /**
+         * @description mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+         * @enum {string}
+         */
+        SegmentKind: "mpls_l3vpn" | "metro_l2" | "shared_lan" | "other";
+        SegmentInput: {
+            name: string;
+            kind: components["schemas"]["SegmentKind"];
+            /**
+             * Format: uuid
+             * @description the carrier / provider (a vendor of the organization)
+             */
+            vendorId?: string | null;
+            /** @description the carrier's service / VPN / circuit id */
+            serviceId?: string;
+            notes?: string;
+        };
+        SegmentUpdate: components["schemas"]["SegmentInput"] & {
+            /** Format: int32 */
+            version: number;
+        };
+        Segment: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["SegmentKind"];
+            /** Format: uuid */
+            vendorId: string | null;
+            vendorName: string;
+            serviceId: string;
+            notes: string;
+            /**
+             * Format: int64
+             * @description cables ending in it
+             */
+            linkCount: number;
+            /** Format: int32 */
+            version: number;
         };
         /** @description L3 pages (P2-08, ADR-047), derived from IPAM: the interface IPs of the devices on the diagram with the subnet (same VRF, most specific) each falls in, those subnets, and the subnet of each endpoint group's IP range */
         DiagramL3: {
@@ -4920,6 +5024,7 @@ export interface components {
         DeviceSortDesc: boolean;
         CredentialId: string;
         CloudAccountId: string;
+        SegmentId: string;
         VendorId: string;
         ContractId: string;
         DeviceId: string;
@@ -7315,6 +7420,156 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    listSegments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        segments: components["schemas"]["Segment"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createSegment: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Segment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                segmentId: components["parameters"]["SegmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Segment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteSegment: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                segmentId: components["parameters"]["SegmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateSegment: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                segmentId: components["parameters"]["SegmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Segment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     listVendors: {

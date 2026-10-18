@@ -452,6 +452,19 @@ type Rack struct {
 	Version        int32
 }
 
+type Segment struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Name           string
+	Kind           string
+	VendorID       pgtype.UUID
+	ServiceID      string
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+}
+
 type Session struct {
 	TokenHash            []byte
 	UserID               pgtype.UUID

@@ -8,6 +8,7 @@ import type {
   EndpointGroupInput,
   LinkInput,
   LinkUpdate,
+  Segment,
 } from './types'
 import { firstPageId } from './pages'
 
@@ -45,7 +46,7 @@ function pruneEdges(draft: DocState) {
 
 /** Place an inventory object on the diagram; `device` carries what the editor needs to draw it. */
 export function addNode(
-  refKind: 'device' | 'endpoint_group' | 'site' | 'diagram',
+  refKind: 'device' | 'endpoint_group' | 'site' | 'diagram' | 'segment',
   refId: string,
   x: number,
   y: number,
@@ -53,6 +54,8 @@ export function addNode(
     id?: string
     device?: DeviceCard
     group?: DocState['groups'][string]
+    /** A shared network (P2-08): its card, to name and draw it. */
+    segment?: Segment
     links?: LinkCard[]
   } = {},
 ): DocCommand {
@@ -71,6 +74,7 @@ export function addNode(
         return
       if (opts.device && !d.devices[refId]) d.devices[refId] = opts.device
       if (opts.group && !d.groups[refId]) d.groups[refId] = opts.group
+      if (opts.segment) (d.segments ??= {})[refId] = opts.segment
       // Inventory links of the object (ADR-015): those to objects on the view get drawn below.
       for (const l of opts.links ?? [])
         if (!d.links[l.id] && !d.deletedLinks.includes(l.id)) d.links[l.id] = l

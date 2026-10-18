@@ -82,6 +82,7 @@ import {
   setPageLayer,
 } from './doc/pageCommands'
 import { PageTabs } from './workspace/PageTabs'
+import { SegmentDialog } from './segments/SegmentDialog'
 import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
@@ -330,6 +331,8 @@ function Workspace({
     at: { x: number; y: number }
   } | null>(null)
   const [lastSite, setLastSite] = useState<string | null>(null)
+  /** Where a shared network will land once picked / created (P2-08). */
+  const [placingSegment, setPlacingSegment] = useState<{ x: number; y: number } | null>(null)
   const onView = useMemo(
     () => new Set(pageDoc.view.nodes.map((n) => n.refId)),
     [pageDoc.view.nodes],
@@ -508,6 +511,10 @@ function Workspace({
     }
     if (item.kind === 'endpoint') {
       setCreatingEndpoint({ kind: item.endpointKind, at })
+      return
+    }
+    if (item.kind === 'segment') {
+      setPlacingSegment(at)
       return
     }
     setCreating({
@@ -815,7 +822,8 @@ function Workspace({
       const s = store.getState()
       const far = c.far[0]
       const info = far && s.doc?.farEnds?.[far.id]
-      if (!far || !info || !canEdit) return
+      // A shared network is placed from the library (it has no site to land in).
+      if (!far || !info || !canEdit || info.kind === 'segment') return
       const at = { x: c.x + 40, y: c.y - 20 }
       s.dispatch(
         info.kind === 'device'
@@ -1168,6 +1176,17 @@ function Workspace({
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      {placingSegment && (
+        <SegmentDialog
+          orgId={orgId}
+          onClose={() => setPlacingSegment(null)}
+          onPlace={(sg) => {
+            const { x, y } = place(placingSegment)
+            store.getState().dispatch(addNode('segment', sg.id, x, y, { segment: sg }))
+            setPlacingSegment(null)
+          }}
+        />
+      )}
       {drill && (
         <SiteDrillDialog
           orgId={orgId}

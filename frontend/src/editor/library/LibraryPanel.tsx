@@ -1,4 +1,4 @@
-import { LayoutTemplate, PackageSearch, PanelLeftClose, X } from 'lucide-react'
+import { Cloud, LayoutTemplate, PackageSearch, PanelLeftClose, X } from 'lucide-react'
 import { useDeferredValue, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -206,6 +206,20 @@ function NewDevices({
                 onPick={onPick}
               />
             ))}
+          </ul>
+        </section>
+      )}
+      {matches(query, 'segment', t('segments.library'), t('segments.title')) && (
+        <section aria-label={t('segments.title')}>
+          <ul className="space-y-0.5">
+            <Entry
+              item={{ kind: 'segment' }}
+              icon={<Cloud aria-hidden className="size-5 text-muted-foreground" />}
+              title={t('segments.library')}
+              detail={t('segments.libraryHint')}
+              label={t('library.addNew', { name: t('segments.title') })}
+              onPick={onPick}
+            />
           </ul>
         </section>
       )}

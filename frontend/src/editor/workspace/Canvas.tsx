@@ -222,24 +222,55 @@ export function Canvas({
     if (!doc || !hasSites || !siteGraph.data) return []
     const nodeOf = new Map<string, string>()
     for (const n of doc.view.nodes) if (n.refKind === 'site') nodeOf.set(n.refId, n.id)
-    return siteGraph.data.edges.flatMap((e): Edge[] => {
-      const a = nodeOf.get(e.a)
-      const b = nodeOf.get(e.b)
-      return a && b
-        ? [
-            {
-              id: `site:${e.a}:${e.b}`,
-              type: 'site',
-              source: a,
-              target: b,
-              selectable: false,
-              deletable: false,
-              focusable: false,
-              data: { label: edgeLabel(e, t), style: e.style, links: e.links },
-            },
-          ]
-        : []
+    // Shared networks (P2-08): the cloud on the overview joined to each drawn site cabled into it.
+    const segOf = new Map<string, string>()
+    for (const n of doc.view.nodes) if (n.refKind === 'segment') segOf.set(n.refId, n.id)
+    const segEdges = siteGraph.data.segments.flatMap((g): Edge[] => {
+      const seg = segOf.get(g.id)
+      if (!seg) return []
+      return g.sites.flatMap((x): Edge[] => {
+        const site = nodeOf.get(x.siteId)
+        return site
+          ? [
+              {
+                id: `seg:${g.id}:${x.siteId}`,
+                type: 'site',
+                source: site,
+                target: seg,
+                selectable: false,
+                deletable: false,
+                focusable: false,
+                data: {
+                  label: x.links > 1 ? t('l2.cables', { count: x.links }) : '',
+                  style: 'vpn',
+                  links: [],
+                },
+              },
+            ]
+          : []
+      })
     })
+    return [
+      ...segEdges,
+      ...siteGraph.data.edges.flatMap((e): Edge[] => {
+        const a = nodeOf.get(e.a)
+        const b = nodeOf.get(e.b)
+        return a && b
+          ? [
+              {
+                id: `site:${e.a}:${e.b}`,
+                type: 'site',
+                source: a,
+                target: b,
+                selectable: false,
+                deletable: false,
+                focusable: false,
+                data: { label: edgeLabel(e, t), style: e.style, links: e.links },
+              },
+            ]
+          : []
+      }),
+    ]
   }, [doc, hasSites, siteGraph.data, t])
   const edges = useMemo(
     () =>

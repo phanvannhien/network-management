@@ -99,6 +99,8 @@ export interface DocState {
   external?: Record<string, LinkCard>
   farEnds?: Record<string, FarEnd>
   elsewhere?: Record<string, { id: string; name: string }[]>
+  /** Shared networks placed on the view (P2-08); edited straight in the inventory, not drafted. */
+  segments?: Record<string, Segment>
   /** L3 pages (P2-08): subnets, where device IPs sit, endpoint groups' subnets — derived from IPAM, read-only. */
   l3?: L3Facts
   // Pending inventory changes, in creation order where order matters (create before link).
@@ -119,6 +121,7 @@ export interface DocState {
 }
 
 export type DiagramSubnet = components['schemas']['DiagramSubnet']
+export type Segment = components['schemas']['Segment']
 export type DiagramAttachment = components['schemas']['DiagramAttachment']
 
 export interface L3Facts {
@@ -131,7 +134,7 @@ export interface L3Facts {
 /** The end of an external link that is not on the diagram. */
 export interface FarEnd {
   id: string
-  kind: 'device' | 'endpoint_group'
+  kind: 'device' | 'endpoint_group' | 'segment'
   name: string
   type: string
   siteId: string
@@ -233,6 +236,7 @@ export function docFromDetail(d: DiagramDetail): DocState {
     vlans: d.vlans ?? [],
     gateways: d.gateways ?? [],
     ...externalFacts(d),
+    segments: Object.fromEntries((d.segments ?? []).map((x) => [x.id, x])),
     l3: {
       subnets: Object.fromEntries((d.l3?.subnets ?? []).map((x) => [x.id, x])),
       attachments: d.l3?.attachments ?? [],
@@ -311,7 +315,7 @@ function externalFacts(d: DiagramDetail): Pick<DocState, 'external' | 'farEnds' 
           kind: e.kind,
           name: e.name,
           type: e.type,
-          siteId: e.siteId,
+          siteId: e.siteId ?? '',
           siteCode: e.siteCode,
         }
   }

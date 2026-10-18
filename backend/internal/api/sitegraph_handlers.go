@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"sort"
 	"strings"
 
@@ -233,6 +234,28 @@ func (s *Server) GetSiteGraph(ctx context.Context, req apigen.GetSiteGraphReques
 		if i, ok := idx[d.SiteID]; ok {
 			out.Sites[i].Diagrams = append(out.Sites[i].Diagrams, apigen.SearchDiagram{Id: uuid.UUID(d.ID.Bytes), Name: d.Name})
 		}
+	}
+	// Shared networks (P2-08): the sites in this view cabled into each — at least one.
+	segs, err := s.q.SiteGraphSegments(ctx, m.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("site graph segments: %w", err)
+	}
+	out.Segments = []apigen.SiteSegment{}
+	at := map[pgtype.UUID]int{}
+	for _, r := range segs {
+		if _, ok := idx[r.SiteID]; !ok {
+			continue
+		}
+		i, ok := at[r.ID]
+		if !ok {
+			i = len(out.Segments)
+			at[r.ID] = i
+			out.Segments = append(out.Segments, apigen.SiteSegment{Id: uuid.UUID(r.ID.Bytes), Name: r.Name, Kind: apigen.SegmentKind(r.Kind)})
+		}
+		out.Segments[i].Sites = append(out.Segments[i].Sites, struct {
+			Links  int                `json:"links"`
+			SiteId openapi_types.UUID `json:"siteId"`
+		}{int(r.Links), uuid.UUID(r.SiteID.Bytes)})
 	}
 	return apigen.GetSiteGraph200JSONResponse(out), nil
 }

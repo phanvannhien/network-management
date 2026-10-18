@@ -13,7 +13,7 @@ export type ConnectorTarget =
 
 export interface FarRef {
   id: string
-  kind: 'device' | 'endpoint_group'
+  kind: 'device' | 'endpoint_group' | 'segment'
   name: string
   /** Port at the far end (empty when none). */
   port: string
@@ -101,6 +101,8 @@ function farOf(doc: DocState, id: string): Omit<FarRef, 'port'> {
   if (d) return { id, kind: 'device', name: d.hostname }
   const g = doc.groups[id]
   if (g) return { id, kind: 'endpoint_group', name: g.name }
+  const sg = doc.segments?.[id]
+  if (sg) return { id, kind: 'segment', name: sg.name }
   const f = doc.farEnds?.[id]
   return { id, kind: f?.kind ?? 'device', name: f?.name ?? '?' }
 }

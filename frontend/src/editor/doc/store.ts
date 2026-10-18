@@ -13,6 +13,7 @@ import {
   type DiagramSave,
   type DiagramViewport,
   type DocState,
+  type Segment,
 } from './types'
 
 // Diagram editor store (P1-13): Zustand + Immer, command based, undo / redo ≥ 100 steps (SRS §6.1). Saving
@@ -69,6 +70,8 @@ export interface DocStore {
    * (so the diagram save does not conflict) and the management IP — in the document and its history, no undo step.
    */
   syncDevice(id: string, facts: { version?: number; mgmtIp?: string }): void
+  /** A shared network edited straight in the inventory (P2-08): its card everywhere in the history, no undo step. */
+  syncSegment(segment: Segment): void
   load(detail: DiagramDetail): void
   /** Restore a draft over the loaded diagram (same document shape). */
   restore(doc: DocState): void
@@ -249,6 +252,28 @@ export function createDocStore() {
           if (cardChanged) d.devices[id]!.mgmtIp = facts.mgmtIp
           if (editChanged) d.deviceEdits[id]!.version = facts.version!
         })
+      }
+      const s = get()
+      if (!s.doc) return
+      set({
+        doc: patch(s.doc),
+        past: s.past.map((e) => ({ ...e, doc: patch(e.doc) })),
+        future: s.future.map(patch),
+        savedDoc: s.savedDoc && patch(s.savedDoc),
+      })
+    },
+    syncSegment: (segment) => {
+      const done = new Map<DocState, DocState>()
+      const patch = (doc: DocState): DocState => {
+        const seen = done.get(doc)
+        if (seen) return seen
+        const out = doc.segments?.[segment.id]
+          ? produce(doc, (d) => {
+              d.segments![segment.id] = segment
+            })
+          : doc
+        done.set(doc, out)
+        return out
       }
       const s = get()
       if (!s.doc) return

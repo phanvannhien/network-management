@@ -2005,6 +2005,121 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /orgs/{orgId}/segments:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listSegments
+      summary: Shared networks of the organization (P2-08) — MPLS, Metro, shared LANs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [segments]
+                properties:
+                  segments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createSegment
+      summary: Add a shared network (editors)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/segments/{segmentId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/SegmentId'
+    get:
+      operationId: getSegment
+      summary: One shared network
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateSegment
+      summary: Edit a shared network (editors; optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteSegment
+      summary: Delete a shared network no cable ends in (editors)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /orgs/{orgId}/vendors:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4486,6 +4601,13 @@ components:
         format: uuid
     CloudAccountId:
       name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SegmentId:
+      name: segmentId
       in: path
       required: true
       schema:
@@ -8033,7 +8155,7 @@ components:
 
     SiteGraph:
       type: object
-      required: [sites, edges]
+      required: [sites, edges, segments]
       properties:
         sites:
           type: array
@@ -8043,6 +8165,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SiteEdge'
+        segments:
+          type: array
+          description: shared networks (P2-08) with the sites (in the filter) cabled into them — one cloud, not n² edges
+          items:
+            $ref: '#/components/schemas/SiteSegment'
+
+    SiteSegment:
+      type: object
+      required: [id, name, kind, sites]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {$ref: '#/components/schemas/SegmentKind'}
+        sites:
+          type: array
+          items:
+            type: object
+            required: [siteId, links]
+            properties:
+              siteId: {type: string, format: uuid}
+              links: {type: integer}
 
     SiteCard:
       type: object
@@ -8820,7 +8963,8 @@ components:
 
     LinkEndKind:
       type: string
-      enum: [device, endpoint_group]
+      enum: [device, endpoint_group, segment]
+      description: segment = a shared network (MPLS, Metro, shared LAN; P2-08) — no port at that end
 
     LinkKind:
       type: string
@@ -8884,8 +9028,9 @@ components:
           type: string
           description: device type, or the group's device type
         siteId:
-          type: string
+          type: [string, 'null']
           format: uuid
+          description: null for a segment end (it spans sites)
         siteCode:
           type: string
         interfaceId:
@@ -9112,8 +9257,8 @@ components:
           maxLength: 64
         refKind:
           type: string
-          enum: [device, endpoint_group, site, diagram, subnet]
-          description: subnet = a subnet bar on an L3 page (P2-08)
+          enum: [device, endpoint_group, site, diagram, subnet, segment]
+          description: subnet = a subnet bar on an L3 page; segment = a shared network (P2-08)
         refId:
           type: string
           format: uuid
@@ -9331,6 +9476,78 @@ components:
             $ref: '#/components/schemas/DiagramElsewhere'
         l3:
           $ref: '#/components/schemas/DiagramL3'
+        segments:
+          type: array
+          description: segments placed on the view (P2-08)
+          items:
+            $ref: '#/components/schemas/Segment'
+
+    SegmentKind:
+      type: string
+      enum: [mpls_l3vpn, metro_l2, shared_lan, other]
+      description: >-
+        mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2;
+        shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+
+    SegmentInput:
+      type: object
+      required: [name, kind]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/SegmentKind'
+        vendorId:
+          type: [string, 'null']
+          format: uuid
+          description: the carrier / provider (a vendor of the organization)
+        serviceId:
+          type: string
+          maxLength: 100
+          description: the carrier's service / VPN / circuit id
+        notes:
+          type: string
+          maxLength: 2000
+
+    SegmentUpdate:
+      allOf:
+        - $ref: '#/components/schemas/SegmentInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int32
+
+    Segment:
+      type: object
+      required: [id, name, kind, vendorId, vendorName, serviceId, notes, linkCount, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/SegmentKind'
+        vendorId:
+          type: [string, 'null']
+          format: uuid
+        vendorName:
+          type: string
+        serviceId:
+          type: string
+        notes:
+          type: string
+        linkCount:
+          type: integer
+          format: int64
+          description: cables ending in it
+        version:
+          type: integer
+          format: int32
 
     DiagramL3:
       type: object

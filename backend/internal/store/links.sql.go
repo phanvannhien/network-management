@@ -257,12 +257,12 @@ func (q *Queries) ListLinkIDsTouching(ctx context.Context, arg ListLinkIDsTouchi
 const listLinks = `-- name: ListLinks :many
 
 SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.b_id, l.b_interface_id, l.kind, l.medium, l.speed, l.length_m, l.cable_id, l.status, l.provider, l.circuit_id, l.bandwidth, l.notes, l.created_at, l.updated_at, l.version, l.fiber_mode, l.connector, l.service,
-  COALESCE(ad.hostname, ag.name, '')::text AS a_name, COALESCE(ad.type, ag.kind, '')::text AS a_type,
+  COALESCE(ad.hostname, ag.name, aseg.name, '')::text AS a_name, COALESCE(ad.type, ag.kind, aseg.kind, '')::text AS a_type,
   COALESCE(ad.site_id, ag.site_id) AS a_site_id,
   COALESCE(asite.code::text, '')::text AS a_site_code,
   COALESCE(ai.name, '')::text AS a_interface_name, COALESCE(ai.kind, '')::text AS a_interface_kind,
   COALESCE(ai.media, '')::text AS a_interface_media,
-  COALESCE(bd.hostname, bg.name, '')::text AS b_name, COALESCE(bd.type, bg.kind, '')::text AS b_type,
+  COALESCE(bd.hostname, bg.name, bseg.name, '')::text AS b_name, COALESCE(bd.type, bg.kind, bseg.kind, '')::text AS b_type,
   COALESCE(bd.site_id, bg.site_id) AS b_site_id,
   COALESCE(bsite.code::text, '')::text AS b_site_code,
   COALESCE(bi.name, '')::text AS b_interface_name, COALESCE(bi.kind, '')::text AS b_interface_kind,
@@ -280,11 +280,13 @@ SELECT l.id, l.organization_id, l.a_kind, l.a_id, l.a_interface_id, l.b_kind, l.
 FROM links l
 LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.organization_id = l.organization_id AND ad.deleted_at IS NULL
 LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id AND ag.organization_id = l.organization_id
+LEFT JOIN segments aseg ON l.a_kind = 'segment' AND aseg.id = l.a_id AND aseg.organization_id = l.organization_id
 LEFT JOIN sites asite ON asite.id = COALESCE(ad.site_id, ag.site_id) AND asite.organization_id = l.organization_id AND asite.deleted_at IS NULL
 LEFT JOIN interfaces ai ON ai.id = l.a_interface_id AND ai.organization_id = l.organization_id
 LEFT JOIN interfaces alag ON alag.id = ai.lag_id AND alag.organization_id = l.organization_id
 LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.organization_id = l.organization_id AND bd.deleted_at IS NULL
 LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id AND bg.organization_id = l.organization_id
+LEFT JOIN segments bseg ON l.b_kind = 'segment' AND bseg.id = l.b_id AND bseg.organization_id = l.organization_id
 LEFT JOIN sites bsite ON bsite.id = COALESCE(bd.site_id, bg.site_id) AND bsite.organization_id = l.organization_id AND bsite.deleted_at IS NULL
 LEFT JOIN interfaces bi ON bi.id = l.b_interface_id AND bi.organization_id = l.organization_id
 LEFT JOIN interfaces blag ON blag.id = bi.lag_id AND blag.organization_id = l.organization_id

@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-08 (bước 5/5) Mạng dùng chung (segment); P2-08 hoàn tất
+- Đã làm:
+  - **Đối tượng kho mới "mạng dùng chung"** (`segments`): MPLS L3VPN, Metro Ethernet / VPLS, LAN dùng chung, khác.
+    - Có tên (không trùng), nhà mạng (chọn từ Nhà cung cấp), mã dịch vụ, ghi chú.
+    - Không gắn site.
+    - Xóa được khi không còn dây nối vào.
+    - Mọi ghi đều có audit; viewer chỉ xem.
+  - **Dây vào segment:**
+    - chỉ từ thiết bị; không chọn cổng ở đầu segment;
+    - loại Ethernet / quang / không dây / DSL / 4G-5G / logical;
+    - DB chặn cổng ở đầu segment;
+    - API `LinkEnd.siteId` cho phép null với đầu segment.
+  - **Màn vẽ:**
+    - thư viện có mục **Mạng dùng chung**: chọn mạng đã có hoặc tạo mới (lưu vào kho ngay);
+    - node đám mây (MPLS / Metro) hoặc thanh rộng (LAN chung);
+    - nối dây bằng công cụ nối (phím L);
+    - panel sửa thẳng vào kho và liệt kê thiết bị nối vào.
+  - **Sơ đồ tổng quan:**
+    - nút **"Thêm N mạng dùng chung"** cho các segment nối từ 2 site đang vẽ trở lên, đặt ở giữa các site đó;
+    - đường nét đứt từ đám mây tới từng site (ghi số dây) thay vì cạnh giữa từng cặp site.
+  - **Glossary:** mạng dùng chung.
+- Test / cách kiểm tra:
+  - `make check` pass. Migration 028 chạy up / down / up.
+  - Go: `TestSegments` (CRUD, trùng tên, viewer, chặn tổ chức khác; dây: không cổng ở đầu segment, không console, không nối segment của tổ chức khác; xóa khi còn dây bị từ chối; sơ đồ; site graph; audit).
+  - Vitest: segment trong `pages.test.ts`.
+  - Trình duyệt thật: tạo MPLS từ thư viện, nối 3 router; tổng quan thêm mạng dùng chung, 3 đường tới 3 site; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - `.ntb.json` chưa mang segment và dây vào segment.
+  - Chưa có trang danh sách segment riêng (quản lý từ màn vẽ).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: task chưa tick đầu tiên của Phase 2 trong PLAN.
+
 ## 2026-10-18 — P2-08 (bước 4/5) Trang L3 sinh từ IPAM
 - Đã làm:
   - **Menu tab → "Thêm trang L3 (tự sinh từ IPAM)":**

@@ -94,6 +94,7 @@ type Querier interface {
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateRack(ctx context.Context, arg CreateRackParams) (Rack, error)
 	CreateRange(ctx context.Context, arg CreateRangeParams) (IpRange, error)
+	CreateSegment(ctx context.Context, arg CreateSegmentParams) (Segment, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error)
 	CreateSubnet(ctx context.Context, arg CreateSubnetParams) (pgtype.UUID, error)
@@ -154,6 +155,7 @@ type Querier interface {
 	DeleteRack(ctx context.Context, arg DeleteRackParams) (int64, error)
 	DeleteRange(ctx context.Context, arg DeleteRangeParams) (int64, error)
 	DeleteRecoveryCodes(ctx context.Context, userID pgtype.UUID) error
+	DeleteSegment(ctx context.Context, arg DeleteSegmentParams) (int64, error)
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteSubnet(ctx context.Context, arg DeleteSubnetParams) (int64, error)
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
@@ -219,6 +221,7 @@ type Querier interface {
 	GetRange(ctx context.Context, arg GetRangeParams) (IpRange, error)
 	// A planned range and its subnet, to link a group to it.
 	GetRangeWithSubnet(ctx context.Context, arg GetRangeWithSubnetParams) (GetRangeWithSubnetRow, error)
+	GetSegment(ctx context.Context, arg GetSegmentParams) (Segment, error)
 	// Returns the live session joined with its (enabled) user and MFA state.
 	GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error)
 	GetSite(ctx context.Context, arg GetSiteParams) (GetSiteRow, error)
@@ -309,6 +312,8 @@ type Querier interface {
 	ListOrgAudit(ctx context.Context, arg ListOrgAuditParams) ([]ListOrgAuditRow, error)
 	ListRacks(ctx context.Context, arg ListRacksParams) ([]Rack, error)
 	ListRanges(ctx context.Context, arg ListRangesParams) ([]IpRange, error)
+	// Segments (P2-08, ADR-047): shared networks cables end in. Every query is scoped to @organization_id.
+	ListSegments(ctx context.Context, arg ListSegmentsParams) ([]ListSegmentsRow, error)
 	// Live sites with what their full code is made of, for re-coding after a tree change.
 	ListSiteCodes(ctx context.Context, organizationID pgtype.UUID) ([]ListSiteCodesRow, error)
 	// Live site codes starting with @prefix (ADR-030 next-code suggestion).
@@ -392,6 +397,8 @@ type Querier interface {
 	SearchMACs(ctx context.Context, arg SearchMACsParams) ([]SearchMACsRow, error)
 	// Master key versions in use, across every table holding a sealed secret (startup check, rotation).
 	SecretKeyVersions(ctx context.Context) ([]int16, error)
+	SegmentLinkCount(ctx context.Context, arg SegmentLinkCountParams) (int64, error)
+	SegmentNameTaken(ctx context.Context, arg SegmentNameTakenParams) (bool, error)
 	// Live, not retired devices with this serial (trimmed, case-insensitive).
 	SerialHolders(ctx context.Context, arg SerialHoldersParams) ([]SerialHoldersRow, error)
 	SetAlertDigestDay(ctx context.Context, arg SetAlertDigestDayParams) error
@@ -408,6 +415,8 @@ type Querier interface {
 	SiteGraphGateways(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphGatewaysRow, error)
 	// Links between two devices (no provider cloud) with the site of each end; the API keeps those across sites.
 	SiteGraphLinks(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphLinksRow, error)
+	// Shared networks (P2-08): each with the sites whose devices are cabled into it, and how many cables.
+	SiteGraphSegments(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphSegmentsRow, error)
 	// Site graph (P2-21, ADR-040): what an overview diagram shows of each site and between sites, derived live from the
 	// inventory. Every query takes organization_id and the category filter (NULL = whole organization, else its subtree).
 	SiteGraphSites(ctx context.Context, arg SiteGraphSitesParams) ([]SiteGraphSitesRow, error)
@@ -449,6 +458,7 @@ type Querier interface {
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
 	UpdateRack(ctx context.Context, arg UpdateRackParams) (Rack, error)
 	UpdateRange(ctx context.Context, arg UpdateRangeParams) (IpRange, error)
+	UpdateSegment(ctx context.Context, arg UpdateSegmentParams) (Segment, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)
 	UpdateSubnet(ctx context.Context, arg UpdateSubnetParams) (int64, error)
 	UpdateVendor(ctx context.Context, arg UpdateVendorParams) (Vendor, error)

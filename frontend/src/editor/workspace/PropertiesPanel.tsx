@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { ExternalLink, Pencil, PanelRightClose, X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -34,7 +35,9 @@ import {
   setLabelColor,
   setLabelTemplate,
   setPortStyle,
+  addNode,
   addSiteNodes,
+  compound,
   updateAnnotation,
   updateDevice,
   updateLink,
@@ -44,6 +47,14 @@ import { SiteDrillDialog } from '../overview/SiteDrillDialog'
 import { placeMissing, useSiteGraph } from '../overview/siteGraph'
 import type { DocState } from '../doc/types'
 import { l2Of } from '../l2/l2'
+import { SegmentFields } from '../segments/SegmentDialog'
+import {
+  draftOf,
+  inputOf,
+  useSegments,
+  useSegmentWrites,
+  type SegmentDraft,
+} from '../segments/segments'
 import { useDoc, useDocStoreApi } from './context'
 import { ANN, isAnnotationId, toFlowEdges } from './flow'
 import { LABEL_PRESETS, presetOf } from './labels'
@@ -105,6 +116,11 @@ export function PropertiesPanel({
     } else if (node?.refKind === 'site') {
       title = t('overview.siteTitle')
       body = <SitePanel key={node.refId} orgId={orgId} siteId={node.refId} />
+    } else if (node?.refKind === 'segment' && doc.segments?.[node.refId]) {
+      title = t('segments.title')
+      body = (
+        <SegmentPanel key={node.refId} orgId={orgId} segmentId={node.refId} canEdit={canEdit} />
+      )
     } else if (node?.refKind === 'subnet') {
       title = t('l3.subnet')
       body = <SubnetPanel orgId={orgId} subnetId={node.refId} />
@@ -298,6 +314,7 @@ function OverviewSync({ canEdit }: { canEdit: boolean }) {
   const drawn = doc.view.nodes.filter((n) => n.refKind === 'site')
   const isOverview = layer === 'overview' || drawn.length > 0
   const graph = useSiteGraph(orgId, isOverview)
+  const segments = useSegments(orgId, isOverview)
   if (!isOverview) return null
   const on = new Set(drawn.map((n) => n.refId))
   const cards = graph.data?.sites ?? []
@@ -305,6 +322,33 @@ function OverviewSync({ canEdit }: { canEdit: boolean }) {
   const missing = cards.filter(
     (c) => !on.has(c.id) && (scope.size === 0 || scope.has(c.categoryId ?? '')),
   )
+  // Shared networks (P2-08) joining two or more of the drawn sites: one cloud instead of an edge per pair.
+  const drawnSegs = new Set(
+    doc.view.nodes.filter((n) => n.refKind === 'segment').map((n) => n.refId),
+  )
+  const segCards = new Map((segments.data ?? []).map((x) => [x.id, x]))
+  const missingSegs = (graph.data?.segments ?? []).filter(
+    (g) =>
+      !drawnSegs.has(g.id) &&
+      segCards.has(g.id) &&
+      g.sites.filter((x) => on.has(x.siteId)).length >= 2,
+  )
+  const addSegments = () => {
+    const at = new Map(drawn.map((n) => [n.refId, n]))
+    store.getState().dispatch(
+      compound(
+        'addSegments',
+        missingSegs.map((g, i) => {
+          const pts = g.sites.map((x) => at.get(x.siteId)).filter((n) => n !== undefined)
+          const x = pts.reduce((m, n) => m + n.x, 0) / pts.length
+          const y = Math.min(...pts.map((n) => n.y)) - 160 - i * 40
+          return addNode('segment', g.id, Math.round(x), Math.round(y), {
+            segment: segCards.get(g.id)!,
+          })
+        }),
+      ),
+    )
+  }
   return (
     <section
       aria-label={t('overview.panelTitle')}
@@ -332,6 +376,11 @@ function OverviewSync({ canEdit }: { canEdit: boolean }) {
         </Button>
       ) : (
         <p className="text-xs text-muted-foreground">{t('overview.upToDate')}</p>
+      )}
+      {missingSegs.length > 0 && (
+        <Button size="sm" variant="outline" disabled={!canEdit} onClick={addSegments}>
+          {t('overview.addSegments', { count: missingSegs.length })}
+        </Button>
       )}
     </section>
   )
@@ -859,6 +908,81 @@ function LagPanel({ linkIds }: { linkIds: string[] }) {
         </ul>
       )}
       <p className="text-xs text-muted-foreground">{t('panel.lagGuide')}</p>
+    </>
+  )
+}
+
+/** A shared network (P2-08): edited straight in the inventory; the devices cabled into it on this diagram. */
+function SegmentPanel({
+  orgId,
+  segmentId,
+  canEdit,
+}: {
+  orgId: string
+  segmentId: string
+  canEdit: boolean
+}) {
+  const { t } = useTranslation()
+  const store = useDocStoreApi()
+  const doc = useDoc((s) => s.doc)!
+  const sg = doc.segments![segmentId]!
+  const writes = useSegmentWrites(orgId)
+  const [draft, setDraft] = useState<SegmentDraft>(() => draftOf(sg))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const connected = [...Object.values(doc.links), ...Object.values(doc.external ?? {})]
+    .filter((l) => l.aId === segmentId || l.bId === segmentId)
+    .map((l) => {
+      const other = l.aId === segmentId ? l.bId : l.aId
+      const port = l.aId === segmentId ? l.bPort : l.aPort
+      return `${doc.devices[other]?.hostname ?? doc.farEnds?.[other]?.name ?? '?'}${port ? ` ${port}` : ''}`
+    })
+  const save = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      const saved = await writes.update(segmentId, { ...inputOf(draft), version: sg.version })
+      store.getState().syncSegment(saved)
+      toast.success(t('segments.saved'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <>
+      {canEdit ? (
+        <SegmentFields orgId={orgId} value={draft} onChange={setDraft} />
+      ) : (
+        <dl className="space-y-1">
+          <Row label={t('segments.name')} value={sg.name} />
+          <Row label={t('segments.kind')} value={t(`segments.kinds.${sg.kind}`)} />
+          <Row label={t('segments.vendor')} value={sg.vendorName || '—'} />
+          <Row label={t('segments.serviceId')} value={sg.serviceId || '—'} mono />
+        </dl>
+      )}
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+      {canEdit && (
+        <Button size="sm" disabled={busy || draft.name.trim() === ''} onClick={() => void save()}>
+          {t('common.save')}
+        </Button>
+      )}
+      {connected.length > 0 && (
+        <div>
+          <p className="text-xs font-medium">{t('segments.connected')}</p>
+          <ul className="space-y-0.5 font-mono text-xs">
+            {connected.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">{t('segments.panelHint')}</p>
     </>
   )
 }

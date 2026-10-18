@@ -55,6 +55,11 @@ export function useWiring({
       if (!g) return null
       return { kind: 'endpoint_group', id: g.id, name: g.name, type: '', draft: false }
     }
+    if (n.refKind === 'segment') {
+      const sg = doc.segments?.[n.refId]
+      if (!sg) return null
+      return { kind: 'segment', id: sg.id, name: sg.name, type: 'segment', draft: false }
+    }
     return null
   }
 
@@ -66,6 +71,15 @@ export function useWiring({
     if (!a || !b) return
     if (a.kind === 'endpoint_group' && b.kind === 'endpoint_group') {
       toast.error(t('cable.groupToGroup'))
+      return
+    }
+    // A shared network (P2-08) is joined by devices only.
+    if (
+      (a.kind === 'segment' || b.kind === 'segment') &&
+      a.kind !== 'device' &&
+      b.kind !== 'device'
+    ) {
+      toast.error(t('segments.wrongEnd'))
       return
     }
     setOpen({ a, b })

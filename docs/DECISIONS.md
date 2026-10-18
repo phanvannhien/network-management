@@ -778,6 +778,9 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - viewport lưu cùng sơ đồ là của trang đầu, các trang khác nhớ theo trình duyệt;
     - `diagrams.layer` giữ nguyên ý nghĩa cũ (không tự đồng bộ theo trang đầu); trang không tên của sơ đồ cũ mang lớp của sơ đồ;
     - `.ntb.json` 2.1.0 có `pages` / `pageId`; file 2.0.0 vẫn nhập được.
+    - segment tạo / sửa thẳng vào kho từ màn vẽ (như IPAM ở panel, ADR-034), không đi qua nháp của sơ đồ; xóa được khi không còn dây nối vào;
+    - dây vào segment: chỉ từ thiết bị, loại Ethernet / quang / không dây / DSL / 4G-5G / logical, không chọn cổng ở đầu segment;
+    - `.ntb.json` chưa mang segment, dây vào segment, thanh subnet và vị trí connector (nối lại / bổ sung sau khi nhập).
 - **Lý do:**
   - L2 của một site gần như trùng topology L1: vẽ riêng chỉ sinh hai bản lệch nhau.
   - L3 có tập node khác hẳn nên cần bố cục riêng.

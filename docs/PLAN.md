@@ -103,8 +103,8 @@ Phase hiện tại: **Phase 0**
 - [x] **P2-05 Cảnh báo hết hạn** (ADR-043): cấu hình SMTP theo tổ chức; quy tắc 90/60/30/7 ngày cho bảo hành, license, EoL, cloud, hợp đồng, credential; thông báo trong app + email. *(2026-10-18: SMTP hệ thống, bảo hành / license / hết hỗ trợ, hợp đồng, mật khẩu tới hạn đổi, tài khoản cloud; email tổng hợp + chuông. SMTP riêng theo tổ chức để sau.)*
 - [ ] **P2-06 Link chia sẻ chỉ xem**: token có hạn, mật khẩu tùy chọn, ẩn IP tùy chọn, thu hồi; trang xem công khai không lộ dữ liệu khác.
 - [ ] **P2-07 SSO OIDC**: Entra ID / Google Workspace / Keycloak; ánh xạ nhóm → vai trò.
-- [ ] **P2-08 Multi-page, layer L1/L2/L3, segment (bus)**, off-page connector.
-  - Thiết kế + quyết định: ADR-047. Thứ tự: [x] chế độ xem L2 · [x] nhiều trang · [x] connector ra ngoài trang · [x] trang L3 · [ ] segment.
+- [x] **P2-08 Multi-page, layer L1/L2/L3, segment (bus)**, off-page connector.
+  - Thiết kế + quyết định: ADR-047. Thứ tự: [x] chế độ xem L2 · [x] nhiều trang · [x] connector ra ngoài trang · [x] trang L3 · [x] segment.
 - [ ] **P2-09 IPAM đầy đủ**: import subnet/dải từ Excel, bảng IP plan đặt lên sơ đồ, rule chồng lấn và IP tĩnh trong DHCP.
 - [ ] **P2-10 Validation Phase 2** theo SRS §7.
 - [ ] **P2-11 Báo cáo & export**: PDF A4/A3 có title block; Excel IP plan, port map, BOQ, VLAN; báo cáo hết hạn, thiếu thông tin.

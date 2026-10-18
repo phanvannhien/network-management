@@ -29,7 +29,7 @@ import type { DocState } from '../doc/types'
 import { sortPorts, suggestKind, takenPorts } from './wiring'
 
 export interface CableEnd {
-  kind: 'device' | 'endpoint_group'
+  kind: 'device' | 'endpoint_group' | 'segment'
   id: string
   name: string
   /** Device type (empty for a group). */
@@ -103,6 +103,7 @@ export function CableDialog({
   const portsB = usePorts(orgId, doc, b, v.kind, self)
   const noPortReason = (e: CableEnd): string | null => {
     if (e.kind === 'endpoint_group') return t('cable.noPortGroup')
+    if (e.kind === 'segment') return t('segments.noPort')
     if (e.type === 'provider_cloud') return t('cable.noPortCloud')
     if (v.kind === 'power' && e.type !== 'ups' && e.type !== 'pdu') return t('cable.noPortPower')
     if (e.draft && !(doc.newPorts?.[e.id]?.length ?? 0)) return t('cable.noPortDraft')

@@ -28,6 +28,7 @@ export const NODE_TYPES_BY_REF = {
   site: 'site',
   diagram: 'ref',
   subnet: 'subnet',
+  segment: 'segment',
 } as const
 
 export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node<RefData>[] {

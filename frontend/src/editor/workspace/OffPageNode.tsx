@@ -40,7 +40,9 @@ function OffPageNodeImpl({ data }: NodeProps<OffPageFlowNode>) {
     : c.far.map((f) => f.name).join(', ')
   const count = c.links.length > 1 ? ` (${t('l2.cables', { count: c.links.length })})` : ''
   const canOpen = c.target.kind !== 'none'
-  const canPlace = c.target.kind === 'none' && actions?.canEdit && single !== null
+  // A device or endpoint group can be placed from here; a shared network is placed from the library.
+  const canPlace =
+    c.target.kind === 'none' && actions?.canEdit && single !== null && single.kind !== 'segment'
   const label = `${where} · ${what}${count}`
   return (
     <div className="group relative flex items-center">

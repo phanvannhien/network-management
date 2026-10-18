@@ -116,6 +116,11 @@ func (c *refChecker) visible(kind string, id uuid.UUID) (bool, error) {
 		_, _, ok, err = loadLink(c.ctx, c.q, c.m, pgUUID(id))
 	case "subnet":
 		_, ok, err = loadSubnet(c.ctx, c.q, c.m, id)
+	case "segment":
+		_, err = c.q.GetSegment(c.ctx, store.GetSegmentParams{OrganizationID: c.m.OrgID, ID: pgUUID(id)})
+		if ok = err == nil; errors.Is(err, pgx.ErrNoRows) {
+			err = nil
+		}
 	}
 	if err != nil {
 		return false, err
@@ -132,7 +137,7 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 	}
 	out := apigen.DiagramDetail{Diagram: toDiagram(d, level), View: view, Devices: []apigen.Device{},
 		EndpointGroups: []apigen.EndpointGroup{}, Links: []apigen.Link{}, HiddenRefs: []uuid.UUID{}}
-	var deviceIDs, endIDs []pgtype.UUID
+	var deviceIDs, endIDs, segIDs []pgtype.UUID
 	hidden := map[uuid.UUID]bool{}
 	check := newRefChecker(ctx, q, m)
 	for _, n := range view.Nodes {
@@ -154,6 +159,16 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 			}
 			out.EndpointGroups = append(out.EndpointGroups, toGroup(g, lv))
 			endIDs = append(endIDs, g.ID)
+		case apigen.DiagramNodeRefKindSegment:
+			// A shared network (P2-08): its cables to devices on the view are drawn like any other.
+			if ok, err := check.visible("segment", n.RefId); err != nil {
+				return out, err
+			} else if !ok {
+				hidden[n.RefId] = true
+				continue
+			}
+			endIDs = append(endIDs, pgUUID(n.RefId))
+			segIDs = append(segIDs, pgUUID(n.RefId))
 		default:
 			if ok, err := check.visible(string(n.RefKind), n.RefId); err != nil {
 				return out, err
@@ -227,6 +242,13 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 	if err := diagramL3(ctx, q, m, &out); err != nil {
 		return out, err
 	}
+	segments := []apigen.Segment{}
+	if len(segIDs) > 0 {
+		if segments, err = listSegments(ctx, q, m, segIDs); err != nil {
+			return out, err
+		}
+	}
+	out.Segments = &segments
 	return out, nil
 }
 

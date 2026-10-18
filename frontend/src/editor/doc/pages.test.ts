@@ -222,3 +222,29 @@ describe('off-page connectors', () => {
     })
   })
 })
+
+describe('shared networks (segments)', () => {
+  it('places a segment with its cards; its cables to devices on the page are drawn', () => {
+    const s = loaded()
+    const SEG = 'dddddddd-0000-4000-8000-000000000001'
+    s.getState().dispatch(
+      addNode('segment', SEG, 300, -200, {
+        segment: {
+          id: SEG,
+          name: 'MPLS Viettel',
+          kind: 'mpls_l3vpn',
+          vendorId: null,
+          vendorName: 'Viettel',
+          serviceId: 'VPN-42',
+          notes: '',
+          linkCount: 1,
+          version: 1,
+        },
+        links: [{ id: 'l-seg', aId: CORE, bId: SEG, kind: 'ethernet', aPort: 'Gi0/0', bPort: '' }],
+      }),
+    )
+    const d = s.getState().doc!
+    expect(d.segments?.[SEG]?.name).toBe('MPLS Viettel')
+    expect(d.view.edges.map((e) => e.linkId)).toEqual(['l-seg'])
+  })
+})

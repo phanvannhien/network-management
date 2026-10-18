@@ -32,10 +32,11 @@ type endKey struct {
 func linkLevels(_ context.Context, _ store.Querier, m tenant.Membership, rows []store.ListLinksRow) (map[endKey]int, error) {
 	out := map[endKey]int{}
 	for _, r := range rows {
-		if r.ASiteID.Valid {
+		// A live device / group has a site; a live segment (no site) has its name.
+		if r.ASiteID.Valid || (r.AKind == "segment" && r.AName != "") {
 			out[endKey{r.AKind, r.AID}] = m.Level()
 		}
-		if r.BSiteID.Valid {
+		if r.BSiteID.Valid || (r.BKind == "segment" && r.BName != "") {
 			out[endKey{r.BKind, r.BID}] = m.Level()
 		}
 	}
@@ -73,7 +74,7 @@ func effectivePortL2(port, lag portL2) portL2 {
 
 func toLink(r store.ListLinksRow, level int) apigen.Link {
 	end := func(kind string, id, site pgtype.UUID, name, typ, siteCode string, iface pgtype.UUID, ifName, ifKind, ifMedia string, l2 portL2) apigen.LinkEnd {
-		return apigen.LinkEnd{Kind: apigen.LinkEndKind(kind), Id: uuid.UUID(id.Bytes), Name: name, Type: typ, SiteId: uuid.UUID(site.Bytes),
+		return apigen.LinkEnd{Kind: apigen.LinkEndKind(kind), Id: uuid.UUID(id.Bytes), Name: name, Type: typ, SiteId: optUUID(site),
 			SiteCode: siteCode, InterfaceId: optUUID(iface), InterfaceName: ifName, InterfaceKind: ifKind, InterfaceMedia: ifMedia,
 			InterfaceMode: apigen.InterfaceMode(l2.mode), AccessVlan: optInt(l2.access), NativeVlan: optInt(l2.native),
 			AllowedVlans: l2.allowed, LagId: optUUID(l2.lagID), LagName: l2.lagName}
@@ -189,6 +190,18 @@ func resolveEnd(ctx context.Context, q store.Querier, m tenant.Membership, in ap
 			return e, "", err
 		}
 		e.label = g.Name
+	case apigen.LinkEndKindSegment:
+		sg, err := q.GetSegment(ctx, store.GetSegmentParams{OrganizationID: m.OrgID, ID: pgUUID(in.Id)})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return e, fmt.Sprintf("Mạng dùng chung ở đầu %s không tồn tại", side), nil
+		}
+		if err != nil {
+			return e, "", fmt.Errorf("load segment: %w", err)
+		}
+		if in.InterfaceId != nil {
+			return e, "Mạng dùng chung không có cổng — để trống cổng ở đầu này", nil
+		}
+		e.level, e.label = m.Level(), sg.Name
 	default:
 		return e, "Loại đầu link không hợp lệ", nil
 	}
@@ -310,6 +323,9 @@ func set(xs ...string) map[string]bool {
 	return out
 }
 
+// segmentKinds are the cables a shared network can end (P2-08): no console, power, stack or serial.
+var segmentKinds = set("ethernet", "fiber", "wireless", "dsl", "cellular", "logical")
+
 func isPowerSource(devType string) bool { return devType == "ups" || devType == "pdu" }
 
 // checkLinkEnds applies the connection rules; returns a 400 message, 403 code or 409 message.
@@ -318,6 +334,15 @@ func checkLinkEnds(ctx context.Context, q store.Querier, m tenant.Membership, ki
 	name := linkKindNames[kind]
 	if a.kind == "endpoint_group" && b.kind == "endpoint_group" {
 		return "Một đầu link phải là thiết bị (nhóm đầu cuối nối vào switch, AP…)", 0, "", nil
+	}
+	// A shared network (P2-08) is joined by devices, over a WAN or LAN kind of cable.
+	if a.kind == "segment" || b.kind == "segment" {
+		if a.kind != "device" && b.kind != "device" {
+			return "Mạng dùng chung nối với thiết bị (router, firewall, switch…), không nối nhóm đầu cuối hay mạng khác", 0, "", nil
+		}
+		if !segmentKinds[kind] {
+			return fmt.Sprintf("Dây %s không nối vào mạng dùng chung (chọn Ethernet, quang, không dây, DSL, 4G/5G hoặc Logical)", name), 0, "", nil
+		}
 	}
 	if !rule.groups && (a.kind == "endpoint_group" || b.kind == "endpoint_group") {
 		return fmt.Sprintf("Dây %s chỉ nối giữa hai thiết bị, không nối nhóm thiết bị đầu cuối", name), 0, "", nil

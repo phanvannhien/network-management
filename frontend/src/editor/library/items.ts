@@ -30,6 +30,8 @@ export type LibraryItem =
   | { kind: 'type'; type: DeviceType }
   | { kind: 'endpoint'; endpointKind: EndpointKind }
   | { kind: 'template'; templateId: string; type: DeviceType }
+  /** A shared network (P2-08): picked or created in a dialog. */
+  | { kind: 'segment' }
   | {
       kind: 'device'
       device: {
@@ -60,6 +62,7 @@ export function decodeItem(raw: string): LibraryItem | null {
     const v = JSON.parse(raw) as Partial<Record<string, unknown>>
     const str = (x: unknown) => typeof x === 'string' && x !== ''
     if (v.kind === 'type' && str(v.type)) return { kind: 'type', type: v.type as DeviceType }
+    if (v.kind === 'segment') return { kind: 'segment' }
     if (v.kind === 'endpoint' && ENDPOINT_KINDS.includes(v.endpointKind as EndpointKind))
       return { kind: 'endpoint', endpointKind: v.endpointKind as EndpointKind }
     if (v.kind === 'template' && str(v.templateId) && str(v.type))

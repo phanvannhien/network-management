@@ -530,6 +530,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['10.0.0.0/30: FW .1 ↔ Core .2', '10.0.0.0/30: FW .1 ↔ Core .2'],
   ),
   e(
+    'segment',
+    'device',
+    ['Mạng dùng chung (MPLS / Metro / LAN chung)', 'Shared network (MPLS / Metro / shared LAN)'],
+    [
+      'Mạng mà từ 3 bên trở lên cùng nối vào, không có "cổng ở đầu kia". MPLS L3VPN: nhà mạng định tuyến giữa các site (mỗi site một subnet). Metro Ethernet / VPLS: các site như cắm chung một switch lớn (cùng subnet). LAN dùng chung: của tòa nhà, chủ nhà, đối tác. Vẽ một đám mây, mỗi site một dây vào. Internet riêng của từng site vẫn là "Internet / mạng nhà cung cấp".',
+      'A network three or more parties join, with no "port at the other end". MPLS L3VPN: the carrier routes between sites (a subnet per site). Metro Ethernet / VPLS: the sites act as if on one big switch (one subnet). Shared LAN: a building, landlord or partner LAN. Drawn as one cloud, one cable per site. Each site\'s own Internet line stays an "Internet / carrier network" cloud.',
+    ],
+    [
+      '"MPLS Viettel – CJ", VPN-0042, 5 chi nhánh nối vào.',
+      '"MPLS Viettel – CJ", VPN-0042, 5 branches joined.',
+    ],
+  ),
+  e(
     'vlan-mismatch',
     'vlan',
     ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],

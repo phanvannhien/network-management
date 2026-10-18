@@ -52,3 +52,15 @@ JOIN devices d ON d.id = n.ref_id::uuid AND d.organization_id = dg.organization_
 WHERE dg.organization_id = @organization_id AND dg.layer <> 'overview'
 GROUP BY d.site_id, dg.id, dg.name, dg.layer
 ORDER BY d.site_id, count(*) DESC, lower(dg.name);
+
+-- name: SiteGraphSegments :many
+-- Shared networks (P2-08): each with the sites whose devices are cabled into it, and how many cables.
+SELECT sg.id, sg.name, sg.kind, d.site_id, count(*)::bigint AS links
+FROM links l
+JOIN segments sg ON sg.organization_id = l.organization_id
+  AND ((l.a_kind = 'segment' AND sg.id = l.a_id) OR (l.b_kind = 'segment' AND sg.id = l.b_id))
+JOIN devices d ON d.organization_id = l.organization_id AND d.deleted_at IS NULL
+  AND ((l.a_kind = 'device' AND d.id = l.a_id) OR (l.b_kind = 'device' AND d.id = l.b_id))
+WHERE l.organization_id = @organization_id
+GROUP BY sg.id, sg.name, sg.kind, d.site_id
+ORDER BY lower(sg.name), d.site_id;

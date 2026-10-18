@@ -765,6 +765,7 @@ const (
 	DiagramNodeRefKindDevice        DiagramNodeRefKind = "device"
 	DiagramNodeRefKindDiagram       DiagramNodeRefKind = "diagram"
 	DiagramNodeRefKindEndpointGroup DiagramNodeRefKind = "endpoint_group"
+	DiagramNodeRefKindSegment       DiagramNodeRefKind = "segment"
 	DiagramNodeRefKindSite          DiagramNodeRefKind = "site"
 	DiagramNodeRefKindSubnet        DiagramNodeRefKind = "subnet"
 )
@@ -777,6 +778,8 @@ func (e DiagramNodeRefKind) Valid() bool {
 	case DiagramNodeRefKindDiagram:
 		return true
 	case DiagramNodeRefKindEndpointGroup:
+		return true
+	case DiagramNodeRefKindSegment:
 		return true
 	case DiagramNodeRefKindSite:
 		return true
@@ -1187,6 +1190,7 @@ func (e LinkConnector) Valid() bool {
 const (
 	LinkEndKindDevice        LinkEndKind = "device"
 	LinkEndKindEndpointGroup LinkEndKind = "endpoint_group"
+	LinkEndKindSegment       LinkEndKind = "segment"
 )
 
 // Valid indicates whether the value is a known member of the LinkEndKind enum.
@@ -1195,6 +1199,8 @@ func (e LinkEndKind) Valid() bool {
 	case LinkEndKindDevice:
 		return true
 	case LinkEndKindEndpointGroup:
+		return true
+	case LinkEndKindSegment:
 		return true
 	default:
 		return false
@@ -1468,6 +1474,30 @@ func (e SearchDeviceHitMatched) Valid() bool {
 	case SearchDeviceHitMatchedPartNumber:
 		return true
 	case SearchDeviceHitMatchedSerial:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SegmentKind.
+const (
+	SegmentKindMetroL2   SegmentKind = "metro_l2"
+	SegmentKindMplsL3vpn SegmentKind = "mpls_l3vpn"
+	SegmentKindOther     SegmentKind = "other"
+	SegmentKindSharedLan SegmentKind = "shared_lan"
+)
+
+// Valid indicates whether the value is a known member of the SegmentKind enum.
+func (e SegmentKind) Valid() bool {
+	switch e {
+	case SegmentKindMetroL2:
+		return true
+	case SegmentKindMplsL3vpn:
+		return true
+	case SegmentKindOther:
+		return true
+	case SegmentKindSharedLan:
 		return true
 	default:
 		return false
@@ -3101,8 +3131,11 @@ type DiagramDetail struct {
 	L3 *DiagramL3 `json:"l3,omitempty"`
 
 	// Links links whose both ends are nodes of the view
-	Links []Link      `json:"links"`
-	View  DiagramView `json:"view"`
+	Links []Link `json:"links"`
+
+	// Segments segments placed on the view (P2-08)
+	Segments *[]Segment  `json:"segments,omitempty"`
+	View     DiagramView `json:"view"`
 
 	// Vlans L2 view (P2-08, ADR-047): VLANs of the sites of the devices on the view and the organization-wide ones (name and colour for each VLAN id; a site's own VLAN wins over the organization-wide one)
 	Vlans *[]DiagramVlan `json:"vlans,omitempty"`
@@ -3190,14 +3223,14 @@ type DiagramNode struct {
 	PageId *string            `json:"pageId,omitempty"`
 	RefId  openapi_types.UUID `json:"refId"`
 
-	// RefKind subnet = a subnet bar on an L3 page (P2-08)
+	// RefKind subnet = a subnet bar on an L3 page; segment = a shared network (P2-08)
 	RefKind DiagramNodeRefKind `json:"refKind"`
 	Width   *float32           `json:"width,omitempty"`
 	X       float32            `json:"x"`
 	Y       float32            `json:"y"`
 }
 
-// DiagramNodeRefKind subnet = a subnet bar on an L3 page (P2-08)
+// DiagramNodeRefKind subnet = a subnet bar on an L3 page; segment = a shared network (P2-08)
 type DiagramNodeRefKind string
 
 // DiagramPage defines model for DiagramPage.
@@ -3785,7 +3818,9 @@ type LinkEnd struct {
 	InterfaceMedia string              `json:"interfaceMedia"`
 	InterfaceMode  InterfaceMode       `json:"interfaceMode"`
 	InterfaceName  string              `json:"interfaceName"`
-	Kind           LinkEndKind         `json:"kind"`
+
+	// Kind segment = a shared network (MPLS, Metro, shared LAN; P2-08) — no port at that end
+	Kind LinkEndKind `json:"kind"`
 
 	// LagId the LAG (port-channel) the port belongs to
 	LagId *openapi_types.UUID `json:"lagId"`
@@ -3797,9 +3832,11 @@ type LinkEnd struct {
 	Name string `json:"name"`
 
 	// NativeVlan untagged VLAN of a trunk / hybrid port; null = the vendor default (1)
-	NativeVlan *int32             `json:"nativeVlan"`
-	SiteCode   string             `json:"siteCode"`
-	SiteId     openapi_types.UUID `json:"siteId"`
+	NativeVlan *int32 `json:"nativeVlan"`
+	SiteCode   string `json:"siteCode"`
+
+	// SiteId null for a segment end (it spans sites)
+	SiteId *openapi_types.UUID `json:"siteId"`
 
 	// Type device type, or the group's device type
 	Type string `json:"type"`
@@ -3811,10 +3848,12 @@ type LinkEndInput struct {
 
 	// InterfaceId a port of the device; empty while not known (logical drawing), always empty for a group
 	InterfaceId *openapi_types.UUID `json:"interfaceId,omitempty"`
-	Kind        LinkEndKind         `json:"kind"`
+
+	// Kind segment = a shared network (MPLS, Metro, shared LAN; P2-08) — no port at that end
+	Kind LinkEndKind `json:"kind"`
 }
 
-// LinkEndKind defines model for LinkEndKind.
+// LinkEndKind segment = a shared network (MPLS, Metro, shared LAN; P2-08) — no port at that end
 type LinkEndKind string
 
 // LinkFiberMode single-mode / multi-mode (fiber links only)
@@ -4309,6 +4348,55 @@ type SearchResult struct {
 	Macs     []SearchMACHit     `json:"macs"`
 }
 
+// Segment defines model for Segment.
+type Segment struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// Kind mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+	Kind SegmentKind `json:"kind"`
+
+	// LinkCount cables ending in it
+	LinkCount  int64               `json:"linkCount"`
+	Name       string              `json:"name"`
+	Notes      string              `json:"notes"`
+	ServiceId  string              `json:"serviceId"`
+	VendorId   *openapi_types.UUID `json:"vendorId"`
+	VendorName string              `json:"vendorName"`
+	Version    int32               `json:"version"`
+}
+
+// SegmentInput defines model for SegmentInput.
+type SegmentInput struct {
+	// Kind mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+	Kind  SegmentKind `json:"kind"`
+	Name  string      `json:"name"`
+	Notes *string     `json:"notes,omitempty"`
+
+	// ServiceId the carrier's service / VPN / circuit id
+	ServiceId *string `json:"serviceId,omitempty"`
+
+	// VendorId the carrier / provider (a vendor of the organization)
+	VendorId *openapi_types.UUID `json:"vendorId,omitempty"`
+}
+
+// SegmentKind mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+type SegmentKind string
+
+// SegmentUpdate defines model for SegmentUpdate.
+type SegmentUpdate struct {
+	// Kind mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+	Kind  SegmentKind `json:"kind"`
+	Name  string      `json:"name"`
+	Notes *string     `json:"notes,omitempty"`
+
+	// ServiceId the carrier's service / VPN / circuit id
+	ServiceId *string `json:"serviceId,omitempty"`
+
+	// VendorId the carrier / provider (a vendor of the organization)
+	VendorId *openapi_types.UUID `json:"vendorId,omitempty"`
+	Version  int32               `json:"version"`
+}
+
 // Site defines model for Site.
 type Site struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
@@ -4407,7 +4495,10 @@ type SiteEdgeStyle string
 // SiteGraph defines model for SiteGraph.
 type SiteGraph struct {
 	Edges []SiteEdge `json:"edges"`
-	Sites []SiteCard `json:"sites"`
+
+	// Segments shared networks (P2-08) with the sites (in the filter) cabled into them — one cloud, not n² edges
+	Segments []SiteSegment `json:"segments"`
+	Sites    []SiteCard    `json:"sites"`
 }
 
 // SiteInput defines model for SiteInput.
@@ -4440,6 +4531,19 @@ type SiteLinkService string
 // SiteList defines model for SiteList.
 type SiteList struct {
 	Sites []Site `json:"sites"`
+}
+
+// SiteSegment defines model for SiteSegment.
+type SiteSegment struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// Kind mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
+	Kind  SegmentKind `json:"kind"`
+	Name  string      `json:"name"`
+	Sites []struct {
+		Links  int                `json:"links"`
+		SiteId openapi_types.UUID `json:"siteId"`
+	} `json:"sites"`
 }
 
 // SiteUpdate defines model for SiteUpdate.
@@ -4971,6 +5075,9 @@ type RackId = openapi_types.UUID
 
 // RangeId defines model for RangeId.
 type RangeId = openapi_types.UUID
+
+// SegmentId defines model for SegmentId.
+type SegmentId = openapi_types.UUID
 
 // SiteId defines model for SiteId.
 type SiteId = openapi_types.UUID
@@ -5611,6 +5718,21 @@ type GlobalSearchParams struct {
 	Q string `form:"q" json:"q"`
 }
 
+// CreateSegmentParams defines parameters for CreateSegment.
+type CreateSegmentParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteSegmentParams defines parameters for DeleteSegment.
+type DeleteSegmentParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateSegmentParams defines parameters for UpdateSegment.
+type UpdateSegmentParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // GetSiteGraphParams defines parameters for GetSiteGraph.
 type GetSiteGraphParams struct {
 	CategoryId *openapi_types.UUID `form:"categoryId,omitempty" json:"categoryId,omitempty"`
@@ -5961,6 +6083,12 @@ type ImportNtbJSONRequestBody = NtbImport
 
 // PreviewNtbImportJSONRequestBody defines body for PreviewNtbImport for application/json ContentType.
 type PreviewNtbImportJSONRequestBody PreviewNtbImportJSONBody
+
+// CreateSegmentJSONRequestBody defines body for CreateSegment for application/json ContentType.
+type CreateSegmentJSONRequestBody = SegmentInput
+
+// UpdateSegmentJSONRequestBody defines body for UpdateSegment for application/json ContentType.
+type UpdateSegmentJSONRequestBody = SegmentUpdate
 
 // CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
 type CreateSiteJSONRequestBody = SiteInput
@@ -6405,6 +6533,21 @@ type ServerInterface interface {
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams)
+	// ListSegments Shared networks of the organization (P2-08) — MPLS, Metro, shared LANs
+	// (GET /orgs/{orgId}/segments)
+	ListSegments(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// CreateSegment Add a shared network (editors)
+	// (POST /orgs/{orgId}/segments)
+	CreateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSegmentParams)
+	// DeleteSegment Delete a shared network no cable ends in (editors)
+	// (DELETE /orgs/{orgId}/segments/{segmentId})
+	DeleteSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params DeleteSegmentParams)
+	// GetSegment One shared network
+	// (GET /orgs/{orgId}/segments/{segmentId})
+	GetSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId)
+	// UpdateSegment Edit a shared network (editors; optimistic lock)
+	// (PATCH /orgs/{orgId}/segments/{segmentId})
+	UpdateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params UpdateSegmentParams)
 	// GetSiteGraph Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
 	// (GET /orgs/{orgId}/site-graph)
 	GetSiteGraph(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetSiteGraphParams)
@@ -7299,6 +7442,36 @@ func (_ Unimplemented) PreviewNtbImport(w http.ResponseWriter, r *http.Request, 
 // GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 // (GET /orgs/{orgId}/search)
 func (_ Unimplemented) GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListSegments Shared networks of the organization (P2-08) — MPLS, Metro, shared LANs
+// (GET /orgs/{orgId}/segments)
+func (_ Unimplemented) ListSegments(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateSegment Add a shared network (editors)
+// (POST /orgs/{orgId}/segments)
+func (_ Unimplemented) CreateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSegmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteSegment Delete a shared network no cable ends in (editors)
+// (DELETE /orgs/{orgId}/segments/{segmentId})
+func (_ Unimplemented) DeleteSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params DeleteSegmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetSegment One shared network
+// (GET /orgs/{orgId}/segments/{segmentId})
+func (_ Unimplemented) GetSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateSegment Edit a shared network (editors; optimistic lock)
+// (PATCH /orgs/{orgId}/segments/{segmentId})
+func (_ Unimplemented) UpdateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params UpdateSegmentParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -14346,6 +14519,247 @@ func (siw *ServerInterfaceWrapper) GlobalSearch(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ListSegments operation middleware
+func (siw *ServerInterfaceWrapper) ListSegments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSegments(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateSegment operation middleware
+func (siw *ServerInterfaceWrapper) CreateSegment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSegmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateSegment(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteSegment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSegment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "segmentId" -------------
+	var segmentId SegmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "segmentId", chi.URLParam(r, "segmentId"), &segmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "segmentId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSegmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteSegment(w, r, orgId, segmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSegment operation middleware
+func (siw *ServerInterfaceWrapper) GetSegment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "segmentId" -------------
+	var segmentId SegmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "segmentId", chi.URLParam(r, "segmentId"), &segmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "segmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSegment(w, r, orgId, segmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSegment operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSegment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "segmentId" -------------
+	var segmentId SegmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "segmentId", chi.URLParam(r, "segmentId"), &segmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "segmentId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSegmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSegment(w, r, orgId, segmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetSiteGraph operation middleware
 func (siw *ServerInterfaceWrapper) GetSiteGraph(w http.ResponseWriter, r *http.Request) {
 
@@ -16791,6 +17205,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}/reveal", wrapper.RevealCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/segments", wrapper.ListSegments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/segments", wrapper.CreateSegment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/segments/{segmentId}", wrapper.DeleteSegment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/segments/{segmentId}", wrapper.GetSegment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/segments/{segmentId}", wrapper.UpdateSegment)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/vendors", wrapper.ListVendors)
@@ -26773,6 +27202,372 @@ func (response GlobalSearch404JSONResponse) VisitGlobalSearchResponse(w http.Res
 	return err
 }
 
+type ListSegmentsRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListSegmentsResponseObject interface {
+	VisitListSegmentsResponse(w http.ResponseWriter) error
+}
+
+type ListSegments200JSONResponse struct {
+	Segments []Segment `json:"segments"`
+}
+
+func (response ListSegments200JSONResponse) VisitListSegmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSegments401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSegments401JSONResponse) VisitListSegmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSegments404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListSegments404JSONResponse) VisitListSegmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegmentRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateSegmentParams
+	Body   *CreateSegmentJSONRequestBody
+}
+
+type CreateSegmentResponseObject interface {
+	VisitCreateSegmentResponse(w http.ResponseWriter) error
+}
+
+type CreateSegment201JSONResponse Segment
+
+func (response CreateSegment201JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegment400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateSegment400JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegment401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateSegment401JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegment403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateSegment403JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegment404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateSegment404JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSegment409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateSegment409JSONResponse) VisitCreateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSegmentRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	SegmentId SegmentId `json:"segmentId"`
+	Params    DeleteSegmentParams
+}
+
+type DeleteSegmentResponseObject interface {
+	VisitDeleteSegmentResponse(w http.ResponseWriter) error
+}
+
+type DeleteSegment204Response struct {
+}
+
+func (response DeleteSegment204Response) VisitDeleteSegmentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteSegment401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteSegment401JSONResponse) VisitDeleteSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSegment403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteSegment403JSONResponse) VisitDeleteSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSegment404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteSegment404JSONResponse) VisitDeleteSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSegment409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteSegment409JSONResponse) VisitDeleteSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSegmentRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	SegmentId SegmentId `json:"segmentId"`
+}
+
+type GetSegmentResponseObject interface {
+	VisitGetSegmentResponse(w http.ResponseWriter) error
+}
+
+type GetSegment200JSONResponse Segment
+
+func (response GetSegment200JSONResponse) VisitGetSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSegment401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetSegment401JSONResponse) VisitGetSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSegment404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSegment404JSONResponse) VisitGetSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegmentRequestObject struct {
+	OrgId     OrgId     `json:"orgId"`
+	SegmentId SegmentId `json:"segmentId"`
+	Params    UpdateSegmentParams
+	Body      *UpdateSegmentJSONRequestBody
+}
+
+type UpdateSegmentResponseObject interface {
+	VisitUpdateSegmentResponse(w http.ResponseWriter) error
+}
+
+type UpdateSegment200JSONResponse Segment
+
+func (response UpdateSegment200JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegment400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSegment400JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegment401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateSegment401JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegment403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateSegment403JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegment404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateSegment404JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateSegment409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateSegment409JSONResponse) VisitUpdateSegmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetSiteGraphRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params GetSiteGraphParams
@@ -30337,6 +31132,21 @@ type StrictServerInterface interface {
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error)
+	// ListSegments Shared networks of the organization (P2-08) — MPLS, Metro, shared LANs
+	// (GET /orgs/{orgId}/segments)
+	ListSegments(ctx context.Context, request ListSegmentsRequestObject) (ListSegmentsResponseObject, error)
+	// CreateSegment Add a shared network (editors)
+	// (POST /orgs/{orgId}/segments)
+	CreateSegment(ctx context.Context, request CreateSegmentRequestObject) (CreateSegmentResponseObject, error)
+	// DeleteSegment Delete a shared network no cable ends in (editors)
+	// (DELETE /orgs/{orgId}/segments/{segmentId})
+	DeleteSegment(ctx context.Context, request DeleteSegmentRequestObject) (DeleteSegmentResponseObject, error)
+	// GetSegment One shared network
+	// (GET /orgs/{orgId}/segments/{segmentId})
+	GetSegment(ctx context.Context, request GetSegmentRequestObject) (GetSegmentResponseObject, error)
+	// UpdateSegment Edit a shared network (editors; optimistic lock)
+	// (PATCH /orgs/{orgId}/segments/{segmentId})
+	UpdateSegment(ctx context.Context, request UpdateSegmentRequestObject) (UpdateSegmentResponseObject, error)
 	// GetSiteGraph Site graph (P2-21, ADR-040) — each site's card and the aggregated links between sites, derived from the inventory
 	// (GET /orgs/{orgId}/site-graph)
 	GetSiteGraph(ctx context.Context, request GetSiteGraphRequestObject) (GetSiteGraphResponseObject, error)
@@ -34430,6 +35240,156 @@ func (sh *strictHandler) GlobalSearch(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GlobalSearchResponseObject); ok {
 		if err := validResponse.VisitGlobalSearchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSegments operation middleware
+func (sh *strictHandler) ListSegments(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListSegmentsRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSegments(ctx, request.(ListSegmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSegments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSegmentsResponseObject); ok {
+		if err := validResponse.VisitListSegmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateSegment operation middleware
+func (sh *strictHandler) CreateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateSegmentParams) {
+	var request CreateSegmentRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateSegmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateSegment(ctx, request.(CreateSegmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateSegment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateSegmentResponseObject); ok {
+		if err := validResponse.VisitCreateSegmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteSegment operation middleware
+func (sh *strictHandler) DeleteSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params DeleteSegmentParams) {
+	var request DeleteSegmentRequestObject
+
+	request.OrgId = orgId
+	request.SegmentId = segmentId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteSegment(ctx, request.(DeleteSegmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteSegment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteSegmentResponseObject); ok {
+		if err := validResponse.VisitDeleteSegmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSegment operation middleware
+func (sh *strictHandler) GetSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId) {
+	var request GetSegmentRequestObject
+
+	request.OrgId = orgId
+	request.SegmentId = segmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSegment(ctx, request.(GetSegmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSegment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSegmentResponseObject); ok {
+		if err := validResponse.VisitGetSegmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateSegment operation middleware
+func (sh *strictHandler) UpdateSegment(w http.ResponseWriter, r *http.Request, orgId OrgId, segmentId SegmentId, params UpdateSegmentParams) {
+	var request UpdateSegmentRequestObject
+
+	request.OrgId = orgId
+	request.SegmentId = segmentId
+	request.Params = params
+
+	var body UpdateSegmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateSegment(ctx, request.(UpdateSegmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateSegment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateSegmentResponseObject); ok {
+		if err := validResponse.VisitUpdateSegmentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
