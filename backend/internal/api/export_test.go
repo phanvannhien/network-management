@@ -22,6 +22,12 @@ func TestRecordExport(t *testing.T) {
 	if status, body := fx.A.Do("POST", path(org), map[string]any{"kind": "diagram_png", "diagramId": dg, "scale": 2}); status != http.StatusNoContent {
 		t.Fatalf("record png: %d %v", status, body)
 	}
+	if status, body := fx.A.Do("POST", path(org), map[string]any{"kind": "diagram_pdf", "diagramId": dg, "paper": "a3", "count": 2}); status != http.StatusNoContent {
+		t.Fatalf("record pdf: %d %v", status, body)
+	}
+	if status, _ := fx.A.Do("POST", path(org), map[string]any{"kind": "diagram_pdf", "diagramId": dgB}); status != http.StatusNotFound {
+		t.Errorf("pdf of other organization's diagram: %d", status)
+	}
 	if status, _ := fx.A.Do("POST", path(org), map[string]any{"kind": "devices_xlsx", "count": 12}); status != http.StatusNoContent {
 		t.Fatalf("record xlsx: %d", status)
 	}

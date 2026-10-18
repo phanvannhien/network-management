@@ -648,6 +648,14 @@ describe('Phase 2 rules (P2-10)', () => {
       ifaces: i.ifaces.map((x) => (x.id === 'up' ? { ...x, allowedVlans: '' } : x)),
     }
     expect(of(open).some((p) => p.rule === 'vlan-isolated')).toBe(false)
+    // Routed on the switch itself: an SVI named the H3C way, or a custom name with its VLAN filled in.
+    for (const svi of [
+      port('s1', D1, { kind: 'svi', name: 'Vlan-interface30' }),
+      port('s1', D1, { kind: 'svi', name: 'cam-gw', accessVlan: 30 }),
+    ])
+      expect(of({ ...i, ifaces: [...i.ifaces, svi] }).some((p) => p.rule === 'vlan-isolated')).toBe(
+        false,
+      )
   })
 
   it('duplex: forced against auto below 1G warns, at 1G is a note, full vs half warns, optics are skipped', () => {

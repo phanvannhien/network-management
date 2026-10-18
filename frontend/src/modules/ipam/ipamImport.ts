@@ -63,6 +63,10 @@ const SYNONYMS: Record<IpamField, string[]> = {
     'ipbatdau',
     'batdau',
     'firstip',
+    'dhcpstart',
+    'dhcpfrom',
+    'poolstart',
+    'startdhcp',
   ],
   rangeEnd: [
     'den',
@@ -75,8 +79,27 @@ const SYNONYMS: Record<IpamField, string[]> = {
     'ipketthuc',
     'ketthuc',
     'lastip',
+    'dhcpend',
+    'dhcpto',
+    'poolend',
+    'enddhcp',
   ],
-  range: ['dai', 'daiip', 'range', 'iprange', 'pool', 'dhcppool', 'dhcp', 'khoangip'],
+  range: [
+    'dai',
+    'daiip',
+    'range',
+    'iprange',
+    'pool',
+    'dhcppool',
+    'dhcp',
+    'khoangip',
+    'dhcprange',
+    'daidhcp',
+    'staticrange',
+    'daitinh',
+    'reservedrange',
+    'daidanhrieng',
+  ],
   rangeKind: ['loai', 'loaidai', 'type', 'kind', 'rangetype', 'kieu', 'loaiip'],
   purpose: ['mucdich', 'purpose', 'dungcho', 'sudung', 'usage', 'role'],
 }
@@ -90,6 +113,14 @@ export function fieldOf(header: string): IpamField | null {
   return null
 }
 
+/** The range kind a column header implies ('' = none). */
+function kindOfHeader(h: string): string {
+  if (h.includes('dhcp') || h.startsWith('pool')) return 'dhcp'
+  if (h.includes('static') || h.includes('tinh')) return 'static'
+  if (h.includes('reserved') || h.includes('danhrieng')) return 'reserved'
+  return ''
+}
+
 const CIDR_RE = /^\s*[0-9a-f:.]+\/\d{1,3}\s*$/i
 
 /**
@@ -98,7 +129,7 @@ const CIDR_RE = /^\s*[0-9a-f:.]+\/\d{1,3}\s*$/i
  */
 export function detectColumns(
   sheet: Sheet,
-): { header: number; columns: (IpamField | null)[]; dhcpRange: boolean } | null {
+): { header: number; columns: (IpamField | null)[]; impliedKind: string } | null {
   const ipLike = /\d+\.\d+\.\d+\.\d+|[0-9a-f]*:[0-9a-f:]+/i
   for (let r = 0; r < Math.min(sheet.rows.length, 15); r++) {
     const cols = sheet.rows[r]!.map(fieldOf)
@@ -115,11 +146,12 @@ export function detectColumns(
       seen.add(f)
       return f
     })
-    // A column named "Pool" / "DHCP pool" holds DHCP ranges even without a kind column.
-    const rangeCol = columns.indexOf('range')
-    const dhcpRange =
-      rangeCol >= 0 && ['pool', 'dhcppool', 'dhcp'].includes(norm(sheet.rows[r]![rangeCol] ?? ''))
-    return { header: r, columns, dhcpRange }
+    // A range column named "Pool" / "DHCP range" / "DHCP start" holds DHCP ranges even without a kind column;
+    // "Static range" static ones.
+    const kindCol = [columns.indexOf('range'), columns.indexOf('rangeStart')].find((c) => c >= 0)
+    const impliedKind =
+      kindCol === undefined ? '' : kindOfHeader(norm(sheet.rows[r]![kindCol] ?? ''))
+    return { header: r, columns, impliedKind }
   }
   return null
 }
@@ -137,7 +169,7 @@ export function ipamRows(
   sheet: Sheet,
   header: number,
   columns: (IpamField | null)[],
-  dhcpRange = false,
+  impliedKind = '',
 ): ParsedRow[] {
   const out: ParsedRow[] = []
   for (let r = header + 1; r < sheet.rows.length; r++) {
@@ -174,7 +206,7 @@ export function ipamRows(
       description: v.description ?? '',
       rangeStart: start,
       rangeEnd: end,
-      rangeKind: v.rangeKind ?? (dhcpRange && (start || end) ? 'dhcp' : ''),
+      rangeKind: v.rangeKind ?? (impliedKind && (start || end) ? impliedKind : ''),
       purpose: v.purpose ?? '',
     }
     if (!row.vlan && !row.cidr && !row.rangeStart && !row.rangeEnd && !note) continue

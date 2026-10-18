@@ -887,6 +887,7 @@ func (e EndpointKind) Valid() bool {
 const (
 	DevicesXlsx ExportEventKind = "devices_xlsx"
 	DiagramNtb  ExportEventKind = "diagram_ntb"
+	DiagramPdf  ExportEventKind = "diagram_pdf"
 	DiagramPng  ExportEventKind = "diagram_png"
 	DiagramSvg  ExportEventKind = "diagram_svg"
 )
@@ -898,9 +899,29 @@ func (e ExportEventKind) Valid() bool {
 		return true
 	case DiagramNtb:
 		return true
+	case DiagramPdf:
+		return true
 	case DiagramPng:
 		return true
 	case DiagramSvg:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExportEventPaper.
+const (
+	A3 ExportEventPaper = "a3"
+	A4 ExportEventPaper = "a4"
+)
+
+// Valid indicates whether the value is a known member of the ExportEventPaper enum.
+func (e ExportEventPaper) Valid() bool {
+	switch e {
+	case A3:
+		return true
+	case A4:
 		return true
 	default:
 		return false
@@ -3514,17 +3535,23 @@ type Error struct {
 
 // ExportEvent defines model for ExportEvent.
 type ExportEvent struct {
-	// Count rows exported (devices_xlsx)
+	// Count rows exported (devices_xlsx); sheets (diagram_pdf)
 	Count *int `json:"count,omitempty"`
 
-	// DiagramId the exported diagram (diagram_png / diagram_svg)
+	// DiagramId the exported diagram (diagram_png / diagram_svg / diagram_pdf)
 	DiagramId *openapi_types.UUID `json:"diagramId,omitempty"`
 	Kind      ExportEventKind     `json:"kind"`
-	Scale     *int                `json:"scale,omitempty"`
+
+	// Paper paper size (diagram_pdf)
+	Paper *ExportEventPaper `json:"paper,omitempty"`
+	Scale *int              `json:"scale,omitempty"`
 }
 
 // ExportEventKind defines model for ExportEvent.Kind.
 type ExportEventKind string
+
+// ExportEventPaper paper size (diagram_pdf)
+type ExportEventPaper string
 
 // Health defines model for Health.
 type Health struct {

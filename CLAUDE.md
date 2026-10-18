@@ -26,7 +26,7 @@ Tài liệu nguồn:
 - **Frontend:** React 19, TypeScript strict, Vite, react-router, TanStack Query (dữ liệu server),
   Zustand + Immer (trạng thái editor sơ đồ), @xyflow/react, shadcn/ui + Tailwind CSS,
   openapi-typescript + openapi-fetch (client sinh từ OpenAPI), ipaddr.js, ajv (file import/export),
-  SheetJS (Excel import/export), html-to-image, react-i18next, Dexie (chỉ lưu nháp chưa gửi), Vitest, Playwright,
+  SheetJS (Excel import/export), html-to-image, jsPDF (PDF sơ đồ, ADR-050), react-i18next, Dexie (chỉ lưu nháp chưa gửi), Vitest, Playwright,
   @tanstack/react-table, cmdk, sonner, recharts, IBM Plex qua @fontsource, @axe-core/playwright (ADR-024; giao diện theo `docs/DESIGN.md`).
 - **Backend:** Go (stable mới nhất), chi, oapi-codegen (server types từ OpenAPI), pgx v5, sqlc, golang-migrate,
   log/slog, golang.org/x/crypto (argon2id, ssh — Phase 4), golang.org/x/term (ẩn mật khẩu CLI, ADR-022), pquerna/otp (TOTP), coreos/go-oidc (SSO — Phase 2),

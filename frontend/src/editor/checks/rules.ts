@@ -538,8 +538,9 @@ export function runChecks(input: CheckInput): Problem[] {
     if (a && b && (l.kind === 'ethernet' || l.kind === 'fiber') && sa && sb && sa !== sb)
       push(
         'speed-mismatch',
-        // Copper auto-negotiates down to the slower end (a note); two optics of different speeds never link (P2-10).
-        SFP.has(a.media) && SFP.has(b.media) ? 'warning' : 'info',
+        // A note, not a warning: the port speed is the port's top speed — copper negotiates down, and a 1G optic in an
+        // SFP+ cage is the everyday uplink (P2-10 review).
+        'info',
         linkTarget(l),
         {
           a: `${host(a.deviceId)} ${a.name} ${a.speed}`,
@@ -753,7 +754,8 @@ const NETWORK = new Set([
 const SWITCHES = new Set(['l2_switch', 'l3_switch', 'poe_switch'])
 /** An SVI's VLAN from its name: Vlan10, Vlanif10, vlan.10, irb.10. */
 const sviVid = (name: string): number | null => {
-  const m = name.match(/^(?:vlan(?:if)?|irb|bvi)\W?(\d{1,4})$/i)
+  // Vlan10 / vlan.10 (Cisco, Juniper), Vlanif10 (Huawei), Vlan-interface10 (H3C / HPE Comware), irb.10, BVI10.
+  const m = name.match(/^(?:vlan(?:if|-?interface)?|irb|bvi)\W?(\d{1,4})$/i)
   return m ? Number(m[1]) : null
 }
 
@@ -890,7 +892,8 @@ function phase2(
     const routed = new Set(
       ports
         .filter((i) => i.kind === 'svi')
-        .map((i) => sviVid(i.name))
+        // A custom SVI name (MikroTik, FortiGate…) still says its VLAN in the access VLAN field when filled in.
+        .map((i) => sviVid(i.name) ?? i.accessVlan ?? null)
         .filter((v) => v !== null),
     )
     const trunks = ports

@@ -73,7 +73,7 @@ function OffPageNodeImpl({ data }: NodeProps<OffPageFlowNode>) {
       {canPlace && (
         <button
           type="button"
-          className="nodrag ml-1 rounded-sm border border-border bg-background px-1 text-[10px] whitespace-nowrap hover:border-primary"
+          className="ntb-no-export nodrag ml-1 rounded-sm border border-border bg-background px-1 text-[10px] whitespace-nowrap hover:border-primary"
           onClick={() => actions?.place(c)}
         >
           {t('offPage.place')}

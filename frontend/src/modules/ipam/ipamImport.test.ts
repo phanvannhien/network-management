@@ -93,7 +93,7 @@ describe('IPAM import, review cases', () => {
     }
     const f = detectColumns(sheet)!
     expect(f.header).toBe(1)
-    const rows = ipamRows(sheet, f.header, f.columns, f.dhcpRange)
+    const rows = ipamRows(sheet, f.header, f.columns, f.impliedKind)
     expect(rows[0]!.row).toMatchObject({
       vlan: 10,
       vlanName: 'Data',
@@ -103,5 +103,34 @@ describe('IPAM import, review cases', () => {
     expect(rows[1]!.row).toMatchObject({ vlan: 20, vlanName: 'Cam', rangeKind: '' })
     expect(rows[2]!.row.vlan).toBe(10)
     expect(rows[3]).toMatchObject({ note: 'Kho', row: { vlan: null } })
+  })
+
+  it('"DHCP Start / DHCP End" and "Static range" headers are read, with the kind they imply', () => {
+    const dhcp = {
+      name: 'x',
+      rows: [
+        ['Subnet', 'Gateway', 'DHCP Start', 'DHCP End'],
+        ['10.6.1.0/24', '10.6.1.1', '10.6.1.100', '10.6.1.200'],
+      ],
+    }
+    const f = detectColumns(dhcp)!
+    expect(f.columns).toEqual(['cidr', 'gateway', 'rangeStart', 'rangeEnd'])
+    expect(ipamRows(dhcp, f.header, f.columns, f.impliedKind)[0]!.row).toMatchObject({
+      rangeStart: '10.6.1.100',
+      rangeEnd: '10.6.1.200',
+      rangeKind: 'dhcp',
+    })
+    const fixed = {
+      name: 'x',
+      rows: [
+        ['Subnet', 'Static range'],
+        ['10.6.2.0/24', '10.6.2.10-10.6.2.49'],
+      ],
+    }
+    const g = detectColumns(fixed)!
+    expect(ipamRows(fixed, g.header, g.columns, g.impliedKind)[0]!.row).toMatchObject({
+      rangeStart: '10.6.2.10',
+      rangeKind: 'static',
+    })
   })
 })

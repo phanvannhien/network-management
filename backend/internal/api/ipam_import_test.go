@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -87,6 +88,34 @@ func TestIpamImport(t *testing.T) {
 		}
 	}
 	_ = site
+}
+
+// P2-09 review: a site name two sites share is refused (not one picked at random); another organization's sites are
+// never matched.
+func TestIpamImportSiteMatching(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	path := orgPath(org) + "/ipam-imports"
+	mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "CN01", "name": "Chi nhánh 1"})
+	mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "CN02", "name": "Chi nhánh 1"})
+	mustCreate(t, fx.B, sitesPath(fx.OrgB), map[string]any{"code": "BX01", "name": "Kho B"})
+	_, res := fx.A.Do("POST", path, map[string]any{"dryRun": true, "rows": []any{
+		map[string]any{"site": "Chi nhánh 1", "cidr": "10.5.0.0/24"},
+		map[string]any{"site": "cn02", "cidr": "10.5.1.0/24"},
+		map[string]any{"site": "BX01", "cidr": "10.5.2.0/24"},
+		map[string]any{"site": "Kho B", "cidr": "10.5.3.0/24"},
+	}})
+	rows := res["rows"].([]any)
+	want := []string{"error", "created", "error", "error"}
+	for i, w := range want {
+		r := rows[i].(map[string]any)
+		if r["status"] != w {
+			t.Errorf("row %d: %v, want %s", i, r, w)
+		}
+	}
+	if msg, _ := rows[0].(map[string]any)["message"].(string); !strings.Contains(msg, "mã site đầy đủ") {
+		t.Errorf("ambiguous name message: %q", msg)
+	}
 }
 
 // P2-09: an IP plan table on a diagram is bound to a site (of the organization); other notes still cannot be.

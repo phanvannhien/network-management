@@ -23,7 +23,7 @@ func (s *Server) RecordExport(ctx context.Context, req apigen.RecordExportReques
 	entry := audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: "export." + string(b.Kind), Meta: infoFrom(ctx).meta}
 	after := map[string]any{}
 	switch b.Kind {
-	case apigen.DiagramPng, apigen.DiagramSvg:
+	case apigen.DiagramPng, apigen.DiagramSvg, apigen.DiagramPdf:
 		if b.DiagramId == nil {
 			return apigen.RecordExport400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Thiếu sơ đồ"}}, nil
 		}
@@ -38,6 +38,12 @@ func (s *Server) RecordExport(ctx context.Context, req apigen.RecordExportReques
 		after["name"] = d.Name
 		if b.Scale != nil {
 			after["scale"] = *b.Scale
+		}
+		if b.Paper != nil {
+			after["paper"] = string(*b.Paper)
+		}
+		if b.Kind == apigen.DiagramPdf && b.Count != nil {
+			after["sheets"] = *b.Count
 		}
 	case apigen.DevicesXlsx:
 		entry.ObjectType = "device"

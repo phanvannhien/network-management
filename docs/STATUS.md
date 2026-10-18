@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-11 Báo cáo & export, bước 1: PDF sơ đồ (ADR-050); sửa sau review P2-09 / P2-10
+- Người dùng chốt:
+  - dùng thư viện jsPDF cho PDF (svg2pdf.js bỏ, vì thiết bị trên sơ đồ là HTML);
+  - ngưỡng 5 thiết bị cho mật khẩu dùng chung giữ nguyên.
+- Đã làm:
+  - **Xuất sơ đồ → "PDF in":**
+    - khổ A3 / A4, ngang / dọc; xuất tất cả các trang (mỗi trang một tờ) hoặc chỉ trang đang xem;
+    - mỗi tờ có khung viền và title block góc dưới phải: tổ chức, site, sơ đồ — trang, số bản vẽ, phiên bản, ngày, người lập, người kiểm tra, không theo tỉ lệ, mức bảo mật, tờ x / y;
+    - sơ đồ chụp 300 DPI, nền trắng kể cả khi app đang ở giao diện tối; có chú giải loại dây;
+    - báo trước khi chữ sẽ in quá nhỏ;
+    - trả lại trang, khung nhìn, vùng chọn sau khi xuất; ghi audit `export.diagram_pdf`.
+  - **Ảnh PNG / SVG cũng được sửa theo:**
+    - không còn cắt mất nhãn nối trang ở mép;
+    - không đưa dấu báo vấn đề và nút "Đặt vào đây" vào ảnh.
+  - **Glossary:** title block.
+  - **Sửa sau review:**
+    - nhập IPAM từ chối tên / mã site trùng nhau giữa nhiều site (trước đây chọn ngẫu nhiên);
+    - nhận cột "DHCP Start / DHCP End / DHCP Range / Static range", tự hiểu loại dải theo tên cột;
+    - lệch tốc độ trở lại mức ghi chú (ô tốc độ là tốc độ tối đa của cổng; module 1G trong cổng SFP+ là bình thường);
+    - nhận SVI kiểu H3C `Vlan-interface10`, hoặc tên tự đặt có ghi VLAN.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Vitest: `exportPdf.test.ts` (bố cục trang, co giãn, độ phân giải, title block), test nhập IPAM và luật kiểm tra mới.
+  - Go: `TestRecordExport` (pdf, chặn sơ đồ tổ chức khác), `TestIpamImportSiteMatching`.
+  - Trình duyệt thật (instance tạm :8075 / :5181): sơ đồ "L2 lab" 2 trang → PDF A3 và A4, kể cả giao diện tối; mở PDF bằng PDFKit kiểm tra từng tờ; khung nhìn trả về đúng; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Chữ trong PDF là ảnh (không tìm / copy được).
+  - Chưa có logo trong title block.
+  - Bảng IP plan trên sơ đồ in được nhưng chỉ của một site.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-11 bước 2 — trang Báo cáo + Excel IP plan, VLAN, port map, BOQ.
+
 ## 2026-10-18 — P2-10 Kiểm tra Phase 2 (ADR-049)
 - Đã làm (panel Problems trên sơ đồ):
   - **Lệch VLAN trên dây:**

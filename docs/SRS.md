@@ -391,7 +391,7 @@ PostgreSQL 16
 | Hợp đồng API | OpenAPI 3.1 → oapi-codegen (Go), openapi-typescript/openapi-fetch (TS) |
 | Backend | Go, chi, pgx v5, sqlc, golang-migrate, slog |
 | Bảo mật | argon2id, TOTP (pquerna/otp), AES-256-GCM envelope, OIDC (coreos/go-oidc, P2) |
-| Import/Export | SheetJS, html-to-image, jsPDF + svg2pdf.js (P2), JSON Schema (ajv / santhosh-tekuri/jsonschema) |
+| Import/Export | SheetJS, html-to-image, jsPDF (P2, sơ đồ chụp 300 DPI — ADR-050), JSON Schema (ajv / santhosh-tekuri/jsonschema) |
 | SNMP | gosnmp (P3) |
 | Test | Vitest, Playwright, go test, Postgres trong Docker cho test tích hợp, snmpsim (P3) |
 | Deploy | Docker Compose + Nginx |

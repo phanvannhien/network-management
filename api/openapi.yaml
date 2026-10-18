@@ -7863,20 +7863,24 @@ components:
       properties:
         kind:
           type: string
-          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb]
+          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb, diagram_pdf]
         diagramId:
           type: string
           format: uuid
-          description: the exported diagram (diagram_png / diagram_svg)
+          description: the exported diagram (diagram_png / diagram_svg / diagram_pdf)
         count:
           type: integer
           minimum: 0
           maximum: 1000000
-          description: rows exported (devices_xlsx)
+          description: rows exported (devices_xlsx); sheets (diagram_pdf)
         scale:
           type: integer
           minimum: 1
           maximum: 4
+        paper:
+          type: string
+          enum: [a4, a3]
+          description: paper size (diagram_pdf)
 
     NtbFile:
       type: object

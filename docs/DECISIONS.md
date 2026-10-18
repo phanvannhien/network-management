@@ -859,3 +859,20 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - SNMP community được miễn (dùng chung là bình thường).
     - Trang Kho mật khẩu đánh dấu ⚠.
 - **Để sau:** ngưỡng chỉnh theo tổ chức; kiểm tra phía backend khi lưu / nhập.
+
+### ADR-050 — PDF sơ đồ (P2-11): jsPDF, chụp sơ đồ 300 DPI, title block góc dưới phải
+- **Bối cảnh:** SRS §12 cần PDF sơ đồ A4/A3 có title block. SRS §15 ghi "jsPDF + svg2pdf.js", nhưng thiết bị trên sơ đồ là HTML (React Flow). svg2pdf.js không đọc được `foreignObject` nên sẽ ra trang trắng. Font gốc của PDF cũng không có chữ tiếng Việt.
+- **Quyết định (người dùng đồng ý dùng thư viện, 2026-10-18):**
+  - Thêm **jsPDF** vào Stack, không dùng svg2pdf.js. jsPDF chỉ tải khi bấm xuất (dynamic import).
+  - Sơ đồ chụp thành PNG ở **300 DPI** theo đúng kích thước in. Không phóng to quá 2 lần cỡ màn hình, để sơ đồ nhỏ không bị to thô.
+  - Title block cũng do trình duyệt vẽ thành ảnh 300 DPI, nên tiếng Việt dùng đúng font IBM Plex của app. Khung viền và viền title block là nét vector của jsPDF.
+  - Bố cục: lề 10 mm, khung viền, title block 170 × 32 mm ở góc dưới phải. Sơ đồ và chú giải nằm phía trên, căn giữa.
+  - Title block gồm: tổ chức, site (mã site của các thiết bị trên trang), tên sơ đồ — tên trang, số bản vẽ, phiên bản (mặc định = số lần lưu), ngày, người lập (người xuất), người kiểm tra, "Không theo tỉ lệ", mức bảo mật (mặc định "Nội bộ"), tờ x / y.
+  - Mỗi trang sơ đồ (ADR-047) có nội dung là một tờ. Mặc định xuất A3 ngang, tất cả các trang.
+  - Luôn chụp ở giao diện sáng, nền trắng. Không đưa vào bản in những thứ chỉ dành cho editor: dấu báo vấn đề, nút "Đặt vào đây", handle.
+  - Sau khi xuất, trả lại trang, khung nhìn và vùng chọn của người dùng.
+  - Sơ đồ quá lớn so với khổ giấy (chữ in dưới khoảng 6 pt) thì báo trước, gợi ý chọn A3 hoặc chia trang.
+  - Audit: `export.diagram_pdf` ghi khổ giấy và số tờ.
+- **Đánh đổi:** chữ trong PDF là ảnh, không tìm kiếm / copy được. Ở 300 DPI vẫn đủ nét để in.
+- **Để sau:** logo tổ chức trong title block; bảng lịch sử phiên bản; khổ A2 / A1.
+

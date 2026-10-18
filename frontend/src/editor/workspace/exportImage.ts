@@ -1,4 +1,4 @@
-import { getNodesBounds, type Node } from '@xyflow/react'
+import { getNodesBounds, type Node, type Rect } from '@xyflow/react'
 import { toPng, toSvg } from 'html-to-image'
 
 // Diagram picture export (P1-22, SRS §12): the drawing as PNG (1x–4x) or SVG, with a title block above and a legend
@@ -19,6 +19,8 @@ export interface ImageExport {
   legendTitle: string
   legend: LegendEntry[]
   nodes: Node[]
+  /** Bounds of the nodes as measured by React Flow (flow.getNodesBounds); else computed from `nodes`. */
+  bounds?: Rect
   background: string
 }
 
@@ -26,8 +28,9 @@ const PAD = 40
 const HEADER = 56
 const LEGEND_ROW = 22
 
-/** Pieces of the editor that must not appear in the picture. */
+/** Pieces of the editor that must not appear in the picture (ntb-no-export: problem badges, "place here"…). */
 const EXCLUDED = [
+  'ntb-no-export',
   'react-flow__resize-control',
   'react-flow__handle',
   'ntb-connect',
@@ -83,21 +86,28 @@ function legendElement(e: ImageExport, x: number, y: number, width: number): HTM
   return box
 }
 
-/** Renders the picture and returns a data URL (PNG or SVG). */
-export async function exportDiagramImage(viewport: HTMLElement, e: ImageExport): Promise<string> {
-  const bounds = getNodesBounds(e.nodes)
+/** Size of the picture in CSS pixels at 1x (drawing, padding, header band, legend). */
+export function imageSize(e: Pick<ImageExport, 'nodes' | 'legend' | 'title' | 'bounds'>) {
+  const bounds = e.bounds ?? getNodesBounds(e.nodes)
   const width = Math.max(480, Math.ceil(bounds.width + PAD * 2))
   const legendRows = Math.ceil(e.legend.length / Math.max(1, Math.floor(width / 220))) + 1
   const legendHeight = e.legend.length > 0 ? legendRows * LEGEND_ROW + 16 : 0
-  const height = Math.ceil(HEADER + bounds.height + PAD * 2 + legendHeight)
+  // No title = no header band (the PDF sheet has its own title block).
+  const headerHeight = e.title ? HEADER : 0
+  const height = Math.ceil(headerHeight + bounds.height + PAD * 2 + legendHeight)
+  return { bounds, width, height, headerHeight }
+}
+
+/** Renders the picture and returns a data URL (PNG or SVG). */
+export async function exportDiagramImage(viewport: HTMLElement, e: ImageExport): Promise<string> {
+  const { bounds, width, height, headerHeight } = imageSize(e)
   // Browsers refuse canvases beyond ~16k px a side / ~16.7M px: lower the scale of a huge drawing instead of failing.
-  const maxScale = Math.max(
-    1,
-    Math.floor(Math.min(16000 / width, 16000 / height, Math.sqrt(16_700_000 / (width * height)))),
-  )
+  const limit = Math.min(16000 / width, 16000 / height, Math.sqrt(16_700_000 / (width * height)))
+  // Whole steps for the PNG choices (1x–4x); the PDF asks for a fractional ratio (its DPI).
+  const maxScale = Math.max(1, Number.isInteger(e.scale) ? Math.floor(limit) : limit)
   const scale = Math.min(e.scale, maxScale)
   const ox = bounds.x - PAD
-  const oy = bounds.y - PAD - HEADER
+  const oy = bounds.y - PAD - headerHeight
 
   // Title block and legend live in flow coordinates, around the drawing.
   const header = block('div', {
@@ -110,7 +120,7 @@ export async function exportDiagramImage(viewport: HTMLElement, e: ImageExport):
   header.appendChild(
     block('div', { fontSize: '12px', color: 'var(--muted-foreground)' }, e.subtitle),
   )
-  const extras: HTMLElement[] = [header]
+  const extras: HTMLElement[] = e.title ? [header] : []
   if (e.legend.length > 0)
     extras.push(legendElement(e, ox + PAD, bounds.y + bounds.height + PAD, width - PAD * 2))
   for (const el of extras) viewport.appendChild(el)

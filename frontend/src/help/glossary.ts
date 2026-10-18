@@ -497,6 +497,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'title-block',
+    'org',
+    ['Title block (khung tên bản vẽ)', 'Title block'],
+    [
+      'Ô thông tin ở góc dưới phải mỗi tờ bản vẽ in: tổ chức, site, tên sơ đồ, số bản vẽ, phiên bản (revision), ngày, người lập, người kiểm tra, tờ x / y. Nhờ nó, bản in rời vẫn biết là bản nào, của ai, mới hay cũ. "Không theo tỉ lệ" nghĩa là khoảng cách trên giấy không phải khoảng cách thật.',
+      'The box in the bottom-right corner of every printed sheet: organization, site, diagram name, drawing number, revision, date, drawn by, checked by, sheet x / y. A loose printout still says which drawing it is, whose, and how recent. "Not to scale" means distances on paper are not real distances.',
+    ],
+    [
+      'Xuất sơ đồ → PDF in: số bản vẽ, phiên bản, người kiểm tra điền ngay trong hộp thoại.',
+      'Export diagram → printable PDF: drawing number, revision and checker are filled in the dialog.',
+    ],
+  ),
+  e(
     'off-page-connector',
     'org',
     ['Connector ra ngoài trang', 'Off-page connector'],

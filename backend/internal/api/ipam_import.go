@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -35,6 +36,8 @@ type ipamImportRun struct {
 	ctx   context.Context
 	m     tenant.Membership
 	sites map[string]uuid.UUID
+	// Own codes / names shared by several sites: the row must say which (full code).
+	ambiguous map[string]bool
 	// What the current row did; added to the totals only when the row stands (a bad row is rolled back).
 	rowCreated, rowUpdated apigen.IpamImportCounts
 	created, updated       apigen.IpamImportCounts
@@ -57,26 +60,33 @@ func (s *Server) ImportIpam(ctx context.Context, req apigen.ImportIpamRequestObj
 		return nil, fmt.Errorf("begin import: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	run := &ipamImportRun{ctx: ctx, m: m, sites: map[string]uuid.UUID{}}
+	run := &ipamImportRun{ctx: ctx, m: m, sites: map[string]uuid.UUID{}, ambiguous: map[string]bool{}}
 	sites, err := store.New(tx).ImportSites(ctx, m.OrgID)
 	if err != nil {
 		return nil, fmt.Errorf("import sites: %w", err)
 	}
-	// Full code, own code (when unique) and name, all case-insensitive.
-	own := map[string]int{}
+	// Full code first; then own code and name when only one site has it (two branches both named "Chi nhánh 1"
+	// under different categories must not pick one at random). All case-insensitive.
+	full := map[string]bool{}
 	for _, st := range sites {
-		own[strings.ToLower(st.LocalCode)]++
+		full[strings.ToLower(st.Code)] = true
+		run.sites[strings.ToLower(st.Code)] = uuid.UUID(st.ID.Bytes)
 	}
+	short := map[string][]uuid.UUID{}
 	for _, st := range sites {
 		id := uuid.UUID(st.ID.Bytes)
-		run.sites[strings.ToLower(st.Code)] = id
-		if own[strings.ToLower(st.LocalCode)] == 1 {
-			if _, taken := run.sites[strings.ToLower(st.LocalCode)]; !taken {
-				run.sites[strings.ToLower(st.LocalCode)] = id
+		for _, k := range []string{strings.ToLower(st.LocalCode), strings.ToLower(st.Name)} {
+			if k == "" || full[k] || slices.Contains(short[k], id) {
+				continue
 			}
+			short[k] = append(short[k], id)
 		}
-		if _, taken := run.sites[strings.ToLower(st.Name)]; !taken {
-			run.sites[strings.ToLower(st.Name)] = id
+	}
+	for k, ids := range short {
+		if len(ids) == 1 {
+			run.sites[k] = ids[0]
+		} else {
+			run.ambiguous[k] = true
 		}
 	}
 	out := apigen.IpamImportResult{Rows: make([]apigen.IpamImportRowResult, 0, len(req.Body.Rows))}
@@ -141,6 +151,9 @@ func (r *ipamImportRun) row(q store.Querier, in apigen.IpamImportRow) (apigen.Ip
 	var site *uuid.UUID
 	if name := strings.TrimSpace(str(in.Site)); name != "" {
 		id, ok := r.sites[strings.ToLower(name)]
+		if !ok && r.ambiguous[strings.ToLower(name)] {
+			return bad(fmt.Sprintf("Có nhiều site tên / mã %q: ghi mã site đầy đủ", name))
+		}
 		if !ok {
 			return bad(fmt.Sprintf("Không có site %q (dùng mã site hoặc tên site)", name))
 		}
@@ -286,7 +299,7 @@ func (r *ipamImportRun) row(q store.Querier, in apigen.IpamImportRow) (apigen.Ip
 	return res, nil
 }
 
-// importVrf reads the default VRF the way spreadsheets write it ("default", "global", "-") as the default one ('').
+// importVrf reads the default VRF the way spreadsheets write it ("default", "global", "-") as the default one (”).
 func importVrf(v string) string {
 	switch strings.ToLower(strings.TrimSpace(v)) {
 	case "", "-", "default", "global", "none", "mặc định", "mac dinh", "grt":

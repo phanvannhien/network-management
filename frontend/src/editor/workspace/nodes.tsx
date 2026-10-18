@@ -137,7 +137,7 @@ function Frame({
         />
       )}
       {problem && (
-        <span className="absolute -top-2 -right-2 rounded-full bg-card">
+        <span className="ntb-no-export absolute -top-2 -right-2 rounded-full bg-card">
           <SeverityIcon severity={problem} className="size-4" />
           <span className="sr-only">{t(`checks.severity.${problem}`)}</span>
         </span>

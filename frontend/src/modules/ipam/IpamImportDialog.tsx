@@ -119,7 +119,7 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
       const sheet = sheets.find((s) => detectColumns(s)) ?? null
       const found = sheet && detectColumns(sheet)
       if (!sheet || !found) return setError(t('ipamImport.noColumns'))
-      const list = ipamRows(sheet, found.header, found.columns, found.dhcpRange)
+      const list = ipamRows(sheet, found.header, found.columns, found.impliedKind)
       if (list.length === 0) return setError(t('ipamImport.empty'))
       if (list.length > MAX_ROWS) return setError(t('ipamImport.tooMany', { count: MAX_ROWS }))
       setRows(list)

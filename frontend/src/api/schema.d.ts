@@ -3825,15 +3825,20 @@ export interface components {
         };
         ExportEvent: {
             /** @enum {string} */
-            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb";
+            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb" | "diagram_pdf";
             /**
              * Format: uuid
-             * @description the exported diagram (diagram_png / diagram_svg)
+             * @description the exported diagram (diagram_png / diagram_svg / diagram_pdf)
              */
             diagramId?: string;
-            /** @description rows exported (devices_xlsx) */
+            /** @description rows exported (devices_xlsx); sheets (diagram_pdf) */
             count?: number;
             scale?: number;
+            /**
+             * @description paper size (diagram_pdf)
+             * @enum {string}
+             */
+            paper?: "a4" | "a3";
         };
         /** @description a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server */
         NtbFile: {
