@@ -65,6 +65,9 @@ const TemplatesPage = lazy(() =>
 const VaultPage = lazy(() =>
   import('./modules/vault/VaultPage').then((m) => ({ default: m.VaultPage })),
 )
+const ReportsPage = lazy(() =>
+  import('./modules/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+)
 const VendorsPage = lazy(() =>
   import('./modules/vendors/VendorsPage').then((m) => ({ default: m.VendorsPage })),
 )
@@ -136,6 +139,7 @@ export function AppRoutes() {
         <Route path="alerts" element={<AlertSettingsPage />} />
         <Route path="vendors" element={<VendorsPage />} />
         <Route path="vault" element={<VaultPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
         <Route path="contracts/:contractId" element={<ContractPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />

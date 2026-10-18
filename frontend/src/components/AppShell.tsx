@@ -11,6 +11,7 @@ import {
   MapPin,
   Handshake,
   KeyRound,
+  FileSpreadsheet,
   Hash,
   Network,
   LayoutTemplate,
@@ -446,6 +447,7 @@ export function OrgShell() {
         { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
         { to: `${base}/vendors`, label: t('nav.vendors'), icon: Handshake },
         { to: `${base}/vault`, label: t('nav.vault'), icon: KeyRound },
+        { to: `${base}/reports`, label: t('nav.reports'), icon: FileSpreadsheet },
       ],
     },
     {

@@ -1453,6 +1453,98 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orgs/{orgId}/reports/ip-plan:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getIpPlanReport
+      summary: IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpPlanReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/reports/vlans:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getVlanReport
+      summary: VLAN report (P2-11) — VLANs with their subnets, gateways and the ports using them
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VlanReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/reports/port-map:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getPortMapReport
+      summary: Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortMapReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/reports/boq:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: getBoqReport
+      summary: Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
+      parameters:
+        - $ref: '#/components/parameters/ReportCategory'
+        - $ref: '#/components/parameters/ReportSite'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoqReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/design-templates/preview:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4533,6 +4625,22 @@ components:
         type: string
         format: uuid
 
+    ReportCategory:
+      name: categoryId
+      in: query
+      required: false
+      description: topbar category (with its subtree); none = whole organization
+      schema:
+        type: string
+        format: uuid
+    ReportSite:
+      name: siteId
+      in: query
+      required: false
+      description: one site; none = every site in scope
+      schema:
+        type: string
+        format: uuid
     DeviceSiteFilter:
       name: siteId
       in: query
@@ -7863,7 +7971,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb, diagram_pdf]
+          enum: [diagram_png, diagram_svg, devices_xlsx, diagram_ntb, diagram_pdf, ipplan_xlsx, vlans_xlsx, portmap_xlsx, boq_xlsx]
         diagramId:
           type: string
           format: uuid
@@ -7872,7 +7980,7 @@ components:
           type: integer
           minimum: 0
           maximum: 1000000
-          description: rows exported (devices_xlsx); sheets (diagram_pdf)
+          description: rows exported (devices_xlsx, reports); sheets (diagram_pdf)
         scale:
           type: integer
           minimum: 1
@@ -7986,6 +8094,147 @@ components:
           type: array
           items:
             type: string
+
+    IpPlanReport:
+      type: object
+      required: [subnets]
+      properties:
+        subnets:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpPlanRow'
+
+    IpPlanRow:
+      type: object
+      required: [id, siteCode, siteName, cidr, mask, vrf, gateway, description, vlanVid, vlanName, size, used, ranges]
+      properties:
+        id: {type: string, format: uuid}
+        siteCode: {type: string, description: "'' = organization-wide"}
+        siteName: {type: string}
+        cidr: {type: string}
+        mask: {type: string, description: dotted mask (IPv4) or /prefix (IPv6)}
+        vrf: {type: string}
+        gateway: {type: string}
+        description: {type: string}
+        vlanVid: {type: [integer, 'null'], format: int32}
+        vlanName: {type: string}
+        size: {type: integer, format: int64}
+        used: {type: integer, format: int64}
+        ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpPlanRange'
+
+    IpPlanRange:
+      type: object
+      required: [kind, startIp, endIp, purpose]
+      properties:
+        kind: {type: string, enum: [dhcp, static, reserved]}
+        startIp: {type: string}
+        endIp: {type: string}
+        purpose: {type: string}
+
+    VlanReport:
+      type: object
+      required: [vlans]
+      properties:
+        vlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/VlanReportRow'
+
+    VlanReportRow:
+      type: object
+      required: [id, vid, name, description, siteCode, subnets, gateways, accessPorts, trunkPorts]
+      properties:
+        id: {type: string, format: uuid}
+        vid: {type: integer, format: int32}
+        name: {type: string}
+        description: {type: string}
+        siteCode: {type: string, description: "'' = organization-wide"}
+        subnets: {type: array, items: {type: string}}
+        gateways: {type: array, items: {type: string}}
+        accessPorts: {type: integer, description: access ports in this VLAN (devices in use / planned / spare)}
+        trunkPorts: {type: integer, description: trunks carrying it (native, or in an allowed list that is filled in)}
+
+    PortMapReport:
+      type: object
+      required: [devices]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortMapDevice'
+
+    PortMapDevice:
+      type: object
+      required: [id, hostname, type, vendor, model, siteCode, clusterName, ports]
+      properties:
+        id: {type: string, format: uuid}
+        hostname: {type: string}
+        type: {$ref: '#/components/schemas/DeviceType'}
+        vendor: {type: string}
+        model: {type: string}
+        siteCode: {type: string}
+        clusterName: {type: string}
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortMapPort'
+
+    PortMapPort:
+      type: object
+      required: [id, name, kind, description, adminUp, mode, accessVlan, nativeVlan, allowedVlans, speed, duplex, media, poe, lag, peerKind, peerName, peerPort, cableId, linkKind, linkStatus]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string}
+        description: {type: string}
+        adminUp: {type: boolean}
+        mode: {type: string}
+        accessVlan: {type: [integer, 'null'], format: int32}
+        nativeVlan: {type: [integer, 'null'], format: int32}
+        allowedVlans: {type: string}
+        speed: {type: string}
+        duplex: {type: string}
+        media: {type: string}
+        poe: {type: boolean}
+        lag: {type: string, description: name of the LAG the port belongs to}
+        peerKind: {type: string, description: "device / endpoint_group / segment; '' = nothing cabled"}
+        peerName: {type: string}
+        peerPort: {type: string}
+        cableId: {type: string}
+        linkKind: {type: string}
+        linkStatus: {type: string}
+
+    BoqReport:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoqLine'
+
+    BoqLine:
+      type: object
+      required: [lifecycle, vendor, model, partNumber, type, quantity, clustered, sites]
+      properties:
+        lifecycle: {type: string, enum: [planned, active, spare]}
+        vendor: {type: string}
+        model: {type: string}
+        partNumber: {type: string}
+        type: {$ref: '#/components/schemas/DeviceType'}
+        quantity: {type: integer, description: physical boxes (each stack member / HA node counts)}
+        clustered: {type: integer, description: how many of them are stack / HA members}
+        sites:
+          type: array
+          items:
+            type: object
+            required: [siteCode, quantity]
+            properties:
+              siteCode: {type: string}
+              quantity: {type: integer}
 
     Dashboard:
       type: object

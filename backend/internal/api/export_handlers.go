@@ -45,6 +45,11 @@ func (s *Server) RecordExport(ctx context.Context, req apigen.RecordExportReques
 		if b.Kind == apigen.DiagramPdf && b.Count != nil {
 			after["sheets"] = *b.Count
 		}
+	case apigen.IpplanXlsx, apigen.VlansXlsx, apigen.PortmapXlsx, apigen.BoqXlsx:
+		entry.ObjectType = "report"
+		if b.Count != nil {
+			after["rows"] = *b.Count
+		}
 	case apigen.DevicesXlsx:
 		entry.ObjectType = "device"
 		if b.Count != nil {

@@ -876,3 +876,22 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Đánh đổi:** chữ trong PDF là ảnh, không tìm kiếm / copy được. Ở 300 DPI vẫn đủ nét để in.
 - **Để sau:** logo tổ chức trong title block; bảng lịch sử phiên bản; khổ A2 / A1.
 
+### ADR-051 — Trang Báo cáo + Excel (P2-11): IP plan, VLAN, port map, BOQ
+- **Bối cảnh:** SRS §12 cần Excel IP plan, port map, BOQ, VLAN. Dữ liệu có sẵn trong kho / IPAM, nhưng lấy qua các API danh sách thì phải gọi N lần (dải IP theo từng subnet, cổng theo từng thiết bị).
+- **Quyết định:**
+  - **Endpoint chỉ đọc** `/reports/{ip-plan, vlans, port-map, boq}`:
+    - lọc theo danh mục trên topbar (cả cây con) và / hoặc một site;
+    - dữ liệu toàn tổ chức (site trống) luôn có mặt, vì áp dụng cho mọi site;
+    - mọi thành viên đọc được (ADR-032); không có bí mật.
+  - **File Excel** do trình duyệt tạo (SheetJS), giống hệt bảng xem trước trên màn hình. Mỗi lần tải ghi audit `export.<loại>_xlsx` kèm số bản ghi.
+  - **IP plan:** mỗi subnet một dòng, cột DHCP / dải tĩnh / dải dành riêng. Tên cột trùng với "Nhập từ Excel" (P2-09), nên sửa xong nhập lại được. Sheet "Dải IP" có mỗi dải một dòng, theo đúng mẫu nhập.
+  - **VLAN:** đếm cổng access trong VLAN và số trunk mang VLAN (native, hoặc có trong danh sách cho phép đã ghi). Danh sách trống không tính, vì mỗi hãng hiểu khác. VLAN riêng của một site được ưu tiên hơn VLAN toàn tổ chức cùng số.
+  - **Port map:** mọi cổng kể cả cổng trống, kèm đầu kia của dây (thiết bị / nhóm đầu cuối / mạng dùng chung) và mã cáp. File có sheet "Tất cả cổng" để lọc, và mỗi thiết bị mạng / patch panel / console server một sheet để in. PC, camera không có sheet riêng.
+  - **BOQ:**
+    - gộp theo hãng + part number (thiếu part number thì theo hãng + model + loại);
+    - dự kiến / đang dùng / dự phòng tách sheet, không cộng chung;
+    - mỗi thành viên stack / HA là một dòng số lượng, có ghi chú số thiết bị thuộc cụm;
+    - không tính thiết bị đã thanh lý / RMA, thiết bị không do mình quản lý (`managed = false`), đám mây nhà mạng và VM;
+    - dòng thiếu model / part number có ghi chú nhắc bổ sung.
+- **Để sau:** module quang và license trong BOQ (kho chưa quản lý); đơn giá / thành tiền.
+

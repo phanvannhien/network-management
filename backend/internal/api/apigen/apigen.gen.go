@@ -88,6 +88,27 @@ func (e AlertKind) Valid() bool {
 	}
 }
 
+// Defines values for BoqLineLifecycle.
+const (
+	BoqLineLifecycleActive  BoqLineLifecycle = "active"
+	BoqLineLifecyclePlanned BoqLineLifecycle = "planned"
+	BoqLineLifecycleSpare   BoqLineLifecycle = "spare"
+)
+
+// Valid indicates whether the value is a known member of the BoqLineLifecycle enum.
+func (e BoqLineLifecycle) Valid() bool {
+	switch e {
+	case BoqLineLifecycleActive:
+		return true
+	case BoqLineLifecyclePlanned:
+		return true
+	case BoqLineLifecycleSpare:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CloudProvider.
 const (
 	CloudProviderArubaCentral CloudProvider = "aruba_central"
@@ -885,16 +906,22 @@ func (e EndpointKind) Valid() bool {
 
 // Defines values for ExportEventKind.
 const (
+	BoqXlsx     ExportEventKind = "boq_xlsx"
 	DevicesXlsx ExportEventKind = "devices_xlsx"
 	DiagramNtb  ExportEventKind = "diagram_ntb"
 	DiagramPdf  ExportEventKind = "diagram_pdf"
 	DiagramPng  ExportEventKind = "diagram_png"
 	DiagramSvg  ExportEventKind = "diagram_svg"
+	IpplanXlsx  ExportEventKind = "ipplan_xlsx"
+	PortmapXlsx ExportEventKind = "portmap_xlsx"
+	VlansXlsx   ExportEventKind = "vlans_xlsx"
 )
 
 // Valid indicates whether the value is a known member of the ExportEventKind enum.
 func (e ExportEventKind) Valid() bool {
 	switch e {
+	case BoqXlsx:
+		return true
 	case DevicesXlsx:
 		return true
 	case DiagramNtb:
@@ -904,6 +931,12 @@ func (e ExportEventKind) Valid() bool {
 	case DiagramPng:
 		return true
 	case DiagramSvg:
+		return true
+	case IpplanXlsx:
+		return true
+	case PortmapXlsx:
+		return true
+	case VlansXlsx:
 		return true
 	default:
 		return false
@@ -1132,21 +1165,42 @@ func (e InterfaceUpdateDuplex) Valid() bool {
 	}
 }
 
+// Defines values for IpPlanRangeKind.
+const (
+	IpPlanRangeKindDhcp     IpPlanRangeKind = "dhcp"
+	IpPlanRangeKindReserved IpPlanRangeKind = "reserved"
+	IpPlanRangeKindStatic   IpPlanRangeKind = "static"
+)
+
+// Valid indicates whether the value is a known member of the IpPlanRangeKind enum.
+func (e IpPlanRangeKind) Valid() bool {
+	switch e {
+	case IpPlanRangeKindDhcp:
+		return true
+	case IpPlanRangeKindReserved:
+		return true
+	case IpPlanRangeKindStatic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IpRangeKind.
 const (
-	Dhcp     IpRangeKind = "dhcp"
-	Reserved IpRangeKind = "reserved"
-	Static   IpRangeKind = "static"
+	IpRangeKindDhcp     IpRangeKind = "dhcp"
+	IpRangeKindReserved IpRangeKind = "reserved"
+	IpRangeKindStatic   IpRangeKind = "static"
 )
 
 // Valid indicates whether the value is a known member of the IpRangeKind enum.
 func (e IpRangeKind) Valid() bool {
 	switch e {
-	case Dhcp:
+	case IpRangeKindDhcp:
 		return true
-	case Reserved:
+	case IpRangeKindReserved:
 		return true
-	case Static:
+	case IpRangeKindStatic:
 		return true
 	default:
 		return false
@@ -2033,6 +2087,32 @@ type AuthSession struct {
 	// (enabled and verified) or (not enabled and not required).
 	Mfa  MfaStatus   `json:"mfa"`
 	User CurrentUser `json:"user"`
+}
+
+// BoqLine defines model for BoqLine.
+type BoqLine struct {
+	// Clustered how many of them are stack / HA members
+	Clustered  int              `json:"clustered"`
+	Lifecycle  BoqLineLifecycle `json:"lifecycle"`
+	Model      string           `json:"model"`
+	PartNumber string           `json:"partNumber"`
+
+	// Quantity physical boxes (each stack member / HA node counts)
+	Quantity int `json:"quantity"`
+	Sites    []struct {
+		Quantity int    `json:"quantity"`
+		SiteCode string `json:"siteCode"`
+	} `json:"sites"`
+	Type   DeviceType `json:"type"`
+	Vendor string     `json:"vendor"`
+}
+
+// BoqLineLifecycle defines model for BoqLine.Lifecycle.
+type BoqLineLifecycle string
+
+// BoqReport defines model for BoqReport.
+type BoqReport struct {
+	Lines []BoqLine `json:"lines"`
 }
 
 // CatalogImages Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
@@ -3535,7 +3615,7 @@ type Error struct {
 
 // ExportEvent defines model for ExportEvent.
 type ExportEvent struct {
-	// Count rows exported (devices_xlsx); sheets (diagram_pdf)
+	// Count rows exported (devices_xlsx, reports); sheets (diagram_pdf)
 	Count *int `json:"count,omitempty"`
 
 	// DiagramId the exported diagram (diagram_png / diagram_svg / diagram_pdf)
@@ -3770,6 +3850,43 @@ type IpLookup struct {
 	HiddenCount int64          `json:"hiddenCount"`
 	Ip          string         `json:"ip"`
 	Subnets     []Subnet       `json:"subnets"`
+}
+
+// IpPlanRange defines model for IpPlanRange.
+type IpPlanRange struct {
+	EndIp   string          `json:"endIp"`
+	Kind    IpPlanRangeKind `json:"kind"`
+	Purpose string          `json:"purpose"`
+	StartIp string          `json:"startIp"`
+}
+
+// IpPlanRangeKind defines model for IpPlanRange.Kind.
+type IpPlanRangeKind string
+
+// IpPlanReport defines model for IpPlanReport.
+type IpPlanReport struct {
+	Subnets []IpPlanRow `json:"subnets"`
+}
+
+// IpPlanRow defines model for IpPlanRow.
+type IpPlanRow struct {
+	Cidr        string             `json:"cidr"`
+	Description string             `json:"description"`
+	Gateway     string             `json:"gateway"`
+	Id          openapi_types.UUID `json:"id"`
+
+	// Mask dotted mask (IPv4) or /prefix (IPv6)
+	Mask   string        `json:"mask"`
+	Ranges []IpPlanRange `json:"ranges"`
+
+	// SiteCode '' = organization-wide
+	SiteCode string `json:"siteCode"`
+	SiteName string `json:"siteName"`
+	Size     int64  `json:"size"`
+	Used     int64  `json:"used"`
+	VlanName string `json:"vlanName"`
+	VlanVid  *int32 `json:"vlanVid"`
+	Vrf      string `json:"vrf"`
 }
 
 // IpRange defines model for IpRange.
@@ -4313,6 +4430,51 @@ type PortGroup struct {
 	Poe     *bool           `json:"poe,omitempty"`
 	Speed   *string         `json:"speed,omitempty"`
 	Start   int32           `json:"start"`
+}
+
+// PortMapDevice defines model for PortMapDevice.
+type PortMapDevice struct {
+	ClusterName string             `json:"clusterName"`
+	Hostname    string             `json:"hostname"`
+	Id          openapi_types.UUID `json:"id"`
+	Model       string             `json:"model"`
+	Ports       []PortMapPort      `json:"ports"`
+	SiteCode    string             `json:"siteCode"`
+	Type        DeviceType         `json:"type"`
+	Vendor      string             `json:"vendor"`
+}
+
+// PortMapPort defines model for PortMapPort.
+type PortMapPort struct {
+	AccessVlan   *int32             `json:"accessVlan"`
+	AdminUp      bool               `json:"adminUp"`
+	AllowedVlans string             `json:"allowedVlans"`
+	CableId      string             `json:"cableId"`
+	Description  string             `json:"description"`
+	Duplex       string             `json:"duplex"`
+	Id           openapi_types.UUID `json:"id"`
+	Kind         string             `json:"kind"`
+
+	// Lag name of the LAG the port belongs to
+	Lag        string `json:"lag"`
+	LinkKind   string `json:"linkKind"`
+	LinkStatus string `json:"linkStatus"`
+	Media      string `json:"media"`
+	Mode       string `json:"mode"`
+	Name       string `json:"name"`
+	NativeVlan *int32 `json:"nativeVlan"`
+
+	// PeerKind device / endpoint_group / segment; '' = nothing cabled
+	PeerKind string `json:"peerKind"`
+	PeerName string `json:"peerName"`
+	PeerPort string `json:"peerPort"`
+	Poe      bool   `json:"poe"`
+	Speed    string `json:"speed"`
+}
+
+// PortMapReport defines model for PortMapReport.
+type PortMapReport struct {
+	Devices []PortMapDevice `json:"devices"`
 }
 
 // PortTempId defines model for PortTempId.
@@ -5087,6 +5249,29 @@ type VlanList struct {
 	Vlans []Vlan `json:"vlans"`
 }
 
+// VlanReport defines model for VlanReport.
+type VlanReport struct {
+	Vlans []VlanReportRow `json:"vlans"`
+}
+
+// VlanReportRow defines model for VlanReportRow.
+type VlanReportRow struct {
+	// AccessPorts access ports in this VLAN (devices in use / planned / spare)
+	AccessPorts int                `json:"accessPorts"`
+	Description string             `json:"description"`
+	Gateways    []string           `json:"gateways"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+
+	// SiteCode '' = organization-wide
+	SiteCode string   `json:"siteCode"`
+	Subnets  []string `json:"subnets"`
+
+	// TrunkPorts trunks carrying it (native
+	TrunkPorts int   `json:"trunkPorts"`
+	Vid        int32 `json:"vid"`
+}
+
 // VlanUpdate defines model for VlanUpdate.
 type VlanUpdate struct {
 	// Color Shown on every diagram
@@ -5210,6 +5395,12 @@ type RackId = openapi_types.UUID
 
 // RangeId defines model for RangeId.
 type RangeId = openapi_types.UUID
+
+// ReportCategory defines model for ReportCategory.
+type ReportCategory = openapi_types.UUID
+
+// ReportSite defines model for ReportSite.
+type ReportSite = openapi_types.UUID
 
 // SegmentId defines model for SegmentId.
 type SegmentId = openapi_types.UUID
@@ -5851,6 +6042,42 @@ type PreviewNtbImportJSONBody struct {
 // PreviewNtbImportParams defines parameters for PreviewNtbImport.
 type PreviewNtbImportParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// GetBoqReportParams defines parameters for GetBoqReport.
+type GetBoqReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// GetIpPlanReportParams defines parameters for GetIpPlanReport.
+type GetIpPlanReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// GetPortMapReportParams defines parameters for GetPortMapReport.
+type GetPortMapReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
+}
+
+// GetVlanReportParams defines parameters for GetVlanReport.
+type GetVlanReportParams struct {
+	// CategoryId topbar category (with its subtree); none = whole organization
+	CategoryId *ReportCategory `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+
+	// SiteId one site; none = every site in scope
+	SiteId *ReportSite `form:"siteId,omitempty" json:"siteId,omitempty"`
 }
 
 // GlobalSearchParams defines parameters for GlobalSearch.
@@ -6676,6 +6903,18 @@ type ServerInterface interface {
 	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 	// (POST /orgs/{orgId}/ntb-imports/preview)
 	PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams)
+	// GetBoqReport Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
+	// (GET /orgs/{orgId}/reports/boq)
+	GetBoqReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetBoqReportParams)
+	// GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
+	// (GET /orgs/{orgId}/reports/ip-plan)
+	GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams)
+	// GetPortMapReport Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
+	// (GET /orgs/{orgId}/reports/port-map)
+	GetPortMapReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetPortMapReportParams)
+	// GetVlanReport VLAN report (P2-11) — VLANs with their subnets, gateways and the ports using them
+	// (GET /orgs/{orgId}/reports/vlans)
+	GetVlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetVlanReportParams)
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(w http.ResponseWriter, r *http.Request, orgId OrgId, params GlobalSearchParams)
@@ -7588,6 +7827,30 @@ func (_ Unimplemented) ImportNtb(w http.ResponseWriter, r *http.Request, orgId O
 // PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 // (POST /orgs/{orgId}/ntb-imports/preview)
 func (_ Unimplemented) PreviewNtbImport(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewNtbImportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetBoqReport Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
+// (GET /orgs/{orgId}/reports/boq)
+func (_ Unimplemented) GetBoqReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetBoqReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
+// (GET /orgs/{orgId}/reports/ip-plan)
+func (_ Unimplemented) GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetPortMapReport Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
+// (GET /orgs/{orgId}/reports/port-map)
+func (_ Unimplemented) GetPortMapReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetPortMapReportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetVlanReport VLAN report (P2-11) — VLANs with their subnets, gateways and the ports using them
+// (GET /orgs/{orgId}/reports/vlans)
+func (_ Unimplemented) GetVlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetVlanReportParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -14683,6 +14946,226 @@ func (siw *ServerInterfaceWrapper) PreviewNtbImport(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// GetBoqReport operation middleware
+func (siw *ServerInterfaceWrapper) GetBoqReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetBoqReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBoqReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIpPlanReport operation middleware
+func (siw *ServerInterfaceWrapper) GetIpPlanReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIpPlanReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIpPlanReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPortMapReport operation middleware
+func (siw *ServerInterfaceWrapper) GetPortMapReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPortMapReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPortMapReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVlanReport operation middleware
+func (siw *ServerInterfaceWrapper) GetVlanReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetVlanReportParams
+
+	// ------------- Optional query parameter "categoryId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "categoryId", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "categoryId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "categoryId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "siteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "siteId", r.URL.Query(), &params.SiteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "siteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "siteId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVlanReport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GlobalSearch operation middleware
 func (siw *ServerInterfaceWrapper) GlobalSearch(w http.ResponseWriter, r *http.Request) {
 
@@ -17354,6 +17837,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/dashboard", wrapper.GetDashboard)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/ip-plan", wrapper.GetIpPlanReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/vlans", wrapper.GetVlanReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/port-map", wrapper.GetPortMapReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/reports/boq", wrapper.GetBoqReport)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/design-templates/preview", wrapper.PreviewDesignTemplate)
@@ -27412,6 +27907,266 @@ func (response PreviewNtbImport404JSONResponse) VisitPreviewNtbImportResponse(w 
 	return err
 }
 
+type GetBoqReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetBoqReportParams
+}
+
+type GetBoqReportResponseObject interface {
+	VisitGetBoqReportResponse(w http.ResponseWriter) error
+}
+
+type GetBoqReport200JSONResponse BoqReport
+
+func (response GetBoqReport200JSONResponse) VisitGetBoqReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBoqReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetBoqReport400JSONResponse) VisitGetBoqReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBoqReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetBoqReport401JSONResponse) VisitGetBoqReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBoqReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetBoqReport404JSONResponse) VisitGetBoqReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIpPlanReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetIpPlanReportParams
+}
+
+type GetIpPlanReportResponseObject interface {
+	VisitGetIpPlanReportResponse(w http.ResponseWriter) error
+}
+
+type GetIpPlanReport200JSONResponse IpPlanReport
+
+func (response GetIpPlanReport200JSONResponse) VisitGetIpPlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIpPlanReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetIpPlanReport400JSONResponse) VisitGetIpPlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIpPlanReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetIpPlanReport401JSONResponse) VisitGetIpPlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIpPlanReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetIpPlanReport404JSONResponse) VisitGetIpPlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPortMapReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetPortMapReportParams
+}
+
+type GetPortMapReportResponseObject interface {
+	VisitGetPortMapReportResponse(w http.ResponseWriter) error
+}
+
+type GetPortMapReport200JSONResponse PortMapReport
+
+func (response GetPortMapReport200JSONResponse) VisitGetPortMapReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPortMapReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetPortMapReport400JSONResponse) VisitGetPortMapReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPortMapReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetPortMapReport401JSONResponse) VisitGetPortMapReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPortMapReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetPortMapReport404JSONResponse) VisitGetPortMapReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVlanReportRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetVlanReportParams
+}
+
+type GetVlanReportResponseObject interface {
+	VisitGetVlanReportResponse(w http.ResponseWriter) error
+}
+
+type GetVlanReport200JSONResponse VlanReport
+
+func (response GetVlanReport200JSONResponse) VisitGetVlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVlanReport400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetVlanReport400JSONResponse) VisitGetVlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVlanReport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetVlanReport401JSONResponse) VisitGetVlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVlanReport404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetVlanReport404JSONResponse) VisitGetVlanReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GlobalSearchRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params GlobalSearchParams
@@ -31421,6 +32176,18 @@ type StrictServerInterface interface {
 	// PreviewNtbImport Check a .ntb.json file and propose where its sites and devices go (nothing written)
 	// (POST /orgs/{orgId}/ntb-imports/preview)
 	PreviewNtbImport(ctx context.Context, request PreviewNtbImportRequestObject) (PreviewNtbImportResponseObject, error)
+	// GetBoqReport Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site
+	// (GET /orgs/{orgId}/reports/boq)
+	GetBoqReport(ctx context.Context, request GetBoqReportRequestObject) (GetBoqReportResponseObject, error)
+	// GetIpPlanReport IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN
+	// (GET /orgs/{orgId}/reports/ip-plan)
+	GetIpPlanReport(ctx context.Context, request GetIpPlanReportRequestObject) (GetIpPlanReportResponseObject, error)
+	// GetPortMapReport Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it
+	// (GET /orgs/{orgId}/reports/port-map)
+	GetPortMapReport(ctx context.Context, request GetPortMapReportRequestObject) (GetPortMapReportResponseObject, error)
+	// GetVlanReport VLAN report (P2-11) — VLANs with their subnets, gateways and the ports using them
+	// (GET /orgs/{orgId}/reports/vlans)
+	GetVlanReport(ctx context.Context, request GetVlanReportRequestObject) (GetVlanReportResponseObject, error)
 	// GlobalSearch Global search (P1-23) — hostname, S/N, part number, model, IP (exact or prefix), MAC (any notation), endpoint group
 	// (GET /orgs/{orgId}/search)
 	GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error)
@@ -35539,6 +36306,114 @@ func (sh *strictHandler) PreviewNtbImport(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewNtbImportResponseObject); ok {
 		if err := validResponse.VisitPreviewNtbImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBoqReport operation middleware
+func (sh *strictHandler) GetBoqReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetBoqReportParams) {
+	var request GetBoqReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBoqReport(ctx, request.(GetBoqReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBoqReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBoqReportResponseObject); ok {
+		if err := validResponse.VisitGetBoqReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetIpPlanReport operation middleware
+func (sh *strictHandler) GetIpPlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetIpPlanReportParams) {
+	var request GetIpPlanReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIpPlanReport(ctx, request.(GetIpPlanReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIpPlanReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetIpPlanReportResponseObject); ok {
+		if err := validResponse.VisitGetIpPlanReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPortMapReport operation middleware
+func (sh *strictHandler) GetPortMapReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetPortMapReportParams) {
+	var request GetPortMapReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPortMapReport(ctx, request.(GetPortMapReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPortMapReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPortMapReportResponseObject); ok {
+		if err := validResponse.VisitGetPortMapReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVlanReport operation middleware
+func (sh *strictHandler) GetVlanReport(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetVlanReportParams) {
+	var request GetVlanReportRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVlanReport(ctx, request.(GetVlanReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVlanReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVlanReportResponseObject); ok {
+		if err := validResponse.VisitGetVlanReportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -807,6 +807,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/reports/ip-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** IP plan report (P2-11) — subnets with VLAN, gateway and ranges, sorted by site / VLAN */
+        get: operations["getIpPlanReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/vlans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** VLAN report (P2-11) — VLANs with their subnets, gateways and the ports using them */
+        get: operations["getVlanReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/port-map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Port map (P2-11) — every port of every device (free ones too) with mode, VLANs and what is cabled to it */
+        get: operations["getPortMapReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/boq": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Bill of quantities (P2-11) — devices counted by vendor / model / part number, per status and site */
+        get: operations["getBoqReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/design-templates/preview": {
         parameters: {
             query?: never;
@@ -3825,13 +3905,13 @@ export interface components {
         };
         ExportEvent: {
             /** @enum {string} */
-            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb" | "diagram_pdf";
+            kind: "diagram_png" | "diagram_svg" | "devices_xlsx" | "diagram_ntb" | "diagram_pdf" | "ipplan_xlsx" | "vlans_xlsx" | "portmap_xlsx" | "boq_xlsx";
             /**
              * Format: uuid
              * @description the exported diagram (diagram_png / diagram_svg / diagram_pdf)
              */
             diagramId?: string;
-            /** @description rows exported (devices_xlsx); sheets (diagram_pdf) */
+            /** @description rows exported (devices_xlsx, reports); sheets (diagram_pdf) */
             count?: number;
             scale?: number;
             /**
@@ -3897,6 +3977,116 @@ export interface components {
             /** @description devices / groups / clusters already there and used as they are */
             reused: number;
             warnings: string[];
+        };
+        IpPlanReport: {
+            subnets: components["schemas"]["IpPlanRow"][];
+        };
+        IpPlanRow: {
+            /** Format: uuid */
+            id: string;
+            /** @description '' = organization-wide */
+            siteCode: string;
+            siteName: string;
+            cidr: string;
+            /** @description dotted mask (IPv4) or /prefix (IPv6) */
+            mask: string;
+            vrf: string;
+            gateway: string;
+            description: string;
+            /** Format: int32 */
+            vlanVid: number | null;
+            vlanName: string;
+            /** Format: int64 */
+            size: number;
+            /** Format: int64 */
+            used: number;
+            ranges: components["schemas"]["IpPlanRange"][];
+        };
+        IpPlanRange: {
+            /** @enum {string} */
+            kind: "dhcp" | "static" | "reserved";
+            startIp: string;
+            endIp: string;
+            purpose: string;
+        };
+        VlanReport: {
+            vlans: components["schemas"]["VlanReportRow"][];
+        };
+        VlanReportRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            vid: number;
+            name: string;
+            description: string;
+            /** @description '' = organization-wide */
+            siteCode: string;
+            subnets: string[];
+            gateways: string[];
+            /** @description access ports in this VLAN (devices in use / planned / spare) */
+            accessPorts: number;
+            /** @description trunks carrying it (native */
+            trunkPorts: number;
+        };
+        PortMapReport: {
+            devices: components["schemas"]["PortMapDevice"][];
+        };
+        PortMapDevice: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            type: components["schemas"]["DeviceType"];
+            vendor: string;
+            model: string;
+            siteCode: string;
+            clusterName: string;
+            ports: components["schemas"]["PortMapPort"][];
+        };
+        PortMapPort: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: string;
+            description: string;
+            adminUp: boolean;
+            mode: string;
+            /** Format: int32 */
+            accessVlan: number | null;
+            /** Format: int32 */
+            nativeVlan: number | null;
+            allowedVlans: string;
+            speed: string;
+            duplex: string;
+            media: string;
+            poe: boolean;
+            /** @description name of the LAG the port belongs to */
+            lag: string;
+            /** @description device / endpoint_group / segment; '' = nothing cabled */
+            peerKind: string;
+            peerName: string;
+            peerPort: string;
+            cableId: string;
+            linkKind: string;
+            linkStatus: string;
+        };
+        BoqReport: {
+            lines: components["schemas"]["BoqLine"][];
+        };
+        BoqLine: {
+            /** @enum {string} */
+            lifecycle: "planned" | "active" | "spare";
+            vendor: string;
+            model: string;
+            partNumber: string;
+            type: components["schemas"]["DeviceType"];
+            /** @description physical boxes (each stack member / HA node counts) */
+            quantity: number;
+            /** @description how many of them are stack / HA members */
+            clustered: number;
+            sites: {
+                siteCode: string;
+                quantity: number;
+            }[];
         };
         Dashboard: {
             /** Format: date-time */
@@ -5098,6 +5288,10 @@ export interface components {
         DeviceQuery: string;
         /** @description devices of sites in this category or below it */
         DeviceCategoryFilter: string;
+        /** @description topbar category (with its subtree); none = whole organization */
+        ReportCategory: string;
+        /** @description one site; none = every site in scope */
+        ReportSite: string;
         DeviceSiteFilter: string[];
         DeviceTypeFilter: components["schemas"]["DeviceType"][];
         DeviceVendorFilter: string[];
@@ -6872,6 +7066,130 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getIpPlanReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpPlanReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getVlanReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VlanReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPortMapReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortMapReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getBoqReport: {
+        parameters: {
+            query?: {
+                /** @description topbar category (with its subtree); none = whole organization */
+                categoryId?: components["parameters"]["ReportCategory"];
+                /** @description one site; none = every site in scope */
+                siteId?: components["parameters"]["ReportSite"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoqReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };

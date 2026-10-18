@@ -497,6 +497,26 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'boq',
+    'device',
+    ['BOQ (bảng khối lượng)', 'BOQ (bill of quantities)'],
+    [
+      'Bảng liệt kê thiết bị cần mua / đã lắp: hãng, model, part number, số lượng, theo từng site. Dùng để báo giá, đặt hàng, nghiệm thu. Bản dự kiến (đề xuất) và bản đang dùng (as-built) tách riêng; mỗi thành viên stack / HA là một thiết bị phải mua.',
+      'The list of equipment to buy / installed: vendor, model, part number, quantity, per site. Used for quotes, orders and hand-over. The planned (proposal) and in-use (as-built) lists stay apart; each stack / HA member is a box to buy.',
+    ],
+    ['Báo cáo → BOQ.', 'Reports → BOQ.'],
+  ),
+  e(
+    'port-map',
+    'port',
+    ['Port map (bảng cổng)', 'Port map'],
+    [
+      'Bảng từng cổng của switch / router / firewall: cổng nào cắm gì, VLAN nào, mã cáp, cổng nào còn trống. Kỹ thuật viên in ra mang theo khi đi lắp đặt hoặc xử lý sự cố.',
+      'A table of every port of a switch / router / firewall: what is plugged in, which VLAN, cable ID, which ports are free. Technicians print it for installs and troubleshooting.',
+    ],
+    ['Báo cáo → Port map.', 'Reports → Port map.'],
+  ),
+  e(
     'title-block',
     'org',
     ['Title block (khung tên bản vẽ)', 'Title block'],

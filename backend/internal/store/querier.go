@@ -377,6 +377,20 @@ type Querier interface {
 	// Counts a failure and locks the account once it reaches the threshold. While locked nothing is counted (no row back),
 	// so nobody can keep an account locked forever; once a lock has expired the count starts over.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
+	// Our physical boxes in scope by status / vendor / model / part number / type / site. Not counted: retired / RMA,
+	// someone else's (managed = false: ISP modem…), the provider cloud and VMs.
+	ReportBoq(ctx context.Context, arg ReportBoqParams) ([]ReportBoqRow, error)
+	// Cables ending on the given ports, with both ends named (device hostname, endpoint group or shared network name).
+	ReportPortLinks(ctx context.Context, arg ReportPortLinksParams) ([]ReportPortLinksRow, error)
+	// Every port of every device in scope (not retired), free ones too, in the device's port order.
+	ReportPorts(ctx context.Context, arg ReportPortsParams) ([]ReportPortsRow, error)
+	ReportRanges(ctx context.Context, arg ReportRangesParams) ([]ReportRangesRow, error)
+	// Reports (P2-11): read-only listings for the Reports page and its Excel files. Scope: the topbar category (with its
+	// subtree) and / or one site; organization-wide rows (site NULL) apply everywhere and are always in.
+	ReportSubnets(ctx context.Context, arg ReportSubnetsParams) ([]ReportSubnetsRow, error)
+	// Switchport settings of the devices in scope (not retired), to count where each VLAN is used.
+	ReportVlanPorts(ctx context.Context, arg ReportVlanPortsParams) ([]ReportVlanPortsRow, error)
+	ReportVlans(ctx context.Context, arg ReportVlansParams) ([]ReportVlansRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
 	RewrapCloudAccount(ctx context.Context, arg RewrapCloudAccountParams) (int64, error)

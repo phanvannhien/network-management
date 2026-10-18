@@ -5,6 +5,28 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-11 Báo cáo & export, bước 2: trang Báo cáo + Excel IP plan / VLAN / port map / BOQ (ADR-051)
+- Đã làm:
+  - **Menu "Báo cáo"** có 4 tab: IP plan, VLAN, Port map, BOQ.
+    - Lọc theo danh mục trên topbar và theo site. Bảng xem trước giống hệt file Excel. Nút "Tải Excel" có ghi audit.
+  - **IP plan:** mỗi subnet một dòng, kèm mask, gateway, dải DHCP / tĩnh / dành riêng, tỉ lệ dùng; sheet "Dải IP" mỗi dải một dòng. File nhập lại được qua "Nhập từ Excel" (có test kiểm tra).
+  - **VLAN:** subnet, gateway, số cổng access và số trunk mang VLAN.
+  - **Port map:** mọi cổng kể cả cổng trống, kèm đầu kia của dây và mã cáp; mỗi switch / router / firewall / patch panel một sheet.
+  - **BOQ:** gộp theo part number, tách dự kiến / đang dùng / dự phòng, mỗi site một cột, có dòng tổng. Ghi chú số thiết bị thuộc stack / HA và dòng thiếu model.
+  - **Backend:** 4 endpoint `/reports/...` chỉ đọc.
+  - **Glossary:** BOQ, port map.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Go: `TestReports` (dữ liệu từng báo cáo, lọc theo danh mục / site, viewer đọc được, chặn tổ chức khác, lọc bằng site của tổ chức khác không ra gì), `TestVlanListHas`.
+  - Vitest: `excel.test.ts` (IP plan nhập lại được, BOQ tách sheet, port map sheet theo switch, tên sheet hợp lệ).
+  - Trình duyệt thật (instance tạm): cả 4 tab, tải 4 file Excel (port map 75 sheet), audit ghi đúng, không lỗi console.
+- Còn dở / lỗi đã biết:
+  - BOQ chưa có module quang, license, đơn giá.
+  - Ô DHCP có nhiều dải ghi cách nhau "; ": khi nhập lại chỉ dải đầu đọc được (sheet "Dải IP" thì đủ).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-11 bước 3 — báo cáo hết hạn (30/60/90 ngày), thiếu thông tin (một định nghĩa chung với Dashboard và panel kiểm tra), thiết bị theo site / loại / hãng, hợp đồng sắp hết hạn.
+
 ## 2026-10-18 — P2-11 Báo cáo & export, bước 1: PDF sơ đồ (ADR-050); sửa sau review P2-09 / P2-10
 - Người dùng chốt:
   - dùng thư viện jsPDF cho PDF (svg2pdf.js bỏ, vì thiết bị trên sơ đồ là HTML);
