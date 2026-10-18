@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSaveSmtp, useSmtp, useTestSmtp, type SmtpSettings } from '@/modules/alerts/alerts'
 import { useHelpTopic } from '@/help/topic'
+import { useStepUp } from '@/app/stepUp'
 
 type Security = SmtpSettings['security']
 const DEFAULT_PORT: Record<Security, number> = { starttls: 587, tls: 465, none: 25 }
@@ -36,6 +37,7 @@ function SmtpForm({ saved }: { saved: SmtpSettings }) {
   const { t } = useTranslation()
   const save = useSaveSmtp()
   const test = useTestSmtp()
+  const stepUp = useStepUp()
   const [f, setF] = useState(() => {
     const { passwordSet: _p, configured: _c, ...rest } = saved
     return rest
@@ -48,6 +50,15 @@ function SmtpForm({ saved }: { saved: SmtpSettings }) {
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
+    saveNow()
+  }
+  const testNow = (): void =>
+    test.mutate(to.trim(), {
+      onSuccess: (r) => r && setResult(r),
+      onError: (err) =>
+        stepUp.guard(err, testNow) || setResult({ sent: false, message: err.message }),
+    })
+  const saveNow = (): void => {
     save.mutate(
       {
         ...f,
@@ -60,7 +71,7 @@ function SmtpForm({ saved }: { saved: SmtpSettings }) {
           setClearPassword(false)
           toast.success(t('smtp.saved'))
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => stepUp.guard(err, saveNow) || toast.error(err.message),
       },
     )
   }
@@ -221,10 +232,7 @@ function SmtpForm({ saved }: { saved: SmtpSettings }) {
           onSubmit={(e) => {
             e.preventDefault()
             setResult(null)
-            test.mutate(to.trim(), {
-              onSuccess: (r) => r && setResult(r),
-              onError: (err) => setResult({ sent: false, message: err.message }),
-            })
+            testNow()
           }}
         >
           <Input
@@ -247,6 +255,7 @@ function SmtpForm({ saved }: { saved: SmtpSettings }) {
           </p>
         )}
       </section>
+      {stepUp.prompt}
     </div>
   )
 }

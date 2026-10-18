@@ -181,6 +181,19 @@ func TestRevealCredential(t *testing.T) {
 	if status, _ := reveal(viewer, "reveal"); status != http.StatusForbidden {
 		t.Errorf("no MFA at all: %d", status)
 	}
+	// Refused looks are in the log too, with the reason (P2-14): no right, stale MFA (an account without MFA is stopped
+	// earlier, by the MFA gate).
+	var reasons []string
+	rows, _ := fx.Pool.Query(context.Background(), `SELECT after->>'reason' FROM audit_log WHERE action = 'credential.reveal_denied' AND organization_id = $1 ORDER BY created_at`, org)
+	for rows.Next() {
+		var r string
+		_ = rows.Scan(&r)
+		reasons = append(reasons, r)
+	}
+	rows.Close()
+	if strings.Join(reasons, ",") != "no_permission,mfa_needed" {
+		t.Errorf("refused looks audited: %v", reasons)
+	}
 	// Another row's ciphertext does not open here.
 	_, other := fx.A.Do("POST", credsPath(org), map[string]any{"name": "Other", "kind": "ssh", "secret": "x", "devices": []any{}})
 	oid := other["credential"].(map[string]any)["id"].(string)

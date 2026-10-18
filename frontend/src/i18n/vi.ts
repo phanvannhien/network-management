@@ -495,6 +495,11 @@ export const vi = {
     yes: 'Có',
     no: 'Không',
   },
+  stepUp: {
+    needed: 'Nhập mã MFA để xác nhận thao tác này',
+    title: 'Xác nhận bằng mã MFA',
+    body: 'Thao tác quản trị nhạy cảm cần nhập lại mã 6 số từ ứng dụng xác thực. Xác nhận xong thao tác tự chạy tiếp.',
+  },
   helpCenter: {
     title: 'Trợ giúp',
     open: 'Trợ giúp cho trang này',
@@ -2797,7 +2802,7 @@ export const vi = {
       prefix: 'Thư mục trong bucket',
       accessKey: 'Access key ID',
       secretKey: 'Secret access key',
-      hostKey: 'Khóa máy chủ SFTP (khuyên dùng)',
+      hostKey: 'Khóa máy chủ SFTP (bắt buộc)',
       hostKeyGuide:
         'Trên máy chủ cài hệ thống, chạy: ssh-keyscan -p 22 nas.congty.local — rồi dán toàn bộ kết quả. Có nó, hệ thống chỉ gửi tới đúng máy chủ của bạn.',
       token: 'Token',

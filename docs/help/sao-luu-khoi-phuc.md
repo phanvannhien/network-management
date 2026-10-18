@@ -80,8 +80,10 @@ Bản trên máy chủ chỉ chống xóa nhầm / nâng cấp hỏng; hỏng �
 ### SFTP (NAS Synology / QNAP, máy chủ khác)
 
 - Bật SFTP trên NAS; tạo **tài khoản riêng** chỉ ghi được một thư mục (vd `backup-ntb`).
-- Khóa máy chủ (chống giả mạo): trên máy chủ cài hệ thống chạy `ssh-keyscan -p 22 nas.congty.local`, dán toàn bộ kết quả vào ô "Khóa máy chủ SFTP".
+- **Khóa máy chủ (bắt buộc, chống giả mạo)**: trên máy chủ cài hệ thống chạy `ssh-keyscan -p 22 nas.congty.local`, dán toàn bộ kết quả vào ô "Khóa máy chủ SFTP".
 - Dùng khóa riêng (private key, PEM) thay mật khẩu nếu được.
+- Đổi máy chủ, cổng, tài khoản hoặc khóa máy chủ của một đích SFTP thì phải nhập lại mật khẩu (mật khẩu đã lưu không bao giờ được gửi tới một máy chủ khác).
+- Thêm / sửa / thử đích, "Sao lưu ngay" và tải bản về đều hỏi lại mã MFA nếu lần xác nhận gần nhất đã quá vài phút.
 
 ### Kho S3 (AWS, Backblaze B2, Wasabi, Cloudflare R2, Synology C2, MinIO)
 

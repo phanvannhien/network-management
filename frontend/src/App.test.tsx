@@ -1879,6 +1879,30 @@ describe('device inventory (P1-08)', () => {
   })
 })
 
+describe('step-up MFA (P2-14)', () => {
+  it('a 428 on a sensitive admin action opens the MFA prompt instead of an error', async () => {
+    fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      'GET /api/admin/backups': () =>
+        json({
+          enabled: true,
+          dir: '/b',
+          schedule: '02:00',
+          keep: '7,4,12',
+          stale: false,
+          runs: [],
+          files: [],
+          targets: [],
+        }),
+      'POST /api/admin/backups/run': () =>
+        json({ message: 'Nhập mã MFA để xác nhận thao tác này' }, 428),
+    })
+    renderAt('/admin/backups')
+    fireEvent.click(await screen.findByRole('button', { name: 'Sao lưu ngay' }))
+    expect(await screen.findByRole('dialog', { name: 'Xác nhận bằng mã MFA' })).toBeInTheDocument()
+  })
+})
+
 describe('help centre (P2-24)', () => {
   it('lists articles by section, searches without accents, and opens an article', async () => {
     fakeApi({ 'GET /api/auth/me': () => json(SESSION) })

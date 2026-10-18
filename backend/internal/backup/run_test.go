@@ -104,6 +104,10 @@ func TestBackupRestore(t *testing.T) {
 	if _, err := svc.Restore(ctx, filepath.Join(dir, res.File), RestoreOptions{}); !errors.Is(err, ErrAPIRunning) {
 		t.Errorf("API running: %v", err)
 	}
+	// Master key rotation is refused too while an API serves (P2-14).
+	if _, err := LockOutAPI(ctx, pool); !errors.Is(err, ErrAPIRunning) {
+		t.Errorf("rotation lock with the API running: %v", err)
+	}
 	release()
 	newer := service(t, pool, dbURL, dir)
 	newer.Cfg.LatestSchema = 1

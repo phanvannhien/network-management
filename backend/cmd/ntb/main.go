@@ -397,6 +397,12 @@ func rotateMasterKey(stderr io.Writer) error {
 		return fmt.Errorf("configure database pool: %w", err)
 	}
 	defer pool.Close()
+	// A running API would keep sealing with the old key after the rotation commits.
+	release, err := backup.LockOutAPI(ctx, pool)
+	if err != nil {
+		return err
+	}
+	defer release()
 	n, err := rotate.Run(ctx, pool, old, next)
 	if err != nil {
 		return fmt.Errorf("rotation aborted, nothing changed: %w", err)

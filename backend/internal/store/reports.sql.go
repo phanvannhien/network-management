@@ -16,7 +16,7 @@ const reportBoq = `-- name: ReportBoq :many
 SELECT d.lifecycle, d.vendor, d.model, d.part_number, d.type, s.code::text AS site_code,
        count(*)::bigint AS quantity, count(d.cluster_id)::bigint AS clustered
 FROM devices d
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN sites s ON s.id = d.site_id AND s.organization_id = d.organization_id AND s.deleted_at IS NULL
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND d.lifecycle IN ('planned', 'active', 'spare') AND d.managed AND d.type NOT IN ('provider_cloud', 'vm')
   AND ($2::uuid IS NULL OR d.site_id = $2)
@@ -88,7 +88,7 @@ SELECT d.id, d.hostname, d.type, d.vendor, d.model, d.lifecycle, d.alerts_muted,
        COALESCE(v.name, '')::text AS supplier, dates.kind::text AS kind, dates.day::date AS day
 FROM dates
 JOIN devices d ON d.id = dates.id AND d.organization_id = $1
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN sites s ON s.id = d.site_id AND s.organization_id = d.organization_id AND s.deleted_at IS NULL
 LEFT JOIN vendors v ON v.id = d.supplier_id AND v.organization_id = d.organization_id
 WHERE d.deleted_at IS NULL AND d.lifecycle IN ('active', 'spare') AND dates.day <= $2::date
   AND ($3::uuid IS NULL OR d.site_id = $3)
@@ -211,7 +211,7 @@ func (q *Queries) ReportExpiringContracts(ctx context.Context, arg ReportExpirin
 const reportInventory = `-- name: ReportInventory :many
 SELECT s.code::text AS site_code, s.name AS site_name, d.type, d.vendor, d.lifecycle, count(*)::bigint AS quantity
 FROM devices d
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN sites s ON s.id = d.site_id AND s.organization_id = d.organization_id AND s.deleted_at IS NULL
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND ($2::uuid IS NULL OR d.site_id = $2)
   AND ($3::uuid IS NULL OR s.category_id IN (SELECT category_subtree($3::uuid)))
@@ -267,14 +267,14 @@ SELECT l.kind, l.cable_id, l.status, l.a_kind, l.a_interface_id, l.b_kind, l.b_i
        COALESCE(ad.hostname, ag.name, asg.name, '')::text AS a_name, COALESCE(ai.name, '')::text AS a_port,
        COALESCE(bd.hostname, bg.name, bsg.name, '')::text AS b_name, COALESCE(bi.name, '')::text AS b_port
 FROM links l
-LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id
-LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id
-LEFT JOIN segments asg ON l.a_kind = 'segment' AND asg.id = l.a_id
-LEFT JOIN interfaces ai ON ai.id = l.a_interface_id
-LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id
-LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id
-LEFT JOIN segments bsg ON l.b_kind = 'segment' AND bsg.id = l.b_id
-LEFT JOIN interfaces bi ON bi.id = l.b_interface_id
+LEFT JOIN devices ad ON l.a_kind = 'device' AND ad.id = l.a_id AND ad.organization_id = l.organization_id
+LEFT JOIN endpoint_groups ag ON l.a_kind = 'endpoint_group' AND ag.id = l.a_id AND ag.organization_id = l.organization_id
+LEFT JOIN segments asg ON l.a_kind = 'segment' AND asg.id = l.a_id AND asg.organization_id = l.organization_id
+LEFT JOIN interfaces ai ON ai.id = l.a_interface_id AND ai.organization_id = l.organization_id
+LEFT JOIN devices bd ON l.b_kind = 'device' AND bd.id = l.b_id AND bd.organization_id = l.organization_id
+LEFT JOIN endpoint_groups bg ON l.b_kind = 'endpoint_group' AND bg.id = l.b_id AND bg.organization_id = l.organization_id
+LEFT JOIN segments bsg ON l.b_kind = 'segment' AND bsg.id = l.b_id AND bsg.organization_id = l.organization_id
+LEFT JOIN interfaces bi ON bi.id = l.b_interface_id AND bi.organization_id = l.organization_id
 WHERE l.organization_id = $1
   AND (l.a_interface_id = ANY ($2::uuid[]) OR l.b_interface_id = ANY ($2::uuid[]))
 `
@@ -337,10 +337,10 @@ SELECT d.id AS device_id, d.hostname, d.type, d.vendor, d.model, s.code::text AS
        i.id, i.name, i.kind, i.description, i.admin_up, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans,
        i.speed, i.duplex, i.media, i.poe, COALESCE(lag.name, '')::text AS lag_name
 FROM devices d
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN sites s ON s.id = d.site_id AND s.organization_id = d.organization_id AND s.deleted_at IS NULL
 JOIN interfaces i ON i.device_id = d.id AND i.organization_id = d.organization_id
-LEFT JOIN interfaces lag ON lag.id = i.lag_id
-LEFT JOIN device_clusters c ON c.id = d.cluster_id
+LEFT JOIN interfaces lag ON lag.id = i.lag_id AND lag.organization_id = i.organization_id
+LEFT JOIN device_clusters c ON c.id = d.cluster_id AND c.organization_id = d.organization_id
 WHERE d.organization_id = $1 AND d.deleted_at IS NULL AND d.lifecycle <> 'retired'
   AND ($2::uuid IS NULL OR d.site_id = $2)
   AND ($3::uuid IS NULL OR s.category_id IN (SELECT category_subtree($3::uuid)))
@@ -474,8 +474,8 @@ SELECT sn.id, sn.cidr, sn.vrf, sn.gateway, sn.description,
        (SELECT count(DISTINCT a.host) FROM ipam_addresses a
          WHERE a.organization_id = sn.organization_id AND a.vrf = sn.vrf AND a.host << sn.cidr)::bigint AS used_count
 FROM subnets sn
-LEFT JOIN sites s ON s.id = sn.site_id AND s.deleted_at IS NULL
-LEFT JOIN vlans v ON v.id = sn.vlan_id
+LEFT JOIN sites s ON s.id = sn.site_id AND s.organization_id = sn.organization_id AND s.deleted_at IS NULL
+LEFT JOIN vlans v ON v.id = sn.vlan_id AND v.organization_id = sn.organization_id
 WHERE sn.organization_id = $1 AND (sn.site_id IS NULL OR s.id IS NOT NULL)
   AND (sn.site_id IS NULL OR (
         ($2::uuid IS NULL OR sn.site_id = $2)
@@ -539,7 +539,7 @@ const reportVlanPorts = `-- name: ReportVlanPorts :many
 SELECT d.site_id, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans
 FROM interfaces i
 JOIN devices d ON d.id = i.device_id AND d.deleted_at IS NULL AND d.lifecycle <> 'retired'
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+JOIN sites s ON s.id = d.site_id AND s.organization_id = d.organization_id AND s.deleted_at IS NULL
 WHERE i.organization_id = $1 AND i.mode IN ('access', 'trunk', 'hybrid')
   AND ($2::uuid IS NULL OR d.site_id = $2)
   AND ($3::uuid IS NULL OR s.category_id IN (SELECT category_subtree($3::uuid)))
@@ -593,7 +593,7 @@ SELECT v.id, v.vid, v.name, v.description, v.site_id, COALESCE(s.code, '')::text
        COALESCE((SELECT array_agg(host(sn.gateway) ORDER BY sn.cidr) FROM subnets sn
                  WHERE sn.organization_id = v.organization_id AND sn.vlan_id = v.id AND sn.gateway IS NOT NULL), '{}')::text[] AS gateways
 FROM vlans v
-LEFT JOIN sites s ON s.id = v.site_id AND s.deleted_at IS NULL
+LEFT JOIN sites s ON s.id = v.site_id AND s.organization_id = v.organization_id AND s.deleted_at IS NULL
 WHERE v.organization_id = $1 AND (v.site_id IS NULL OR s.id IS NOT NULL)
   AND (v.site_id IS NULL OR (
         ($2::uuid IS NULL OR v.site_id = $2)

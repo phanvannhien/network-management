@@ -4488,6 +4488,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/backups/files/{name}:
     parameters:
@@ -4551,6 +4557,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/backup-targets/{targetId}:
     parameters:
@@ -4586,6 +4598,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: adminDeleteBackupTarget
       summary: Remove a backup destination (the files already there stay)
@@ -4600,6 +4618,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/backup-targets/{targetId}/test:
     parameters:
@@ -4625,6 +4649,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/smtp:
     get:
@@ -4665,6 +4695,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/smtp/test:
     post:
@@ -4702,6 +4738,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/audit:
     get:
@@ -4764,6 +4806,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/users/{userId}/enable:
     parameters:
@@ -4800,6 +4848,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/users/{userId}/password-reset:
     parameters:
@@ -4822,6 +4876,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:

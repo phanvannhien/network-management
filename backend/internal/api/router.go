@@ -2,12 +2,16 @@
 package api
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -23,6 +27,7 @@ func NewRouter(logger *slog.Logger, server *Server, resolver *auth.ClientIPResol
 	r.Use(middleware.RequestID)
 	r.Use(securityHeaders)
 	r.Use(limitBody)
+	r.Use(rejectBadText)
 	r.Use(requestLogger(logger))
 	r.Use(middleware.Recoverer)
 	r.Use(withRequestInfo(resolver))
@@ -102,16 +107,83 @@ const (
 )
 
 // limitBody caps request bodies (P2-01): nothing is buffered beyond what the endpoint can use.
+// bigBodyPath: the only routes taking large bodies (imports, contract files) — exact routes, not any path that happens
+// to end the same way (P2-14).
+var bigBodyPath = regexp.MustCompile(`^/api/orgs/[0-9a-fA-F-]{36}/(device-imports|ipam-imports|ntb-imports(/preview)?|contracts/[0-9a-fA-F-]{36}/files)$`)
+
 func limitBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil && r.Body != http.NoBody {
 			limit := int64(maxBody)
 			p := r.URL.Path
-			if strings.HasSuffix(p, "/device-imports") || strings.HasSuffix(p, "/ipam-imports") || strings.Contains(p, "/ntb-imports") || strings.HasSuffix(p, "/files") {
+			if bigBodyPath.MatchString(p) {
 				limit = maxImportBody
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// rejectBadText refuses (400) text the database cannot store: a NUL character or invalid UTF-8 in the path, the
+// query or a JSON body (P2-14 — Postgres rejects them, which surfaced as 500s). Files (multipart) are left alone.
+func rejectBadText(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bad := func() {
+			writeError(w, http.StatusBadRequest, "Dữ liệu có ký tự không hợp lệ (NUL hoặc không phải UTF-8)")
+		}
+		if strings.ContainsRune(r.URL.Path, 0) || !utf8.ValidString(r.URL.Path) {
+			bad()
+			return
+		}
+		if q, err := url.ParseQuery(r.URL.RawQuery); err == nil {
+			for _, vs := range q {
+				for _, v := range vs {
+					if strings.ContainsRune(v, 0) || !utf8.ValidString(v) {
+						bad()
+						return
+					}
+				}
+			}
+		}
+		if r.Body != nil && r.Body != http.NoBody && strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				if tooBig := (*http.MaxBytesError)(nil); errors.As(err, &tooBig) {
+					writeError(w, http.StatusRequestEntityTooLarge, "Dữ liệu gửi lên quá lớn")
+					return
+				}
+				writeError(w, http.StatusBadRequest, "Không đọc được dữ liệu gửi lên")
+				return
+			}
+			if !utf8.Valid(body) || jsonHasNUL(body) {
+				bad()
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(body))
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// jsonHasNUL: a raw NUL byte, or a \u0000 escape (not itself an escaped backslash followed by "u0000").
+func jsonHasNUL(b []byte) bool {
+	if bytes.IndexByte(b, 0) >= 0 {
+		return true
+	}
+	for i := 0; ; {
+		j := bytes.Index(b[i:], []byte(`u0000`))
+		if j < 0 {
+			return false
+		}
+		k := i + j
+		slashes := 0
+		for m := k - 1; m >= 0 && b[m] == '\\'; m-- {
+			slashes++
+		}
+		if slashes%2 == 1 {
+			return true
+		}
+		i = k + 5
+	}
 }

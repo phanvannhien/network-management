@@ -59,11 +59,12 @@ DELETE FROM backup_targets WHERE id = @id;
 UPDATE backup_targets SET last_status = @last_status, last_at = now(), last_file = @last_file, last_error = @last_error
 WHERE id = @id;
 
--- name: SaveBackupTargetSecret :exec
+-- name: SaveBackupTargetSecret :execrows
 -- A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
+-- Only over the secret it was refreshed from: a token pasted meanwhile is not overwritten.
 UPDATE backup_targets SET secret_ciphertext = @secret_ciphertext, secret_wrapped_dek = @secret_wrapped_dek,
     secret_key_version = @secret_key_version
-WHERE id = @id;
+WHERE id = @id AND secret_wrapped_dek = @old_wrapped_dek;
 
 -- name: BackupAlertRecipients :many
 -- System admins who can sign in: they receive backup failure e-mails.

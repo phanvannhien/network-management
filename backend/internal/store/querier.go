@@ -426,7 +426,8 @@ type Querier interface {
 	RewrapSmtpPassword(ctx context.Context, arg RewrapSmtpPasswordParams) (int64, error)
 	RewrapTOTP(ctx context.Context, arg RewrapTOTPParams) (int64, error)
 	// A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
-	SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) error
+	// Only over the secret it was refreshed from: a token pasted meanwhile is not overwritten.
+	SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) (int64, error)
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
 	// keep_password leaves the stored password as it is; otherwise the given one (NULL clears it) replaces it.
 	SaveSmtpSettings(ctx context.Context, arg SaveSmtpSettingsParams) (SmtpSetting, error)

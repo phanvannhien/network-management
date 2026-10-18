@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type components } from '@/api/client'
 import i18n from '@/i18n'
+import { mfaGate } from '@/app/stepUp'
 import { MfaNeeded } from '@/modules/vault/vault'
 
 // Backups of the installation (P2-13, ADR-053): status, destinations, run now, download. System admins only.
@@ -37,6 +38,7 @@ export function useSaveTarget() {
           })
         : await api.POST('/admin/backup-targets', { params: csrfParam, body })
       if (r.data) return r.data
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('backups.saveFailed')))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
@@ -51,6 +53,7 @@ export function useDeleteTarget() {
         params: { path: { targetId: id }, ...csrfParam },
       })
       if (r.response.ok) return
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('backups.deleteFailed')))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
@@ -65,6 +68,7 @@ export function useTestTarget() {
         params: { path: { targetId: id }, ...csrfParam },
       })
       if (r.data) return r.data
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('backups.testFailed')))
     },
     onSettled: () => qc.invalidateQueries({ queryKey: KEY }),
@@ -77,6 +81,7 @@ export function useRunBackup() {
     mutationFn: async () => {
       const r = await api.POST('/admin/backups/run', { params: csrfParam })
       if (r.response.ok) return
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('backups.runFailed')))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),

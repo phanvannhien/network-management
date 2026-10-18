@@ -109,8 +109,10 @@ func (s *Service) recordShip(ctx context.Context, q *store.Queries, r store.Back
 		sec := res.Target.Secret
 		sec.Token = res.Refreshed
 		if sealed, err := SealTargetSecret(s.Cfg.Keys, uuid.UUID(r.ID.Bytes), sec); err == nil {
-			_ = q.SaveBackupTargetSecret(ctx, store.SaveBackupTargetSecretParams{ID: r.ID, SecretCiphertext: sealed.Ciphertext,
-				SecretWrappedDek: sealed.WrappedDEK, SecretKeyVersion: sealed.KeyVersion})
+			if _, err := q.SaveBackupTargetSecret(ctx, store.SaveBackupTargetSecretParams{ID: r.ID, SecretCiphertext: sealed.Ciphertext,
+				SecretWrappedDek: sealed.WrappedDEK, SecretKeyVersion: sealed.KeyVersion, OldWrappedDek: r.SecretWrappedDek}); err != nil {
+				s.Logger.Warn("save refreshed backup token", "destination", r.Name, "error", err)
+			}
 		}
 	}
 	if status == "failed" && r.LastStatus != "failed" {

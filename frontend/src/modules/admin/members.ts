@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type components } from '../../api/client'
 import i18n from '@/i18n'
+import { mfaGate } from '@/app/stepUp'
 
 export type Member = components['schemas']['Member']
 export type Permission = components['schemas']['Permission']
@@ -131,6 +132,7 @@ export function useAdminUserAction() {
             ? await api.POST('/admin/users/{userId}/enable', { params })
             : await api.POST('/admin/users/{userId}/reset-mfa', { params })
       if (r.response.status === 204) return
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.actionFailed')))
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: adminUsersKey }),
@@ -144,6 +146,7 @@ export function useAdminPasswordReset() {
         params: { ...csrfParam, path: { userId } },
       })
       if (r.data) return r.data.resetToken
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       throw new Error(errorMessage(r.error, r.response.status, i18n.t('errors.resetLink')))
     },
   })

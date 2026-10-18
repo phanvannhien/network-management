@@ -26,6 +26,7 @@ import {
   type BackupTarget,
 } from './backups'
 import { useHelpTopic } from '@/help/topic'
+import { useStepUp } from '@/app/stepUp'
 
 /** Where a destination writes, in one line. */
 function whereOf(t: BackupTarget): string {
@@ -68,6 +69,7 @@ export function BackupsPage() {
   const [editing, setEditing] = useState<BackupTarget | 'new' | null>(null)
   const [deleting, setDeleting] = useState<BackupTarget | null>(null)
   const [askMfa, setAskMfa] = useState<string | null>(null)
+  const stepUp = useStepUp()
   useBreadcrumbs([{ label: t('backups.title') }])
   useHelpTopic('sao-luu-khoi-phuc')
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
@@ -75,11 +77,24 @@ export function BackupsPage() {
   if (!b) return <Skeleton className="m-4 h-64" />
   if (running && b.runs[0]?.status !== 'running' && !run.isPending) setRunning(false)
 
-  const doTest = (target: BackupTarget) =>
+  const doTest = (target: BackupTarget): void =>
     test.mutate(target.id, {
       onSuccess: (r) =>
         r.ok ? toast.success(r.message) : toast.error(r.message, { duration: 15_000 }),
-      onError: (err) => toast.error(err.message),
+      onError: (err) => stepUp.guard(err, () => doTest(target)) || toast.error(err.message),
+    })
+  const runNow = (): void =>
+    run.mutate(undefined, {
+      onSuccess: () => {
+        setRunning(true)
+        toast.success(t('backups.started'))
+      },
+      onError: (err) => stepUp.guard(err, runNow) || toast.error(err.message),
+    })
+  const remove = (target: BackupTarget): void =>
+    del.mutate(target.id, {
+      onSuccess: () => setDeleting(null),
+      onError: (err) => stepUp.guard(err, () => remove(target)) || toast.error(err.message),
     })
   const download = async (name: string) => {
     try {
@@ -98,15 +113,7 @@ export function BackupsPage() {
         actions={
           <Button
             disabled={!b.enabled || run.isPending || b.runs[0]?.status === 'running'}
-            onClick={() =>
-              run.mutate(undefined, {
-                onSuccess: () => {
-                  setRunning(true)
-                  toast.success(t('backups.started'))
-                },
-                onError: (err) => toast.error(err.message),
-              })
-            }
+            onClick={runNow}
           >
             <Play aria-hidden /> {t('backups.runNow')}
           </Button>
@@ -310,15 +317,11 @@ export function BackupsPage() {
           description={t('backups.deleteBody')}
           confirmLabel={t('common.delete')}
           pending={del.isPending}
-          onConfirm={() =>
-            del.mutate(deleting.id, {
-              onSuccess: () => setDeleting(null),
-              onError: (err) => toast.error(err.message),
-            })
-          }
+          onConfirm={() => remove(deleting)}
           onOpenChange={(o) => !o && setDeleting(null)}
         />
       )}
+      {stepUp.prompt}
       {askMfa && (
         <MfaPrompt
           onClose={() => setAskMfa(null)}

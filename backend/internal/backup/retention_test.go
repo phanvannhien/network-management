@@ -65,7 +65,7 @@ func TestFileNames(t *testing.T) {
 	if f, ok := ParseFileName(name); !ok || !f.At.Equal(at) || f.Kind != "pre-upgrade" {
 		t.Fatalf("parse: %v %v", f, ok)
 	}
-	for _, bad := range []string{"notes.txt", "ntb-.ntbbak", ".ntb-20261018T190005Z-x.ntbbak.partial"} {
+	for _, bad := range []string{"notes.txt", "ntb-.ntbbak", ".ntb-20261018T190005Z-x.ntbbak.partial", "ntb-20261018T190005Z-../x.ntbbak", "ntb-20261018T190005Z-a/b.ntbbak", "ntb-20261018T190005Z-A.ntbbak"} {
 		if _, ok := ParseFileName(bad); ok {
 			t.Errorf("%q parsed", bad)
 		}

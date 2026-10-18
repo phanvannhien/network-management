@@ -5,6 +5,42 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-14 Gate Enterprise: rà soát bảo mật & kiểm thử xâm nhập (ADR-055) — xong Phase 2
+- Đã làm:
+  - **Rà code (3 nhánh song song):**
+    - kho mật khẩu & mọi bí mật;
+    - phân quyền & cách ly tổ chức trên toàn bộ API;
+    - bề mặt web & dữ liệu đầu vào.
+    - Không có lỗi nghiêm trọng / cao. Báo cáo: `docs/SECURITY-REVIEW.md`.
+  - **Kiểm thử xâm nhập tự động, chạy trong `make check`:**
+    - `pentest_test.go`: 236 operation × (không phiên, thiếu / sai CSRF, Origin lạ, tổ chức khác, viewer, owner vào `/admin`), không lệnh nào được 5xx;
+    - `pentest_targeted_test.go`: SQL injection, NUL, chuỗi khổng lồ, body 6 MiB.
+  - **Trình duyệt thật:** chèn `<img onerror>` / `<svg onload>` vào tên site / thiết bị / nhà cung cấp / sơ đồ / mật khẩu, mở 11 trang + Ctrl K: không có XSS.
+  - **Đã sửa:**
+    - mật khẩu SFTP / SMTP không còn gửi được tới máy chủ mới khi không nhập lại;
+    - MFA vừa xác nhận cho thao tác quản trị nhạy cảm (đích sao lưu, sao lưu ngay, SMTP, reset MFA / link đặt lại mật khẩu / khóa tài khoản người khác) — giao diện tự hỏi mã rồi làm tiếp;
+    - nhật ký quản trị tài khoản ghi vào tổ chức của người bị tác động;
+    - khóa máy chủ SFTP bắt buộc;
+    - NUL / UTF-8 hỏng → 400 thay vì 500;
+    - tên file sao lưu chặt hơn;
+    - `rotate-master-key` từ chối khi API chạy;
+    - tiến trình con không nhận bí mật qua biến môi trường;
+    - dọn file tạm rclone;
+    - token OAuth không đè nhau;
+    - ghi nhật ký lần xem mật khẩu bị từ chối;
+    - link chuyển hướng chặn `\`;
+    - giới hạn body theo đúng route;
+    - thêm điều kiện tổ chức vào vài join SQL.
+  - Bài trợ giúp sao lưu và thành viên được cập nhật theo.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Test hồi quy mới: `TestAdminStepUpMFA`, `TestAdminAccountActionsAuditedInOrgs`, `TestSmtpPasswordStaysWithItsServer`; `TestAdminBackupTargets` (đổi máy chủ phải nhập lại mật khẩu); `TestRevealCredential` (lần bị từ chối có nhật ký); `TestBackupRestore` (khóa khi đổi key); `TestJSONHasNUL`; `safeNext.test.ts`; App test step-up MFA.
+- Còn dở / lỗi đã biết:
+  - Bản Docker trên máy dev: container `deploy-api-1` đang khởi động lại liên tục vì database dev đã ở migration 30 (API chạy từ mã nguồn đã nâng), còn image build từ 2 ngày trước. Cần `docker compose -f deploy/docker-compose.yml up -d --build` (người dùng tự chạy).
+- Câu hỏi cho người dùng: thêm thành viên là tài khoản đã tồn tại có cần người đó bấm chấp nhận không? (Hiện không cần, và phản hồi cho biết email đã có tài khoản.)
+- Đề xuất quyết định cần chốt: lời mời chờ chấp nhận + phản hồi giống nhau dù email đã có hay chưa (ADR-055).
+- Task tiếp theo đề xuất: Phase 2 xong (trừ P2-06 link chia sẻ và P2-07 SSO OIDC đang hoãn / chưa làm). Tiếp theo P2-07 nếu khách cần đăng nhập bằng tài khoản công ty, hoặc sang Phase 3 SNMP.
+
 ## 2026-10-18 — P2-24 Trung tâm trợ giúp (ADR-054)
 - Người dùng chốt:
   - làm mục Trợ giúp theo đề xuất: tiếng Việt trước, phần quản trị chỉ system admin thấy;

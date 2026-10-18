@@ -19493,6 +19493,20 @@ func (response AdminCreateBackupTarget409JSONResponse) VisitAdminCreateBackupTar
 	return err
 }
 
+type AdminCreateBackupTarget428JSONResponse Error
+
+func (response AdminCreateBackupTarget428JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AdminDeleteBackupTargetRequestObject struct {
 	TargetId openapi_types.UUID `json:"targetId"`
 	Params   AdminDeleteBackupTargetParams
@@ -19548,6 +19562,20 @@ func (response AdminDeleteBackupTarget404JSONResponse) VisitAdminDeleteBackupTar
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteBackupTarget428JSONResponse Error
+
+func (response AdminDeleteBackupTarget428JSONResponse) VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -19646,6 +19674,20 @@ func (response AdminUpdateBackupTarget409JSONResponse) VisitAdminUpdateBackupTar
 	return err
 }
 
+type AdminUpdateBackupTarget428JSONResponse Error
+
+func (response AdminUpdateBackupTarget428JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AdminTestBackupTargetRequestObject struct {
 	TargetId openapi_types.UUID `json:"targetId"`
 	Params   AdminTestBackupTargetParams
@@ -19707,6 +19749,20 @@ func (response AdminTestBackupTarget404JSONResponse) VisitAdminTestBackupTargetR
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestBackupTarget428JSONResponse Error
+
+func (response AdminTestBackupTarget428JSONResponse) VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -19910,6 +19966,20 @@ func (response AdminRunBackup409JSONResponse) VisitAdminRunBackupResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRunBackup428JSONResponse Error
+
+func (response AdminRunBackup428JSONResponse) VisitAdminRunBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20201,6 +20271,20 @@ func (response AdminSaveSmtp403JSONResponse) VisitAdminSaveSmtpResponse(w http.R
 	return err
 }
 
+type AdminSaveSmtp428JSONResponse Error
+
+func (response AdminSaveSmtp428JSONResponse) VisitAdminSaveSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AdminTestSmtpRequestObject struct {
 	Params AdminTestSmtpParams
 	Body   *AdminTestSmtpJSONRequestBody
@@ -20265,6 +20349,20 @@ func (response AdminTestSmtp403JSONResponse) VisitAdminTestSmtpResponse(w http.R
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestSmtp428JSONResponse Error
+
+func (response AdminTestSmtp428JSONResponse) VisitAdminTestSmtpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20387,6 +20485,20 @@ func (response AdminDisableUser409JSONResponse) VisitAdminDisableUserResponse(w 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDisableUser428JSONResponse Error
+
+func (response AdminDisableUser428JSONResponse) VisitAdminDisableUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -20515,6 +20627,20 @@ func (response AdminCreatePasswordReset404JSONResponse) VisitAdminCreatePassword
 	return err
 }
 
+type AdminCreatePasswordReset428JSONResponse Error
+
+func (response AdminCreatePasswordReset428JSONResponse) VisitAdminCreatePasswordResetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AdminResetMfaRequestObject struct {
 	UserId UserId `json:"userId"`
 	Params AdminResetMfaParams
@@ -20570,6 +20696,20 @@ func (response AdminResetMfa404JSONResponse) VisitAdminResetMfaResponse(w http.R
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminResetMfa428JSONResponse Error
+
+func (response AdminResetMfa428JSONResponse) VisitAdminResetMfaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
 	_, err := buf.WriteTo(w)
 	return err
 }

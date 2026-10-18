@@ -119,7 +119,7 @@ func TestShipToDestinations(t *testing.T) {
 func TestTargetValidate(t *testing.T) {
 	ok := []Target{
 		{Kind: KindLocal, Settings: TargetSettings{Path: "/mnt/nas/ntb"}},
-		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas.local", User: "backup", Path: "ntb"}, Secret: TargetSecret{Password: "x"}},
+		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas.local", User: "backup", Path: "ntb", HostKey: "nas.local ssh-ed25519 AAAAC3Nza"}, Secret: TargetSecret{Password: "x"}},
 		{Kind: KindS3, Settings: TargetSettings{Provider: "AWS", Bucket: "b", AccessKeyID: "AK"}, Secret: TargetSecret{SecretKey: "s"}},
 		{Kind: KindS3, Settings: TargetSettings{Provider: "Other", Endpoint: "s3.us-west-004.backblazeb2.com", Bucket: "b", AccessKeyID: "AK"}, Secret: TargetSecret{SecretKey: "s"}},
 		{Kind: KindDrive, Secret: TargetSecret{Token: `{"access_token":"a","refresh_token":"r","expiry":"2026-01-01T00:00:00Z"}`}},
@@ -132,7 +132,8 @@ func TestTargetValidate(t *testing.T) {
 	bad := []Target{
 		{Kind: KindLocal, Settings: TargetSettings{Path: "relative"}},
 		{Kind: KindLocal, Settings: TargetSettings{Path: "/mnt/../etc"}},
-		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas", User: "u"}},
+		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas", User: "u", HostKey: "nas ssh-ed25519 AAAA"}},
+		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas", User: "u"}, Secret: TargetSecret{Password: "x"}}, // no server key
 		{Kind: KindSFTP, Settings: TargetSettings{Host: "nas", User: "u"}, Secret: TargetSecret{PrivateKey: "not a key"}},
 		{Kind: KindS3, Settings: TargetSettings{Provider: "Other", Bucket: "b", AccessKeyID: "AK"}, Secret: TargetSecret{SecretKey: "s"}},
 		{Kind: KindS3, Settings: TargetSettings{Provider: "AWS", Bucket: "b", AccessKeyID: "AK\nX"}, Secret: TargetSecret{SecretKey: "s"}},

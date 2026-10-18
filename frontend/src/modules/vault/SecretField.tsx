@@ -143,9 +143,13 @@ export function SecretField({
 export function MfaPrompt({
   onClose,
   onConfirmed,
+  title,
+  body,
 }: {
   onClose: () => void
   onConfirmed: () => void
+  title?: string
+  body?: string
 }) {
   const { t } = useTranslation()
   const verify = useMfaVerify()
@@ -161,8 +165,8 @@ export function MfaPrompt({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('vault.mfaTitle')}</DialogTitle>
-          <DialogDescription>{t('vault.mfaBody')}</DialogDescription>
+          <DialogTitle>{title ?? t('vault.mfaTitle')}</DialogTitle>
+          <DialogDescription>{body ?? t('vault.mfaBody')}</DialogDescription>
         </DialogHeader>
         <form id="mfa-step-up" onSubmit={onSubmit}>
           <Input

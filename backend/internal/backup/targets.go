@@ -108,6 +108,10 @@ func (t Target) Validate() error {
 		if t.Secret.Password == "" && t.Secret.PrivateKey == "" {
 			return MessageError("Cần mật khẩu hoặc khóa riêng (private key) SFTP")
 		}
+		// Without the server's key anyone on the path could pose as the NAS and take the password (P2-14).
+		if strings.TrimSpace(st.HostKey) == "" {
+			return MessageError("Cần khóa máy chủ SFTP: chạy ssh-keyscan -p <cổng> <máy chủ> trên máy cài hệ thống rồi dán kết quả")
+		}
 		if t.Secret.PrivateKey != "" && !strings.Contains(t.Secret.PrivateKey, "PRIVATE KEY") {
 			return MessageError("Khóa riêng phải ở dạng PEM (-----BEGIN … PRIVATE KEY-----)")
 		}
@@ -169,6 +173,17 @@ func withScheme(s string) string {
 	return "https://" + s
 }
 
+// tempPrefix names the private directories holding rclone's config (secrets) for one call.
+const tempPrefix = "ntb-rclone-"
+
+// CleanTemp deletes rclone config directories left by a process that was killed mid-call (they hold secrets).
+func CleanTemp() {
+	dirs, _ := filepath.Glob(filepath.Join(os.TempDir(), tempPrefix+"*"))
+	for _, d := range dirs {
+		_ = os.RemoveAll(d)
+	}
+}
+
 // Rclone runs the rclone binary ("" = rclone in PATH).
 type Rclone struct{ Bin string }
 
@@ -191,7 +206,7 @@ type session struct {
 func iniValue(v string) string { return strings.ReplaceAll(v, "\n", `\n`) }
 
 func (r Rclone) open(ctx context.Context, t Target) (*session, error) {
-	dir, err := os.MkdirTemp("", "ntb-rclone-*")
+	dir, err := os.MkdirTemp("", tempPrefix+"*")
 	if err != nil {
 		return nil, fmt.Errorf("rclone temp dir: %w", err)
 	}
@@ -303,6 +318,7 @@ func (s *session) run(ctx context.Context, stdin string, args ...string) (string
 
 func (r Rclone) obscure(ctx context.Context, secret string) (string, error) {
 	cmd := exec.CommandContext(ctx, r.bin(), "obscure", "-")
+	cmd.Env = childEnv()
 	cmd.Stdin = strings.NewReader(secret)
 	out, err := cmd.Output()
 	if err != nil {

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { useSaveTarget, type BackupTarget, type BackupTargetKind } from './backups'
+import { useStepUp } from '@/app/stepUp'
 
 /** Kinds offered, grouped by who they suit (the user chose "options for every size of customer", ADR-053). */
 const KINDS: { kind: BackupTargetKind; audience: 'personal' | 'office' | 'enterprise' }[] = [
@@ -48,6 +49,7 @@ export function BackupTargetDialog({
 }) {
   const { t } = useTranslation()
   const save = useSaveTarget()
+  const stepUp = useStepUp()
   const [kind, setKind] = useState<BackupTargetKind>(target?.kind ?? 'local')
   const [name, setName] = useState(target?.name ?? '')
   const [enabled, setEnabled] = useState(target?.enabled ?? true)
@@ -60,6 +62,9 @@ export function BackupTargetDialog({
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
+    submit()
+  }
+  const submit = (): void => {
     const secrets = Object.fromEntries(Object.entries(secret).filter(([, v]) => v !== ''))
     save.mutate(
       {
@@ -79,7 +84,7 @@ export function BackupTargetDialog({
           toast.success(t('backups.target.saved'))
           onSaved(saved)
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => stepUp.guard(err, submit) || toast.error(err.message),
       },
     )
   }
@@ -287,6 +292,7 @@ export function BackupTargetDialog({
             {t('common.save')}
           </Button>
         </DialogFooter>
+        {stepUp.prompt}
       </DialogContent>
     </Dialog>
   )

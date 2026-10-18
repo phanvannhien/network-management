@@ -157,6 +157,12 @@ func prepareTarget(ctx context.Context, t *backup.Target, keep string) string {
 }
 
 func (s *Server) AdminCreateBackupTarget(ctx context.Context, req apigen.AdminCreateBackupTargetRequestObject) (apigen.AdminCreateBackupTargetResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminCreateBackupTarget403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminCreateBackupTarget428JSONResponse{Message: msg}, nil
+	}
 	bad := func(msg string) (apigen.AdminCreateBackupTargetResponseObject, error) {
 		return apigen.AdminCreateBackupTarget400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -196,6 +202,12 @@ func (s *Server) AdminCreateBackupTarget(ctx context.Context, req apigen.AdminCr
 }
 
 func (s *Server) AdminUpdateBackupTarget(ctx context.Context, req apigen.AdminUpdateBackupTargetRequestObject) (apigen.AdminUpdateBackupTargetResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminUpdateBackupTarget403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminUpdateBackupTarget428JSONResponse{Message: msg}, nil
+	}
 	bad := func(msg string) (apigen.AdminUpdateBackupTargetResponseObject, error) {
 		return apigen.AdminUpdateBackupTarget400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -222,6 +234,14 @@ func (s *Server) AdminUpdateBackupTarget(ctx context.Context, req apigen.AdminUp
 	// A new OneDrive token may be another account: look its drive up again.
 	if t.Kind == backup.KindOneDrive && b.Token != nil {
 		t.Settings.DriveID, t.Settings.DriveType = "", ""
+	}
+	// The stored SFTP password only goes to the server it was typed for (P2-14): another address or server key needs it
+	// typed again.
+	if t.Kind == backup.KindSFTP && b.Password == nil && cur.Secret.Password != "" {
+		a, c := t.Settings, cur.Settings
+		if a.Host != c.Host || a.Port != c.Port || a.User != c.User || strings.TrimSpace(a.HostKey) != strings.TrimSpace(c.HostKey) {
+			return bad("Đổi máy chủ, cổng, tài khoản hoặc khóa máy chủ thì phải nhập lại mật khẩu SFTP")
+		}
 	}
 	if msg := prepareTarget(ctx, &t, b.Keep); msg != "" {
 		return bad(msg)
@@ -255,6 +275,12 @@ func (s *Server) AdminUpdateBackupTarget(ctx context.Context, req apigen.AdminUp
 }
 
 func (s *Server) AdminDeleteBackupTarget(ctx context.Context, req apigen.AdminDeleteBackupTargetRequestObject) (apigen.AdminDeleteBackupTargetResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminDeleteBackupTarget403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminDeleteBackupTarget428JSONResponse{Message: msg}, nil
+	}
 	sess, _ := sessionFrom(ctx)
 	row, err := s.q.GetBackupTarget(ctx, pgUUID(req.TargetId))
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -279,6 +305,12 @@ func (s *Server) AdminDeleteBackupTarget(ctx context.Context, req apigen.AdminDe
 }
 
 func (s *Server) AdminTestBackupTarget(ctx context.Context, req apigen.AdminTestBackupTargetRequestObject) (apigen.AdminTestBackupTargetResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminTestBackupTarget403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminTestBackupTarget428JSONResponse{Message: msg}, nil
+	}
 	sess, _ := sessionFrom(ctx)
 	row, err := s.q.GetBackupTarget(ctx, pgUUID(req.TargetId))
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -299,8 +331,10 @@ func (s *Server) AdminTestBackupTarget(ctx context.Context, req apigen.AdminTest
 	if refreshed != "" {
 		t.Secret.Token = refreshed
 		if sealed, err := backup.SealTargetSecret(s.auth.Keyring(), req.TargetId, t.Secret); err == nil {
-			_ = s.q.SaveBackupTargetSecret(ctx, store.SaveBackupTargetSecretParams{ID: row.ID, SecretCiphertext: sealed.Ciphertext,
-				SecretWrappedDek: sealed.WrappedDEK, SecretKeyVersion: sealed.KeyVersion})
+			if _, err := s.q.SaveBackupTargetSecret(ctx, store.SaveBackupTargetSecretParams{ID: row.ID, SecretCiphertext: sealed.Ciphertext,
+				SecretWrappedDek: sealed.WrappedDEK, SecretKeyVersion: sealed.KeyVersion, OldWrappedDek: row.SecretWrappedDek}); err != nil {
+				s.logger.Warn("save refreshed backup token", "error", err)
+			}
 		}
 	}
 	out := apigen.BackupTargetTest{Ok: terr == nil, Message: "Kết nối và ghi được"}
@@ -317,6 +351,12 @@ func (s *Server) AdminTestBackupTarget(ctx context.Context, req apigen.AdminTest
 // --- run now / download ---
 
 func (s *Server) AdminRunBackup(ctx context.Context, _ apigen.AdminRunBackupRequestObject) (apigen.AdminRunBackupResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminRunBackup403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminRunBackup428JSONResponse{Message: msg}, nil
+	}
 	conflict := func(msg string) (apigen.AdminRunBackupResponseObject, error) {
 		return apigen.AdminRunBackup409JSONResponse{Message: msg}, nil
 	}

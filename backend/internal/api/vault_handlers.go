@@ -55,6 +55,18 @@ func recentMFA(ctx context.Context) (int, string) {
 	return 0, ""
 }
 
+// stepUp: like recentMFA, for sensitive system administration (backups, mail server, other people's accounts):
+// 0 when MFA was confirmed within the window, 403 without MFA on the account, 428 when a fresh code is needed.
+func stepUp(ctx context.Context) (int, string) {
+	switch code, _ := recentMFA(ctx); code {
+	case 403:
+		return 403, "Cần bật xác thực hai lớp (MFA) cho tài khoản trước khi làm việc này"
+	case 428:
+		return 428, "Nhập mã MFA để xác nhận thao tác này"
+	}
+	return 0, ""
+}
+
 // sealed is a secret ready for its columns (all empty = no secret).
 type sealed struct {
 	ct, dek []byte
@@ -455,14 +467,24 @@ type revealOutcome struct {
 
 func (s *Server) reveal(ctx context.Context, m tenant.Membership, action apigen.RevealRequestAction, objectType string, id pgtype.UUID,
 	load func(q store.Querier) (name string, ct, dek []byte, ver pgtype.Int2, err error), aad []byte) (revealOutcome, error) {
-	if !canRevealVault(m) {
-		return revealOutcome{code: 403, message: msgVaultReveal}, nil
-	}
-	if code, msg := recentMFA(ctx); code != 0 {
+	// A refused look is logged too (P2-14): a stolen session probing the vault leaves a trace.
+	denied := func(code int, msg, reason string) (revealOutcome, error) {
+		_ = audit.Write(ctx, s.q, audit.Entry{OrganizationID: m.OrgID, Actor: m.UserID, Action: objectType + ".reveal_denied",
+			ObjectType: objectType, ObjectID: uuidStr(id), After: map[string]any{"reason": reason}, Meta: infoFrom(ctx).meta})
 		return revealOutcome{code: code, message: msg}, nil
 	}
+	if !canRevealVault(m) {
+		return denied(403, msgVaultReveal, "no_permission")
+	}
+	if code, msg := recentMFA(ctx); code != 0 {
+		reason := "mfa_needed"
+		if code == 403 {
+			reason = "no_mfa"
+		}
+		return denied(code, msg, reason)
+	}
 	if !revealLimit.Allow("reveal:" + uuidStr(m.UserID)) {
-		return revealOutcome{code: 429, message: "Xem quá nhiều mật khẩu trong thời gian ngắn — đợi một phút"}, nil
+		return denied(429, "Xem quá nhiều mật khẩu trong thời gian ngắn — đợi một phút", "rate_limited")
 	}
 	if !action.Valid() {
 		action = apigen.Reveal

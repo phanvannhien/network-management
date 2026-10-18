@@ -57,7 +57,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool, old, next *secrets.Keyring) (C
 	err := pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
 		// Nothing may write a secret meanwhile (an API left running): a row saved during the rotation would stay on
 		// the old key, or get an old data key wrapped over its new one.
-		if _, err := tx.Exec(ctx, `LOCK TABLE credentials, cloud_accounts, mfa_totp, smtp_settings IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+		if _, err := tx.Exec(ctx, `LOCK TABLE credentials, cloud_accounts, mfa_totp, smtp_settings, backup_targets IN SHARE ROW EXCLUSIVE MODE`); err != nil {
 			return fmt.Errorf("lock secret tables: %w", err)
 		}
 		q := store.New(tx)

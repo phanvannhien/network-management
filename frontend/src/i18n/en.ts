@@ -500,6 +500,11 @@ export const en: Strings = {
     yes: 'Yes',
     no: 'No',
   },
+  stepUp: {
+    needed: 'Confirm an MFA code for this action',
+    title: 'Confirm with an MFA code',
+    body: 'This sensitive administration step needs the 6-digit code from your authenticator app again. Once confirmed, it carries on.',
+  },
   helpCenter: {
     title: 'Help',
     open: 'Help for this page',
@@ -2813,7 +2818,7 @@ export const en: Strings = {
       prefix: 'Folder in the bucket',
       accessKey: 'Access key ID',
       secretKey: 'Secret access key',
-      hostKey: 'SFTP server key (recommended)',
+      hostKey: 'SFTP server key (required)',
       hostKeyGuide:
         'On the server running this system: ssh-keyscan -p 22 nas.company.local — and paste all of it. With it, backups only go to your real server.',
       token: 'Token',

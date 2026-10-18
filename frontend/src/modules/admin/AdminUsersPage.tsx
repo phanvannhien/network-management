@@ -30,6 +30,8 @@ import {
   useAdminUsers,
   type AdminUser,
 } from './members'
+import { useStepUp } from '@/app/stepUp'
+import { MfaNeeded } from '@/modules/vault/vault'
 
 type Confirm = { user: AdminUser; action: 'disable' | 'reset-mfa' }
 
@@ -50,6 +52,7 @@ export function AdminUsersPage() {
   const users = useAdminUsers()
   const action = useAdminUserAction()
   const reset = useAdminPasswordReset()
+  const stepUp = useStepUp()
   const [filter, setFilter] = useState<FilterState>(emptyFilter)
   const [confirm, setConfirm] = useState<Confirm | null>(null)
   const [resetLink, setResetLink] = useState<{ email: string; link: string } | null>(null)
@@ -71,11 +74,19 @@ export function AdminUsersPage() {
 
   if (session.data && !session.data.user.isSystemAdmin) return <Navigate to="/" replace />
 
-  const run = (user: AdminUser, kind: 'disable' | 'enable' | 'reset-mfa') =>
+  const run = (user: AdminUser, kind: 'disable' | 'enable' | 'reset-mfa'): void =>
     action.mutate(
       { userId: user.id, action: kind },
-      { onSuccess: () => toast.success(t('adminUsers.done')) },
+      {
+        onSuccess: () => toast.success(t('adminUsers.done')),
+        onError: (err) => void stepUp.guard(err, () => run(user, kind)),
+      },
     )
+  const issueReset = (u: AdminUser): void =>
+    reset.mutate(u.id, {
+      onSuccess: (tok) => setResetLink({ email: u.email, link: accountLink(tok) }),
+      onError: (err) => void stepUp.guard(err, () => issueReset(u)),
+    })
 
   const columns: DataColumn<AdminUser>[] = [
     {
@@ -165,13 +176,7 @@ export function AdminUsersPage() {
             <MoreHorizontal aria-hidden />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
-              onClick={() =>
-                reset.mutate(u.id, {
-                  onSuccess: (tok) => setResetLink({ email: u.email, link: accountLink(tok) }),
-                })
-              }
-            >
+            <DropdownMenuItem onClick={() => issueReset(u)}>
               {t('adminUsers.resetLink')}
             </DropdownMenuItem>
             {u.mfaEnabled && (
@@ -203,7 +208,8 @@ export function AdminUsersPage() {
   ]
 
   const count = (pred: (u: AdminUser) => boolean) => users.data?.filter(pred).length ?? 0
-  const error = action.error ?? reset.error
+  // A pending MFA confirmation is not an error (the prompt is open).
+  const error = [action.error, reset.error].find((e) => e && !(e instanceof MfaNeeded)) ?? null
   const email = confirm?.user.email ?? ''
 
   return (
@@ -289,6 +295,7 @@ export function AdminUsersPage() {
         description={t('adminUsers.resetLinkBody', { email: resetLink?.email ?? '' })}
         onClose={() => setResetLink(null)}
       />
+      {stepUp.prompt}
     </div>
   )
 }

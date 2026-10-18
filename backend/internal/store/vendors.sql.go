@@ -449,7 +449,7 @@ func (q *Queries) GetContract(ctx context.Context, arg GetContractParams) (Contr
 }
 
 const getFile = `-- name: GetFile :one
-SELECT f.id, f.organization_id, f.contract_id, f.name, f.content_type, f.size, f.sha256, f.data, f.created_by, f.created_at FROM files f JOIN contracts k ON k.id = f.contract_id AND k.deleted_at IS NULL
+SELECT f.id, f.organization_id, f.contract_id, f.name, f.content_type, f.size, f.sha256, f.data, f.created_by, f.created_at FROM files f JOIN contracts k ON k.id = f.contract_id AND k.organization_id = f.organization_id AND k.deleted_at IS NULL
 WHERE f.organization_id = $1 AND f.id = $2
 `
 
@@ -478,7 +478,7 @@ func (q *Queries) GetFile(ctx context.Context, arg GetFileParams) (File, error) 
 }
 
 const getFileMeta = `-- name: GetFileMeta :one
-SELECT f.id, f.contract_id, f.name, f.size FROM files f JOIN contracts k ON k.id = f.contract_id AND k.deleted_at IS NULL
+SELECT f.id, f.contract_id, f.name, f.size FROM files f JOIN contracts k ON k.id = f.contract_id AND k.organization_id = f.organization_id AND k.deleted_at IS NULL
 WHERE f.organization_id = $1 AND f.id = $2
 `
 
@@ -657,8 +657,8 @@ func (q *Queries) ListContractFiles(ctx context.Context, arg ListContractFilesPa
 
 const listContracts = `-- name: ListContracts :many
 SELECT k.id, k.organization_id, k.vendor_id, k.kind, k.number, k.name, k.start_date, k.end_date, k.sla, k.notes, k.created_at, k.updated_at, k.version, k.deleted_at, v.name AS vendor_name, v.kind AS vendor_kind, v.support_phone, v.support_email, v.support_portal,
-       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.device_id IS NOT NULL)::bigint AS device_count,
-       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.link_id IS NOT NULL)::bigint AS link_count,
+       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.organization_id = k.organization_id AND i.device_id IS NOT NULL)::bigint AS device_count,
+       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.organization_id = k.organization_id AND i.link_id IS NOT NULL)::bigint AS link_count,
        (SELECT count(*) FROM files f WHERE f.contract_id = k.id)::bigint AS file_count
 FROM contracts k
 JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = k.organization_id
@@ -805,8 +805,8 @@ func (q *Queries) ListVendorContacts(ctx context.Context, arg ListVendorContacts
 const listVendors = `-- name: ListVendors :many
 
 SELECT v.id, v.organization_id, v.kind, v.name, v.tax_code, v.website, v.support_phone, v.support_email, v.support_portal, v.notes, v.created_at, v.updated_at, v.version, v.deleted_at,
-       (SELECT count(*) FROM vendor_contacts c WHERE c.vendor_id = v.id)::bigint AS contact_count,
-       (SELECT count(*) FROM contracts k WHERE k.vendor_id = v.id AND k.deleted_at IS NULL)::bigint AS contract_count,
+       (SELECT count(*) FROM vendor_contacts c WHERE c.vendor_id = v.id AND c.organization_id = v.organization_id)::bigint AS contact_count,
+       (SELECT count(*) FROM contracts k WHERE k.vendor_id = v.id AND k.organization_id = v.organization_id AND k.deleted_at IS NULL)::bigint AS contract_count,
        (SELECT min(k.end_date) FROM contracts k
          WHERE k.vendor_id = v.id AND k.deleted_at IS NULL AND k.end_date >= $1::date)::date AS next_end
 FROM vendors v

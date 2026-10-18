@@ -153,7 +153,7 @@ export function linkTarget(href: string): { internal: string } | { external: str
     const [slug, anchor] = href.slice(5).split('#')
     return { internal: `/help/${slug}${anchor ? `#${anchor}` : ''}` }
   }
-  if (href.startsWith('/') && !href.startsWith('//')) return { internal: href }
+  if (/^\/(?![/\\])/.test(href) && !href.includes('\\')) return { internal: href }
   if (href.startsWith('#')) return { internal: href }
   if (/^https?:\/\//i.test(href)) return { external: href }
   return null

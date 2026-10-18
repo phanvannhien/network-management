@@ -44,7 +44,7 @@ func TestAdminBackupTargets(t *testing.T) {
 	admin := fx.NewUser(t, "sysadmin-targets@example.com", true)
 	path := "/api/admin/backup-targets"
 	body := map[string]any{"name": "NAS văn phòng", "kind": "sftp", "enabled": true, "keep": "7,4,12",
-		"settings": map[string]any{"host": "nas.local", "port": 22, "user": "backup", "path": "ntb"}, "password": "nas-secret-pw"}
+		"settings": map[string]any{"host": "nas.local", "port": 22, "user": "backup", "path": "ntb", "hostKey": "nas.local ssh-ed25519 AAAAC3NzaC1lZDI1NTE5"}, "password": "nas-secret-pw"}
 	if status, _ := fx.A.Do("POST", path, body); status != http.StatusForbidden {
 		t.Errorf("org owner adding a destination: %d", status)
 	}
@@ -77,9 +77,14 @@ func TestAdminBackupTargets(t *testing.T) {
 			t.Errorf("invalid %v: %d", b["name"], status)
 		}
 	}
-	// Change without the password: kept.
+	// Another server without typing the password again: refused — the stored one never goes to a new address (P2-14).
 	upd := map[string]any{"name": "NAS tầng 2", "kind": "sftp", "enabled": false, "keep": "14,8,24", "version": 1,
-		"settings": map[string]any{"host": "nas2.local", "user": "backup", "path": "ntb"}}
+		"settings": map[string]any{"host": "attacker.example", "port": 22, "user": "backup", "path": "ntb", "hostKey": "attacker.example ssh-ed25519 AAAA"}}
+	if status, body := admin.Do("PUT", path+"/"+id, upd); status != http.StatusBadRequest {
+		t.Errorf("new host without the password: %d %v", status, body)
+	}
+	// Same server, other settings, password omitted: kept.
+	upd["settings"] = map[string]any{"host": "nas.local", "port": 22, "user": "backup", "path": "ntb2", "hostKey": "nas.local ssh-ed25519 AAAAC3NzaC1lZDI1NTE5"}
 	status, got = admin.Do("PUT", path+"/"+id, upd)
 	if status != http.StatusOK || got["secretSet"] != true || got["enabled"] != false || got["version"] != float64(2) {
 		t.Fatalf("update: %d %v", status, got)
@@ -114,5 +119,53 @@ func TestAdminBackupTargets(t *testing.T) {
 	}
 	if status, _ := admin.Do("DELETE", path+"/"+id, nil); status != http.StatusNotFound {
 		t.Errorf("delete twice: %d", status)
+	}
+}
+
+// P2-14: sensitive system administration needs a fresh MFA confirmation (backup destinations, run now, mail server,
+// other people's accounts); without one the answer is 428 and nothing changes.
+func TestAdminStepUpMFA(t *testing.T) {
+	fx := newOrgFixture(t)
+	admin := fx.NewUser(t, "sysadmin-stepup@example.com", true)
+	if _, err := fx.Pool.Exec(context.Background(), `UPDATE sessions SET mfa_verified_at = now() - interval '1 hour' WHERE user_id = $1`, admin.UserID); err != nil {
+		t.Fatal(err)
+	}
+	target := map[string]any{"name": "S3", "kind": "s3", "enabled": true, "keep": "7,4,12", "secretKey": "s",
+		"settings": map[string]any{"provider": "AWS", "bucket": "b", "accessKeyId": "AK"}}
+	for _, c := range []struct {
+		method, path string
+		body         any
+	}{
+		{"POST", "/api/admin/backup-targets", target},
+		{"POST", "/api/admin/backups/run", nil},
+		{"PUT", "/api/admin/smtp", map[string]any{"host": "smtp.example.com", "port": 587, "security": "starttls", "username": "", "fromAddress": "a@b.vn", "fromName": "", "publicUrl": ""}},
+		{"POST", "/api/admin/smtp/test", map[string]any{"to": "a@b.vn"}},
+		{"POST", "/api/admin/users/" + fx.A.UserID.String() + "/reset-mfa", nil},
+		{"POST", "/api/admin/users/" + fx.A.UserID.String() + "/password-reset", nil},
+		{"POST", "/api/admin/users/" + fx.A.UserID.String() + "/disable", nil},
+	} {
+		if status, _ := admin.Do(c.method, c.path, c.body); status != 428 {
+			t.Errorf("%s %s without a fresh MFA: %d, want 428", c.method, c.path, status)
+		}
+	}
+	var n int
+	_ = fx.Pool.QueryRow(context.Background(), "SELECT count(*) FROM backup_targets").Scan(&n)
+	if n != 0 {
+		t.Errorf("a destination was created without MFA")
+	}
+}
+
+// P2-14: a system admin's action on someone's account shows in the log of every organization the person belongs to.
+func TestAdminAccountActionsAuditedInOrgs(t *testing.T) {
+	fx := newOrgFixture(t)
+	admin := fx.NewUser(t, "sysadmin-audit@example.com", true)
+	if status, _ := admin.Do("POST", "/api/admin/users/"+fx.A.UserID.String()+"/password-reset", nil); status != http.StatusOK {
+		t.Fatalf("password reset: %d", status)
+	}
+	if auditCount(t, fx.Pool, "user.password_reset_issued", fx.OrgA) != 1 {
+		t.Error("organization A's log does not show the reset link issued for its member")
+	}
+	if auditCount(t, fx.Pool, "user.password_reset_issued", fx.OrgB) != 0 {
+		t.Error("organization B's log shows another organization's member")
 	}
 }

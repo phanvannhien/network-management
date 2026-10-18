@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/audit"
@@ -80,6 +81,12 @@ func (s *Server) AdminListUsers(ctx context.Context, _ apigen.AdminListUsersRequ
 
 // AdminDisableUser soft-deletes a user and ends all their sessions (ADR-022).
 func (s *Server) AdminDisableUser(ctx context.Context, req apigen.AdminDisableUserRequestObject) (apigen.AdminDisableUserResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminDisableUser403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminDisableUser428JSONResponse{Message: msg}, nil
+	}
 	sess, _ := sessionFrom(ctx)
 	target := pgUUID(req.UserId)
 	if target == sess.UserID {
@@ -110,7 +117,7 @@ func (s *Server) AdminDisableUser(ctx context.Context, req apigen.AdminDisableUs
 		if err := q.DeleteUserSessions(ctx, target); err != nil {
 			return fmt.Errorf("revoke sessions: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{
+		return accountAudit(ctx, q, target, audit.Entry{
 			Actor: sess.UserID, Action: "user.disable", ObjectType: "user", ObjectID: user.Email,
 			Before: userState{Disabled: false}, After: userState{Disabled: true}, Meta: infoFrom(ctx).meta,
 		})
@@ -139,7 +146,7 @@ func (s *Server) AdminEnableUser(ctx context.Context, req apigen.AdminEnableUser
 		if err != nil {
 			return fmt.Errorf("enable user: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{
+		return accountAudit(ctx, q, pgUUID(req.UserId), audit.Entry{
 			Actor: sess.UserID, Action: "user.enable", ObjectType: "user", ObjectID: user.Email,
 			Before: userState{Disabled: true}, After: userState{Disabled: false}, Meta: infoFrom(ctx).meta,
 		})
@@ -155,6 +162,12 @@ func (s *Server) AdminEnableUser(ctx context.Context, req apigen.AdminEnableUser
 
 // AdminResetMfa removes TOTP and recovery codes and signs the user out; they enroll again at next sign-in.
 func (s *Server) AdminResetMfa(ctx context.Context, req apigen.AdminResetMfaRequestObject) (apigen.AdminResetMfaResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminResetMfa403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminResetMfa428JSONResponse{Message: msg}, nil
+	}
 	sess, _ := sessionFrom(ctx)
 	target := pgUUID(req.UserId)
 	var notFound bool
@@ -176,7 +189,7 @@ func (s *Server) AdminResetMfa(ctx context.Context, req apigen.AdminResetMfaRequ
 		if err := q.DeleteUserSessions(ctx, target); err != nil {
 			return fmt.Errorf("revoke sessions: %w", err)
 		}
-		return audit.Write(ctx, q, audit.Entry{
+		return accountAudit(ctx, q, target, audit.Entry{
 			Actor: sess.UserID, Action: "user.mfa_reset", ObjectType: "user", ObjectID: user.Email,
 			Before: mfaState{MFAEnabled: true}, After: mfaState{MFAEnabled: false}, Meta: infoFrom(ctx).meta,
 		})
@@ -193,6 +206,12 @@ func (s *Server) AdminResetMfa(ctx context.Context, req apigen.AdminResetMfaRequ
 // AdminCreatePasswordReset issues a one-time reset link (system admin only: an org admin resetting a user
 // who also belongs to other organizations could take over that access).
 func (s *Server) AdminCreatePasswordReset(ctx context.Context, req apigen.AdminCreatePasswordResetRequestObject) (apigen.AdminCreatePasswordResetResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminCreatePasswordReset403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminCreatePasswordReset428JSONResponse{Message: msg}, nil
+	}
 	sess, _ := sessionFrom(ctx)
 	target := pgUUID(req.UserId)
 	var (
@@ -211,7 +230,7 @@ func (s *Server) AdminCreatePasswordReset(ctx context.Context, req apigen.AdminC
 		if token, err = auth.IssueAccountToken(ctx, q, target, sess.UserID, auth.PurposePasswordReset, auth.PasswordResetTTL); err != nil {
 			return err
 		}
-		return audit.Write(ctx, q, audit.Entry{Actor: sess.UserID, Action: "user.password_reset_issued", ObjectType: "user", ObjectID: user.Email, Meta: infoFrom(ctx).meta})
+		return accountAudit(ctx, q, target, audit.Entry{Actor: sess.UserID, Action: "user.password_reset_issued", ObjectType: "user", ObjectID: user.Email, Meta: infoFrom(ctx).meta})
 	})
 	if notFound {
 		return apigen.AdminCreatePasswordReset404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy người dùng"}}, nil
@@ -229,4 +248,24 @@ type userState struct {
 
 type mfaState struct {
 	MFAEnabled bool `json:"mfaEnabled"`
+}
+
+// accountAudit records a system admin's action on someone's account in the system log and in the log of every
+// organization the person belongs to, so its owners see who reset an MFA or issued a password link (P2-14).
+func accountAudit(ctx context.Context, q store.Querier, target pgtype.UUID, e audit.Entry) error {
+	if err := audit.Write(ctx, q, e); err != nil {
+		return err
+	}
+	orgs, err := q.ListMyOrganizations(ctx, target)
+	if err != nil {
+		return fmt.Errorf("organizations of the user: %w", err)
+	}
+	for _, o := range orgs {
+		c := e
+		c.OrganizationID = o.ID
+		if err := audit.Write(ctx, q, c); err != nil {
+			return err
+		}
+	}
+	return nil
 }

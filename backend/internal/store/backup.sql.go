@@ -369,10 +369,10 @@ func (q *Queries) RecordBackupTargetResult(ctx context.Context, arg RecordBackup
 	return err
 }
 
-const saveBackupTargetSecret = `-- name: SaveBackupTargetSecret :exec
+const saveBackupTargetSecret = `-- name: SaveBackupTargetSecret :execrows
 UPDATE backup_targets SET secret_ciphertext = $1, secret_wrapped_dek = $2,
     secret_key_version = $3
-WHERE id = $4
+WHERE id = $4 AND secret_wrapped_dek = $5
 `
 
 type SaveBackupTargetSecretParams struct {
@@ -380,17 +380,23 @@ type SaveBackupTargetSecretParams struct {
 	SecretWrappedDek []byte
 	SecretKeyVersion pgtype.Int2
 	ID               pgtype.UUID
+	OldWrappedDek    []byte
 }
 
 // A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
-func (q *Queries) SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) error {
-	_, err := q.db.Exec(ctx, saveBackupTargetSecret,
+// Only over the secret it was refreshed from: a token pasted meanwhile is not overwritten.
+func (q *Queries) SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) (int64, error) {
+	result, err := q.db.Exec(ctx, saveBackupTargetSecret,
 		arg.SecretCiphertext,
 		arg.SecretWrappedDek,
 		arg.SecretKeyVersion,
 		arg.ID,
+		arg.OldWrappedDek,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const startBackupRun = `-- name: StartBackupRun :one

@@ -2,8 +2,8 @@
 
 -- name: ListVendors :many
 SELECT v.*,
-       (SELECT count(*) FROM vendor_contacts c WHERE c.vendor_id = v.id)::bigint AS contact_count,
-       (SELECT count(*) FROM contracts k WHERE k.vendor_id = v.id AND k.deleted_at IS NULL)::bigint AS contract_count,
+       (SELECT count(*) FROM vendor_contacts c WHERE c.vendor_id = v.id AND c.organization_id = v.organization_id)::bigint AS contact_count,
+       (SELECT count(*) FROM contracts k WHERE k.vendor_id = v.id AND k.organization_id = v.organization_id AND k.deleted_at IS NULL)::bigint AS contract_count,
        (SELECT min(k.end_date) FROM contracts k
          WHERE k.vendor_id = v.id AND k.deleted_at IS NULL AND k.end_date >= @today::date)::date AS next_end
 FROM vendors v
@@ -62,8 +62,8 @@ DELETE FROM vendor_contacts WHERE organization_id = @organization_id AND id = @i
 -- name: ListContracts :many
 -- Live contracts, optionally of one vendor / covering one device or link / ending by a date.
 SELECT k.*, v.name AS vendor_name, v.kind AS vendor_kind, v.support_phone, v.support_email, v.support_portal,
-       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.device_id IS NOT NULL)::bigint AS device_count,
-       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.link_id IS NOT NULL)::bigint AS link_count,
+       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.organization_id = k.organization_id AND i.device_id IS NOT NULL)::bigint AS device_count,
+       (SELECT count(*) FROM contract_items i WHERE i.contract_id = k.id AND i.organization_id = k.organization_id AND i.link_id IS NOT NULL)::bigint AS link_count,
        (SELECT count(*) FROM files f WHERE f.contract_id = k.id)::bigint AS file_count
 FROM contracts k
 JOIN vendors v ON v.id = k.vendor_id AND v.organization_id = k.organization_id
@@ -132,11 +132,11 @@ RETURNING id, contract_id, name, content_type, size, created_at, created_by;
 
 -- name: GetFile :one
 -- The file and its contract, live.
-SELECT f.* FROM files f JOIN contracts k ON k.id = f.contract_id AND k.deleted_at IS NULL
+SELECT f.* FROM files f JOIN contracts k ON k.id = f.contract_id AND k.organization_id = f.organization_id AND k.deleted_at IS NULL
 WHERE f.organization_id = @organization_id AND f.id = @id;
 
 -- name: GetFileMeta :one
-SELECT f.id, f.contract_id, f.name, f.size FROM files f JOIN contracts k ON k.id = f.contract_id AND k.deleted_at IS NULL
+SELECT f.id, f.contract_id, f.name, f.size FROM files f JOIN contracts k ON k.id = f.contract_id AND k.organization_id = f.organization_id AND k.deleted_at IS NULL
 WHERE f.organization_id = @organization_id AND f.id = @id;
 
 -- name: DeleteFile :execrows

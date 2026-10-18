@@ -217,3 +217,6 @@ func (fx *Fixture) AssertCrossTenantDenied(t *testing.T, method string, pathFor 
 func (fx *Fixture) NewAnonymous() *Client {
 	return &Client{t: fx.t, base: fx.Server.URL}
 }
+
+// Session returns the client's session cookie value and CSRF token (to forge requests in security tests).
+func (c *Client) Session() (token, csrf string) { return c.token, c.csrf }

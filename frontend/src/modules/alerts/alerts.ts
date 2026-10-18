@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrfParam, errorMessage, type components } from '@/api/client'
 import i18n from '@/i18n'
+import { mfaGate } from '@/app/stepUp'
 
 // Expiry alerts (P2-05, ADR-043): the installation's mail server (system admins), the organization's alert
 // settings (owners / admins), the bell, muting one device.
@@ -42,6 +43,7 @@ export function useSaveSmtp() {
     mutationFn: async (body: SmtpSettingsInput) => {
       const r = await api.PUT('/admin/smtp', { params: csrfParam, body })
       if (r.data) return r.data
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       fail(r.error, r.response.status, i18n.t('errors.save'))
     },
     onSuccess: (data) => qc.setQueryData(keys.smtp, data),
@@ -53,6 +55,7 @@ export function useTestSmtp() {
     mutationFn: async (to: string) => {
       const r = await api.POST('/admin/smtp/test', { params: csrfParam, body: { to } })
       if (r.data) return r.data
+      mfaGate(r.response.status, i18n.t('stepUp.needed'))
       fail(r.error, r.response.status, i18n.t('smtp.testFailed'))
     },
   })

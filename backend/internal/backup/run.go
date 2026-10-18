@@ -143,7 +143,7 @@ func (l *limited) Write(p []byte) (int, error) {
 // PGPASSWORD (never on a command line other processes can read).
 func (s *Service) command(ctx context.Context, name, database string, useDB bool, args ...string) (*exec.Cmd, *limited, error) {
 	cmd := exec.CommandContext(ctx, s.bin(name), args...)
-	cmd.Env = os.Environ()
+	cmd.Env = childEnv()
 	if useDB {
 		dsn, pw, err := dsnFor(s.Cfg.DatabaseURL, database)
 		if err != nil {
@@ -157,6 +157,19 @@ func (s *Service) command(ctx context.Context, name, database string, useDB bool
 	stderr := &limited{}
 	cmd.Stderr = stderr
 	return cmd, stderr, nil
+}
+
+// childEnv is the environment of pg_dump / pg_restore / rclone: PATH, HOME, TZ and the client's PG* settings —
+// never NTB_MASTER_KEY, NTB_BACKUP_PASSPHRASE or other secrets of the API process.
+func childEnv() []string {
+	var out []string
+	for _, kv := range os.Environ() {
+		k, _, _ := strings.Cut(kv, "=")
+		if k == "PATH" || k == "HOME" || k == "TZ" || k == "TMPDIR" || (strings.HasPrefix(k, "PG") && k != "PGPASSWORD") {
+			out = append(out, kv)
+		}
+	}
+	return out
 }
 
 func toolError(name string, err error, stderr *limited) error {
@@ -177,7 +190,9 @@ func (s *Service) checkClient(ctx context.Context, conn *pgxpool.Conn) (string, 
 	if err := conn.QueryRow(ctx, "SELECT current_setting('server_version'), current_setting('server_version_num')::int").Scan(&server, &serverNum); err != nil {
 		return "", fmt.Errorf("backup: server version: %w", err)
 	}
-	out, err := exec.CommandContext(ctx, s.bin("pg_dump"), "--version").Output()
+	version := exec.CommandContext(ctx, s.bin("pg_dump"), "--version")
+	version.Env = childEnv()
+	out, err := version.Output()
 	if err != nil {
 		return server, fmt.Errorf("backup: pg_dump not found (install the PostgreSQL client or set NTB_PG_BIN): %w", err)
 	}
@@ -249,6 +264,24 @@ func HoldAPI(ctx context.Context, pool *pgxpool.Pool) (release func(), ok bool, 
 		return nil, ok, err
 	}
 	return func() { unlock(conn, lockAPI, true); conn.Release() }, true, nil
+}
+
+// LockOutAPI takes the API lock exclusively for a maintenance command (master key rotation): ErrAPIRunning when an API
+// serves. Call release when done.
+func LockOutAPI(ctx context.Context, pool *pgxpool.Pool) (release func(), err error) {
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("api lock: %w", err)
+	}
+	ok, err := tryLock(ctx, conn, lockAPI, false)
+	if err != nil || !ok {
+		conn.Release()
+		if err == nil {
+			err = ErrAPIRunning
+		}
+		return nil, err
+	}
+	return func() { unlock(conn, lockAPI, false); conn.Release() }, nil
 }
 
 // Run makes one backup of the given kind into Cfg.Dir, reads it back completely, records it in backup_runs and

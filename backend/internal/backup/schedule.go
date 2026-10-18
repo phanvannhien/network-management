@@ -57,6 +57,7 @@ type Scheduler struct {
 // Loop checks every 5 minutes until ctx ends.
 func (sc Scheduler) Loop(ctx context.Context) {
 	sc.Svc.CleanPartials()
+	CleanTemp()
 	t := time.NewTicker(5 * time.Minute)
 	defer t.Stop()
 	for {

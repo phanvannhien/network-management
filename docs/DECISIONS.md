@@ -962,3 +962,22 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Quy tắc mới:** tính năng mới phải kèm cập nhật bài trong `docs/help/` (CLAUDE.md).
 - **Để sau:** bài tiếng Anh; ảnh minh họa trong bài; link "Xem hướng dẫn" ngay trong các hộp thoại.
 
+### ADR-055 — Gate Enterprise (P2-14): kết quả rà soát bảo mật và các luật mới
+- **Bối cảnh:** chốt Phase 2. Rà lại kho mật khẩu, phân quyền và bề mặt web sau P2-01; kiểm thử xâm nhập cơ bản. Báo cáo đầy đủ ở `docs/SECURITY-REVIEW.md`.
+- **Quyết định:**
+  - **Kiểm thử xâm nhập là test thường trực:**
+    - `pentest_test.go` đọc mọi operation từ `api/openapi.yaml` và gọi như kẻ tấn công (không phiên, thiếu / sai CSRF, Origin lạ, tổ chức khác, viewer, owner gọi `/admin`); không lệnh nào được trả 5xx;
+    - `pentest_targeted_test.go` thử SQL injection, NUL, chuỗi khổng lồ, body quá lớn.
+    - Chạy trong `make check`, nên endpoint mới tự được kiểm.
+  - **MFA vừa xác nhận (step-up) cho quản trị nhạy cảm:** thêm / sửa / xóa / thử đích sao lưu, sao lưu ngay, tải bản sao lưu, lưu / thử SMTP, reset MFA / tạo link đặt lại mật khẩu / khóa tài khoản người khác.
+    - API trả 428; giao diện hỏi mã (`useStepUp`) rồi tự làm tiếp.
+  - **Bí mật đã lưu chỉ đi tới đúng nơi nó được nhập:** đổi máy chủ / cổng / tài khoản / khóa máy chủ của đích SFTP, hoặc máy chủ / cổng / kiểu mã hóa / tài khoản SMTP, thì phải nhập lại mật khẩu. Đích SFTP bắt buộc có khóa máy chủ.
+  - **Nhật ký quản trị tài khoản ghi vào mọi tổ chức của người bị tác động**, để owner thấy system admin đã làm gì với thành viên của mình. Lần xem mật khẩu bị từ chối cũng được ghi, kèm lý do.
+  - **Đầu vào:** NUL / UTF-8 hỏng bị từ chối 400 ở middleware. Giới hạn body lớn chỉ áp cho đúng các route nhập / file. Tên file sao lưu chỉ gồm loại `a-z-`. Link chuyển hướng chặn `\` và ký tự điều khiển.
+  - **Vận hành:**
+    - `rotate-master-key` từ chối khi API đang chạy;
+    - tiến trình con chỉ nhận PATH / HOME / TZ / PG*;
+    - file cấu hình tạm của rclone được dọn lúc khởi động;
+    - token OAuth làm mới chỉ ghi đè đúng bí mật cũ.
+- **Để người dùng chốt:** thêm thành viên là tài khoản đã tồn tại hiện không cần người đó đồng ý (và phản hồi cho biết email đã có tài khoản). Đề xuất: lời mời chờ người được mời chấp nhận, phản hồi giống nhau dù email đã có hay chưa.
+

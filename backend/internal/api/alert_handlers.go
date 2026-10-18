@@ -62,6 +62,12 @@ func (s *Server) AdminGetSmtp(ctx context.Context, _ apigen.AdminGetSmtpRequestO
 }
 
 func (s *Server) AdminSaveSmtp(ctx context.Context, req apigen.AdminSaveSmtpRequestObject) (apigen.AdminSaveSmtpResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminSaveSmtp403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminSaveSmtp428JSONResponse{Message: msg}, nil
+	}
 	bad := func(msg string) (apigen.AdminSaveSmtpResponseObject, error) {
 		return apigen.AdminSaveSmtp400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: msg}}, nil
 	}
@@ -91,6 +97,14 @@ func (s *Server) AdminSaveSmtp(ctx context.Context, req apigen.AdminSaveSmtpRequ
 		u, err := url.Parse(public)
 		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 			return bad("Địa chỉ truy cập phải dạng https://ntb.congty.vn")
+		}
+	}
+	// The stored password only ever goes to the server it was typed for: a new address needs it typed again
+	// (otherwise an admin session could send it to a server of its choosing — P2-14).
+	if b.Password == nil {
+		if cur, err := s.q.GetSmtpSettings(ctx); err == nil && cur.PasswordCiphertext != nil &&
+			(cur.Host != host || cur.Port != int32(b.Port) || cur.Security != string(b.Security) || cur.Username != user) {
+			return bad("Đổi máy chủ, cổng, kiểu mã hóa hoặc tài khoản thì phải nhập lại mật khẩu SMTP")
 		}
 	}
 	sess, _ := sessionFrom(ctx)
@@ -124,6 +138,12 @@ func (s *Server) AdminSaveSmtp(ctx context.Context, req apigen.AdminSaveSmtpRequ
 }
 
 func (s *Server) AdminTestSmtp(ctx context.Context, req apigen.AdminTestSmtpRequestObject) (apigen.AdminTestSmtpResponseObject, error) {
+	switch code, msg := stepUp(ctx); code {
+	case 403:
+		return apigen.AdminTestSmtp403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: msg}}, nil
+	case 428:
+		return apigen.AdminTestSmtp428JSONResponse{Message: msg}, nil
+	}
 	if req.Body == nil || !notify.ValidAddress(strings.TrimSpace(req.Body.To)) {
 		return apigen.AdminTestSmtp400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse{Message: "Nhập một địa chỉ email để gửi thử"}}, nil
 	}

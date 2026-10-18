@@ -2,6 +2,7 @@ package backup
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -106,6 +107,8 @@ func gfs(files []File, p Policy) (keep, drop []File) {
 
 const fileSuffix = ".ntbbak"
 
+var kindRe = regexp.MustCompile(`^[a-z]+(-[a-z]+)*$`)
+
 // FileName names a backup: ntb-20261018T190000Z-scheduled.ntbbak (UTC, sorts by time).
 func FileName(at time.Time, kind string) string {
 	return "ntb-" + at.UTC().Format("20060102T150405Z") + "-" + kind + fileSuffix
@@ -120,5 +123,10 @@ func ParseFileName(name string) (File, bool) {
 	if err != nil {
 		return File{}, false
 	}
-	return File{Name: name, At: at, Kind: strings.TrimSuffix(name[21:], fileSuffix)}, true
+	kind := strings.TrimSuffix(name[21:], fileSuffix)
+	// Only the kinds the code writes: no path separators or dots can slip through a name.
+	if !kindRe.MatchString(kind) {
+		return File{}, false
+	}
+	return File{Name: name, At: at, Kind: kind}, true
 }

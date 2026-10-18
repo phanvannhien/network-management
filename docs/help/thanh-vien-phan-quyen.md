@@ -35,3 +35,7 @@ Không ai tự nâng quyền của mình: owner (hoặc system admin) mới nân
 ## Nhật ký
 
 **Nhật ký (audit log)** ghi mọi thao tác ghi (tạo / sửa / xóa, trước và sau), đăng nhập, xuất file, xem / copy mật khẩu: ai, lúc nào, từ đâu. Owner / admin xem và lọc được.
+
+- Lần xem mật khẩu **bị từ chối** (thiếu quyền, cần mã MFA, xem quá nhiều) cũng được ghi, kèm lý do.
+- Khi **system admin** reset MFA, tạo link đặt lại mật khẩu, hay khóa / mở khóa tài khoản của một thành viên, dòng nhật ký xuất hiện trong mọi tổ chức người đó tham gia — owner luôn biết.
+- Các thao tác quản trị nhạy cảm của system admin đều hỏi lại mã MFA.

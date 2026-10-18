@@ -272,3 +272,23 @@ func TestAlertRun(t *testing.T) {
 		t.Error("mute not audited")
 	}
 }
+
+// P2-14: the stored SMTP password only goes to the server it was typed for.
+func TestSmtpPasswordStaysWithItsServer(t *testing.T) {
+	fx := newOrgFixture(t)
+	admin := fx.NewUser(t, "sysadmin-smtp2@example.com", true)
+	if status, _ := saveSmtp(t, admin, map[string]any{"password": smtpSecret}); status != http.StatusOK {
+		t.Fatal("save")
+	}
+	for _, change := range []map[string]any{{"host": "smtp.attacker.example"}, {"port": 2525}, {"security": "tls"}, {"username": "other@example.com"}} {
+		if status, _ := saveSmtp(t, admin, change); status != http.StatusBadRequest {
+			t.Errorf("%v without the password: %d, want 400", change, status)
+		}
+	}
+	if status, _ := saveSmtp(t, admin, map[string]any{"fromName": "NTB 2"}); status != http.StatusOK {
+		t.Error("same server, password omitted: refused")
+	}
+	if status, _ := saveSmtp(t, admin, map[string]any{"host": "smtp2.example.com", "password": smtpSecret}); status != http.StatusOK {
+		t.Error("new server with the password typed again: refused")
+	}
+}
