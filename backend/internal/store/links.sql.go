@@ -11,6 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const advisoryXactLock = `-- name: AdvisoryXactLock :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// Serializes writes on one key until the transaction ends (a segment and the cables ending in it, a subnet's ranges).
+func (q *Queries) AdvisoryXactLock(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, advisoryXactLock, lockKey)
+	return err
+}
+
 const countPhysicalLinksOnInterface = `-- name: CountPhysicalLinksOnInterface :one
 SELECT count(*) FROM links
 WHERE organization_id = $1 AND kind NOT IN ('logical', 'wireless', 'cellular')

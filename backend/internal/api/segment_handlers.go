@@ -61,6 +61,11 @@ func checkSegment(ctx context.Context, q store.Querier, m tenant.Membership, b *
 	return f, "", nil
 }
 
+// segmentLockKey serializes deleting a segment with cabling into it.
+func segmentLockKey(m tenant.Membership, id uuid.UUID) string {
+	return m.OrgID.String() + "/segment/" + id.String()
+}
+
 func segmentView(r store.ListSegmentsRow) apigen.Segment {
 	return apigen.Segment{Id: uuid.UUID(r.ID.Bytes), Name: r.Name, Kind: apigen.SegmentKind(r.Kind), VendorId: optUUID(r.VendorID),
 		VendorName: r.VendorName, ServiceId: r.ServiceID, Notes: r.Notes, LinkCount: r.LinkCount, Version: r.Version}
@@ -238,6 +243,10 @@ func (s *Server) DeleteSegment(ctx context.Context, req apigen.DeleteSegmentRequ
 	}
 	code := 0
 	err = s.withTx(ctx, func(q store.Querier) error {
+		// Same lock as cabling into it (resolveEnd): no cable can land on a segment being deleted.
+		if err := q.AdvisoryXactLock(ctx, segmentLockKey(m, req.SegmentId)); err != nil {
+			return fmt.Errorf("lock segment: %w", err)
+		}
 		sg, err := q.GetSegment(ctx, store.GetSegmentParams{OrganizationID: m.OrgID, ID: pgUUID(req.SegmentId)})
 		if errors.Is(err, pgx.ErrNoRows) {
 			code = 404

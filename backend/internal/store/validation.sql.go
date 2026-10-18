@@ -230,6 +230,39 @@ func (q *Queries) ValidationDevices(ctx context.Context, arg ValidationDevicesPa
 	return items, nil
 }
 
+const validationDhcpRanges = `-- name: ValidationDhcpRanges :many
+SELECT r.subnet_id, host(r.start_ip)::text AS start_ip, host(r.end_ip)::text AS end_ip
+FROM ip_ranges r
+WHERE r.organization_id = $1 AND r.kind = 'dhcp'
+`
+
+type ValidationDhcpRangesRow struct {
+	SubnetID pgtype.UUID
+	StartIp  string
+	EndIp    string
+}
+
+// DHCP pools (P2-09): a static IP inside one may be handed out again by the DHCP server.
+func (q *Queries) ValidationDhcpRanges(ctx context.Context, organizationID pgtype.UUID) ([]ValidationDhcpRangesRow, error) {
+	rows, err := q.db.Query(ctx, validationDhcpRanges, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ValidationDhcpRangesRow
+	for rows.Next() {
+		var i ValidationDhcpRangesRow
+		if err := rows.Scan(&i.SubnetID, &i.StartIp, &i.EndIp); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const validationGroupMembers = `-- name: ValidationGroupMembers :many
 SELECT group_id, name, host(ip)::text AS ip
 FROM endpoint_members

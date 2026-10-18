@@ -543,6 +543,34 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'ip-plan',
+    'ip',
+    ['Bảng IP plan', 'IP plan table'],
+    [
+      'Bảng quy hoạch IP của một site đặt trên sơ đồ: VLAN, subnet, gateway, các dải (DHCP / tĩnh / dành riêng) và mức đã dùng. Lấy từ IPAM và tự cập nhật — không gõ tay trên sơ đồ.',
+      "A site's IP plan on the diagram: VLANs, subnets, gateways, ranges (DHCP / static / reserved) and usage. Read from IPAM and kept up to date — never typed on the diagram.",
+    ],
+  ),
+  e(
+    'plan-block',
+    'ip',
+    ['Khối quy hoạch (supernet)', 'Plan block (supernet)'],
+    [
+      'Subnet lớn chỉ để chia nhỏ (không gateway, VLAN hay dải), vd 10.1.0.0/16 cho cả chi nhánh. Subnet con nằm trong khối là bình thường; nằm trong một subnet đang dùng thật (có gateway / VLAN / dải) là chồng lấn, thường do gõ sai mask.',
+      'A large subnet only meant to be divided (no gateway, VLAN or range), e.g. 10.1.0.0/16 for a branch. Subnets inside it are fine; inside a subnet in use (gateway / VLAN / ranges) it is an overlap, usually a mistyped mask.',
+    ],
+  ),
+  e(
+    'static-in-dhcp',
+    'ip',
+    ['IP tĩnh trong dải DHCP', 'Static IP inside a DHCP pool'],
+    [
+      'IP đặt tay cho thiết bị nhưng lại nằm trong dải DHCP: DHCP server không biết nên có thể cấp IP đó cho máy khác, gây trùng IP. Gateway nằm trong dải DHCP là lỗi hay gặp nhất. Chuyển IP ra ngoài dải, hoặc thu hẹp / tách dải.',
+      'An address set by hand on a device but inside a DHCP pool: the DHCP server does not know and may hand it to another machine (duplicate IP). A gateway inside the pool is the most common case. Move the IP out of the pool, or shrink / split the pool.',
+    ],
+    ['Dải DHCP .100–.200, switch đặt .150.', 'DHCP pool .100–.200, switch set to .150.'],
+  ),
+  e(
     'vlan-mismatch',
     'vlan',
     ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],

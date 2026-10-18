@@ -98,6 +98,10 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **VRF** | Bảng định tuyến riêng trên cùng thiết bị; cùng một IP ở 2 VRF khác nhau là hợp lệ | Hai khách hàng cùng dùng `192.168.1.0/24` trên một router MPLS |
 | **Poll address** | Địa chỉ hệ thống giám sát (Phase 3) dùng để hỏi thiết bị; trống = IP quản trị | Poller đi qua IP NAT |
 | **IPv6** | Thế hệ địa chỉ mới, dài hơn | `2001:db8::1/64` |
+| **Bảng IP plan** | Bảng quy hoạch IP của một site đặt trên sơ đồ: VLAN, subnet, gateway, các dải (DHCP / tĩnh / dành riêng) và mức đã dùng. Lấy từ IPAM, tự cập nhật — không gõ tay trên sơ đồ | IP plan · HCM01: VLAN 20 Camera, 10.1.20.0/24, GW .1, DHCP .100–.200 | Màn vẽ → nút Bảng IP plan (P2-09) |
+| **Khối quy hoạch (supernet)** | Subnet lớn chỉ để chia nhỏ (không gateway, không VLAN, không dải), vd 10.1.0.0/16 cho cả chi nhánh. Subnet con nằm trong khối là bình thường; nằm trong một subnet **đang dùng thật** thì là chồng lấn, thường do gõ sai mask | 10.1.20.0/24 nằm trong khối 10.1.0.0/16: bình thường; nằm trong 10.1.20.0/23 có gateway: chồng lấn | IPAM → danh sách subnet (⊂ / ⚠) |
+| **IP tĩnh trong dải DHCP** | IP đặt tay cho thiết bị nhưng lại nằm trong dải DHCP cấp tự động: DHCP không biết, có thể cấp IP đó cho máy khác → trùng IP. Gateway nằm trong dải DHCP là lỗi hay gặp nhất | Dải DHCP .100–.200 mà switch đặt .150, hoặc gateway .100 | Cảnh báo ở panel Problems và trang subnet (P2-09) |
+| **Nhập IP plan từ Excel** | Đưa file quy hoạch IP có sẵn vào IPAM: mỗi dòng có thể có VLAN, subnet và một dải. Cái đã có chỉ được điền chỗ trống, không ghi đè; chỗ khác nhau được báo lại | File "Quy hoach IP.xlsx" của khách | IPAM → Nhập từ Excel (P2-09) |
 
 ## 4b. Nhóm thiết bị đầu cuối
 

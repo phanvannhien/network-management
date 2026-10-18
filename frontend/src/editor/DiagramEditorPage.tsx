@@ -83,6 +83,7 @@ import {
 } from './doc/pageCommands'
 import { PageTabs } from './workspace/PageTabs'
 import { SegmentDialog } from './segments/SegmentDialog'
+import { IpPlanSiteDialog } from './workspace/IpPlanSiteDialog'
 import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
@@ -331,6 +332,8 @@ function Workspace({
     at: { x: number; y: number }
   } | null>(null)
   const [lastSite, setLastSite] = useState<string | null>(null)
+  /** Choosing the site of a new IP plan table (P2-09). */
+  const [pickingPlanSite, setPickingPlanSite] = useState(false)
   /** Where a shared network will land once picked / created (P2-08). */
   const [placingSegment, setPlacingSegment] = useState<{ x: number; y: number } | null>(null)
   const onView = useMemo(
@@ -801,6 +804,16 @@ function Workspace({
     if (target) toast.info(t('pages.jumped', { name: pageLabel(target, pages.indexOf(target), t) }))
   }, [pageJump]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // IP plan table (P2-09): the site of the devices on this page when there is one, else the user picks.
+  const addIpPlan = () => {
+    const sites = new Set(
+      pageDoc.view.nodes
+        .map((n) => doc.devices[n.refId]?.siteId)
+        .filter((x): x is string => Boolean(x)),
+    )
+    if (sites.size === 1) annotate.ipPlan([...sites][0]!)
+    else setPickingPlanSite(true)
+  }
   // Off-page connectors (P2-08): go where the cables continue, or place the far end on this page.
   const openConnector = useCallback(
     (c: Connector) => {
@@ -1054,6 +1067,7 @@ function Workspace({
         drawingFrame={drawingFrame}
         onAddText={annotate.text}
         onAddArrow={annotate.arrow}
+        onAddIpPlan={meta.layer === 'overview' ? undefined : addIpPlan}
         connecting={wiring.mode !== null}
         onConnect={() => {
           setHand(false)
@@ -1176,13 +1190,31 @@ function Workspace({
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      {pickingPlanSite && (
+        <IpPlanSiteDialog
+          orgId={orgId}
+          suggested={pageDoc.view.nodes
+            .map((n) => doc.devices[n.refId]?.siteId ?? '')
+            .filter(Boolean)}
+          onPick={(siteId) => {
+            annotate.ipPlan(siteId)
+            setPickingPlanSite(false)
+          }}
+          onClose={() => setPickingPlanSite(false)}
+        />
+      )}
       {placingSegment && (
         <SegmentDialog
           orgId={orgId}
           onClose={() => setPlacingSegment(null)}
           onPlace={(sg) => {
             const { x, y } = place(placingSegment)
-            store.getState().dispatch(addNode('segment', sg.id, x, y, { segment: sg }))
+            // Its cables to devices already on the diagram are drawn at once (they were off-page connectors).
+            const doc = store.getState().doc
+            const links = Object.values(doc?.external ?? {}).filter(
+              (l) => l.aId === sg.id || l.bId === sg.id,
+            )
+            store.getState().dispatch(addNode('segment', sg.id, x, y, { segment: sg, links }))
             setPlacingSegment(null)
           }}
         />

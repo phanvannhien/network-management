@@ -46,3 +46,54 @@ describe('ipam: subnet maths', () => {
     expect(formatSize(254)).toBe('254')
   })
 })
+
+describe('IPAM warnings (P2-09)', () => {
+  it('tells an overlap inside a subnet in use from a subnet inside a plan block', async () => {
+    const { nestings } = await import('./ipam')
+    const sn = (id: string, cidr: string, extra: Record<string, unknown> = {}) => ({
+      id,
+      cidr,
+      vrf: '',
+      gateway: null,
+      vlanId: null,
+      rangeCount: 0,
+      ...extra,
+    })
+    const n = nestings([
+      sn('block', '10.0.0.0/16'),
+      sn('lan', '10.0.20.0/24', { gateway: '10.0.20.1' }),
+      sn('typo', '10.0.20.0/25'),
+      sn('guest', '10.0.20.0/24', { vrf: 'GUEST' }),
+    ] as never)
+    expect(n.get('lan')).toMatchObject({ parentCidr: '10.0.0.0/16', inUse: false })
+    expect(n.get('typo')).toMatchObject({ parentCidr: '10.0.20.0/24', inUse: true })
+    expect(n.has('guest')).toBe(false)
+    expect(n.has('block')).toBe(false)
+  })
+
+  it('lists static IPs and the gateway inside DHCP pools, not endpoint members or NAT', async () => {
+    const { poolWarnings } = await import('./ipam')
+    const ip = (host: string, extra: Record<string, unknown> = {}) => ({
+      host,
+      role: 'primary',
+      endpointGroupId: null,
+      hostname: 'SW01',
+      interfaceName: 'Vlan20',
+      ...extra,
+    })
+    const w = poolWarnings({
+      gateway: '10.1.20.100',
+      ranges: [{ kind: 'dhcp', startIp: '10.1.20.100', endIp: '10.1.20.200' }],
+      ips: [
+        ip('10.1.20.150'),
+        ip('10.1.20.10'),
+        ip('10.1.20.160', { endpointGroupId: 'g' }),
+        ip('10.1.20.170', { role: 'nat' }),
+      ],
+    } as never)
+    expect(w.map((x) => [x.kind, x.host])).toEqual([
+      ['gateway-in-dhcp', '10.1.20.100'],
+      ['static-in-dhcp', '10.1.20.150'],
+    ])
+  })
+})

@@ -1,4 +1,4 @@
-import { Network, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Network, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -21,6 +21,7 @@ import { atLeast, useInScope, useOrgAccess } from '@/modules/sites/access'
 import { useSites } from '@/modules/sites/sites'
 import { SubnetDialog, VlanDialog } from './IpamDialogs'
 import {
+  nestings,
   useIpLookup,
   useIpamMutations,
   useSubnets,
@@ -30,6 +31,8 @@ import {
   type Vlan,
 } from './ipam'
 import { HolderLink, HolderRole, UsageBar, VlanChip } from './UsageBar'
+import { IpamImportDialog } from './IpamImportDialog'
+import { cn } from '@/lib/utils'
 
 const TABS = ['subnets', 'vlans'] as const
 type Tab = (typeof TABS)[number]
@@ -114,6 +117,8 @@ function SubnetsTable({
     },
     [],
   )
+  // Nested subnets of one VRF (P2-09): a warning inside a subnet in use, a note inside a plan block.
+  const nested = useMemo(() => nestings(subnets.data ?? []), [subnets.data])
   const vrfs = [...new Set((scoped ?? []).map((s) => s.vrf))]
   const facets: Facet[] = [
     siteFacet(t('ipam.site'), t('ipam.orgWide'), scoped ?? []),
@@ -137,14 +142,29 @@ function SubnetsTable({
       accessorKey: 'cidr',
       header: t('ipam.cidr'),
       meta: { label: t('ipam.cidr'), width: 180, pin: true, alwaysVisible: true },
-      cell: ({ row: { original: s } }) => (
-        <Link
-          to={`/o/${orgId}/ipam/subnets/${s.id}`}
-          className="font-mono text-tech font-medium hover:text-primary hover:underline"
-        >
-          {s.cidr}
-        </Link>
-      ),
+      cell: ({ row: { original: s } }) => {
+        const n = nested.get(s.id)
+        return (
+          <span className="flex items-center gap-1">
+            <Link
+              to={`/o/${orgId}/ipam/subnets/${s.id}`}
+              className="font-mono text-tech font-medium hover:text-primary hover:underline"
+            >
+              {s.cidr}
+            </Link>
+            {n && (
+              <span
+                className={cn('text-xs', n.inUse ? 'text-status-warning' : 'text-muted-foreground')}
+                title={t(n.inUse ? 'ipam.overlapHint' : 'ipam.insideHint', {
+                  parent: n.parentCidr,
+                })}
+              >
+                {n.inUse ? `⚠ ${t('ipam.overlap', { parent: n.parentCidr })}` : `⊂ ${n.parentCidr}`}
+              </span>
+            )}
+          </span>
+        )
+      },
     },
     {
       id: 'vrf',
@@ -535,6 +555,7 @@ export function IpamPage() {
   const tab: Tab = TABS.find((x) => x === params.get('tab')) ?? 'subnets'
   // Anyone who edits some site may add subnets/VLANs there; organization-wide ones need an org role.
   const canAdd = access.canAddSites
+  const [importing, setImporting] = useState(false)
   useBreadcrumbs([{ label: t('ipam.title') }])
   return (
     <div className="space-y-3 p-4">
@@ -556,10 +577,14 @@ export function IpamPage() {
               >
                 <Plus aria-hidden /> {t('ipam.addVlan')}
               </Button>
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <Upload aria-hidden /> {t('ipamImport.open')}
+              </Button>
             </>
           )
         }
       />
+      {importing && <IpamImportDialog orgId={orgId} onClose={() => setImporting(false)} />}
       <IpLookupPanel orgId={orgId} />
       <Tabs
         value={tab}

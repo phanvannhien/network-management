@@ -790,3 +790,46 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - STP root không hiện được: kho không có priority. Phase 3 đọc qua SNMP.
   - Không có bảng định tuyến / OSPF / BGP trên L3.
   - Sơ đồ tổng quan giữ một trang ở P2-08.
+
+### ADR-048 — IPAM đầy đủ (P2-09): nhập IP plan từ Excel không ghi đè, bảng IP plan trên sơ đồ, cảnh báo chồng lấn / DHCP
+- **Bối cảnh:**
+  - Khách thường có sẵn file Excel quy hoạch IP; file thường cũ hơn thực tế.
+  - SRS §5, §7, §12 yêu cầu:
+    - nhập subnet / dải từ Excel;
+    - bảng IP plan đặt lên sơ đồ;
+    - cảnh báo subnet chồng lấn, dải chồng nhau, IP tĩnh trong DHCP.
+- **Quyết định:**
+  - **Nhập Excel** (`POST /ipam-imports`, xem trước bằng `dryRun`):
+    - **Cột:** nhận theo tên tiếng Việt / tiếng Anh, bỏ dấu, không phân biệt hoa thường.
+    - **Ô:** hiểu các cách viết thường gặp:
+      - mạng + mask tách riêng (kể cả 255.255.255.0);
+      - VLAN dạng "VLAN 10 - Văn phòng";
+      - dải trong một ô, kể cả viết tắt ".100-.200".
+    - **Một dòng** có thể có VLAN, subnet, dải. Dải không có cột subnet thì vào subnet cụ thể nhất (cùng VRF) chứa nó.
+    - **Khớp cái đã có:**
+      - VLAN theo site + số; không có ở site thì dùng VLAN toàn tổ chức; không có thì tạo;
+      - subnet theo VRF + CIDR;
+      - dải theo đúng địa chỉ đầu / cuối.
+    - **Không ghi đè:** chỉ điền chỗ IPAM còn trống (gateway, mô tả, VLAN, site). Chỗ file ghi khác IPAM thì giữ IPAM và báo trong kết quả dòng. Dải trùng biên mà khác loại cũng chỉ báo.
+    - **Dòng lỗi** được hoàn tác riêng (savepoint) và bỏ qua; các dòng đúng vẫn vào.
+    - Mọi ghi dùng chung kiểm tra và audit với form tay.
+  - **Bảng IP plan:**
+    - chú thích kiểu `ipPlan` gắn một site (server kiểm tra site thuộc tổ chức);
+    - nội dung đọc trực tiếp từ IPAM: VLAN, subnet, gateway, các dải, mức dùng; xếp theo VLAN rồi subnet;
+    - bỏ khối quy hoạch; tối đa 30 dòng rồi "+N".
+  - **Chồng lấn subnet:**
+    - CIDR chỉ có lồng nhau hoặc tách rời, và chỉ xét cùng VRF;
+    - nằm trong **khối quy hoạch** (không gateway / VLAN / dải) là bình thường, chỉ ghi chú ⊂;
+    - nằm trong subnet **đang dùng thật** thì cảnh báo ⚠ (thường do gõ sai mask).
+  - **IP tĩnh trong dải DHCP:**
+    - tính IP interface primary / secondary và IP cụm; không tính thành viên nhóm đầu cuối (máy DHCP), NAT / public, loopback / tunnel;
+    - **gateway trong dải DHCP** là cảnh báo riêng;
+    - hiện ở panel Problems của sơ đồ và trang subnet.
+  - **Dải chồng nhau** vẫn bị API chặn; ghi dải được khóa theo subnet để hai ghi cùng lúc không cùng lọt.
+- **Lý do:** file Excel là nguồn dữ liệu phụ, IPAM là nguồn sự thật — ghi đè im lặng sẽ làm sai dữ liệu đang đúng. Phân biệt khối quy hoạch với chồng lấn thật để không báo nhầm khi chia supernet.
+- **Đánh đổi / để sau:**
+  - Chưa có chế độ "ghi đè theo file".
+  - Chưa so dải giữa subnet cha và con.
+  - Chưa có khái niệm "reservation" DHCP.
+  - IP quản trị cụm luôn coi là VRF mặc định.
+  - Bảng IP plan chỉ theo một site.

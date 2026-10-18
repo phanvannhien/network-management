@@ -242,6 +242,39 @@ export function edgeAddress(
  * ADR-038 talk 2026-10-17): the subnet is a /23 with gateway .1 but the device was given a /24 that cannot reach it —
  * usually a mistyped mask. Host routes (/32, /128) and the gateway itself are not checked.
  */
+/**
+ * The DHCP pool of the most specific subnet (same VRF) an interface IP sits in, if it sits in one (P2-09): a static
+ * address there may be handed to another machine by the DHCP server. `gateway` = the IP is the subnet's gateway.
+ */
+export function dhcpPoolOf(
+  address: string,
+  vrf: string,
+  subnets: ValidationContext['subnets'],
+): { start: string; end: string; cidr: string; gateway: boolean } | null {
+  try {
+    const [addr] = ipaddr.parseCIDR(
+      address.includes('/') ? address : `${address}/${address.includes(':') ? 128 : 32}`,
+    )
+    const best = subnets
+      .filter((sn) => sn.vrf === vrf)
+      .map((sn) => ({ sn, p: ipaddr.parseCIDR(sn.cidr) }))
+      .filter(({ p }) => p[0].kind() === addr.kind() && addr.match(p))
+      .sort((x, y) => y.p[1] - x.p[1])[0]
+    if (!best) return null
+    const host = addr.toString()
+    const pool = (best.sn.dhcp ?? []).find((r) => inRange(host, r.start, r.end))
+    if (!pool) return null
+    return {
+      start: pool.start,
+      end: pool.end,
+      cidr: best.sn.cidr,
+      gateway: best.sn.gateway === host,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function gatewayOutsideMask(
   address: string,
   vrf: string,
@@ -386,6 +419,25 @@ export function runChecks(input: CheckInput): Problem[] {
       kind === 'loopback' || kind === 'tunnel'
         ? null
         : gatewayOutsideMask(ip.address, ip.vrf, input.ctx.subnets)
+    // A static address inside a DHCP pool (P2-09); the subnet's own gateway there is the classic SMB mistake.
+    const pool =
+      kind === 'loopback' || kind === 'tunnel'
+        ? null
+        : dhcpPoolOf(ip.address, ip.vrf, input.ctx.subnets)
+    if (pool)
+      push(
+        pool.gateway ? 'gateway-in-dhcp' : 'static-in-dhcp',
+        'warning',
+        deviceTarget(ip.deviceId),
+        {
+          host: host(ip.deviceId),
+          ip: ip.address,
+          start: pool.start,
+          end: pool.end,
+          cidr: pool.cidr,
+        },
+        `${ip.deviceId}:${ip.address}`,
+      )
     if (gw)
       push(
         'gateway-mask',

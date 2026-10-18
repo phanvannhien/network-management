@@ -19,6 +19,7 @@ import {
   Plus,
   Redo2,
   Save,
+  Sheet,
   SquareArrowOutUpRight,
   Undo2,
   ZoomIn,
@@ -131,6 +132,8 @@ export interface ToolbarProps {
   drawingFrame: boolean
   onAddText: () => void
   onAddArrow: () => void
+  /** IP plan table of a site (P2-09). */
+  onAddIpPlan?: () => void
   /** Check results per level (P1-20). */
   problems: Record<Severity, number>
   problemsOpen: boolean
@@ -236,6 +239,11 @@ export function Toolbar(p: ToolbarProps) {
           <ToolButton label={t('frames.addArrow')} onClick={p.onAddArrow}>
             <MoveUpRight aria-hidden />
           </ToolButton>
+          {p.onAddIpPlan && (
+            <ToolButton label={t('ipPlan.add')} onClick={p.onAddIpPlan}>
+              <Sheet aria-hidden />
+            </ToolButton>
+          )}
         </>
       )}
       {p.lens && p.onLens && (

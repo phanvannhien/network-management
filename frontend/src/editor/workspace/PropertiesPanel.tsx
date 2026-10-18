@@ -94,7 +94,10 @@ export function PropertiesPanel({
     selection.length === 1 && isAnnotationId(selection[0]!)
       ? doc.view.annotations.find((a) => ANN + a.id === selection[0])
       : undefined
-  if (ann) {
+  if (ann?.kind === 'ipPlan') {
+    title = t('ipPlan.add')
+    body = <IpPlanPanel key={ann.id} orgId={orgId} annotationId={ann.id} canEdit={canEdit} />
+  } else if (ann) {
     title = t(`frames.kinds.${ann.kind as 'zone'}`)
     body = <AnnotationPanel key={ann.id} orgId={orgId} annotationId={ann.id} canEdit={canEdit} />
   } else if (selection.length === 1) {
@@ -908,6 +911,49 @@ function LagPanel({ linkIds }: { linkIds: string[] }) {
         </ul>
       )}
       <p className="text-xs text-muted-foreground">{t('panel.lagGuide')}</p>
+    </>
+  )
+}
+
+/** An IP plan table (P2-09): which site it shows; the content comes from IPAM. */
+function IpPlanPanel({
+  orgId,
+  annotationId,
+  canEdit,
+}: {
+  orgId: string
+  annotationId: string
+  canEdit: boolean
+}) {
+  const { t } = useTranslation()
+  const store = useDocStoreApi()
+  const a = useDoc((s) => s.doc?.view.annotations.find((x) => x.id === annotationId))
+  const sites = useSites(orgId)
+  if (!a) return null
+  return (
+    <>
+      <FormField label={t('ipam.site')}>
+        {(p) => (
+          <NativeSelect
+            {...p}
+            disabled={!canEdit}
+            value={a.siteId ?? ''}
+            onChange={(e) =>
+              store.getState().dispatch(updateAnnotation(a.id, { siteId: e.target.value }))
+            }
+          >
+            {(sites.data ?? []).map((st) => (
+              <option key={st.id} value={st.id}>
+                {st.code} · {st.name}
+              </option>
+            ))}
+          </NativeSelect>
+        )}
+      </FormField>
+      <p className="text-xs text-muted-foreground">{t('ipPlan.hint')}</p>
+      <Link className="text-xs underline-offset-2 hover:underline" to={`/o/${orgId}/ipam`}>
+        {t('l3.openIpam')}
+      </Link>
     </>
   )
 }

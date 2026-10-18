@@ -1087,6 +1087,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/ipam-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import VLANs, subnets and IP ranges from a spreadsheet (P2-09). Each row may carry a VLAN, a subnet and a range; existing ones (VLAN by site + id, subnet by VRF + CIDR) are completed, not duplicated. Bad rows are reported and skipped; dryRun rolls everything back (the preview). */
+        post: operations["importIpam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/segments": {
         parameters: {
             query?: never;
@@ -3050,6 +3070,11 @@ export interface components {
             cidr: string;
             vrf: string;
             gateway: string;
+            /** @description DHCP pools of the subnet (P2-09) */
+            dhcp: {
+                start: string;
+                end: string;
+            }[];
         };
         ValGroup: {
             /** Format: uuid */
@@ -4716,6 +4741,48 @@ export interface components {
             l3?: components["schemas"]["DiagramL3"];
             /** @description segments placed on the view (P2-08) */
             segments?: components["schemas"]["Segment"][];
+        };
+        IpamImport: {
+            dryRun: boolean;
+            rows: components["schemas"]["IpamImportRow"][];
+        };
+        /** @description one spreadsheet row; empty strings / nulls are "not given" */
+        IpamImportRow: {
+            /** @description site code (full or own) or name; empty = organization-wide */
+            site?: string;
+            /** Format: int32 */
+            vlan?: number | null;
+            vlanName?: string;
+            cidr?: string;
+            gateway?: string;
+            vrf?: string;
+            description?: string;
+            rangeStart?: string;
+            rangeEnd?: string;
+            /** @description dhcp, static or reserved (Vietnamese words accepted) */
+            rangeKind?: string;
+            purpose?: string;
+        };
+        IpamImportResult: {
+            rows: components["schemas"]["IpamImportRowResult"][];
+            created: components["schemas"]["IpamImportCounts"];
+            updated: components["schemas"]["IpamImportCounts"];
+            errors: number;
+        };
+        IpamImportCounts: {
+            vlans: number;
+            subnets: number;
+            ranges: number;
+        };
+        IpamImportRowResult: {
+            /** @description index in the request (0-based) */
+            row: number;
+            /** @enum {string} */
+            status: "created" | "updated" | "unchanged" | "error";
+            /** @description what was done, e.g. "Tạo subnet 10.1.20.0/24" */
+            actions: string[];
+            /** @description why the row was skipped (status error) */
+            message: string;
         };
         /**
          * @description mpls_l3vpn = carrier MPLS VPN joining sites at L3; metro_l2 = Metro Ethernet / VPLS / E-LAN joining sites at L2; shared_lan = a LAN that is not ours (building, landlord, partner DMZ)
@@ -7420,6 +7487,39 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    importIpam: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IpamImport"];
+            };
+        };
+        responses: {
+            /** @description What each row did (or would do) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IpamImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listSegments: {

@@ -55,7 +55,9 @@ export interface LinkOwner {
   siteId: string
 }
 
-function endHref(orgId: string, kind: LinkEndKind, id: string): string {
+/** Where an end's page is; a shared network (P2-08) has none (it is edited on a diagram). */
+function endHref(orgId: string, kind: LinkEndKind, id: string): string | null {
+  if (kind === 'segment') return null
   return kind === 'device' ? `/o/${orgId}/devices/${id}` : `/o/${orgId}/endpoint-groups/${id}`
 }
 
@@ -619,12 +621,21 @@ export function LinksPanel({
                       </TableCell>
                     )}
                     <TableCell>
-                      <RouterLink
-                        to={endHref(orgId, far.kind, far.id)}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {far.name}
-                      </RouterLink>
+                      {endHref(orgId, far.kind, far.id) ? (
+                        <RouterLink
+                          to={endHref(orgId, far.kind, far.id)!}
+                          className="font-medium hover:text-primary hover:underline"
+                        >
+                          {far.name}
+                        </RouterLink>
+                      ) : (
+                        <span className="font-medium">
+                          {far.name}{' '}
+                          <span className="font-normal text-muted-foreground">
+                            ({t('links.endKinds.segment')})
+                          </span>
+                        </span>
+                      )}
                       {far.siteId !== owner.siteId && (
                         <span className="ml-2 text-muted-foreground">{far.siteCode}</span>
                       )}
@@ -653,14 +664,17 @@ export function LinksPanel({
                       <TableCell>
                         {editable && (
                           <span className="flex justify-end">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`${t('links.edit')} ${far.name}`}
-                              onClick={() => setEditing(l)}
-                            >
-                              <Pencil aria-hidden />
-                            </Button>
+                            {/* A cable into a shared network is edited on a diagram (its far end is not a device). */}
+                            {far.kind !== 'segment' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`${t('links.edit')} ${far.name}`}
+                                onClick={() => setEditing(l)}
+                              >
+                                <Pencil aria-hidden />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"

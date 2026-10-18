@@ -646,8 +646,10 @@ func writeSubnet(ctx context.Context, q store.Querier, m tenant.Membership, f su
 			if err != nil {
 				return fmt.Errorf("list ranges: %w", err)
 			}
+			first, last := usableBounds(f.cidr)
 			for _, rg := range ranges {
-				if !f.cidr.Contains(rg.StartIp) || !f.cidr.Contains(rg.EndIp) {
+				// Usable addresses only: a range must not take the new network / broadcast address.
+				if !inRange(rg.StartIp, first, last) || !inRange(rg.EndIp, first, last) {
 					out.bad = fmt.Sprintf("Dải %s–%s nằm ngoài %s", rg.StartIp, rg.EndIp, f.cidr)
 					return errRollback
 				}
@@ -916,8 +918,12 @@ func rangeWrite(ctx context.Context, q store.Querier, m tenant.Membership, id uu
 	return sn, 0, nil
 }
 
-// overlapping returns another range of the subnet that shares an address with [start, end].
+// overlapping returns another range of the subnet that shares an address with [start, end]. It takes the subnet's
+// range lock first, so two writes cannot both pass the check.
 func overlapping(ctx context.Context, q store.Querier, m tenant.Membership, sn store.GetSubnetRow, self pgtype.UUID, start, end netip.Addr) (*store.IpRange, error) {
+	if err := q.AdvisoryXactLock(ctx, m.OrgID.String()+"/ranges/"+uuidStr(sn.ID)); err != nil {
+		return nil, fmt.Errorf("lock ranges: %w", err)
+	}
 	ranges, err := q.ListRanges(ctx, store.ListRangesParams{OrganizationID: m.OrgID, SubnetID: sn.ID})
 	if err != nil {
 		return nil, fmt.Errorf("list ranges: %w", err)

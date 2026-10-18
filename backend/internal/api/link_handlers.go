@@ -191,6 +191,9 @@ func resolveEnd(ctx context.Context, q store.Querier, m tenant.Membership, in ap
 		}
 		e.label = g.Name
 	case apigen.LinkEndKindSegment:
+		if err := q.AdvisoryXactLock(ctx, segmentLockKey(m, in.Id)); err != nil {
+			return e, "", fmt.Errorf("lock segment: %w", err)
+		}
 		sg, err := q.GetSegment(ctx, store.GetSegmentParams{OrganizationID: m.OrgID, ID: pgUUID(in.Id)})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return e, fmt.Sprintf("Mạng dùng chung ở đầu %s không tồn tại", side), nil

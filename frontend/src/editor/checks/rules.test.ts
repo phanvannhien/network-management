@@ -162,7 +162,7 @@ describe('runChecks', () => {
         ip('10.1.0.0/31'),
         ip('10.2.0.255/32'),
       ],
-      subnets: [{ id: 's', cidr: '10.2.0.0/24', vrf: '', gateway: '' }],
+      subnets: [{ id: 's', cidr: '10.2.0.0/24', vrf: '', gateway: '', dhcp: [] }],
     })
     const out = runChecks(input({ ctx: c }))
     expect(out.map((p) => `${p.rule}:${p.params.ip}`)).toEqual([
@@ -192,8 +192,8 @@ describe('runChecks', () => {
         ip('10.9.0.5/24'),
       ],
       subnets: [
-        { id: 's', cidr: '10.0.0.0/23', vrf: '', gateway: '10.0.0.1' },
-        { id: 't', cidr: '10.9.0.0/24', vrf: '', gateway: '' },
+        { id: 's', cidr: '10.0.0.0/23', vrf: '', gateway: '10.0.0.1', dhcp: [] },
+        { id: 't', cidr: '10.9.0.0/24', vrf: '', gateway: '', dhcp: [] },
       ],
     })
     const out = runChecks(input({ ctx: c })).filter((p) => p.rule === 'gateway-mask')
@@ -417,7 +417,7 @@ describe('review fixes', () => {
       ifaces: [port('p1', D1), port('p2', D2), port('lo0', D1, { kind: 'loopback' })],
       ctx: ctx({
         ips: [ip(D1, 'lo0', '10.255.255.0/32')],
-        subnets: [{ id: 's', cidr: '10.255.255.0/24', vrf: '', gateway: '' }],
+        subnets: [{ id: 's', cidr: '10.255.255.0/24', vrf: '', gateway: '', dhcp: [] }],
       }),
     })
     expect(rules(i)).toEqual([])
@@ -534,5 +534,37 @@ describe('address helpers', () => {
     expect(rule(input({ devices: devices('2026-10-18') }))).toEqual([]) // the last day still counts
     expect(rule(input({ devices: devices('2020-01-01', 'spare') }))).toEqual([])
     expect(rule(input({ devices: devices('') }))).toEqual([])
+  })
+})
+
+describe('DHCP pools (P2-09)', () => {
+  it('flags a static IP inside a DHCP pool, and the gateway there as its own warning', async () => {
+    const { dhcpPoolOf } = await import('./rules')
+    const subnets = [
+      {
+        id: 's',
+        cidr: '10.1.20.0/24',
+        vrf: '',
+        gateway: '10.1.20.100',
+        dhcp: [{ start: '10.1.20.100', end: '10.1.20.200' }],
+      },
+      {
+        id: 'w',
+        cidr: '10.0.0.0/16',
+        vrf: '',
+        gateway: '',
+        dhcp: [{ start: '10.0.20.0', end: '10.0.30.255' }],
+      },
+    ]
+    expect(dhcpPoolOf('10.1.20.150/24', '', subnets)).toMatchObject({
+      cidr: '10.1.20.0/24',
+      gateway: false,
+    })
+    expect(dhcpPoolOf('10.1.20.100/24', '', subnets)).toMatchObject({ gateway: true })
+    expect(dhcpPoolOf('10.1.20.10/24', '', subnets)).toBeNull()
+    // Other VRF: another network.
+    expect(dhcpPoolOf('10.1.20.150/24', 'GUEST', subnets)).toBeNull()
+    // The most specific subnet decides (the /24 has no pool at .20.x of the /16's range).
+    expect(dhcpPoolOf('10.1.20.5', '', subnets)).toBeNull()
   })
 })

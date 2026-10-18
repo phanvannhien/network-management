@@ -148,10 +148,12 @@ export function Canvas({
       ? (pagesOf(s.doc.view, s.meta?.layer ?? '').find((p) => p.id === s.page)?.layer ?? 'physical')
       : 'physical',
   )
-  // An L3 page shows IP attachments, not cables: no off-page connectors there.
+  // An L3 page shows IP attachments, not cables, and an overview shows sites, not devices: no off-page connectors.
+  const overview = useDoc((s) => s.meta?.layer === 'overview')
   const connectors = useMemo(
-    () => (fullDoc && showOffPage && layer !== 'l3' ? offPageConnectors(fullDoc, page) : []),
-    [fullDoc, page, showOffPage, layer],
+    () =>
+      fullDoc && showOffPage && layer !== 'l3' && !overview ? offPageConnectors(fullDoc, page) : [],
+    [fullDoc, page, showOffPage, layer, overview],
   )
   const connectorActions = useMemo<ConnectorActions>(
     () => ({

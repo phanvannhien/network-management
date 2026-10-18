@@ -164,6 +164,44 @@ func (q *Queries) DeleteVlan(ctx context.Context, arg DeleteVlanParams) (int64, 
 	return result.RowsAffected(), nil
 }
 
+const findSubnetID = `-- name: FindSubnetID :one
+SELECT id FROM subnets WHERE organization_id = $1 AND vrf = $2 AND cidr = $3::cidr
+`
+
+type FindSubnetIDParams struct {
+	OrganizationID pgtype.UUID
+	Vrf            string
+	Cidr           netip.Prefix
+}
+
+// IPAM import (P2-09): the subnet a row means (same VRF and CIDR).
+func (q *Queries) FindSubnetID(ctx context.Context, arg FindSubnetIDParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, findSubnetID, arg.OrganizationID, arg.Vrf, arg.Cidr)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const findVlanID = `-- name: FindVlanID :one
+SELECT id FROM vlans
+WHERE organization_id = $1 AND vid = $2
+  AND site_id IS NOT DISTINCT FROM $3::uuid
+`
+
+type FindVlanIDParams struct {
+	OrganizationID pgtype.UUID
+	Vid            int32
+	SiteID         pgtype.UUID
+}
+
+// IPAM import: the VLAN a row means — the site's own (or the organization-wide one when no site).
+func (q *Queries) FindVlanID(ctx context.Context, arg FindVlanIDParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, findVlanID, arg.OrganizationID, arg.Vid, arg.SiteID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getRange = `-- name: GetRange :one
 SELECT id, organization_id, subnet_id, start_ip, end_ip, kind, purpose, created_at, updated_at, version FROM ip_ranges WHERE id = $1 AND organization_id = $2 AND subnet_id = $3
 `
@@ -300,6 +338,43 @@ func (q *Queries) GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, e
 		&i.SubnetCount,
 	)
 	return i, err
+}
+
+const importSites = `-- name: ImportSites :many
+SELECT id, code::text AS code, local_code, name FROM sites WHERE organization_id = $1 AND deleted_at IS NULL
+`
+
+type ImportSitesRow struct {
+	ID        pgtype.UUID
+	Code      string
+	LocalCode string
+	Name      string
+}
+
+// IPAM import: live sites by full code, own code and name (matched case-insensitively).
+func (q *Queries) ImportSites(ctx context.Context, organizationID pgtype.UUID) ([]ImportSitesRow, error) {
+	rows, err := q.db.Query(ctx, importSites, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ImportSitesRow
+	for rows.Next() {
+		var i ImportSitesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.LocalCode,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listRanges = `-- name: ListRanges :many
@@ -691,6 +766,32 @@ func (q *Queries) LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const subnetHolding = `-- name: SubnetHolding :one
+SELECT id FROM subnets
+WHERE organization_id = $1 AND vrf = $2 AND cidr >>= $3::inet AND cidr >>= $4::inet
+ORDER BY masklen(cidr) DESC LIMIT 1
+`
+
+type SubnetHoldingParams struct {
+	OrganizationID pgtype.UUID
+	Vrf            string
+	FirstIp        netip.Addr
+	LastIp         netip.Addr
+}
+
+// IPAM import: the most specific subnet of a VRF holding both addresses (a range row without a subnet column).
+func (q *Queries) SubnetHolding(ctx context.Context, arg SubnetHoldingParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, subnetHolding,
+		arg.OrganizationID,
+		arg.Vrf,
+		arg.FirstIp,
+		arg.LastIp,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const updateRange = `-- name: UpdateRange :one

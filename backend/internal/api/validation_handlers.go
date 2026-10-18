@@ -85,12 +85,25 @@ func validationContext(ctx context.Context, q store.Querier, m tenant.Membership
 		out.Links = append(out.Links, apigen.ValLink{Id: uuid.UUID(l.ID.Bytes), Kind: l.Kind, AKind: l.AKind, AId: uuid.UUID(l.AID.Bytes),
 			AInterfaceId: optUUID(l.AInterfaceID), BKind: l.BKind, BId: uuid.UUID(l.BID.Bytes), BInterfaceId: optUUID(l.BInterfaceID)})
 	}
+	ranges, err := q.ValidationDhcpRanges(ctx, org)
+	if err != nil {
+		return out, fmt.Errorf("validation dhcp ranges: %w", err)
+	}
+	type pool = struct {
+		End   string `json:"end"`
+		Start string `json:"start"`
+	}
+	pools := map[pgtype.UUID][]pool{}
+	for _, r := range ranges {
+		pools[r.SubnetID] = append(pools[r.SubnetID], pool{End: r.EndIp, Start: r.StartIp})
+	}
 	subnets, err := q.ValidationSubnets(ctx, org)
 	if err != nil {
 		return out, fmt.Errorf("validation subnets: %w", err)
 	}
 	for _, sn := range subnets {
-		out.Subnets = append(out.Subnets, apigen.ValSubnet{Id: uuid.UUID(sn.ID.Bytes), Cidr: sn.Cidr, Vrf: sn.Vrf, Gateway: sn.Gateway})
+		out.Subnets = append(out.Subnets, apigen.ValSubnet{Id: uuid.UUID(sn.ID.Bytes), Cidr: sn.Cidr, Vrf: sn.Vrf, Gateway: sn.Gateway,
+			Dhcp: append([]pool{}, pools[sn.ID]...)})
 	}
 	groups, err := q.ValidationGroups(ctx, store.ValidationGroupsParams{OrganizationID: org, Ids: gids})
 	if err != nil {

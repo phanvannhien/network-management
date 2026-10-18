@@ -5,6 +5,45 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-09 IPAM đầy đủ (ADR-048); sửa thêm segment
+- Người dùng chốt: P2-06 (link chia sẻ) tạm hoãn vì export PNG đủ dùng; làm tuần tự P2-09.
+- Đã làm:
+  - **IPAM → "Nhập từ Excel":**
+    - tải file mẫu; chọn file; xem trước từng dòng (Tạo mới / Bổ sung / Đã có / Lỗi kèm lý do); rồi mới nhập;
+    - cột nhận theo tên tiếng Việt / tiếng Anh; hiểu mask tách riêng, "VLAN 10 - Văn phòng", dải ".100-.200";
+    - **không ghi đè** IPAM: chỉ điền chỗ trống, chỗ khác thì báo;
+    - dòng lỗi bỏ qua, dòng đúng vẫn vào; audit như form.
+  - **Bảng IP plan trên sơ đồ:**
+    - nút trên thanh công cụ; chọn site (tự lấy nếu trang chỉ có thiết bị của một site);
+    - bảng VLAN / subnet / gateway / các dải / % dùng, đọc từ IPAM và tự cập nhật; đổi site ở panel.
+  - **Cảnh báo:**
+    - IP tĩnh trong dải DHCP và gateway trong dải DHCP: panel Problems của sơ đồ và trang subnet;
+    - subnet nằm trong khối quy hoạch: `⊂` (bình thường); nằm trong subnet đang dùng: `⚠ chồng lấn` (thường gõ sai mask).
+  - **Sửa từ rà soát:**
+    - **IPAM:** ghi dải khóa theo subnet; đổi cỡ subnet kiểm tra dải theo địa chỉ dùng được;
+    - **segment — chống mồ côi:** xóa segment và nối dây vào nó không còn chạy song song được;
+    - **segment — màn vẽ:**
+      - đặt segment có sẵn thì dây của nó hiện ngay;
+      - sơ đồ tổng quan không còn mốc thừa;
+      - hộp nối dây chỉ cho loại dây hợp lệ với segment;
+    - **segment — chỗ khác:**
+      - trang Link của thiết bị hiểu đầu segment;
+      - sửa được segment có nhà mạng đã xóa;
+      - site graph bỏ đám mây ISP / thiết bị retired.
+  - **Glossary:** bảng IP plan, khối quy hoạch, IP tĩnh trong dải DHCP, nhập IP plan.
+- Test / cách kiểm tra:
+  - `make check` pass. Go: `TestIpamImport` (xem trước không ghi, khớp / bổ sung / không ghi đè, dải không cột subnet, dòng lỗi hoàn tác cả VLAN đã tạo, viewer, audit, chặn tổ chức khác), `TestIpPlanAnnotation`.
+  - Vitest: đọc file, cảnh báo IPAM, luật DHCP.
+  - Trình duyệt thật: nhập file mẫu (5 dòng, 1 lỗi), trang subnet 2 cảnh báo, danh sách `⊂`, bảng IP plan trên sơ đồ, panel Problems báo IP tĩnh trong DHCP; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Chưa có chế độ ghi đè theo file.
+  - Chưa so dải giữa subnet cha / con.
+  - Bảng IP plan theo một site.
+  - `.ntb.json` chưa mang segment.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-10 Validation Phase 2.
+
 ## 2026-10-18 — P2-08 (bước 5/5) Mạng dùng chung (segment); P2-08 hoàn tất
 - Đã làm:
   - **Đối tượng kho mới "mạng dùng chung"** (`segments`): MPLS L3VPN, Metro Ethernet / VPLS, LAN dùng chung, khác.

@@ -27,6 +27,7 @@ import {
 import { atLeast } from '@/modules/sites/access'
 import { RangeDialog, SubnetDialog } from './IpamDialogs'
 import {
+  poolWarnings,
   fetchNextFree,
   formatSize,
   useIpamMutations,
@@ -275,6 +276,7 @@ export function SubnetDetailPage() {
   }
   if (!s) return <NotFoundPage inShell />
   const canEdit = atLeast(s.access, 'edit')
+  const warnings = poolWarnings(s)
   return (
     <div className="max-w-6xl space-y-4 p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -311,6 +313,24 @@ export function SubnetDetailPage() {
           </div>
         )}
       </header>
+      {warnings.length > 0 && (
+        <section
+          aria-label={t('ipam.warnings')}
+          className="space-y-1 rounded-md border border-status-warning/50 bg-status-warning/5 p-3 text-sm"
+        >
+          {warnings.map((w) => (
+            <p key={`${w.kind}:${w.host}`}>
+              ⚠{' '}
+              {t(`ipam.${w.kind === 'gateway-in-dhcp' ? 'gatewayInDhcp' : 'staticInDhcp'}`, {
+                host: w.host,
+                who: w.who,
+                pool: w.pool,
+              })}
+            </p>
+          ))}
+          <p className="text-xs text-muted-foreground">{t('ipam.dhcpFix')}</p>
+        </section>
+      )}
       <div className="space-y-3 rounded-lg border border-border bg-card p-3">
         <KeyValueList
           items={[

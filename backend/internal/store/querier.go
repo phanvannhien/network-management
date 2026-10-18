@@ -24,6 +24,8 @@ type Querier interface {
 	AdminListOrganizations(ctx context.Context) ([]AdminListOrganizationsRow, error)
 	// System admin: user management (global by design).
 	AdminListUsers(ctx context.Context) ([]AdminListUsersRow, error)
+	// Serializes writes on one key until the transaction ends (a segment and the cables ending in it, a subnet's ranges).
+	AdvisoryXactLock(ctx context.Context, lockKey string) error
 	// Owners and admins of the organization whose account is active.
 	AlertAdminEmails(ctx context.Context, organizationID pgtype.UUID) ([]string, error)
 	// Dates of devices in use (or spare) of an organization up to @until; muted devices and retired / planned ones are
@@ -185,8 +187,12 @@ type Querier interface {
 	// Same serial (trimmed, case-insensitive) on another live device; empty and placeholder values do not count.
 	DuplicateSerials(ctx context.Context, arg DuplicateSerialsParams) ([]DuplicateSerialsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	// IPAM import (P2-09): the subnet a row means (same VRF and CIDR).
+	FindSubnetID(ctx context.Context, arg FindSubnetIDParams) (pgtype.UUID, error)
 	// The organization's template already standing for a catalog model: same name, or same type and model / part number.
 	FindTemplateForCatalog(ctx context.Context, arg FindTemplateForCatalogParams) (DeviceTemplate, error)
+	// IPAM import: the VLAN a row means — the site's own (or the organization-wide one when no site).
+	FindVlanID(ctx context.Context, arg FindVlanIDParams) (pgtype.UUID, error)
 	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCloudAccountMeta(ctx context.Context, arg GetCloudAccountMetaParams) (GetCloudAccountMetaRow, error)
@@ -246,6 +252,8 @@ type Querier interface {
 	ImportDevicesByHostname(ctx context.Context, arg ImportDevicesByHostnameParams) ([]pgtype.UUID, error)
 	ImportDevicesBySerial(ctx context.Context, arg ImportDevicesBySerialParams) ([]pgtype.UUID, error)
 	ImportInterfaceByName(ctx context.Context, arg ImportInterfaceByNameParams) (pgtype.UUID, error)
+	// IPAM import: live sites by full code, own code and name (matched case-insensitively).
+	ImportSites(ctx context.Context, organizationID pgtype.UUID) ([]ImportSitesRow, error)
 	// Prefix length of the most specific subnet holding the address in the VRF (0 = none).
 	ImportSubnetPrefix(ctx context.Context, arg ImportSubnetPrefixParams) (int32, error)
 	// First save of an organization that still had the defaults (no row); nothing back = someone saved meanwhile.
@@ -430,6 +438,8 @@ type Querier interface {
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	SoftDeleteVendor(ctx context.Context, arg SoftDeleteVendorParams) (int64, error)
+	// IPAM import: the most specific subnet of a VRF holding both addresses (a range row without a subnet column).
+	SubnetHolding(ctx context.Context, arg SubnetHoldingParams) (pgtype.UUID, error)
 	// Interface / IP changes bump the device version so open device forms see the change.
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
@@ -473,6 +483,8 @@ type Querier interface {
 	// Validation context of a diagram (P1-20): what the rules need about the objects on it, plus conflicts computed
 	// org-wide. Every query takes organization_id.
 	ValidationDevices(ctx context.Context, arg ValidationDevicesParams) ([]ValidationDevicesRow, error)
+	// DHCP pools (P2-09): a static IP inside one may be handed out again by the DHCP server.
+	ValidationDhcpRanges(ctx context.Context, organizationID pgtype.UUID) ([]ValidationDhcpRangesRow, error)
 	ValidationGroupMembers(ctx context.Context, arg ValidationGroupMembersParams) ([]ValidationGroupMembersRow, error)
 	ValidationGroups(ctx context.Context, arg ValidationGroupsParams) ([]ValidationGroupsRow, error)
 	// Only the ports a rule can look at (cabled, addressed, LAG, VLAN mode): a 48-port switch rarely needs all 48.

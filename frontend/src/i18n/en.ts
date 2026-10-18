@@ -659,6 +659,15 @@ export const en: Strings = {
     },
   },
   ipam: {
+    overlap: 'overlaps {{parent}}',
+    overlapHint:
+      'Inside {{parent}} in the same VRF, and {{parent}} is in use (gateway, VLAN or ranges). Usually a mistyped mask — check one of them.',
+    insideHint: 'Inside the plan block {{parent}} (no gateway / VLAN / range) — fine.',
+    warnings: 'IPAM warnings',
+    staticInDhcp: 'Static IP {{host}} ({{who}}) is inside DHCP pool {{pool}}',
+    gatewayInDhcp: 'Gateway {{host}} is inside DHCP pool {{pool}}',
+    dhcpFix:
+      'The DHCP server may hand these addresses to other machines. Move them out of the pool, or shrink / split the pool.',
     title: 'IPAM',
     subtitle:
       'IP address planning: VLANs, subnets, IP ranges — and which device uses which address.',
@@ -917,6 +926,37 @@ export const en: Strings = {
     removeFromDiagram: 'Remove from diagram',
     unsaved: 'unsaved',
     empty: 'The diagram is empty.',
+  },
+  ipPlan: {
+    add: 'IP plan table',
+    hint: "A site's IP plan from IPAM (VLANs, subnets, gateways, ranges, usage), kept up to date as IPAM changes.",
+    place: 'Place the table',
+    title: 'IP plan · {{site}}',
+    empty: 'The site has no subnet in IPAM yet.',
+    ranges: 'Ranges / description',
+    used: 'Used',
+    more_one: '… and {{count}} more subnet (see IPAM)',
+    more_other: '… and {{count}} more subnets (see IPAM)',
+  },
+  ipamImport: {
+    open: 'Import from Excel',
+    title: 'Import VLANs, subnets and IP ranges from Excel',
+    hint: 'Each row may carry a VLAN, a subnet and an IP range. Columns are found by name (Site, VLAN, VLAN name, Subnet, Gateway, VRF, Description, Start IP, End IP or Range, Range type, Purpose). Existing ones are completed, never duplicated; bad rows are skipped. You see a preview before anything is written.',
+    template: 'Download the template',
+    pick: 'Pick an Excel / CSV file',
+    noColumns:
+      'No Subnet (or CIDR / Network) column in the file. Download the template to see the column names.',
+    empty: 'The file has no row with a VLAN, a subnet or a range.',
+    failed: 'Import failed',
+    summary:
+      'Will create {{vlans}} VLANs, {{subnets}} subnets, {{ranges}} ranges; complete {{updated}} subnets; {{errors}} bad rows (skipped).',
+    line: 'Row',
+    range: 'Range',
+    result: 'Result',
+    status: { created: 'New', updated: 'Completed', unchanged: 'Already there', error: 'Error' },
+    commit_one: 'Import {{count}} row',
+    commit_other: 'Import {{count}} rows',
+    done: 'Created {{vlans}} VLANs, {{subnets}} subnets, {{ranges}} ranges ({{errors}} bad rows skipped)',
   },
   segments: {
     title: 'Shared networks',
@@ -2797,6 +2837,10 @@ export const en: Strings = {
       'duplicate-hostname': 'Hostname {{value}} is used by another device ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} also on {{other}}',
       'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'static-in-dhcp':
+        '{{host}}: static IP {{ip}} is inside DHCP pool {{start}}–{{end}} of {{cidr}}',
+      'gateway-in-dhcp':
+        '{{host}}: gateway {{ip}} is inside DHCP pool {{start}}–{{end}} of {{cidr}}',
       'gateway-mask':
         '{{host}}: gateway {{gateway}} of subnet {{cidr}} is outside the mask of IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} is {{which}} of {{cidr}}',
@@ -2823,6 +2867,10 @@ export const en: Strings = {
       'duplicate-serial':
         'Serials are normally unique — check for a typo or a device entered twice.',
       'ip-format': 'This address cannot be set on an interface. Fix it in the properties panel.',
+      'static-in-dhcp':
+        'The DHCP server does not know this address is taken and may hand it to another machine (duplicate IP). Move the IP out of the pool, or shrink / split the pool to leave it out.',
+      'gateway-in-dhcp':
+        'A gateway inside the DHCP pool is a common mistake: DHCP may hand the gateway address to a PC and the whole subnet loses its way out. Shrink the pool so the gateway is outside (e.g. pool .100–.200, gateway .1).',
       'gateway-mask':
         'With this mask the device cannot reach its gateway, so nothing beyond the subnet works. Usually a mistyped mask (e.g. /24 in a /23 subnet) — fix the IP mask, or the subnet gateway in IPAM.',
       'ip-edge':

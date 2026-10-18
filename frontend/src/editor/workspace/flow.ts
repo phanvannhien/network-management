@@ -457,7 +457,9 @@ export function toAnnotationNodes(
   canEdit: boolean,
 ): Node<AnnotationData>[] {
   return doc.view.annotations
-    .filter((a) => a.kind === 'zone' || a.kind === 'text' || a.kind === 'arrow')
+    .filter(
+      (a) => a.kind === 'zone' || a.kind === 'text' || a.kind === 'arrow' || a.kind === 'ipPlan',
+    )
     .map((a) => {
       const id = ANN + a.id
       const base = {
@@ -480,6 +482,9 @@ export function toAnnotationNodes(
           style: { pointerEvents: 'none' },
         }
       if (a.kind === 'arrow') return { ...base, type: 'arrow', position: arrowOrigin(a), zIndex: 5 }
+      // A site's IP plan table, read from IPAM (P2-09).
+      if (a.kind === 'ipPlan')
+        return { ...base, type: 'ipplan', position: { x: a.x, y: a.y }, zIndex: 5 }
       return { ...base, type: 'text', position: { x: a.x, y: a.y }, zIndex: 5 }
     })
 }

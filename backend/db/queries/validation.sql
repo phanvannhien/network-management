@@ -32,6 +32,12 @@ SELECT id, cidr::text AS cidr, vrf, COALESCE(host(gateway), '')::text AS gateway
 FROM subnets
 WHERE organization_id = @organization_id;
 
+-- name: ValidationDhcpRanges :many
+-- DHCP pools (P2-09): a static IP inside one may be handed out again by the DHCP server.
+SELECT r.subnet_id, host(r.start_ip)::text AS start_ip, host(r.end_ip)::text AS end_ip
+FROM ip_ranges r
+WHERE r.organization_id = @organization_id AND r.kind = 'dhcp';
+
 -- name: ValidationGroups :many
 SELECT g.id, g.name, COALESCE(host(r.start_ip), '')::text AS range_start, COALESCE(host(r.end_ip), '')::text AS range_end
 FROM endpoint_groups g

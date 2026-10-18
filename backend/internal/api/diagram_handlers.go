@@ -695,8 +695,11 @@ func checkViewShape(v apigen.DiagramView) string {
 			return "Màu chú thích không hợp lệ"
 		case a.LineStyle != nil && !a.LineStyle.Valid():
 			return "Kiểu nét mũi tên không hợp lệ"
-		case (a.SiteId != nil || a.LocationId != nil) && a.Kind != apigen.DiagramAnnotationKindZone:
-			return "Chỉ khung (zone) mới gắn được site/location"
+		// A frame binds a site / location; an IP plan table (P2-09) lists a site's subnets.
+		case a.LocationId != nil && a.Kind != apigen.DiagramAnnotationKindZone:
+			return "Chỉ khung (zone) mới gắn được location"
+		case a.SiteId != nil && a.Kind != apigen.DiagramAnnotationKindZone && a.Kind != apigen.DiagramAnnotationKindIpPlan:
+			return "Chỉ khung (zone) hoặc bảng IP plan mới gắn được site"
 		case a.LocationId != nil && a.SiteId == nil:
 			return "Khung gắn location phải gắn cả site"
 		}

@@ -1159,6 +1159,30 @@ func (e IpRole) Valid() bool {
 	}
 }
 
+// Defines values for IpamImportRowResultStatus.
+const (
+	IpamImportRowResultStatusCreated   IpamImportRowResultStatus = "created"
+	IpamImportRowResultStatusError     IpamImportRowResultStatus = "error"
+	IpamImportRowResultStatusUnchanged IpamImportRowResultStatus = "unchanged"
+	IpamImportRowResultStatusUpdated   IpamImportRowResultStatus = "updated"
+)
+
+// Valid indicates whether the value is a known member of the IpamImportRowResultStatus enum.
+func (e IpamImportRowResultStatus) Valid() bool {
+	switch e {
+	case IpamImportRowResultStatusCreated:
+		return true
+	case IpamImportRowResultStatusError:
+		return true
+	case IpamImportRowResultStatusUnchanged:
+		return true
+	case IpamImportRowResultStatusUpdated:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkConnector.
 const (
 	LinkConnectorEmpty LinkConnector = ""
@@ -3756,6 +3780,62 @@ type IpRangeUpdate struct {
 // IpRole primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
 type IpRole string
 
+// IpamImport defines model for IpamImport.
+type IpamImport struct {
+	DryRun bool            `json:"dryRun"`
+	Rows   []IpamImportRow `json:"rows"`
+}
+
+// IpamImportCounts defines model for IpamImportCounts.
+type IpamImportCounts struct {
+	Ranges  int `json:"ranges"`
+	Subnets int `json:"subnets"`
+	Vlans   int `json:"vlans"`
+}
+
+// IpamImportResult defines model for IpamImportResult.
+type IpamImportResult struct {
+	Created IpamImportCounts      `json:"created"`
+	Errors  int                   `json:"errors"`
+	Rows    []IpamImportRowResult `json:"rows"`
+	Updated IpamImportCounts      `json:"updated"`
+}
+
+// IpamImportRow one spreadsheet row; empty strings / nulls are "not given"
+type IpamImportRow struct {
+	Cidr        *string `json:"cidr,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Gateway     *string `json:"gateway,omitempty"`
+	Purpose     *string `json:"purpose,omitempty"`
+	RangeEnd    *string `json:"rangeEnd,omitempty"`
+
+	// RangeKind dhcp, static or reserved (Vietnamese words accepted)
+	RangeKind  *string `json:"rangeKind,omitempty"`
+	RangeStart *string `json:"rangeStart,omitempty"`
+
+	// Site site code (full or own) or name; empty = organization-wide
+	Site     *string `json:"site,omitempty"`
+	Vlan     *int32  `json:"vlan,omitempty"`
+	VlanName *string `json:"vlanName,omitempty"`
+	Vrf      *string `json:"vrf,omitempty"`
+}
+
+// IpamImportRowResult defines model for IpamImportRowResult.
+type IpamImportRowResult struct {
+	// Actions what was done, e.g. "Tạo subnet 10.1.20.0/24"
+	Actions []string `json:"actions"`
+
+	// Message why the row was skipped (status error)
+	Message string `json:"message"`
+
+	// Row index in the request (0-based)
+	Row    int                       `json:"row"`
+	Status IpamImportRowResultStatus `json:"status"`
+}
+
+// IpamImportRowResultStatus defines model for IpamImportRowResult.Status.
+type IpamImportRowResultStatus string
+
 // LifecycleFill defines model for LifecycleFill.
 type LifecycleFill struct {
 	// EolDate end-of-sale date written (null = left as it was)
@@ -4821,7 +4901,13 @@ type ValLink struct {
 
 // ValSubnet defines model for ValSubnet.
 type ValSubnet struct {
-	Cidr    string             `json:"cidr"`
+	Cidr string `json:"cidr"`
+
+	// Dhcp DHCP pools of the subnet (P2-09)
+	Dhcp []struct {
+		End   string `json:"end"`
+		Start string `json:"start"`
+	} `json:"dhcp"`
 	Gateway string             `json:"gateway"`
 	Id      openapi_types.UUID `json:"id"`
 	Vrf     string             `json:"vrf"`
@@ -5645,6 +5731,11 @@ type DeleteFileParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ImportIpamParams defines parameters for ImportIpam.
+type ImportIpamParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // LookupIpParams defines parameters for LookupIp.
 type LookupIpParams struct {
 	Ip string `form:"ip" json:"ip"`
@@ -6065,6 +6156,9 @@ type PromoteEndpointMemberJSONRequestBody = PromoteMemberInput
 
 // RecordExportJSONRequestBody defines body for RecordExport for application/json ContentType.
 type RecordExportJSONRequestBody = ExportEvent
+
+// ImportIpamJSONRequestBody defines body for ImportIpam for application/json ContentType.
+type ImportIpamJSONRequestBody = IpamImport
 
 // CreateLinkJSONRequestBody defines body for CreateLink for application/json ContentType.
 type CreateLinkJSONRequestBody = LinkInput
@@ -6488,6 +6582,9 @@ type ServerInterface interface {
 	// DownloadFile Download an attached file (always as an attachment)
 	// (GET /orgs/{orgId}/files/{fileId})
 	DownloadFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID)
+	// ImportIpam Import VLANs, subnets and IP ranges from a spreadsheet (P2-09). Each row may carry a VLAN, a subnet and a range; existing ones (VLAN by site + id, subnet by VRF + CIDR) are completed, not duplicated. Bad rows are reported and skipped; dryRun rolls everything back (the preview).
+	// (POST /orgs/{orgId}/ipam-imports)
+	ImportIpam(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportIpamParams)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
@@ -7352,6 +7449,12 @@ func (_ Unimplemented) DeleteFile(w http.ResponseWriter, r *http.Request, orgId 
 // DownloadFile Download an attached file (always as an attachment)
 // (GET /orgs/{orgId}/files/{fileId})
 func (_ Unimplemented) DownloadFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ImportIpam Import VLANs, subnets and IP ranges from a spreadsheet (P2-09). Each row may carry a VLAN, a subnet and a range; existing ones (VLAN by site + id, subnet by VRF + CIDR) are completed, not duplicated. Bad rows are reported and skipped; dryRun rolls everything back (the preview).
+// (POST /orgs/{orgId}/ipam-imports)
+func (_ Unimplemented) ImportIpam(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportIpamParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -13743,6 +13846,60 @@ func (siw *ServerInterfaceWrapper) DownloadFile(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ImportIpam operation middleware
+func (siw *ServerInterfaceWrapper) ImportIpam(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ImportIpamParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportIpam(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LookupIp operation middleware
 func (siw *ServerInterfaceWrapper) LookupIp(w http.ResponseWriter, r *http.Request) {
 
@@ -17205,6 +17362,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}/reveal", wrapper.RevealCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/ipam-imports", wrapper.ImportIpam)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/segments", wrapper.ListSegments)
@@ -26065,6 +26225,86 @@ func (response DownloadFile404JSONResponse) VisitDownloadFileResponse(w http.Res
 	return err
 }
 
+type ImportIpamRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ImportIpamParams
+	Body   *ImportIpamJSONRequestBody
+}
+
+type ImportIpamResponseObject interface {
+	VisitImportIpamResponse(w http.ResponseWriter) error
+}
+
+type ImportIpam200JSONResponse IpamImportResult
+
+func (response ImportIpam200JSONResponse) VisitImportIpamResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportIpam400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ImportIpam400JSONResponse) VisitImportIpamResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportIpam401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ImportIpam401JSONResponse) VisitImportIpamResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportIpam403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ImportIpam403JSONResponse) VisitImportIpamResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportIpam404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ImportIpam404JSONResponse) VisitImportIpamResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LookupIpRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params LookupIpParams
@@ -31087,6 +31327,9 @@ type StrictServerInterface interface {
 	// DownloadFile Download an attached file (always as an attachment)
 	// (GET /orgs/{orgId}/files/{fileId})
 	DownloadFile(ctx context.Context, request DownloadFileRequestObject) (DownloadFileResponseObject, error)
+	// ImportIpam Import VLANs, subnets and IP ranges from a spreadsheet (P2-09). Each row may carry a VLAN, a subnet and a range; existing ones (VLAN by site + id, subnet by VRF + CIDR) are completed, not duplicated. Bad rows are reported and skipped; dryRun rolls everything back (the preview).
+	// (POST /orgs/{orgId}/ipam-imports)
+	ImportIpam(ctx context.Context, request ImportIpamRequestObject) (ImportIpamResponseObject, error)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
@@ -34790,6 +35033,40 @@ func (sh *strictHandler) DownloadFile(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DownloadFileResponseObject); ok {
 		if err := validResponse.VisitDownloadFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportIpam operation middleware
+func (sh *strictHandler) ImportIpam(w http.ResponseWriter, r *http.Request, orgId OrgId, params ImportIpamParams) {
+	var request ImportIpamRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body ImportIpamJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportIpam(ctx, request.(ImportIpamRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportIpam")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportIpamResponseObject); ok {
+		if err := validResponse.VisitImportIpamResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

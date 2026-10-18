@@ -28,6 +28,16 @@ import type { PortNames } from '../doc/commands'
 import type { DocState } from '../doc/types'
 import { sortPorts, suggestKind, takenPorts } from './wiring'
 
+/** Cable kinds a shared network can end (same list as the server). */
+const SEGMENT_LINK_KINDS: ReadonlySet<string> = new Set([
+  'ethernet',
+  'fiber',
+  'wireless',
+  'dsl',
+  'cellular',
+  'logical',
+])
+
 export interface CableEnd {
   kind: 'device' | 'endpoint_group' | 'segment'
   id: string
@@ -82,14 +92,14 @@ export function CableDialog({
   onClose: () => void
 }) {
   const { t } = useTranslation()
+  // A shared network (P2-08) takes WAN / LAN kinds of cable only (the server refuses the others).
+  const toSegment = a.kind === 'segment' || b.kind === 'segment'
+  const kinds = toSegment ? LINK_KINDS.filter((k) => SEGMENT_LINK_KINDS.has(k)) : LINK_KINDS
+  const allowed = (k: LinkKind): LinkKind => (kinds.includes(k) ? k : 'ethernet')
   const [v, setV] = useState<CableValue>(
     initial ?? {
-      kind: suggestKind(
-        a.type,
-        b.type,
-        '',
-        '',
-        Boolean(a.clusterId && a.clusterId === b.clusterId),
+      kind: allowed(
+        suggestKind(a.type, b.type, '', '', Boolean(a.clusterId && a.clusterId === b.clusterId)),
       ),
       aPort: '',
       bPort: '',
@@ -252,7 +262,7 @@ export function CableDialog({
                   })
                 }}
               >
-                {LINK_KINDS.map((k) => (
+                {kinds.map((k) => (
                   <option key={k} value={k}>
                     {t(`links.kinds.${k}`)}
                   </option>
@@ -364,7 +374,9 @@ export function CableDialog({
     if (kindTouched) return cur.kind
     const ma = aMedia ?? portsA.list.find((x) => x.id === cur.aPort)?.media ?? ''
     const mb = bMedia ?? portsB.list.find((x) => x.id === cur.bPort)?.media ?? ''
-    return suggestKind(a.type, b.type, ma, mb, Boolean(a.clusterId && a.clusterId === b.clusterId))
+    return allowed(
+      suggestKind(a.type, b.type, ma, mb, Boolean(a.clusterId && a.clusterId === b.clusterId)),
+    )
   }
 }
 

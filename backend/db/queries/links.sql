@@ -99,3 +99,7 @@ WHERE organization_id = @organization_id
   AND ((a_id = ANY (@ids::uuid[])) <> (b_id = ANY (@ids::uuid[])))
 ORDER BY id
 LIMIT 2000;
+
+-- name: AdvisoryXactLock :exec
+-- Serializes writes on one key until the transaction ends (a segment and the cables ending in it, a subnet's ranges).
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));

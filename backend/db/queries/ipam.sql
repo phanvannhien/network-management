@@ -121,3 +121,23 @@ FROM ipam_addresses a
 JOIN sites ds ON ds.id = a.site_id AND ds.deleted_at IS NULL
 WHERE a.organization_id = @organization_id AND a.host = @ip::inet
 ORDER BY a.hostname;
+
+-- name: FindSubnetID :one
+-- IPAM import (P2-09): the subnet a row means (same VRF and CIDR).
+SELECT id FROM subnets WHERE organization_id = @organization_id AND vrf = @vrf AND cidr = @cidr::cidr;
+
+-- name: FindVlanID :one
+-- IPAM import: the VLAN a row means — the site's own (or the organization-wide one when no site).
+SELECT id FROM vlans
+WHERE organization_id = @organization_id AND vid = @vid
+  AND site_id IS NOT DISTINCT FROM sqlc.narg('site_id')::uuid;
+
+-- name: ImportSites :many
+-- IPAM import: live sites by full code, own code and name (matched case-insensitively).
+SELECT id, code::text AS code, local_code, name FROM sites WHERE organization_id = @organization_id AND deleted_at IS NULL;
+
+-- name: SubnetHolding :one
+-- IPAM import: the most specific subnet of a VRF holding both addresses (a range row without a subnet column).
+SELECT id FROM subnets
+WHERE organization_id = @organization_id AND vrf = @vrf AND cidr >>= @first_ip::inet AND cidr >>= @last_ip::inet
+ORDER BY masklen(cidr) DESC LIMIT 1;

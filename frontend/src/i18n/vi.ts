@@ -653,6 +653,16 @@ export const vi = {
     },
   },
   ipam: {
+    overlap: 'chồng lấn {{parent}}',
+    overlapHint:
+      'Nằm trong {{parent}} cùng VRF, mà {{parent}} đang dùng thật (có gateway, VLAN hoặc dải). Thường do gõ sai mask — kiểm tra lại một trong hai.',
+    insideHint:
+      'Nằm trong khối quy hoạch {{parent}} (không có gateway / VLAN / dải) — bình thường.',
+    warnings: 'Cảnh báo IPAM',
+    staticInDhcp: 'IP tĩnh {{host}} ({{who}}) nằm trong dải DHCP {{pool}}',
+    gatewayInDhcp: 'Gateway {{host}} nằm trong dải DHCP {{pool}}',
+    dhcpFix:
+      'DHCP server có thể cấp lại các IP này cho máy khác. Chuyển IP ra ngoài dải, hoặc thu hẹp / tách dải DHCP.',
     title: 'IPAM',
     subtitle: 'Quy hoạch địa chỉ IP: VLAN, subnet, dải IP — và IP nào đang được thiết bị nào dùng.',
     tabSubnets: 'Subnet',
@@ -911,6 +921,37 @@ export const vi = {
     removeFromDiagram: 'Gỡ khỏi sơ đồ',
     unsaved: 'chưa lưu',
     empty: 'Sơ đồ trống.',
+  },
+  ipPlan: {
+    add: 'Bảng IP plan',
+    hint: 'Bảng quy hoạch IP của một site, lấy từ IPAM (VLAN, subnet, gateway, các dải, mức đã dùng) và tự cập nhật khi IPAM đổi.',
+    place: 'Đặt bảng',
+    title: 'IP plan · {{site}}',
+    empty: 'Site chưa có subnet nào trong IPAM.',
+    ranges: 'Dải / mô tả',
+    used: 'Đã dùng',
+    more_one: '… và {{count}} subnet nữa (xem đủ trong IPAM)',
+    more_other: '… và {{count}} subnet nữa (xem đủ trong IPAM)',
+  },
+  ipamImport: {
+    open: 'Nhập từ Excel',
+    title: 'Nhập VLAN, subnet, dải IP từ Excel',
+    hint: 'Mỗi dòng có thể có VLAN, subnet và một dải IP. Cột nhận theo tên (Site, VLAN, Tên VLAN, Subnet, Gateway, VRF, Mô tả, IP đầu, IP cuối hoặc Dải IP, Loại dải, Mục đích). Cái đã có thì được bổ sung, không tạo trùng; dòng lỗi bị bỏ qua. Xem trước rồi mới ghi.',
+    template: 'Tải file mẫu',
+    pick: 'Chọn file Excel / CSV',
+    noColumns:
+      'Không thấy cột Subnet (hoặc CIDR / Dải mạng) trong file. Tải file mẫu để xem cách đặt tên cột.',
+    empty: 'File không có dòng nào có VLAN, subnet hay dải IP.',
+    failed: 'Không nhập được',
+    summary:
+      'Sẽ tạo {{vlans}} VLAN, {{subnets}} subnet, {{ranges}} dải; bổ sung {{updated}} subnet; {{errors}} dòng lỗi (bỏ qua).',
+    line: 'Dòng',
+    range: 'Dải',
+    result: 'Kết quả',
+    status: { created: 'Tạo mới', updated: 'Bổ sung', unchanged: 'Đã có', error: 'Lỗi' },
+    commit_one: 'Nhập {{count}} dòng',
+    commit_other: 'Nhập {{count}} dòng',
+    done: 'Đã tạo {{vlans}} VLAN, {{subnets}} subnet, {{ranges}} dải ({{errors}} dòng lỗi bỏ qua)',
   },
   segments: {
     title: 'Mạng dùng chung',
@@ -2779,6 +2820,10 @@ export const vi = {
       'duplicate-hostname': 'Hostname {{value}} trùng với một thiết bị khác ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} trùng với {{other}}',
       'ip-format': '{{host}}: IP {{ip}} {{why}}',
+      'static-in-dhcp':
+        '{{host}}: IP tĩnh {{ip}} nằm trong dải DHCP {{start}}–{{end}} của {{cidr}}',
+      'gateway-in-dhcp':
+        '{{host}}: gateway {{ip}} nằm trong dải DHCP {{start}}–{{end}} của {{cidr}}',
       'gateway-mask':
         '{{host}}: gateway {{gateway}} của subnet {{cidr}} nằm ngoài mask của IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} là {{which}} của {{cidr}}',
@@ -2806,6 +2851,10 @@ export const vi = {
         'Serial thường là duy nhất — kiểm tra nhập nhầm hoặc thiết bị bị khai hai lần.',
       'ip-format':
         'Địa chỉ này không gán được cho một interface. Sửa lại IP trong panel thuộc tính.',
+      'static-in-dhcp':
+        'DHCP server không biết IP này đã có người dùng nên có thể cấp nó cho máy khác, gây trùng IP. Chuyển IP ra ngoài dải DHCP, hoặc thu hẹp dải (tách dải) để chừa IP này.',
+      'gateway-in-dhcp':
+        'Gateway nằm trong dải DHCP là lỗi hay gặp: DHCP có thể cấp IP gateway cho một máy, cả subnet mất mạng. Thu hẹp dải DHCP để gateway nằm ngoài (vd dải .100–.200, gateway .1).',
       'gateway-mask':
         'Với mask này thiết bị không tới được gateway nên không ra được mạng khác. Thường là gõ sai mask (vd /24 trong khi subnet là /23) — sửa mask của IP, hoặc gateway của subnet trong IPAM.',
       'ip-edge':

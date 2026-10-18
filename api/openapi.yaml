@@ -2005,6 +2005,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /orgs/{orgId}/ipam-imports:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: importIpam
+      summary: >-
+        Import VLANs, subnets and IP ranges from a spreadsheet (P2-09). Each row may carry a VLAN, a subnet and a range;
+        existing ones (VLAN by site + id, subnet by VRF + CIDR) are completed, not duplicated. Bad rows are reported and
+        skipped; dryRun rolls everything back (the preview).
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpamImport'
+      responses:
+        '200':
+          description: What each row did (or would do)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpamImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/segments:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -6302,12 +6335,21 @@ components:
 
     ValSubnet:
       type: object
-      required: [id, cidr, vrf, gateway]
+      required: [id, cidr, vrf, gateway, dhcp]
       properties:
         id: {type: string, format: uuid}
         cidr: {type: string}
         vrf: {type: string}
         gateway: {type: string}
+        dhcp:
+          type: array
+          description: DHCP pools of the subnet (P2-09)
+          items:
+            type: object
+            required: [start, end]
+            properties:
+              start: {type: string}
+              end: {type: string}
 
     ValGroup:
       type: object
@@ -9481,6 +9523,100 @@ components:
           description: segments placed on the view (P2-08)
           items:
             $ref: '#/components/schemas/Segment'
+
+    IpamImport:
+      type: object
+      required: [rows, dryRun]
+      properties:
+        dryRun:
+          type: boolean
+        rows:
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/IpamImportRow'
+
+    IpamImportRow:
+      type: object
+      description: one spreadsheet row; empty strings / nulls are "not given"
+      properties:
+        site:
+          type: string
+          maxLength: 120
+          description: site code (full or own) or name; empty = organization-wide
+        vlan:
+          type: [integer, 'null']
+          format: int32
+        vlanName:
+          type: string
+          maxLength: 100
+        cidr:
+          type: string
+          maxLength: 64
+        gateway:
+          type: string
+          maxLength: 64
+        vrf:
+          type: string
+          maxLength: 64
+        description:
+          type: string
+          maxLength: 500
+        rangeStart:
+          type: string
+          maxLength: 64
+        rangeEnd:
+          type: string
+          maxLength: 64
+        rangeKind:
+          type: string
+          maxLength: 20
+          description: dhcp, static or reserved (Vietnamese words accepted)
+        purpose:
+          type: string
+          maxLength: 200
+
+    IpamImportResult:
+      type: object
+      required: [rows, created, updated, errors]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpamImportRowResult'
+        created:
+          $ref: '#/components/schemas/IpamImportCounts'
+        updated:
+          $ref: '#/components/schemas/IpamImportCounts'
+        errors:
+          type: integer
+
+    IpamImportCounts:
+      type: object
+      required: [vlans, subnets, ranges]
+      properties:
+        vlans: {type: integer}
+        subnets: {type: integer}
+        ranges: {type: integer}
+
+    IpamImportRowResult:
+      type: object
+      required: [row, status, actions, message]
+      properties:
+        row:
+          type: integer
+          description: index in the request (0-based)
+        status:
+          type: string
+          enum: [created, updated, unchanged, error]
+        actions:
+          type: array
+          description: what was done, e.g. "Tạo subnet 10.1.20.0/24"
+          items:
+            type: string
+        message:
+          type: string
+          description: why the row was skipped (status error)
 
     SegmentKind:
       type: string

@@ -101,11 +101,11 @@ Phase hiện tại: **Phase 0**
 - [x] **P2-03 Tài khoản cloud** (ADR-045): CRUD, liên kết credential, thiết bị được quản lý, người giữ MFA, ngày hết hạn.
 - [x] **P2-04 Nhà cung cấp & hợp đồng** (ADR-044): vendors, vendor_contacts, contracts + đính kèm file; liên kết thiết bị/link WAN; trường mua sắm/hỗ trợ của thiết bị trỏ tới nhà cung cấp/hợp đồng. *(đổi tên từ "Đối tác & hợp đồng" — ADR-031)*
 - [x] **P2-05 Cảnh báo hết hạn** (ADR-043): cấu hình SMTP theo tổ chức; quy tắc 90/60/30/7 ngày cho bảo hành, license, EoL, cloud, hợp đồng, credential; thông báo trong app + email. *(2026-10-18: SMTP hệ thống, bảo hành / license / hết hỗ trợ, hợp đồng, mật khẩu tới hạn đổi, tài khoản cloud; email tổng hợp + chuông. SMTP riêng theo tổ chức để sau.)*
-- [ ] **P2-06 Link chia sẻ chỉ xem**: token có hạn, mật khẩu tùy chọn, ẩn IP tùy chọn, thu hồi; trang xem công khai không lộ dữ liệu khác.
+- [ ] **P2-06 Link chia sẻ chỉ xem** _(tạm hoãn 2026-10-18 theo người dùng: export PNG đủ dùng lúc này)_: token có hạn, mật khẩu tùy chọn, ẩn IP tùy chọn, thu hồi; trang xem công khai không lộ dữ liệu khác.
 - [ ] **P2-07 SSO OIDC**: Entra ID / Google Workspace / Keycloak; ánh xạ nhóm → vai trò.
 - [x] **P2-08 Multi-page, layer L1/L2/L3, segment (bus)**, off-page connector.
   - Thiết kế + quyết định: ADR-047. Thứ tự: [x] chế độ xem L2 · [x] nhiều trang · [x] connector ra ngoài trang · [x] trang L3 · [x] segment.
-- [ ] **P2-09 IPAM đầy đủ**: import subnet/dải từ Excel, bảng IP plan đặt lên sơ đồ, rule chồng lấn và IP tĩnh trong DHCP.
+- [x] **P2-09 IPAM đầy đủ**: import subnet/dải từ Excel, bảng IP plan đặt lên sơ đồ, rule chồng lấn và IP tĩnh trong DHCP.
 - [ ] **P2-10 Validation Phase 2** theo SRS §7.
 - [ ] **P2-11 Báo cáo & export**: PDF A4/A3 có title block; Excel IP plan, port map, BOQ, VLAN; báo cáo hết hạn, thiếu thông tin.
 - [x] **P2-12 Model library theo hãng** (ADR-041): catalog đối chiếu với thư viện NetBox (CC0), thêm model mới, ảnh thật mặt trước/sau xem qua popup.

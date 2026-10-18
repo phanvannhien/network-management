@@ -82,6 +82,12 @@ export function useAnnotate({
       fontSize: 16,
     })
   }
+  /** The IP plan table of a site (P2-09), read from IPAM. */
+  const ipPlan = (siteId: string) => {
+    if (!canEdit) return
+    const c = centre()
+    add({ id: newId(), kind: 'ipPlan', x: Math.round(c.x - 200), y: Math.round(c.y), siteId })
+  }
   const arrow = () => {
     if (!canEdit) return
     const c = centre()
@@ -102,5 +108,5 @@ export function useAnnotate({
       .filter((id) => s.doc!.view.annotations.some((a) => a.id === id && a.kind === 'zone'))
     if (frames.length > 0) s.dispatch(removeAnnotations(frames))
   }
-  return { frame, frameAt, text, arrow, ungroup }
+  return { frame, frameAt, text, arrow, ipPlan, ungroup }
 }

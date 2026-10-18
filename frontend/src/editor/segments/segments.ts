@@ -76,7 +76,8 @@ export interface SegmentDraft {
 export const draftOf = (s?: Segment): SegmentDraft => ({
   name: s?.name ?? '',
   kind: s?.kind ?? 'mpls_l3vpn',
-  vendorId: s?.vendorId ?? '',
+  // A carrier deleted since (no name back) is not kept: saving would be refused.
+  vendorId: s?.vendorName ? (s.vendorId ?? '') : '',
   serviceId: s?.serviceId ?? '',
   notes: s?.notes ?? '',
 })
