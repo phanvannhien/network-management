@@ -5,6 +5,33 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-08 (bước 4/5) Trang L3 sinh từ IPAM
+- Đã làm:
+  - **Menu tab → "Thêm trang L3 (tự sinh từ IPAM)":**
+    - lấy router / firewall / L3 switch / đám mây ISP trên các trang khác của sơ đồ (và thiết bị nào giữ IP gateway);
+    - xếp thành một hàng, subnet của chúng thành thanh ngang (WAN ở trên, LAN ở dưới), nhóm đầu cuối treo dưới subnet của dải IP.
+  - **"Bổ sung subnet / thiết bị còn thiếu"** trên trang L3: chỉ thêm cái mới, giữ bố cục đã sắp.
+  - **Cách vẽ (suy ra từ IPAM, không vẽ tay):**
+    - IP của thiết bị trong subnet là đường xuống thanh, ghi `vlan20 .1` và **GW** nếu là gateway;
+    - /30, /31 giữa hai router là đường thẳng ghi subnet (và `.1` / `.2` khi đủ chỗ);
+    - chỉ giữ dây logical (VPN / GRE); trang L3 không có connector ra ngoài trang.
+  - **Thanh subnet:** màu theo VLAN, ghi `cidr · VLAN · VRF · mô tả`; kéo giãn ngang được (lưu, hoàn tác được); bấm vào thì panel hiện VLAN / VRF / gateway / thiết bị gắn vào và link mở IPAM.
+  - **Server:**
+    - node `refKind: subnet` (kiểm tra subnet thuộc tổ chức);
+    - `DiagramDetail.l3`: IP của thiết bị kèm subnet cụ thể nhất cùng VRF, có là gateway không; subnet của nhóm đầu cuối; thông tin các subnet.
+  - **Glossary:** trang L3, subnet chuyển tiếp.
+- Test / cách kiểm tra:
+  - `make check` pass. Go: `TestDiagramL3Facts` (subnet cụ thể nhất, gateway, /30, loopback ngoài subnet, nhóm, chặn subnet tổ chức khác). Vitest: `l3.test.ts`.
+  - Trình duyệt thật: sinh trang L3 từ sơ đồ "L2 lab": FW / CORE, thanh WAN trên, thanh VLAN 20 dưới, CORE có GW, /30 FW–CORE; panel subnet; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Kéo dây từ thiết bị tới thanh để gán IP: chưa làm (sửa IP ở panel cổng / IPAM).
+  - Router-on-a-stick, VIP / VRRP chưa vẽ riêng.
+  - Đường xuống thanh ở xa có thể cắt qua thanh khác.
+  - `.ntb.json` không mang thanh subnet (bấm "Bổ sung còn thiếu" sau khi nhập).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 bước 5, segment cho MPLS / Metro.
+
 ## 2026-10-18 — P2-08 (bước 3/5) Connector cho dây đi ra ngoài trang
 - Đã làm:
   - **Không còn dây bị giấu:** dây có một đầu trên trang mà đầu kia không ở đây thì hiện mốc hình mũi tên cạnh thiết bị:

@@ -31,6 +31,8 @@ export function PageTabs({
   onLayer,
   onMove,
   onRemove,
+  onGenerateL3,
+  onFillL3,
 }: {
   pages: DiagramPage[]
   current: string
@@ -46,6 +48,9 @@ export function PageTabs({
   onLayer: (id: string, layer: PageLayer) => void
   onMove: (id: string, delta: -1 | 1) => void
   onRemove: (id: string) => void
+  /** L3 page from IPAM (P2-08): a new one, or what is missing on the current L3 page. */
+  onGenerateL3: () => void
+  onFillL3: (id: string) => void
 }) {
   const { t } = useTranslation()
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -120,7 +125,7 @@ export function PageTabs({
               )}
             >
               {pageLabel(p, i, t)}
-              {p.layer !== 'physical' && (
+              {p.layer !== 'physical' && p.name.trim().toUpperCase() !== p.layer.toUpperCase() && (
                 <span className="ml-1 rounded-sm border border-border px-0.5 text-[10px] font-normal">
                   {p.layer.toUpperCase()}
                 </span>
@@ -150,13 +155,23 @@ export function PageTabs({
               {t('pages.duplicate')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onGenerateL3}>{t('l3.generate')}</DropdownMenuItem>
+            {page.layer === 'l3' && (
+              <DropdownMenuItem onClick={() => onFillL3(page.id)}>
+                {t('l3.fillIn')}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem
-              disabled={page.layer === 'physical'}
+              disabled={page.layer === 'physical' || page.layer === 'l3'}
               onClick={() => onLayer(page.id, 'physical')}
             >
               {t('pages.opensL1')}
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={page.layer === 'l2'} onClick={() => onLayer(page.id, 'l2')}>
+            <DropdownMenuItem
+              disabled={page.layer === 'l2' || page.layer === 'l3'}
+              onClick={() => onLayer(page.id, 'l2')}
+            >
               {t('pages.opensL2')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />

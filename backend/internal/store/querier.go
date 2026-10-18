@@ -166,6 +166,11 @@ type Querier interface {
 	DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsParams) ([]DeviceFacetCountsRow, error)
 	// L2 view: IPs of the given devices that are the gateway of a subnet (same VRF) with a VLAN — where the VLAN is routed.
 	DiagramGateways(ctx context.Context, arg DiagramGatewaysParams) ([]DiagramGatewaysRow, error)
+	// L3 pages (P2-08): configured IPs of the given devices with the most specific subnet (same VRF) each falls in.
+	DiagramL3Attachments(ctx context.Context, arg DiagramL3AttachmentsParams) ([]DiagramL3AttachmentsRow, error)
+	// The subnet of each given endpoint group's IP range.
+	DiagramL3Groups(ctx context.Context, arg DiagramL3GroupsParams) ([]DiagramL3GroupsRow, error)
+	DiagramSubnets(ctx context.Context, arg DiagramSubnetsParams) ([]DiagramSubnetsRow, error)
 	// L2 view (P2-08): VLANs of the given sites and the organization-wide ones (name and colour per VLAN id).
 	DiagramVlans(ctx context.Context, arg DiagramVlansParams) ([]DiagramVlansRow, error)
 	// Another live device with the same name, except members of the same cluster and provider clouds (ADR-027, ADR-033).

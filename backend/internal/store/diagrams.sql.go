@@ -107,6 +107,158 @@ func (q *Queries) DiagramGateways(ctx context.Context, arg DiagramGatewaysParams
 	return items, nil
 }
 
+const diagramL3Attachments = `-- name: DiagramL3Attachments :many
+SELECT ip.device_id, COALESCE(i.name, '')::text AS interface_name, COALESCE(i.kind, '')::text AS interface_kind,
+       ip.address::text AS address, s.id AS subnet_id,
+       COALESCE(s.gateway IS NOT NULL AND host(s.gateway)::inet = host(ip.address)::inet, false)::boolean AS is_gateway
+FROM ip_addresses ip
+LEFT JOIN interfaces i ON i.id = ip.interface_id AND i.organization_id = ip.organization_id
+LEFT JOIN LATERAL (
+  SELECT sn.id, sn.gateway FROM subnets sn
+  WHERE sn.organization_id = ip.organization_id AND sn.vrf = ip.vrf AND host(ip.address)::inet <<= sn.cidr
+  ORDER BY masklen(sn.cidr) DESC LIMIT 1
+) s ON true
+WHERE ip.organization_id = $1 AND ip.device_id = ANY ($2::uuid[])
+  AND ip.role IN ('primary', 'secondary') AND ip.interface_id IS NOT NULL
+ORDER BY ip.device_id, ip.address
+`
+
+type DiagramL3AttachmentsParams struct {
+	OrganizationID pgtype.UUID
+	DeviceIds      []pgtype.UUID
+}
+
+type DiagramL3AttachmentsRow struct {
+	DeviceID      pgtype.UUID
+	InterfaceName string
+	InterfaceKind string
+	Address       string
+	SubnetID      pgtype.UUID
+	IsGateway     bool
+}
+
+// L3 pages (P2-08): configured IPs of the given devices with the most specific subnet (same VRF) each falls in.
+func (q *Queries) DiagramL3Attachments(ctx context.Context, arg DiagramL3AttachmentsParams) ([]DiagramL3AttachmentsRow, error) {
+	rows, err := q.db.Query(ctx, diagramL3Attachments, arg.OrganizationID, arg.DeviceIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DiagramL3AttachmentsRow
+	for rows.Next() {
+		var i DiagramL3AttachmentsRow
+		if err := rows.Scan(
+			&i.DeviceID,
+			&i.InterfaceName,
+			&i.InterfaceKind,
+			&i.Address,
+			&i.SubnetID,
+			&i.IsGateway,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const diagramL3Groups = `-- name: DiagramL3Groups :many
+SELECT g.id AS group_id, r.subnet_id
+FROM endpoint_groups g
+JOIN ip_ranges r ON r.id = g.ip_range_id AND r.organization_id = g.organization_id
+WHERE g.organization_id = $1 AND g.id = ANY ($2::uuid[])
+`
+
+type DiagramL3GroupsParams struct {
+	OrganizationID pgtype.UUID
+	GroupIds       []pgtype.UUID
+}
+
+type DiagramL3GroupsRow struct {
+	GroupID  pgtype.UUID
+	SubnetID pgtype.UUID
+}
+
+// The subnet of each given endpoint group's IP range.
+func (q *Queries) DiagramL3Groups(ctx context.Context, arg DiagramL3GroupsParams) ([]DiagramL3GroupsRow, error) {
+	rows, err := q.db.Query(ctx, diagramL3Groups, arg.OrganizationID, arg.GroupIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DiagramL3GroupsRow
+	for rows.Next() {
+		var i DiagramL3GroupsRow
+		if err := rows.Scan(&i.GroupID, &i.SubnetID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const diagramSubnets = `-- name: DiagramSubnets :many
+SELECT s.id, s.cidr::text AS cidr, s.vrf, COALESCE(host(s.gateway), '')::text AS gateway, s.description, s.site_id,
+       v.vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color
+FROM subnets s
+LEFT JOIN vlans v ON v.id = s.vlan_id AND v.organization_id = s.organization_id
+WHERE s.organization_id = $1 AND s.id = ANY ($2::uuid[])
+ORDER BY s.cidr
+`
+
+type DiagramSubnetsParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []pgtype.UUID
+}
+
+type DiagramSubnetsRow struct {
+	ID          pgtype.UUID
+	Cidr        string
+	Vrf         string
+	Gateway     string
+	Description string
+	SiteID      pgtype.UUID
+	Vid         pgtype.Int4
+	VlanName    string
+	VlanColor   string
+}
+
+func (q *Queries) DiagramSubnets(ctx context.Context, arg DiagramSubnetsParams) ([]DiagramSubnetsRow, error) {
+	rows, err := q.db.Query(ctx, diagramSubnets, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DiagramSubnetsRow
+	for rows.Next() {
+		var i DiagramSubnetsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Cidr,
+			&i.Vrf,
+			&i.Gateway,
+			&i.Description,
+			&i.SiteID,
+			&i.Vid,
+			&i.VlanName,
+			&i.VlanColor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const diagramVlans = `-- name: DiagramVlans :many
 SELECT v.vid, v.name, v.color, v.site_id
 FROM vlans v

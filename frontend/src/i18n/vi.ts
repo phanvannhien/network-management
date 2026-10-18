@@ -912,6 +912,26 @@ export const vi = {
     unsaved: 'chưa lưu',
     empty: 'Sơ đồ trống.',
   },
+  l3: {
+    generate: 'Thêm trang L3 (tự sinh từ IPAM)',
+    fillIn: 'Bổ sung subnet / thiết bị còn thiếu',
+    pageName: 'L3',
+    added_one: 'Đã thêm {{count}} đối tượng vào trang L3',
+    added_other: 'Đã thêm {{count}} đối tượng vào trang L3',
+    nothing:
+      'Không có gì để thêm: chưa có router / firewall / L3 switch có IP trong IPAM, hoặc trang đã đủ.',
+    gatewayHint: 'IP này là gateway của subnet',
+    subnet: 'Subnet',
+    vlan: 'VLAN',
+    vrf: 'VRF',
+    gateway: 'Gateway',
+    noGateway: 'chưa khai',
+    attached: 'Thiết bị gắn vào',
+    openIpam: 'Mở trong IPAM',
+    hint: 'Trang L3 vẽ từ IP trong IPAM: thiết bị có IP thuộc subnet nào thì nối xuống thanh subnet đó; /30 giữa hai router là đường thẳng. Muốn đổi thì sửa IP / subnet, sơ đồ tự theo.',
+    pageHint:
+      'Trang L3: subnet là thanh ngang, đường nối là IP của thiết bị trong subnet đó (lấy từ IPAM).',
+  },
   offPage: {
     diagram: 'Sơ đồ "{{name}}"',
     nowhere: 'Chưa có trên sơ đồ nào',

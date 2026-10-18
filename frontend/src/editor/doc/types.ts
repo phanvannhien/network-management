@@ -99,6 +99,8 @@ export interface DocState {
   external?: Record<string, LinkCard>
   farEnds?: Record<string, FarEnd>
   elsewhere?: Record<string, { id: string; name: string }[]>
+  /** L3 pages (P2-08): subnets, where device IPs sit, endpoint groups' subnets — derived from IPAM, read-only. */
+  l3?: L3Facts
   // Pending inventory changes, in creation order where order matters (create before link).
   newDevices: Record<string, DeviceInput>
   newDeviceOrder: string[]
@@ -114,6 +116,16 @@ export interface DocState {
   newGroups?: Record<string, EndpointGroupInput>
   newGroupOrder?: string[]
   groupEdits?: Record<string, EndpointGroupUpdate>
+}
+
+export type DiagramSubnet = components['schemas']['DiagramSubnet']
+export type DiagramAttachment = components['schemas']['DiagramAttachment']
+
+export interface L3Facts {
+  subnets: Record<string, DiagramSubnet>
+  attachments: DiagramAttachment[]
+  /** Endpoint group id → subnet id (of its IP range). */
+  groupSubnet: Record<string, string>
 }
 
 /** The end of an external link that is not on the diagram. */
@@ -221,6 +233,11 @@ export function docFromDetail(d: DiagramDetail): DocState {
     vlans: d.vlans ?? [],
     gateways: d.gateways ?? [],
     ...externalFacts(d),
+    l3: {
+      subnets: Object.fromEntries((d.l3?.subnets ?? []).map((x) => [x.id, x])),
+      attachments: d.l3?.attachments ?? [],
+      groupSubnet: Object.fromEntries((d.l3?.groups ?? []).map((g) => [g.groupId, g.subnetId])),
+    },
     newDevices: {},
     newDeviceOrder: [],
     newPorts: {},

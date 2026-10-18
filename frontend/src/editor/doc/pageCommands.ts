@@ -178,3 +178,54 @@ export function setStub(
     },
   }
 }
+
+/** Put several objects on one page at once (an L3 page generated from IPAM): one undo step, once per page each. */
+export function placeOnPage(
+  pageId: string,
+  nodes: {
+    refKind: 'device' | 'endpoint_group' | 'subnet'
+    refId: string
+    x: number
+    y: number
+    width?: number
+  }[],
+): DocCommand {
+  return {
+    label: 'placeOnPage',
+    apply(d) {
+      const first = firstPageId(d.view)
+      const multi = Boolean(d.view.pages && d.view.pages.length > 1)
+      const there = new Set(
+        d.view.nodes
+          .filter((n) => (n.pageId || first) === pageId)
+          .map((n) => `${n.refKind}|${n.refId}`),
+      )
+      for (const n of nodes) {
+        const key = `${n.refKind}|${n.refId}`
+        if (there.has(key)) continue
+        there.add(key)
+        d.view.nodes.push({
+          id: newId(),
+          refKind: n.refKind,
+          refId: n.refId,
+          x: n.x,
+          y: n.y,
+          ...(n.width !== undefined && { width: n.width }),
+          ...(multi && { pageId }),
+        })
+      }
+    },
+  }
+}
+
+/** Width of a node drawn as a bar (an L3 subnet); a resize sends many with one mergeKey. */
+export function setNodeWidth(nodeId: string, width: number, mergeKey?: string): DocCommand {
+  return {
+    label: 'resizeNode',
+    mergeKey,
+    apply(d) {
+      const n = d.view.nodes.find((x) => x.id === nodeId)
+      if (n && n.width !== width) n.width = width
+    },
+  }
+}

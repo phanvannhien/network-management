@@ -32,7 +32,8 @@ import {
   useDiagramMutations,
   useDiagrams,
 } from './doc/api'
-import { addNode, createDevice, createGroup, newId } from './doc/commands'
+import { addNode, compound, createDevice, createGroup, newId } from './doc/commands'
+import { planL3 } from './doc/l3'
 import { expandTemplatePorts } from './library/ports'
 import { useTemplateChoices } from '@/modules/inventory/TemplatePicker'
 import { draftStore, type Draft } from './doc/drafts'
@@ -74,6 +75,7 @@ import {
   addPage,
   duplicatePage,
   movePage,
+  placeOnPage,
   removePage,
   renamePage,
   sendToPage,
@@ -741,6 +743,27 @@ function Workspace({
       if (id === store.getState().page) store.getState().setLens(layer === 'l2' ? 'l2' : 'physical')
     },
     move: (id: string, delta: -1 | 1) => store.getState().dispatch(movePage(id, delta)),
+    // L3 from IPAM (P2-08): routing devices of the other pages with their subnets, laid out; or what is missing.
+    generateL3: () => {
+      const plan = planL3(doc)
+      if (plan.length === 0) return toast.info(t('l3.nothing'))
+      const id = newId()
+      const s = store.getState()
+      s.dispatch(
+        compound('addL3Page', [
+          addPage(id, t('l3.pageName'), 'l3', firstName, firstLayer),
+          placeOnPage(id, plan),
+        ]),
+      )
+      s.setPage(id)
+      toast.success(t('l3.added', { count: plan.length }))
+    },
+    fillL3: (id: string) => {
+      const plan = planL3(doc, docOnPage(doc, id).view.nodes)
+      if (plan.length === 0) return toast.info(t('l3.nothing'))
+      store.getState().dispatch(placeOnPage(id, plan))
+      toast.success(t('l3.added', { count: plan.length }))
+    },
     remove: (id: string) => store.getState().dispatch(removePage(id)),
   }
   const pageCounts = useMemo(() => {
@@ -996,7 +1019,11 @@ function Workspace({
         orgId={orgId}
         name={meta.name}
         layer={t(`diagrams.layers.${meta.layer}`)}
-        lens={meta.layer === 'overview' ? undefined : lens}
+        lens={
+          meta.layer === 'overview' || pages.find((x) => x.id === page)?.layer === 'l3'
+            ? undefined
+            : lens
+        }
         onLens={(l) => store.getState().setLens(l)}
         status={status}
         pending={changesOf(doc).length}
@@ -1134,6 +1161,8 @@ function Workspace({
           onLayer={pageActions.layer}
           onMove={pageActions.move}
           onRemove={pageActions.remove}
+          onGenerateL3={pageActions.generateL3}
+          onFillL3={pageActions.fillL3}
         />
       )}
       {/* Same spot as the Problems panel: the panel wins while open. */}

@@ -5,6 +5,9 @@ import type { CableData } from './CableEdge'
 import { arrowOrigin, type ClusterBox } from './frames'
 import { ANN, type DiagramNode, type DocState, type LinkCard } from '../doc/types'
 import type { Lens } from '../doc/store'
+import type { PageLayer } from '../doc/pages'
+import { hostPart, isTransit, SUBNET_H, SUBNET_W } from '../doc/l3'
+import type { L3EdgeData } from './L3Edge'
 import { carries, l2Of, mergedL2, vidOfKey, vlanInfo, type Carry, type L2Edge } from '../l2/l2'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
@@ -24,6 +27,7 @@ export const NODE_TYPES_BY_REF = {
   endpoint_group: 'group',
   site: 'site',
   diagram: 'ref',
+  subnet: 'subnet',
 } as const
 
 export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node<RefData>[] {
@@ -39,6 +43,8 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
     },
     selected: selection.has(n.id),
     draggable: !n.locked,
+    // A subnet bar of an L3 page has its own width (stretched by the user).
+    ...(n.refKind === 'subnet' && { width: n.width ?? SUBNET_W, height: SUBNET_H }),
   }))
 }
 
@@ -48,6 +54,8 @@ export function toFlowNodes(doc: DocState, selection: ReadonlySet<string>): Node
  */
 export interface EdgeLens {
   lens: Lens
+  /** Layer of the page: an L3 page draws IP attachments instead of cables (P2-08). */
+  layer?: PageLayer
   /** L2 view: the VLAN record picked (`vlanInfo().key`) — cables not carrying it fade. */
   vlanFilter?: string | null
 }
@@ -60,6 +68,8 @@ export function toFlowEdges(
   selection: ReadonlySet<string> = new Set(),
   lens: EdgeLens = { lens: 'physical' },
 ): Edge<CableData>[] {
+  // L3 lines carry their own data (L3Edge); the callers only read cable data from cable edges.
+  if (lens.layer === 'l3') return toL3Edges(doc, selection) as Edge<CableData>[]
   const l2 = lens.lens === 'l2'
   const filter = l2 ? (lens.vlanFilter ?? null) : null
   const nodeOf = new Map<string, string>()
@@ -182,6 +192,109 @@ export function toFlowEdges(
     const label = `${portRanges(names.filter(Boolean)) || '—'} (${names.length})`
     if (edge.data!.groupAt === 'a') edge.data!.bPort = label
     else edge.data!.aPort = label
+  }
+  return out
+}
+
+/**
+ * An L3 page (P2-08): each device IP in a subnet drawn as a bar is a line down to the bar; a transit /30 / /31 not drawn
+ * as a bar is a line between its two routers; endpoint groups hang from their subnet; of the cables, only logical ones
+ * (VPN, GRE) are drawn.
+ */
+function toL3Edges(doc: DocState, selection: ReadonlySet<string>): Edge<CableData | L3EdgeData>[] {
+  const l3 = doc.l3
+  const out: Edge<CableData | L3EdgeData>[] = []
+  const nodeOf = new Map<string, string>()
+  const barOf = new Map<string, string>()
+  for (const n of doc.view.nodes) {
+    if (n.refKind === 'subnet') barOf.set(n.refId, n.id)
+    else if (!nodeOf.has(n.refId)) nodeOf.set(n.refId, n.id)
+  }
+  if (l3) {
+    const transit = new Map<string, { node: string; address: string }[]>()
+    for (const a of l3.attachments) {
+      const node = nodeOf.get(a.deviceId)
+      if (!node || !a.subnetId) continue
+      const bar = barOf.get(a.subnetId)
+      if (bar) {
+        out.push({
+          id: `l3:${node}:${a.address}`,
+          source: node,
+          target: bar,
+          type: 'l3',
+          selectable: false,
+          focusable: false,
+          data: {
+            kind: 'attach',
+            label: `${a.interfaceName} ${hostPart(a.address)}`.trim(),
+            gateway: a.isGateway,
+          },
+        })
+        continue
+      }
+      const sn = l3.subnets[a.subnetId]
+      if (sn && isTransit(sn.cidr)) {
+        const list = transit.get(a.subnetId) ?? []
+        list.push({ node, address: a.address })
+        transit.set(a.subnetId, list)
+      }
+    }
+    for (const [id, ends] of transit) {
+      const [x, y] = ends
+      if (!x || !y || x.node === y.node) continue
+      out.push({
+        id: `l3p:${id}`,
+        source: x.node,
+        target: y.node,
+        type: 'l3',
+        selectable: false,
+        focusable: false,
+        data: {
+          kind: 'p2p',
+          label: l3.subnets[id]!.cidr,
+          aHost: hostPart(x.address),
+          bHost: hostPart(y.address),
+        },
+      })
+    }
+    for (const [g, sn] of Object.entries(l3.groupSubnet)) {
+      const node = nodeOf.get(g)
+      const bar = barOf.get(sn)
+      if (node && bar)
+        out.push({
+          id: `l3g:${node}`,
+          source: node,
+          target: bar,
+          type: 'l3',
+          selectable: false,
+          focusable: false,
+          data: { kind: 'attach', label: '' },
+        })
+    }
+  }
+  // VPN / GRE tunnels between routers stay drawn (they are L3).
+  for (const e of doc.view.edges) {
+    const l = doc.links[e.linkId]
+    if (!l || l.kind !== 'logical') continue
+    const source = nodeOf.get(l.aId)
+    const target = nodeOf.get(l.bId)
+    if (!source || !target) continue
+    out.push({
+      id: e.id,
+      source,
+      target,
+      type: 'cable',
+      className: 'ntb-edge-logical',
+      data: {
+        linkId: l.id,
+        aPort: l.aPort,
+        bPort: l.bPort,
+        status: l.status ?? 'up',
+        index: 0,
+        count: 1,
+      },
+      selected: selection.has(e.id),
+    })
   }
   return out
 }

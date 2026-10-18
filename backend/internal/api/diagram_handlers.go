@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"math"
 	"regexp"
 	"strings"
@@ -113,6 +114,8 @@ func (c *refChecker) visible(kind string, id uuid.UUID) (bool, error) {
 		_, _, ok, err = loadDiagram(c.ctx, c.q, c.m, id)
 	case "link":
 		_, _, ok, err = loadLink(c.ctx, c.q, c.m, pgUUID(id))
+	case "subnet":
+		_, ok, err = loadSubnet(c.ctx, c.q, c.m, id)
 	}
 	if err != nil {
 		return false, err
@@ -221,7 +224,79 @@ func (s *Server) diagramDetail(ctx context.Context, q store.Querier, m tenant.Me
 	if err := diagramExternal(ctx, q, m, d.ID, endIDs, &out); err != nil {
 		return out, err
 	}
+	if err := diagramL3(ctx, q, m, &out); err != nil {
+		return out, err
+	}
 	return out, nil
+}
+
+// diagramL3 adds what L3 pages (P2-08, ADR-047) draw, all derived from IPAM: where each device's interface IPs sit
+// (subnet, gateway), the subnet of each endpoint group, and those subnets plus the ones placed as bars.
+func diagramL3(ctx context.Context, q store.Querier, m tenant.Membership, out *apigen.DiagramDetail) error {
+	l3 := apigen.DiagramL3{Subnets: []apigen.DiagramSubnet{}, Attachments: []apigen.DiagramAttachment{},
+		Groups: []struct {
+			GroupId  openapi_types.UUID `json:"groupId"`
+			SubnetId openapi_types.UUID `json:"subnetId"`
+		}{}}
+	out.L3 = &l3
+	subnetIDs := []pgtype.UUID{}
+	seen := map[pgtype.UUID]bool{}
+	want := func(id pgtype.UUID) {
+		if id.Valid && !seen[id] {
+			seen[id] = true
+			subnetIDs = append(subnetIDs, id)
+		}
+	}
+	devIDs := make([]pgtype.UUID, 0, len(out.Devices))
+	for _, d := range out.Devices {
+		devIDs = append(devIDs, pgUUID(d.Id))
+	}
+	if len(devIDs) > 0 {
+		rows, err := q.DiagramL3Attachments(ctx, store.DiagramL3AttachmentsParams{OrganizationID: m.OrgID, DeviceIds: devIDs})
+		if err != nil {
+			return fmt.Errorf("l3 attachments: %w", err)
+		}
+		for _, r := range rows {
+			want(r.SubnetID)
+			l3.Attachments = append(l3.Attachments, apigen.DiagramAttachment{DeviceId: uuid.UUID(r.DeviceID.Bytes),
+				InterfaceName: r.InterfaceName, InterfaceKind: r.InterfaceKind, Address: r.Address,
+				SubnetId: optUUID(r.SubnetID), IsGateway: r.IsGateway})
+		}
+	}
+	groupIDs := make([]pgtype.UUID, 0, len(out.EndpointGroups))
+	for _, g := range out.EndpointGroups {
+		groupIDs = append(groupIDs, pgUUID(g.Id))
+	}
+	if len(groupIDs) > 0 {
+		rows, err := q.DiagramL3Groups(ctx, store.DiagramL3GroupsParams{OrganizationID: m.OrgID, GroupIds: groupIDs})
+		if err != nil {
+			return fmt.Errorf("l3 groups: %w", err)
+		}
+		for _, r := range rows {
+			want(r.SubnetID)
+			l3.Groups = append(l3.Groups, struct {
+				GroupId  openapi_types.UUID `json:"groupId"`
+				SubnetId openapi_types.UUID `json:"subnetId"`
+			}{uuid.UUID(r.GroupID.Bytes), uuid.UUID(r.SubnetID.Bytes)})
+		}
+	}
+	for _, n := range out.View.Nodes {
+		if n.RefKind == apigen.DiagramNodeRefKindSubnet {
+			want(pgUUID(n.RefId))
+		}
+	}
+	if len(subnetIDs) == 0 {
+		return nil
+	}
+	rows, err := q.DiagramSubnets(ctx, store.DiagramSubnetsParams{OrganizationID: m.OrgID, Ids: subnetIDs})
+	if err != nil {
+		return fmt.Errorf("l3 subnets: %w", err)
+	}
+	for _, r := range rows {
+		l3.Subnets = append(l3.Subnets, apigen.DiagramSubnet{Id: uuid.UUID(r.ID.Bytes), Cidr: r.Cidr, Vrf: r.Vrf, Gateway: r.Gateway,
+			Description: r.Description, SiteId: optUUID(r.SiteID), Vid: optInt(r.Vid), VlanName: r.VlanName, VlanColor: r.VlanColor})
+	}
+	return nil
 }
 
 // diagramExternal adds what off-page connectors (P2-08, ADR-047) need: the links with one end on the diagram and the

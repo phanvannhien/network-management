@@ -117,6 +117,7 @@ function withLoadedFacts(draft: DocState, loaded: DocState | null): DocState {
     external: draft.external ?? loaded.external,
     farEnds: draft.farEnds ?? loaded.farEnds,
     elsewhere: draft.elsewhere ?? loaded.elsewhere,
+    l3: draft.l3 ?? loaded.l3,
   }
 }
 
@@ -286,7 +287,7 @@ export function createDocStore() {
     restore: (doc) =>
       set((s) => ({
         // Drafts kept before the L2 view have no VLAN facts: the loaded diagram's are still right.
-        doc: doc.vlans && doc.external ? doc : withLoadedFacts(doc, s.doc),
+        doc: doc.vlans && doc.external && doc.l3 ? doc : withLoadedFacts(doc, s.doc),
         past: [],
         future: [],
         status: 'dirty',

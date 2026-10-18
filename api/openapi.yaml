@@ -9112,7 +9112,8 @@ components:
           maxLength: 64
         refKind:
           type: string
-          enum: [device, endpoint_group, site, diagram]
+          enum: [device, endpoint_group, site, diagram, subnet]
+          description: subnet = a subnet bar on an L3 page (P2-08)
         refId:
           type: string
           format: uuid
@@ -9328,6 +9329,84 @@ components:
           description: the other diagrams (the caller may open) that place the far ends of externalLinks
           items:
             $ref: '#/components/schemas/DiagramElsewhere'
+        l3:
+          $ref: '#/components/schemas/DiagramL3'
+
+    DiagramL3:
+      type: object
+      required: [subnets, attachments, groups]
+      description: >-
+        L3 pages (P2-08, ADR-047), derived from IPAM: the interface IPs of the devices on the diagram with the subnet
+        (same VRF, most specific) each falls in, those subnets, and the subnet of each endpoint group's IP range
+      properties:
+        subnets:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagramSubnet'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagramAttachment'
+        groups:
+          type: array
+          items:
+            type: object
+            required: [groupId, subnetId]
+            properties:
+              groupId:
+                type: string
+                format: uuid
+              subnetId:
+                type: string
+                format: uuid
+
+    DiagramSubnet:
+      type: object
+      required: [id, cidr, vrf, gateway, description, siteId, vid, vlanName, vlanColor]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cidr:
+          type: string
+        vrf:
+          type: string
+        gateway:
+          type: string
+          description: empty when none
+        description:
+          type: string
+        siteId:
+          type: [string, 'null']
+          format: uuid
+        vid:
+          type: [integer, 'null']
+          format: int32
+        vlanName:
+          type: string
+        vlanColor:
+          type: string
+
+    DiagramAttachment:
+      type: object
+      required: [deviceId, interfaceName, interfaceKind, address, subnetId, isGateway]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        interfaceName:
+          type: string
+        interfaceKind:
+          type: string
+        address:
+          type: string
+          description: with its prefix, e.g. 10.1.20.1/24
+        subnetId:
+          type: [string, 'null']
+          format: uuid
+          description: null = no subnet of IPAM holds it
+        isGateway:
+          type: boolean
 
     DiagramElsewhere:
       type: object

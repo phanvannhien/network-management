@@ -22,9 +22,9 @@ import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { ConnectorContext, useDoc, useDocStoreApi, type ConnectorActions } from './context'
 import { offPageConnectors, type Connector } from '../doc/offpage'
-import { setStub } from '../doc/pageCommands'
+import { setNodeWidth, setStub } from '../doc/pageCommands'
 import type { OffPageData } from './OffPageNode'
-import { docOnPage, firstPageId } from '../doc/pages'
+import { docOnPage, firstPageId, pagesOf } from '../doc/pages'
 import {
   ANN,
   fitOptions,
@@ -143,9 +143,15 @@ export function Canvas({
   // Off-page connectors need the whole diagram (where else each far end is drawn).
   const fullDoc = useDoc((s) => s.doc)
   const page = useDoc((s) => s.page)
+  const layer = useDoc((s) =>
+    s.doc
+      ? (pagesOf(s.doc.view, s.meta?.layer ?? '').find((p) => p.id === s.page)?.layer ?? 'physical')
+      : 'physical',
+  )
+  // An L3 page shows IP attachments, not cables: no off-page connectors there.
   const connectors = useMemo(
-    () => (fullDoc && showOffPage ? offPageConnectors(fullDoc, page) : []),
-    [fullDoc, page, showOffPage],
+    () => (fullDoc && showOffPage && layer !== 'l3' ? offPageConnectors(fullDoc, page) : []),
+    [fullDoc, page, showOffPage, layer],
   )
   const connectorActions = useMemo<ConnectorActions>(
     () => ({
@@ -157,7 +163,7 @@ export function Canvas({
   )
   const lens = useDoc((s) => s.lens)
   const vlanFilter = useDoc((s) => s.vlanFilter)
-  const edgeLens = useMemo(() => ({ lens, vlanFilter }), [lens, vlanFilter])
+  const edgeLens = useMemo(() => ({ lens, vlanFilter, layer }), [lens, vlanFilter, layer])
   // L2 view with a VLAN picked: nodes it does not touch fade.
   const lit = useMemo(() => (doc ? litNodes(doc, edgeLens) : null), [doc, edgeLens])
 
@@ -370,7 +376,20 @@ export function Canvas({
         if (c.type === 'position' && c.position && canEdit)
           moves.push({ id: c.id, x: Math.round(c.position.x), y: Math.round(c.position.y) })
         else if (c.type === 'select') picked.set(c.id, c.selected)
-        else if (c.type === 'dimensions' && c.dimensions) sizes[c.id] = c.dimensions
+        else if (c.type === 'dimensions' && c.dimensions) {
+          sizes[c.id] = c.dimensions
+          // A subnet bar stretched by the user keeps its width (one undo step per gesture).
+          if (
+            c.resizing &&
+            canEdit &&
+            store.getState().doc?.view.nodes.find((n) => n.id === c.id)?.refKind === 'subnet'
+          ) {
+            if (resizeKey.current?.id !== c.id)
+              resizeKey.current = { id: c.id, key: `resize:${c.id}:${crypto.randomUUID()}` }
+            dispatch(setNodeWidth(c.id, Math.round(c.dimensions.width), resizeKey.current.key))
+          } else if (c.resizing === false && resizeKey.current?.id === c.id)
+            resizeKey.current = null
+        }
       }
       if (moves.length > 0) {
         dispatch(moveNodes(moves, dragKey.current ?? undefined))

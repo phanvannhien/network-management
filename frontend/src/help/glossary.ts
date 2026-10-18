@@ -507,6 +507,29 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['→ Phòng server · CORE-SW01 Te1/1/2', '→ Server room · CORE-SW01 Te1/1/2'],
   ),
   e(
+    'l3-page',
+    'ip',
+    ['Trang L3', 'L3 page'],
+    [
+      'Trang vẽ phần định tuyến, sinh từ IPAM: router / firewall / L3 switch thành một hàng, mỗi subnet là một thanh ngang. Thiết bị có IP thuộc subnet nào thì nối xuống thanh đó (ghi cổng và phần host, GW nếu là gateway). Subnet WAN (IP công cộng) ở trên, LAN ở dưới. Muốn đổi thì sửa IP / subnet, trang tự theo.',
+      'A page of the routing part, generated from IPAM: routers / firewalls / L3 switches in a row, each subnet a bar. A device with an IP in a subnet is joined to that bar (port and host part, GW for the gateway). WAN subnets (public addresses) above, LANs below. Change IPs / subnets and the page follows.',
+    ],
+    [
+      'Firewall "port1 .1 GW" xuống thanh 10.1.20.0/24 · VLAN 20.',
+      'Firewall "port1 .1 GW" down to the 10.1.20.0/24 · VLAN 20 bar.',
+    ],
+  ),
+  e(
+    'transit-subnet',
+    'ip',
+    ['Subnet chuyển tiếp (/30, /31)', 'Transit subnet (/30, /31)'],
+    [
+      'Subnet chỉ có 2 địa chỉ dùng được, nối đúng hai router với nhau. Trang L3 vẽ nó thành một đường thẳng giữa hai router, ghi subnet và .1 / .2 ở hai đầu, không vẽ thanh.',
+      'A subnet with just two usable addresses joining two routers. The L3 page draws it as a straight line between them, with the subnet and .1 / .2 at the ends, not as a bar.',
+    ],
+    ['10.0.0.0/30: FW .1 ↔ Core .2', '10.0.0.0/30: FW .1 ↔ Core .2'],
+  ),
+  e(
     'vlan-mismatch',
     'vlan',
     ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],

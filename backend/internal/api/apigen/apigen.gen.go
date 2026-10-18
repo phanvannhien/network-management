@@ -766,6 +766,7 @@ const (
 	DiagramNodeRefKindDiagram       DiagramNodeRefKind = "diagram"
 	DiagramNodeRefKindEndpointGroup DiagramNodeRefKind = "endpoint_group"
 	DiagramNodeRefKindSite          DiagramNodeRefKind = "site"
+	DiagramNodeRefKindSubnet        DiagramNodeRefKind = "subnet"
 )
 
 // Valid indicates whether the value is a known member of the DiagramNodeRefKind enum.
@@ -778,6 +779,8 @@ func (e DiagramNodeRefKind) Valid() bool {
 	case DiagramNodeRefKindEndpointGroup:
 		return true
 	case DiagramNodeRefKindSite:
+		return true
+	case DiagramNodeRefKindSubnet:
 		return true
 	default:
 		return false
@@ -3042,6 +3045,19 @@ type DiagramAnnotationKind string
 // DiagramAnnotationLineStyle arrows
 type DiagramAnnotationLineStyle string
 
+// DiagramAttachment defines model for DiagramAttachment.
+type DiagramAttachment struct {
+	// Address with its prefix, e.g. 10.1.20.1/24
+	Address       string             `json:"address"`
+	DeviceId      openapi_types.UUID `json:"deviceId"`
+	InterfaceKind string             `json:"interfaceKind"`
+	InterfaceName string             `json:"interfaceName"`
+	IsGateway     bool               `json:"isGateway"`
+
+	// SubnetId null = no subnet of IPAM holds it
+	SubnetId *openapi_types.UUID `json:"subnetId"`
+}
+
 // DiagramChange One inventory change made in the editor. createDevice / createLink carry a client tempId (a UUID) that view nodes, edges and later changes may reference; the result maps it to the real id.
 type DiagramChange struct {
 	Device       *DeviceInput  `json:"device,omitempty"`
@@ -3080,6 +3096,9 @@ type DiagramDetail struct {
 
 	// HiddenRefs ids referenced by the view that the caller may not see (kept unchanged when saving)
 	HiddenRefs []openapi_types.UUID `json:"hiddenRefs"`
+
+	// L3 L3 pages (P2-08, ADR-047), derived from IPAM: the interface IPs of the devices on the diagram with the subnet (same VRF, most specific) each falls in, those subnets, and the subnet of each endpoint group's IP range
+	L3 *DiagramL3 `json:"l3,omitempty"`
 
 	// Links links whose both ends are nodes of the view
 	Links []Link      `json:"links"`
@@ -3132,6 +3151,16 @@ type DiagramInput struct {
 	Name  string        `json:"name"`
 }
 
+// DiagramL3 L3 pages (P2-08, ADR-047), derived from IPAM: the interface IPs of the devices on the diagram with the subnet (same VRF, most specific) each falls in, those subnets, and the subnet of each endpoint group's IP range
+type DiagramL3 struct {
+	Attachments []DiagramAttachment `json:"attachments"`
+	Groups      []struct {
+		GroupId  openapi_types.UUID `json:"groupId"`
+		SubnetId openapi_types.UUID `json:"subnetId"`
+	} `json:"groups"`
+	Subnets []DiagramSubnet `json:"subnets"`
+}
+
 // DiagramLayer overview (organization / unit level), physical, l2, l3 (site detail)
 type DiagramLayer string
 
@@ -3158,15 +3187,17 @@ type DiagramNode struct {
 	Locked     *bool              `json:"locked,omitempty"`
 
 	// PageId page of the diagram it is on (P2-08); absent = the first page
-	PageId  *string            `json:"pageId,omitempty"`
-	RefId   openapi_types.UUID `json:"refId"`
+	PageId *string            `json:"pageId,omitempty"`
+	RefId  openapi_types.UUID `json:"refId"`
+
+	// RefKind subnet = a subnet bar on an L3 page (P2-08)
 	RefKind DiagramNodeRefKind `json:"refKind"`
 	Width   *float32           `json:"width,omitempty"`
 	X       float32            `json:"x"`
 	Y       float32            `json:"y"`
 }
 
-// DiagramNodeRefKind defines model for DiagramNode.RefKind.
+// DiagramNodeRefKind subnet = a subnet bar on an L3 page (P2-08)
 type DiagramNodeRefKind string
 
 // DiagramPage defines model for DiagramPage.
@@ -3221,6 +3252,21 @@ type DiagramStub struct {
 	PageId *string `json:"pageId,omitempty"`
 	X      float32 `json:"x"`
 	Y      float32 `json:"y"`
+}
+
+// DiagramSubnet defines model for DiagramSubnet.
+type DiagramSubnet struct {
+	Cidr        string `json:"cidr"`
+	Description string `json:"description"`
+
+	// Gateway empty when none
+	Gateway   string              `json:"gateway"`
+	Id        openapi_types.UUID  `json:"id"`
+	SiteId    *openapi_types.UUID `json:"siteId"`
+	Vid       *int32              `json:"vid"`
+	VlanColor string              `json:"vlanColor"`
+	VlanName  string              `json:"vlanName"`
+	Vrf       string              `json:"vrf"`
 }
 
 // DiagramView defines model for DiagramView.

@@ -105,6 +105,9 @@ export function PropertiesPanel({
     } else if (node?.refKind === 'site') {
       title = t('overview.siteTitle')
       body = <SitePanel key={node.refId} orgId={orgId} siteId={node.refId} />
+    } else if (node?.refKind === 'subnet') {
+      title = t('l3.subnet')
+      body = <SubnetPanel orgId={orgId} subnetId={node.refId} />
     }
   } else if (selection.length > 1) {
     title = t('panel.many', { count: selection.length })
@@ -856,6 +859,48 @@ function LagPanel({ linkIds }: { linkIds: string[] }) {
         </ul>
       )}
       <p className="text-xs text-muted-foreground">{t('panel.lagGuide')}</p>
+    </>
+  )
+}
+
+/** A subnet bar of an L3 page (P2-08): what IPAM says about it and who sits in it; edited in IPAM. */
+function SubnetPanel({ orgId, subnetId }: { orgId: string; subnetId: string }) {
+  const { t } = useTranslation()
+  const doc = useDoc((s) => s.doc)!
+  const sn = doc.l3?.subnets[subnetId]
+  if (!sn) return null
+  const members = (doc.l3?.attachments ?? [])
+    .filter((a) => a.subnetId === subnetId)
+    .map((a) => ({ ...a, host: doc.devices[a.deviceId]?.hostname ?? '?' }))
+  return (
+    <>
+      <dl className="space-y-1">
+        <Row label={t('l3.subnet')} value={sn.cidr} mono />
+        <Row label={t('l3.vlan')} value={sn.vid ? `${sn.vid} ${sn.vlanName}` : '—'} />
+        <Row label={t('l3.vrf')} value={sn.vrf || '—'} />
+        <Row label={t('l3.gateway')} value={sn.gateway || t('l3.noGateway')} mono />
+      </dl>
+      {sn.description && <p className="text-xs whitespace-pre-line">{sn.description}</p>}
+      {members.length > 0 && (
+        <div>
+          <p className="text-xs font-medium">{t('l3.attached')}</p>
+          <ul className="space-y-0.5 font-mono text-xs">
+            {members.map((m) => (
+              <li key={`${m.deviceId}:${m.address}`}>
+                {m.host} · {m.interfaceName} {m.address}
+                {m.isGateway && ' · GW'}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <Link
+        className="text-xs underline-offset-2 hover:underline"
+        to={`/o/${orgId}/ipam/subnets/${subnetId}`}
+      >
+        {t('l3.openIpam')}
+      </Link>
+      <p className="text-xs text-muted-foreground">{t('l3.hint')}</p>
     </>
   )
 }

@@ -4545,8 +4545,11 @@ export interface components {
         };
         DiagramNode: {
             id: string;
-            /** @enum {string} */
-            refKind: "device" | "endpoint_group" | "site" | "diagram";
+            /**
+             * @description subnet = a subnet bar on an L3 page (P2-08)
+             * @enum {string}
+             */
+            refKind: "device" | "endpoint_group" | "site" | "diagram" | "subnet";
             /** Format: uuid */
             refId: string;
             x: number;
@@ -4647,6 +4650,47 @@ export interface components {
             externalLinks?: components["schemas"]["Link"][];
             /** @description the other diagrams (the caller may open) that place the far ends of externalLinks */
             elsewhere?: components["schemas"]["DiagramElsewhere"][];
+            l3?: components["schemas"]["DiagramL3"];
+        };
+        /** @description L3 pages (P2-08, ADR-047), derived from IPAM: the interface IPs of the devices on the diagram with the subnet (same VRF, most specific) each falls in, those subnets, and the subnet of each endpoint group's IP range */
+        DiagramL3: {
+            subnets: components["schemas"]["DiagramSubnet"][];
+            attachments: components["schemas"]["DiagramAttachment"][];
+            groups: {
+                /** Format: uuid */
+                groupId: string;
+                /** Format: uuid */
+                subnetId: string;
+            }[];
+        };
+        DiagramSubnet: {
+            /** Format: uuid */
+            id: string;
+            cidr: string;
+            vrf: string;
+            /** @description empty when none */
+            gateway: string;
+            description: string;
+            /** Format: uuid */
+            siteId: string | null;
+            /** Format: int32 */
+            vid: number | null;
+            vlanName: string;
+            vlanColor: string;
+        };
+        DiagramAttachment: {
+            /** Format: uuid */
+            deviceId: string;
+            interfaceName: string;
+            interfaceKind: string;
+            /** @description with its prefix, e.g. 10.1.20.1/24 */
+            address: string;
+            /**
+             * Format: uuid
+             * @description null = no subnet of IPAM holds it
+             */
+            subnetId: string | null;
+            isGateway: boolean;
         };
         DiagramElsewhere: {
             /** Format: uuid */

@@ -55,3 +55,34 @@ JOIN vlans v ON v.id = s.vlan_id AND v.organization_id = ip.organization_id
 LEFT JOIN interfaces i ON i.id = ip.interface_id AND i.organization_id = ip.organization_id
 WHERE ip.organization_id = @organization_id AND ip.device_id = ANY (@device_ids::uuid[])
 ORDER BY v.vid;
+
+-- name: DiagramL3Attachments :many
+-- L3 pages (P2-08): configured IPs of the given devices with the most specific subnet (same VRF) each falls in.
+SELECT ip.device_id, COALESCE(i.name, '')::text AS interface_name, COALESCE(i.kind, '')::text AS interface_kind,
+       ip.address::text AS address, s.id AS subnet_id,
+       COALESCE(s.gateway IS NOT NULL AND host(s.gateway)::inet = host(ip.address)::inet, false)::boolean AS is_gateway
+FROM ip_addresses ip
+LEFT JOIN interfaces i ON i.id = ip.interface_id AND i.organization_id = ip.organization_id
+LEFT JOIN LATERAL (
+  SELECT sn.id, sn.gateway FROM subnets sn
+  WHERE sn.organization_id = ip.organization_id AND sn.vrf = ip.vrf AND host(ip.address)::inet <<= sn.cidr
+  ORDER BY masklen(sn.cidr) DESC LIMIT 1
+) s ON true
+WHERE ip.organization_id = @organization_id AND ip.device_id = ANY (@device_ids::uuid[])
+  AND ip.role IN ('primary', 'secondary') AND ip.interface_id IS NOT NULL
+ORDER BY ip.device_id, ip.address;
+
+-- name: DiagramL3Groups :many
+-- The subnet of each given endpoint group's IP range.
+SELECT g.id AS group_id, r.subnet_id
+FROM endpoint_groups g
+JOIN ip_ranges r ON r.id = g.ip_range_id AND r.organization_id = g.organization_id
+WHERE g.organization_id = @organization_id AND g.id = ANY (@group_ids::uuid[]);
+
+-- name: DiagramSubnets :many
+SELECT s.id, s.cidr::text AS cidr, s.vrf, COALESCE(host(s.gateway), '')::text AS gateway, s.description, s.site_id,
+       v.vid, COALESCE(v.name, '')::text AS vlan_name, COALESCE(v.color, '')::text AS vlan_color
+FROM subnets s
+LEFT JOIN vlans v ON v.id = s.vlan_id AND v.organization_id = s.organization_id
+WHERE s.organization_id = @organization_id AND s.id = ANY (@ids::uuid[])
+ORDER BY s.cidr;
