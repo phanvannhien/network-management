@@ -35,3 +35,4 @@ Thumbs.db
 dist/
 coverage/
 deploy/docker-compose.override.yml
+ntb-recovery-codes*.txt
