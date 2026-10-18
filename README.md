@@ -44,8 +44,12 @@ make dev-env    # tạo deploy/.env (NTB_MASTER_KEY ngẫu nhiên); đổi mật
 docker compose -f deploy/docker-compose.yml up -d --build   # web :8068, api, db
 ```
 
-**NTB_MASTER_KEY** mã hóa mọi bí mật (MFA, sau này là mật khẩu thiết bị). Sao lưu key riêng, KHÔNG để chung
-với backup DB; mất hoặc đổi key = không đọc được các bí mật đã lưu. API không khởi động nếu thiếu key.
+Cài cho khách / máy chủ thật: **`docs/INSTALL.md`** (cài, HTTPS, nâng cấp). Sao lưu, khôi phục, giữ master key:
+**`docs/OPERATIONS.md`**.
+
+**NTB_MASTER_KEY** mã hóa mọi bí mật (MFA, mật khẩu kho, token các đích sao lưu). Cất key riêng, KHÔNG để chung
+với bản sao lưu; mất hoặc đổi key = không đọc được các bí mật đã lưu. API không khởi động nếu thiếu key.
+**NTB_BACKUP_PASSPHRASE** (≥ 16 ký tự) bật sao lưu tự động mỗi đêm; cũng cất riêng.
 
 Tạo system admin đầu tiên (mật khẩu ≥ 12 ký tự, đọc từ stdin để không lộ trong lịch sử shell):
 

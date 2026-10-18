@@ -24,6 +24,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
@@ -46,6 +47,11 @@ type Config struct {
 	Migrate func(databaseURL string) error
 	// CheckKeys tells whether the restored database's secrets open with the current master key version.
 	CheckKeys func(ctx context.Context, pool *pgxpool.Pool) error
+	// Keys opens the destinations' secrets; Rclone copies backups to them (step 2).
+	Keys   *secrets.Keyring
+	Rclone Rclone
+	// Notify e-mails the system admins (nil = no e-mail).
+	Notify func(ctx context.Context, subject, text string) error
 }
 
 // Service makes, checks and restores backups of the installation's database.
@@ -78,6 +84,8 @@ type Result struct {
 	SHA256   string
 	Pruned   int
 	Duration time.Duration
+	// Shipped: one result per enabled destination.
+	Shipped []ShipResult
 }
 
 func (s *Service) bin(name string) string {
@@ -290,6 +298,10 @@ func (s *Service) Run(ctx context.Context, kind string) (Result, error) {
 	}
 	if runErr == nil {
 		res.Pruned = s.prune()
+		// The safety backup before an upgrade stays local: the upgrade waits for it.
+		if kind != "pre-upgrade" {
+			res.Shipped = s.Ship(ctx, res.File)
+		}
 	}
 	res.Duration = time.Since(started)
 	finish := store.FinishBackupRunParams{ID: id, Status: "ok", FileName: res.File, SizeBytes: res.Size, Sha256: res.SHA256, Pruned: int32(res.Pruned)}

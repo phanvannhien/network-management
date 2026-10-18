@@ -517,6 +517,39 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['Báo cáo → Port map.', 'Reports → Port map.'],
   ),
   e(
+    'backup-321',
+    'org',
+    ['Sao lưu 3-2-1', '3-2-1 backups'],
+    [
+      'Quy tắc sao lưu an toàn: 3 bản dữ liệu, trên 2 loại nơi lưu khác nhau, 1 bản nằm ngoài toà nhà. Bản trên chính máy chủ chỉ chống xóa nhầm; NAS chống hỏng máy chủ; bản trên cloud chống cháy nổ, mất trộm.',
+      'A safe backup rule: 3 copies, on 2 kinds of storage, 1 outside the building. The copy on the server only guards against mistakes; a NAS against a dead server; a cloud copy against fire and theft.',
+    ],
+    ['Hệ thống → Sao lưu → Thêm đích.', 'System → Backups → Add destination.'],
+  ),
+  e(
+    'object-lock',
+    'org',
+    ['Object Lock (khóa chống xóa)', 'Object Lock'],
+    [
+      'Tính năng của kho lưu trữ S3: file vừa ghi không ai xóa hay sửa được trong N ngày, kể cả người có key. Kẻ tấn công chiếm được máy chủ cũng không xóa được bản sao lưu — cách chống ransomware tốt nhất.',
+      'An S3 storage feature: a file just written cannot be deleted or changed for N days, even with the key. Someone who took over the server still cannot delete the backups — the best defence against ransomware.',
+    ],
+    [
+      'Bật khi tạo bucket; Hệ thống → Sao lưu → đích Kho S3.',
+      'Turn it on when creating the bucket; System → Backups → S3 destination.',
+    ],
+  ),
+  e(
+    'sftp',
+    'org',
+    ['SFTP', 'SFTP'],
+    [
+      'Gửi file qua kết nối SSH đã mã hóa, tới NAS (Synology / QNAP bật SFTP) hoặc máy chủ khác. "Khóa máy chủ" (known_hosts) giúp chắc chắn đang gửi tới đúng máy, không phải máy giả mạo.',
+      'File transfer over an encrypted SSH connection, to a NAS (Synology / QNAP with SFTP on) or another server. The "server key" (known_hosts) makes sure files go to the real server, not an impostor.',
+    ],
+    ['Hệ thống → Sao lưu → đích SFTP.', 'System → Backups → SFTP destination.'],
+  ),
+  e(
     'title-block',
     'org',
     ['Title block (khung tên bản vẽ)', 'Title block'],

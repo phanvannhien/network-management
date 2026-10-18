@@ -1,8 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Navigate } from 'react-router'
-import { api, errorMessage } from '@/api/client'
+import { Link, Navigate } from 'react-router'
 import { useSession } from '@/app/auth'
 import { useHealth } from '@/app/health'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
@@ -11,23 +9,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/format'
-
-function useBackups(enabled: boolean) {
-  const { t } = useTranslation()
-  return useQuery({
-    queryKey: ['admin', 'backups'],
-    enabled,
-    refetchInterval: 60_000,
-    queryFn: async () => {
-      const r = await api.GET('/admin/backups')
-      if (r.data) return r.data
-      throw new Error(errorMessage(r.error, r.response.status, t('backups.loadFailed')))
-    },
-  })
-}
-
-const kib = (n: number) =>
-  n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MiB` : `${Math.max(1, Math.round(n / 1024))} KiB`
+import { BackupState } from './BackupsPage'
+import { sizeText as kib, useBackups } from './backups'
 
 /**
  * Backups (P2-13): whether they are on, the newest good one (red after 2 days without), the recent runs with their
@@ -38,13 +21,7 @@ function BackupsSection({ enabled }: { enabled: boolean }) {
   const q = useBackups(enabled)
   const b = q.data
   if (!b) return null
-  const state = !b.enabled ? (
-    <StatusBadge status="down" label={t('backups.off')} />
-  ) : b.stale ? (
-    <StatusBadge status="down" label={t('backups.stale')} />
-  ) : (
-    <StatusBadge status="up" label={t('backups.ok')} />
-  )
+  const state = <BackupState b={b} />
   return (
     <section
       aria-label={t('backups.title')}
@@ -107,6 +84,9 @@ function BackupsSection({ enabled }: { enabled: boolean }) {
         </table>
       )}
       <p className="text-xs text-muted-foreground">{t('backups.howTo')}</p>
+      <Link to="/admin/backups" className="text-sm text-primary hover:underline">
+        {t('backups.manage')} →
+      </Link>
     </section>
   )
 }

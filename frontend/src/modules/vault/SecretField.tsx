@@ -140,7 +140,13 @@ export function SecretField({
 }
 
 /** Confirm an MFA code (the session's MFA time is refreshed, then the look is tried again). */
-function MfaPrompt({ onClose, onConfirmed }: { onClose: () => void; onConfirmed: () => void }) {
+export function MfaPrompt({
+  onClose,
+  onConfirmed,
+}: {
+  onClose: () => void
+  onConfirmed: () => void
+}) {
   const { t } = useTranslation()
   const verify = useMfaVerify()
   const [code, setCode] = useState('')

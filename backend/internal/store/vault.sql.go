@@ -54,6 +54,42 @@ func (q *Queries) AddCredentialDevices(ctx context.Context, arg AddCredentialDev
 	return err
 }
 
+const allSealedBackupTargets = `-- name: AllSealedBackupTargets :many
+SELECT id, secret_ciphertext, secret_wrapped_dek, secret_key_version FROM backup_targets WHERE secret_ciphertext IS NOT NULL
+`
+
+type AllSealedBackupTargetsRow struct {
+	ID               pgtype.UUID
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+}
+
+func (q *Queries) AllSealedBackupTargets(ctx context.Context) ([]AllSealedBackupTargetsRow, error) {
+	rows, err := q.db.Query(ctx, allSealedBackupTargets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AllSealedBackupTargetsRow
+	for rows.Next() {
+		var i AllSealedBackupTargetsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SecretCiphertext,
+			&i.SecretWrappedDek,
+			&i.SecretKeyVersion,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const allSealedCloudAccounts = `-- name: AllSealedCloudAccounts :many
 SELECT id, secret_ciphertext, secret_wrapped_dek, secret_key_version FROM cloud_accounts WHERE secret_ciphertext IS NOT NULL
 `
@@ -700,6 +736,31 @@ func (q *Queries) ListCredentials(ctx context.Context, arg ListCredentialsParams
 	return items, nil
 }
 
+const rewrapBackupTarget = `-- name: RewrapBackupTarget :execrows
+UPDATE backup_targets SET secret_wrapped_dek = $1, secret_key_version = $2
+WHERE id = $3 AND secret_wrapped_dek = $4
+`
+
+type RewrapBackupTargetParams struct {
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	ID               pgtype.UUID
+	OldWrappedDek    []byte
+}
+
+func (q *Queries) RewrapBackupTarget(ctx context.Context, arg RewrapBackupTargetParams) (int64, error) {
+	result, err := q.db.Exec(ctx, rewrapBackupTarget,
+		arg.SecretWrappedDek,
+		arg.SecretKeyVersion,
+		arg.ID,
+		arg.OldWrappedDek,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const rewrapCloudAccount = `-- name: RewrapCloudAccount :execrows
 UPDATE cloud_accounts SET secret_wrapped_dek = $1, secret_key_version = $2
 WHERE id = $3 AND secret_wrapped_dek = $4
@@ -830,6 +891,7 @@ SELECT DISTINCT v::smallint AS version FROM (
   UNION SELECT secret_key_version FROM cloud_accounts WHERE secret_key_version IS NOT NULL
   UNION SELECT key_version FROM mfa_totp WHERE secret_ciphertext <> '\x00'::bytea
   UNION SELECT password_key_version FROM smtp_settings WHERE password_key_version IS NOT NULL
+  UNION SELECT secret_key_version FROM backup_targets WHERE secret_key_version IS NOT NULL
 ) x ORDER BY 1
 `
 

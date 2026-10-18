@@ -65,6 +65,9 @@ const TemplatesPage = lazy(() =>
 const VaultPage = lazy(() =>
   import('./modules/vault/VaultPage').then((m) => ({ default: m.VaultPage })),
 )
+const BackupsPage = lazy(() =>
+  import('./modules/admin/BackupsPage').then((m) => ({ default: m.BackupsPage })),
+)
 const ReportsPage = lazy(() =>
   import('./modules/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 )
@@ -150,6 +153,7 @@ export function AppRoutes() {
         <Route path="audit" element={<AuditLogPage scope="system" />} />
         <Route path="health" element={<SystemHealthPage />} />
         <Route path="smtp" element={<AdminSmtpPage />} />
+        <Route path="backups" element={<BackupsPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/editor" element={guard(<EditorPage />)} />

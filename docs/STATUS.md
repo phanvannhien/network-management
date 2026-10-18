@@ -5,6 +5,45 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-13 Vận hành, bước 2–3: đích lưu ngoài máy chủ, trang Sao lưu, tài liệu cài đặt / nâng cấp (ADR-053) — xong P2-13
+- Người dùng: làm xong P2-13 rồi dừng.
+- Đã làm:
+  - **Đích lưu bản sao** (qua rclone, image `api` thêm gói `rclone`):
+    - thư mục mount (NAS SMB/NFS, USB), SFTP (kiểm tra khóa máy chủ), kho S3 (AWS / Backblaze B2 / Wasabi / Cloudflare R2 / Synology C2 / MinIO, hợp với Object Lock), Google Drive / OneDrive / Dropbox (token từ `rclone authorize`);
+    - mỗi đích có số bản giữ riêng;
+    - mật khẩu / token mã hóa bằng master key, không bao giờ hiện lại, được mã hóa lại khi đổi master key.
+  - **Sau mỗi bản tốt:** gửi lên các đích đang bật, dọn bản cũ trên đích. Đích lỗi được ghi lại và email cho system admin (chỉ lúc chuyển sang lỗi). Sao lưu hằng ngày bắt đầu lỗi cũng gửi email.
+  - **Trang Hệ thống → Sao lưu:**
+    - tình trạng, "Sao lưu ngay";
+    - đích lưu (thêm theo gợi ý cá nhân / văn phòng / doanh nghiệp, sửa, thử kết nối, xóa);
+    - các bản trên máy chủ (tải về cần nhập lại MFA, có audit), lịch sử.
+    - Trang Tình trạng hệ thống có link sang và báo vàng khi có đích lỗi.
+  - **Tài liệu:**
+    - `docs/INSTALL.md`: cài lần đầu, HTTPS / reverse proxy, nâng cấp, quay về bản cũ, nâng major Postgres, gỡ bỏ;
+    - `docs/OPERATIONS.md`: đích theo cỡ khách, mount NAS vào container, SFTP, S3 Object Lock, Drive token, chống ransomware (snapshot NAS bất biến), khôi phục lên máy chủ mới;
+    - README trỏ tới hai tài liệu này.
+  - `make backup | backup-list | restore` tự dùng `deploy/docker-compose.override.yml` khi có (file này đã vào .gitignore).
+  - **Glossary:** sao lưu 3-2-1, Object Lock, SFTP.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Go:
+    - `TestShipToDestinations` (rclone thật: gửi lên thư mục, đích tắt bị bỏ qua, giữ bản trên đích, file lạ không bị đụng, đích hỏng ghi lỗi + đúng một email);
+    - `TestTargetValidate`;
+    - `TestAdminBackupTargets` (chỉ system admin, bí mật không lộ trong DB / API / audit, giữ bí mật khi không gửi, không đổi loại, phiên bản cũ bị từ chối, tên file `../` không đọc được);
+    - `TestRotateMasterKey` gồm cả đích sao lưu.
+  - Máy chủ thật trong container tạm: SFTP (`linuxserver/openssh-server`, có khóa máy chủ) và S3 (MinIO): thử kết nối, gửi file, sai mật khẩu bị từ chối (`TestRcloneRemotes`, chạy khi có biến NTB_TEST_SFTP / NTB_TEST_S3).
+  - Trình duyệt thật (instance tạm): thêm đích → tự thử kết nối OK → "Sao lưu ngay" → file có trên đích; "Tải về" hỏi MFA; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Google Drive / OneDrive / Dropbox chưa thử với tài khoản thật (cần đăng nhập trình duyệt).
+  - Mật khẩu sao lưu và lịch vẫn đặt trong `deploy/.env`, chưa chỉnh trên giao diện.
+  - Chưa build thử image `api` đầy đủ (đã kiểm tra gói `postgresql16-client` và `rclone` trên alpine 3.22).
+- Câu hỏi cho người dùng: file `ntb-recovery-codes.txt` (10 mã khôi phục MFA) đang nằm trong git từ P1-03 — xem đề xuất.
+- Đề xuất quyết định cần chốt:
+  - gỡ `ntb-recovery-codes.txt` khỏi git, thêm vào .gitignore;
+  - tạo lại mã khôi phục cho tài khoản đó;
+  - nếu repo GitHub công khai hoặc có người khác truy cập, xóa khỏi lịch sử git.
+- Task tiếp theo đề xuất: P2-14 Gate Enterprise (review bảo mật kho mật khẩu & phân quyền, kiểm thử xâm nhập cơ bản) — người dùng dặn dừng sau P2-13.
+
 ## 2026-10-18 — P2-13 Vận hành, bước 1: bộ máy sao lưu / khôi phục (ADR-053); sửa sau review P2-11
 - Người dùng chốt:
   - nhiều lựa chọn sao lưu cho nhiều cỡ khách (trên máy / NAS / SFTP / S3 có khóa chống xóa / Google Drive…);

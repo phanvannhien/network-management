@@ -130,6 +130,57 @@ func (e BackupRunStatus) Valid() bool {
 	}
 }
 
+// Defines values for BackupTargetLastStatus.
+const (
+	BackupTargetLastStatusEmpty  BackupTargetLastStatus = ""
+	BackupTargetLastStatusFailed BackupTargetLastStatus = "failed"
+	BackupTargetLastStatusOk     BackupTargetLastStatus = "ok"
+)
+
+// Valid indicates whether the value is a known member of the BackupTargetLastStatus enum.
+func (e BackupTargetLastStatus) Valid() bool {
+	switch e {
+	case BackupTargetLastStatusEmpty:
+		return true
+	case BackupTargetLastStatusFailed:
+		return true
+	case BackupTargetLastStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BackupTargetKind.
+const (
+	Drive    BackupTargetKind = "drive"
+	Dropbox  BackupTargetKind = "dropbox"
+	Local    BackupTargetKind = "local"
+	Onedrive BackupTargetKind = "onedrive"
+	S3       BackupTargetKind = "s3"
+	Sftp     BackupTargetKind = "sftp"
+)
+
+// Valid indicates whether the value is a known member of the BackupTargetKind enum.
+func (e BackupTargetKind) Valid() bool {
+	switch e {
+	case Drive:
+		return true
+	case Dropbox:
+		return true
+	case Local:
+		return true
+	case Onedrive:
+		return true
+	case S3:
+		return true
+	case Sftp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BoqLineLifecycle.
 const (
 	BoqLineLifecycleActive  BoqLineLifecycle = "active"
@@ -2212,6 +2263,18 @@ type AuthSession struct {
 	User CurrentUser `json:"user"`
 }
 
+// BackupFile defines model for BackupFile.
+type BackupFile struct {
+	CreatedAt time.Time `json:"createdAt"`
+	Kind      string    `json:"kind"`
+	Name      string    `json:"name"`
+
+	// SameKey made with the current master key (its vault passwords open)
+	SameKey       bool  `json:"sameKey"`
+	SchemaVersion int   `json:"schemaVersion"`
+	SizeBytes     int64 `json:"sizeBytes"`
+}
+
 // BackupRun defines model for BackupRun.
 type BackupRun struct {
 	Error      string             `json:"error"`
@@ -2240,6 +2303,9 @@ type BackupStatus struct {
 	// Enabled a backup passphrase is set
 	Enabled bool `json:"enabled"`
 
+	// Files backups in the directory, newest first
+	Files []BackupFile `json:"files"`
+
 	// Keep daily,weekly,monthly
 	Keep     string      `json:"keep"`
 	LastGood *BackupRun  `json:"lastGood,omitempty"`
@@ -2249,7 +2315,86 @@ type BackupStatus struct {
 	Schedule string `json:"schedule"`
 
 	// Stale no good backup in the last 2 days
-	Stale bool `json:"stale"`
+	Stale   bool           `json:"stale"`
+	Targets []BackupTarget `json:"targets"`
+}
+
+// BackupTarget defines model for BackupTarget.
+type BackupTarget struct {
+	Enabled bool               `json:"enabled"`
+	Id      openapi_types.UUID `json:"id"`
+
+	// Keep daily,weekly,monthly
+	Keep       string                 `json:"keep"`
+	Kind       BackupTargetKind       `json:"kind"`
+	LastAt     *time.Time             `json:"lastAt,omitempty"`
+	LastError  string                 `json:"lastError"`
+	LastFile   string                 `json:"lastFile"`
+	LastStatus BackupTargetLastStatus `json:"lastStatus"`
+	Name       string                 `json:"name"`
+
+	// SecretSet a password / key / token is stored (never returned)
+	SecretSet bool `json:"secretSet"`
+
+	// Settings non-secret settings; which ones apply depends on the kind
+	Settings BackupTargetSettings `json:"settings"`
+	Version  int                  `json:"version"`
+}
+
+// BackupTargetLastStatus defines model for BackupTarget.LastStatus.
+type BackupTargetLastStatus string
+
+// BackupTargetInput defines model for BackupTargetInput.
+type BackupTargetInput struct {
+	Enabled bool             `json:"enabled"`
+	Keep    string           `json:"keep"`
+	Kind    BackupTargetKind `json:"kind"`
+	Name    string           `json:"name"`
+
+	// Password SFTP password (omitted = kept)
+	Password *string `json:"password,omitempty"`
+
+	// PrivateKey SFTP private key
+	PrivateKey *string `json:"privateKey,omitempty"`
+
+	// SecretKey S3 secret access key (omitted = kept)
+	SecretKey *string `json:"secretKey,omitempty"`
+
+	// Settings non-secret settings; which ones apply depends on the kind
+	Settings BackupTargetSettings `json:"settings"`
+
+	// Token rclone authorize output (omitted = kept)
+	Token *string `json:"token,omitempty"`
+
+	// Version required when changing
+	Version *int `json:"version,omitempty"`
+}
+
+// BackupTargetKind defines model for BackupTargetKind.
+type BackupTargetKind string
+
+// BackupTargetSettings non-secret settings; which ones apply depends on the kind
+type BackupTargetSettings struct {
+	AccessKeyId *string `json:"accessKeyId,omitempty"`
+	Bucket      *string `json:"bucket,omitempty"`
+	DriveId     *string `json:"driveId,omitempty"`
+	DriveType   *string `json:"driveType,omitempty"`
+	Endpoint    *string `json:"endpoint,omitempty"`
+	Host        *string `json:"host,omitempty"`
+
+	// HostKey SFTP server's known_hosts lines (ssh-keyscan)
+	HostKey  *string `json:"hostKey,omitempty"`
+	Path     *string `json:"path,omitempty"`
+	Port     *int    `json:"port,omitempty"`
+	Provider *string `json:"provider,omitempty"`
+	Region   *string `json:"region,omitempty"`
+	User     *string `json:"user,omitempty"`
+}
+
+// BackupTargetTest defines model for BackupTargetTest.
+type BackupTargetTest struct {
+	Message string `json:"message"`
+	Ok      bool   `json:"ok"`
 }
 
 // BoqLine defines model for BoqLine.
@@ -5700,6 +5845,31 @@ type ListSystemAuditParams struct {
 	To *AuditTo `form:"to,omitempty" json:"to,omitempty"`
 }
 
+// AdminCreateBackupTargetParams defines parameters for AdminCreateBackupTarget.
+type AdminCreateBackupTargetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminDeleteBackupTargetParams defines parameters for AdminDeleteBackupTarget.
+type AdminDeleteBackupTargetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminUpdateBackupTargetParams defines parameters for AdminUpdateBackupTarget.
+type AdminUpdateBackupTargetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminTestBackupTargetParams defines parameters for AdminTestBackupTarget.
+type AdminTestBackupTargetParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// AdminRunBackupParams defines parameters for AdminRunBackup.
+type AdminRunBackupParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // AdminCreateOrganizationParams defines parameters for AdminCreateOrganization.
 type AdminCreateOrganizationParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -6540,6 +6710,12 @@ type UpdateVlanParams struct {
 // AcceptAccountTokenJSONRequestBody defines body for AcceptAccountToken for application/json ContentType.
 type AcceptAccountTokenJSONRequestBody = AcceptAccountTokenRequest
 
+// AdminCreateBackupTargetJSONRequestBody defines body for AdminCreateBackupTarget for application/json ContentType.
+type AdminCreateBackupTargetJSONRequestBody = BackupTargetInput
+
+// AdminUpdateBackupTargetJSONRequestBody defines body for AdminUpdateBackupTarget for application/json ContentType.
+type AdminUpdateBackupTargetJSONRequestBody = BackupTargetInput
+
 // AdminCreateOrganizationJSONRequestBody defines body for AdminCreateOrganization for application/json ContentType.
 type AdminCreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
@@ -6791,9 +6967,27 @@ type ServerInterface interface {
 	// ListSystemAudit System-level audit events without an organization (system admin), newest first
 	// (GET /admin/audit)
 	ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams)
+	// AdminCreateBackupTarget Add a backup destination (secrets sealed with the master key, never returned)
+	// (POST /admin/backup-targets)
+	AdminCreateBackupTarget(w http.ResponseWriter, r *http.Request, params AdminCreateBackupTargetParams)
+	// AdminDeleteBackupTarget Remove a backup destination (the files already there stay)
+	// (DELETE /admin/backup-targets/{targetId})
+	AdminDeleteBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminDeleteBackupTargetParams)
+	// AdminUpdateBackupTarget Change a backup destination (secret fields omitted = kept)
+	// (PUT /admin/backup-targets/{targetId})
+	AdminUpdateBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminUpdateBackupTargetParams)
+	// AdminTestBackupTarget Check a destination can be written (creates the folder, writes and deletes a small file)
+	// (POST /admin/backup-targets/{targetId}/test)
+	AdminTestBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminTestBackupTargetParams)
 	// AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
 	// (GET /admin/backups)
 	AdminGetBackups(w http.ResponseWriter, r *http.Request)
+	// AdminDownloadBackup Download a backup file (still encrypted) — system admins with a recent MFA confirmation; audited
+	// (GET /admin/backups/files/{name})
+	AdminDownloadBackup(w http.ResponseWriter, r *http.Request, name string)
+	// AdminRunBackup Back up now (P2-13) — runs in the background; the result shows in the runs list
+	// (POST /admin/backups/run)
+	AdminRunBackup(w http.ResponseWriter, r *http.Request, params AdminRunBackupParams)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(w http.ResponseWriter, r *http.Request)
@@ -7349,9 +7543,45 @@ func (_ Unimplemented) ListSystemAudit(w http.ResponseWriter, r *http.Request, p
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// AdminCreateBackupTarget Add a backup destination (secrets sealed with the master key, never returned)
+// (POST /admin/backup-targets)
+func (_ Unimplemented) AdminCreateBackupTarget(w http.ResponseWriter, r *http.Request, params AdminCreateBackupTargetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminDeleteBackupTarget Remove a backup destination (the files already there stay)
+// (DELETE /admin/backup-targets/{targetId})
+func (_ Unimplemented) AdminDeleteBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminDeleteBackupTargetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminUpdateBackupTarget Change a backup destination (secret fields omitted = kept)
+// (PUT /admin/backup-targets/{targetId})
+func (_ Unimplemented) AdminUpdateBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminUpdateBackupTargetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminTestBackupTarget Check a destination can be written (creates the folder, writes and deletes a small file)
+// (POST /admin/backup-targets/{targetId}/test)
+func (_ Unimplemented) AdminTestBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminTestBackupTargetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
 // (GET /admin/backups)
 func (_ Unimplemented) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminDownloadBackup Download a backup file (still encrypted) — system admins with a recent MFA confirmation; audited
+// (GET /admin/backups/files/{name})
+func (_ Unimplemented) AdminDownloadBackup(w http.ResponseWriter, r *http.Request, name string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminRunBackup Back up now (P2-13) — runs in the background; the result shows in the runs list
+// (POST /admin/backups/run)
+func (_ Unimplemented) AdminRunBackup(w http.ResponseWriter, r *http.Request, params AdminRunBackupParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8589,11 +8819,289 @@ func (siw *ServerInterfaceWrapper) ListSystemAudit(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// AdminCreateBackupTarget operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateBackupTarget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminCreateBackupTargetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminCreateBackupTarget(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDeleteBackupTarget operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteBackupTarget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "targetId" -------------
+	var targetId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "targetId", chi.URLParam(r, "targetId"), &targetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteBackupTargetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDeleteBackupTarget(w, r, targetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminUpdateBackupTarget operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateBackupTarget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "targetId" -------------
+	var targetId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "targetId", chi.URLParam(r, "targetId"), &targetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminUpdateBackupTargetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminUpdateBackupTarget(w, r, targetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminTestBackupTarget operation middleware
+func (siw *ServerInterfaceWrapper) AdminTestBackupTarget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "targetId" -------------
+	var targetId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "targetId", chi.URLParam(r, "targetId"), &targetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminTestBackupTargetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminTestBackupTarget(w, r, targetId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AdminGetBackups operation middleware
 func (siw *ServerInterfaceWrapper) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminGetBackups(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDownloadBackup operation middleware
+func (siw *ServerInterfaceWrapper) AdminDownloadBackup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDownloadBackup(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminRunBackup operation middleware
+func (siw *ServerInterfaceWrapper) AdminRunBackup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminRunBackupParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminRunBackup(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18687,6 +19195,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/admin/backups", wrapper.AdminGetBackups)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/backups/run", wrapper.AdminRunBackup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/backups/files/{name}", wrapper.AdminDownloadBackup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/backup-targets", wrapper.AdminCreateBackupTarget)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/admin/backup-targets/{targetId}", wrapper.AdminDeleteBackupTarget)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/admin/backup-targets/{targetId}", wrapper.AdminUpdateBackupTarget)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/backup-targets/{targetId}/test", wrapper.AdminTestBackupTarget)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/smtp", wrapper.AdminGetSmtp)
 	})
 	r.Group(func(r chi.Router) {
@@ -18888,6 +19414,303 @@ func (response ListSystemAudit403JSONResponse) VisitListSystemAuditResponse(w ht
 	return err
 }
 
+type AdminCreateBackupTargetRequestObject struct {
+	Params AdminCreateBackupTargetParams
+	Body   *AdminCreateBackupTargetJSONRequestBody
+}
+
+type AdminCreateBackupTargetResponseObject interface {
+	VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateBackupTarget201JSONResponse BackupTarget
+
+func (response AdminCreateBackupTarget201JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateBackupTarget400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminCreateBackupTarget400JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateBackupTarget401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminCreateBackupTarget401JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateBackupTarget403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateBackupTarget403JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateBackupTarget409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminCreateBackupTarget409JSONResponse) VisitAdminCreateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteBackupTargetRequestObject struct {
+	TargetId openapi_types.UUID `json:"targetId"`
+	Params   AdminDeleteBackupTargetParams
+}
+
+type AdminDeleteBackupTargetResponseObject interface {
+	VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteBackupTarget204Response struct {
+}
+
+func (response AdminDeleteBackupTarget204Response) VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeleteBackupTarget401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDeleteBackupTarget401JSONResponse) VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteBackupTarget403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDeleteBackupTarget403JSONResponse) VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteBackupTarget404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDeleteBackupTarget404JSONResponse) VisitAdminDeleteBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTargetRequestObject struct {
+	TargetId openapi_types.UUID `json:"targetId"`
+	Params   AdminUpdateBackupTargetParams
+	Body     *AdminUpdateBackupTargetJSONRequestBody
+}
+
+type AdminUpdateBackupTargetResponseObject interface {
+	VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateBackupTarget200JSONResponse BackupTarget
+
+func (response AdminUpdateBackupTarget200JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTarget400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdateBackupTarget400JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTarget401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpdateBackupTarget401JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTarget403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdateBackupTarget403JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTarget404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminUpdateBackupTarget404JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateBackupTarget409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminUpdateBackupTarget409JSONResponse) VisitAdminUpdateBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestBackupTargetRequestObject struct {
+	TargetId openapi_types.UUID `json:"targetId"`
+	Params   AdminTestBackupTargetParams
+}
+
+type AdminTestBackupTargetResponseObject interface {
+	VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error
+}
+
+type AdminTestBackupTarget200JSONResponse BackupTargetTest
+
+func (response AdminTestBackupTarget200JSONResponse) VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestBackupTarget401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminTestBackupTarget401JSONResponse) VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestBackupTarget403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminTestBackupTarget403JSONResponse) VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminTestBackupTarget404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminTestBackupTarget404JSONResponse) VisitAdminTestBackupTargetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AdminGetBackupsRequestObject struct {
 }
 
@@ -18933,6 +19756,160 @@ func (response AdminGetBackups403JSONResponse) VisitAdminGetBackupsResponse(w ht
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDownloadBackupRequestObject struct {
+	Name string `json:"name"`
+}
+
+type AdminDownloadBackupResponseObject interface {
+	VisitAdminDownloadBackupResponse(w http.ResponseWriter) error
+}
+
+type AdminDownloadBackup200ResponseHeaders struct {
+	CacheControl       *string
+	ContentDisposition *string
+}
+
+type AdminDownloadBackup200ApplicationoctetStreamResponse struct {
+	Body          io.Reader
+	Headers       AdminDownloadBackup200ResponseHeaders
+	ContentLength int64
+}
+
+func (response AdminDownloadBackup200ApplicationoctetStreamResponse) VisitAdminDownloadBackupResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type AdminDownloadBackup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDownloadBackup401JSONResponse) VisitAdminDownloadBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDownloadBackup403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDownloadBackup403JSONResponse) VisitAdminDownloadBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDownloadBackup404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDownloadBackup404JSONResponse) VisitAdminDownloadBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDownloadBackup428JSONResponse Error
+
+func (response AdminDownloadBackup428JSONResponse) VisitAdminDownloadBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRunBackupRequestObject struct {
+	Params AdminRunBackupParams
+}
+
+type AdminRunBackupResponseObject interface {
+	VisitAdminRunBackupResponse(w http.ResponseWriter) error
+}
+
+type AdminRunBackup202Response struct {
+}
+
+func (response AdminRunBackup202Response) VisitAdminRunBackupResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type AdminRunBackup401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminRunBackup401JSONResponse) VisitAdminRunBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRunBackup403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminRunBackup403JSONResponse) VisitAdminRunBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRunBackup409JSONResponse Error
+
+func (response AdminRunBackup409JSONResponse) VisitAdminRunBackupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -32548,9 +33525,27 @@ type StrictServerInterface interface {
 	// ListSystemAudit System-level audit events without an organization (system admin), newest first
 	// (GET /admin/audit)
 	ListSystemAudit(ctx context.Context, request ListSystemAuditRequestObject) (ListSystemAuditResponseObject, error)
+	// AdminCreateBackupTarget Add a backup destination (secrets sealed with the master key, never returned)
+	// (POST /admin/backup-targets)
+	AdminCreateBackupTarget(ctx context.Context, request AdminCreateBackupTargetRequestObject) (AdminCreateBackupTargetResponseObject, error)
+	// AdminDeleteBackupTarget Remove a backup destination (the files already there stay)
+	// (DELETE /admin/backup-targets/{targetId})
+	AdminDeleteBackupTarget(ctx context.Context, request AdminDeleteBackupTargetRequestObject) (AdminDeleteBackupTargetResponseObject, error)
+	// AdminUpdateBackupTarget Change a backup destination (secret fields omitted = kept)
+	// (PUT /admin/backup-targets/{targetId})
+	AdminUpdateBackupTarget(ctx context.Context, request AdminUpdateBackupTargetRequestObject) (AdminUpdateBackupTargetResponseObject, error)
+	// AdminTestBackupTarget Check a destination can be written (creates the folder, writes and deletes a small file)
+	// (POST /admin/backup-targets/{targetId}/test)
+	AdminTestBackupTarget(ctx context.Context, request AdminTestBackupTargetRequestObject) (AdminTestBackupTargetResponseObject, error)
 	// AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
 	// (GET /admin/backups)
 	AdminGetBackups(ctx context.Context, request AdminGetBackupsRequestObject) (AdminGetBackupsResponseObject, error)
+	// AdminDownloadBackup Download a backup file (still encrypted) — system admins with a recent MFA confirmation; audited
+	// (GET /admin/backups/files/{name})
+	AdminDownloadBackup(ctx context.Context, request AdminDownloadBackupRequestObject) (AdminDownloadBackupResponseObject, error)
+	// AdminRunBackup Back up now (P2-13) — runs in the background; the result shows in the runs list
+	// (POST /admin/backups/run)
+	AdminRunBackup(ctx context.Context, request AdminRunBackupRequestObject) (AdminRunBackupResponseObject, error)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(ctx context.Context, request AdminListOrganizationsRequestObject) (AdminListOrganizationsResponseObject, error)
@@ -33208,6 +34203,127 @@ func (sh *strictHandler) ListSystemAudit(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// AdminCreateBackupTarget operation middleware
+func (sh *strictHandler) AdminCreateBackupTarget(w http.ResponseWriter, r *http.Request, params AdminCreateBackupTargetParams) {
+	var request AdminCreateBackupTargetRequestObject
+
+	request.Params = params
+
+	var body AdminCreateBackupTargetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateBackupTarget(ctx, request.(AdminCreateBackupTargetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateBackupTarget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminCreateBackupTargetResponseObject); ok {
+		if err := validResponse.VisitAdminCreateBackupTargetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDeleteBackupTarget operation middleware
+func (sh *strictHandler) AdminDeleteBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminDeleteBackupTargetParams) {
+	var request AdminDeleteBackupTargetRequestObject
+
+	request.TargetId = targetId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteBackupTarget(ctx, request.(AdminDeleteBackupTargetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteBackupTarget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDeleteBackupTargetResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteBackupTargetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminUpdateBackupTarget operation middleware
+func (sh *strictHandler) AdminUpdateBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminUpdateBackupTargetParams) {
+	var request AdminUpdateBackupTargetRequestObject
+
+	request.TargetId = targetId
+	request.Params = params
+
+	var body AdminUpdateBackupTargetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateBackupTarget(ctx, request.(AdminUpdateBackupTargetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateBackupTarget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminUpdateBackupTargetResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateBackupTargetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminTestBackupTarget operation middleware
+func (sh *strictHandler) AdminTestBackupTarget(w http.ResponseWriter, r *http.Request, targetId openapi_types.UUID, params AdminTestBackupTargetParams) {
+	var request AdminTestBackupTargetRequestObject
+
+	request.TargetId = targetId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminTestBackupTarget(ctx, request.(AdminTestBackupTargetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminTestBackupTarget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminTestBackupTargetResponseObject); ok {
+		if err := validResponse.VisitAdminTestBackupTargetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AdminGetBackups operation middleware
 func (sh *strictHandler) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
 	var request AdminGetBackupsRequestObject
@@ -33225,6 +34341,58 @@ func (sh *strictHandler) AdminGetBackups(w http.ResponseWriter, r *http.Request)
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminGetBackupsResponseObject); ok {
 		if err := validResponse.VisitAdminGetBackupsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDownloadBackup operation middleware
+func (sh *strictHandler) AdminDownloadBackup(w http.ResponseWriter, r *http.Request, name string) {
+	var request AdminDownloadBackupRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDownloadBackup(ctx, request.(AdminDownloadBackupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDownloadBackup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDownloadBackupResponseObject); ok {
+		if err := validResponse.VisitAdminDownloadBackupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminRunBackup operation middleware
+func (sh *strictHandler) AdminRunBackup(w http.ResponseWriter, r *http.Request, params AdminRunBackupParams) {
+	var request AdminRunBackupRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRunBackup(ctx, request.(AdminRunBackupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRunBackup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminRunBackupResponseObject); ok {
+		if err := validResponse.VisitAdminRunBackupResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

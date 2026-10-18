@@ -34,3 +34,4 @@ Thumbs.db
 # Build artifacts
 dist/
 coverage/
+deploy/docker-compose.override.yml

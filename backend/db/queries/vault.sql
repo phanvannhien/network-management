@@ -167,4 +167,12 @@ SELECT DISTINCT v::smallint AS version FROM (
   UNION SELECT secret_key_version FROM cloud_accounts WHERE secret_key_version IS NOT NULL
   UNION SELECT key_version FROM mfa_totp WHERE secret_ciphertext <> '\x00'::bytea
   UNION SELECT password_key_version FROM smtp_settings WHERE password_key_version IS NOT NULL
+  UNION SELECT secret_key_version FROM backup_targets WHERE secret_key_version IS NOT NULL
 ) x ORDER BY 1;
+
+-- name: AllSealedBackupTargets :many
+SELECT id, secret_ciphertext, secret_wrapped_dek, secret_key_version FROM backup_targets WHERE secret_ciphertext IS NOT NULL;
+
+-- name: RewrapBackupTarget :execrows
+UPDATE backup_targets SET secret_wrapped_dek = @secret_wrapped_dek, secret_key_version = @secret_key_version
+WHERE id = @id AND secret_wrapped_dek = @old_wrapped_dek;

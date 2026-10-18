@@ -21,6 +21,7 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/backup"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/notify"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/rotate"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
@@ -62,7 +63,31 @@ func newBackupService(cfg config.Config, pool *pgxpool.Pool, logger *slog.Logger
 		AppVersion: cfg.Version, KeyFingerprint: secrets.Fingerprint(master), KeyVersion: version, Policy: policy,
 		LatestSchema: latest, Migrate: database.MigrateUp,
 		CheckKeys: func(ctx context.Context, p *pgxpool.Pool) error { return rotate.CheckVersions(ctx, store.New(p), keys) },
+		Keys:      keys, Rclone: backup.Rclone{Bin: os.Getenv("NTB_RCLONE")},
+		Notify: func(ctx context.Context, subject, text string) error {
+			return mailSystemAdmins(ctx, pool, keys, subject, text)
+		},
 	}}, nil
+}
+
+// mailSystemAdmins sends a backup alert to every active system admin through the installation's mail server.
+func mailSystemAdmins(ctx context.Context, pool *pgxpool.Pool, keys *secrets.Keyring, subject, text string) error {
+	q := store.New(pool)
+	cfg, _, err := notify.LoadSMTP(ctx, q, keys)
+	if err != nil {
+		return err
+	}
+	if !cfg.Configured() {
+		return notify.ErrNotConfigured
+	}
+	to, err := q.BackupAlertRecipients(ctx)
+	if err != nil {
+		return fmt.Errorf("backup alert recipients: %w", err)
+	}
+	if len(to) == 0 {
+		return nil
+	}
+	return notify.SendSMTP(ctx, cfg, notify.Message{To: to, Subject: "[NTB] " + subject, Text: text})
 }
 
 // readPassphrase: --passphrase-file, else the environment, else typed (an old backup may use an old passphrase).

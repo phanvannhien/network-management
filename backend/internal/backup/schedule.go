@@ -89,6 +89,11 @@ func (sc Scheduler) tick(ctx context.Context) {
 	if err != nil {
 		if !errors.Is(err, ErrBusy) {
 			sc.Logger.Error("scheduled backup failed", "error", err)
+			// One e-mail when backups start failing, not one per hourly retry.
+			if !failed {
+				sc.Svc.notify(ctx, "Sao lưu tự động bị lỗi",
+					"Bản sao lưu hằng ngày không làm được:\n\n"+err.Error()+"\n\nHệ thống thử lại mỗi giờ. Kiểm tra ở Hệ thống → Sao lưu.")
+			}
 		}
 		return
 	}

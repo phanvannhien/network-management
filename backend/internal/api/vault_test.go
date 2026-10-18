@@ -260,6 +260,11 @@ func TestRotateMasterKey(t *testing.T) {
 	cid := cr["credential"].(map[string]any)["id"].(string)
 	_, ca := fx.A.Do("POST", cloudPath(org), map[string]any{"provider": "unifi", "name": "UniFi", "secret": "rot-2", "deviceIds": []any{}})
 	aid := ca["account"].(map[string]any)["id"].(string)
+	// A backup destination's secrets move too (P2-13).
+	_, bt := fx.NewUser(t, "sysadmin-rotate@example.com", true).Do("POST", "/api/admin/backup-targets", map[string]any{
+		"name": "S3", "kind": "s3", "enabled": true, "keep": "7,4,12", "secretKey": "rot-3",
+		"settings": map[string]any{"provider": "AWS", "bucket": "b", "accessKeyId": "AK"}})
+	bid, _ := bt["id"].(string)
 	old := testKeyring(t)
 	// The fixture's MFA rows are placeholders; one real seed stands for them.
 	if _, err := fx.Pool.Exec(ctx, `DELETE FROM mfa_totp`); err != nil {
@@ -276,7 +281,7 @@ func TestRotateMasterKey(t *testing.T) {
 		t.Fatal("rotation with the wrong old key went through")
 	}
 	n, err := rotate.Run(ctx, fx.Pool, old, next)
-	if err != nil || n.Credentials != 1 || n.CloudAccounts != 1 || n.TOTP != 1 {
+	if err != nil || n.Credentials != 1 || n.CloudAccounts != 1 || n.TOTP != 1 || n.BackupTargets != 1 {
 		t.Fatalf("rotate: %+v %v", n, err)
 	}
 	var ct, dek []byte
@@ -289,6 +294,11 @@ func TestRotateMasterKey(t *testing.T) {
 	if pt, err := next.Open(secrets.Sealed{Ciphertext: ct, WrappedDEK: dek, KeyVersion: ver}, secrets.CloudAccountAAD(aid)); err != nil || string(pt) != "rot-2" {
 		t.Errorf("cloud account after rotation: %q %v", pt, err)
 	}
+	_ = fx.Pool.QueryRow(ctx, `SELECT secret_ciphertext, secret_wrapped_dek, secret_key_version FROM backup_targets WHERE id = $1`, bid).Scan(&ct, &dek, &ver)
+	if pt, err := next.Open(secrets.Sealed{Ciphertext: ct, WrappedDEK: dek, KeyVersion: ver}, secrets.BackupTargetAAD(bid)); err != nil || !strings.Contains(string(pt), "rot-3") {
+		t.Errorf("backup destination after rotation: %v", err)
+	}
+	_ = fx.Pool.QueryRow(ctx, `SELECT secret_ciphertext, secret_wrapped_dek, secret_key_version FROM cloud_accounts WHERE id = $1`, aid).Scan(&ct, &dek, &ver)
 	if _, err := old.Open(secrets.Sealed{Ciphertext: ct, WrappedDEK: dek, KeyVersion: ver}, secrets.CloudAccountAAD(aid)); err == nil {
 		t.Error("the old key still opens it")
 	}

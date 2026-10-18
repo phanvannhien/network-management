@@ -14,3 +14,6 @@ func TOTPAAD(userID string) []byte { return []byte("totp:" + userID) }
 
 // SMTPPasswordAAD binds the installation's SMTP password to its purpose (P2-05).
 var SMTPPasswordAAD = []byte("smtp_settings.password")
+
+// BackupTargetAAD binds a backup destination's sealed secrets to its row.
+func BackupTargetAAD(id string) []byte { return []byte("backup_target:" + id) }

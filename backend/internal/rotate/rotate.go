@@ -17,7 +17,7 @@ import (
 
 // Counts says how many secrets of each kind were moved.
 type Counts struct {
-	Credentials, CloudAccounts, TOTP, SMTP int
+	Credentials, CloudAccounts, TOTP, SMTP, BackupTargets int
 }
 
 func id(u pgtype.UUID) string { return uuid.UUID(u.Bytes).String() }
@@ -124,6 +124,22 @@ func Run(ctx context.Context, pool *pgxpool.Pool, old, next *secrets.Keyring) (C
 				return fmt.Errorf("save smtp password: %w", err)
 			}
 			c.SMTP++
+		}
+		targets, err := q.AllSealedBackupTargets(ctx)
+		if err != nil {
+			return fmt.Errorf("load backup destinations: %w", err)
+		}
+		for _, r := range targets {
+			s, err := old.Rewrap(secrets.Sealed{Ciphertext: r.SecretCiphertext, WrappedDEK: r.SecretWrappedDek, KeyVersion: r.SecretKeyVersion.Int16},
+				secrets.BackupTargetAAD(id(r.ID)), next)
+			if err != nil {
+				return fmt.Errorf("backup destination %s: %w", id(r.ID), err)
+			}
+			if err := one(q.RewrapBackupTarget(ctx, store.RewrapBackupTargetParams{ID: r.ID, SecretWrappedDek: s.WrappedDEK,
+				SecretKeyVersion: pgtype.Int2{Int16: s.KeyVersion, Valid: true}, OldWrappedDek: r.SecretWrappedDek})); err != nil {
+				return fmt.Errorf("save backup destination: %w", err)
+			}
+			c.BackupTargets++
 		}
 		return nil
 	})

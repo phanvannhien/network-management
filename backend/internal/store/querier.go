@@ -39,10 +39,13 @@ type Querier interface {
 	AlertCredentialCandidates(ctx context.Context, arg AlertCredentialCandidatesParams) ([]AlertCredentialCandidatesRow, error)
 	// Live organizations with their alert settings (defaults when they never saved any).
 	AlertOrganizations(ctx context.Context) ([]AlertOrganizationsRow, error)
+	AllSealedBackupTargets(ctx context.Context) ([]AllSealedBackupTargetsRow, error)
 	AllSealedCloudAccounts(ctx context.Context) ([]AllSealedCloudAccountsRow, error)
 	// Master key rotation (ntb rotate-master-key): every stored secret of the installation, across organizations.
 	AllSealedCredentials(ctx context.Context) ([]AllSealedCredentialsRow, error)
 	AllSealedTOTP(ctx context.Context) ([]AllSealedTOTPRow, error)
+	// System admins who can sign in: they receive backup failure e-mails.
+	BackupAlertRecipients(ctx context.Context) ([]string, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	ClearDeviceSupplier(ctx context.Context, arg ClearDeviceSupplierParams) error
@@ -74,6 +77,7 @@ type Querier interface {
 	CountSystemAudit(ctx context.Context, arg CountSystemAuditParams) (int64, error)
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CreateBackupTarget(ctx context.Context, arg CreateBackupTargetParams) (BackupTarget, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateCloudAccount(ctx context.Context, arg CreateCloudAccountParams) (CreateCloudAccountRow, error)
 	CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error)
@@ -136,6 +140,7 @@ type Querier interface {
 	// IPv4 subnets with the addresses taken: documented hosts outside DHCP / reserved pools, plus those pools whole (a
 	// DHCP pool hands its addresses out, they are not free). The API keeps those ≥ 90 % full.
 	DashboardSubnets(ctx context.Context, arg DashboardSubnetsParams) ([]DashboardSubnetsRow, error)
+	DeleteBackupTarget(ctx context.Context, id pgtype.UUID) (int64, error)
 	DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error)
 	DeleteCloudAccountDevices(ctx context.Context, arg DeleteCloudAccountDevicesParams) error
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
@@ -199,6 +204,7 @@ type Querier interface {
 	FindVlanID(ctx context.Context, arg FindVlanIDParams) (pgtype.UUID, error)
 	FinishBackupRun(ctx context.Context, arg FinishBackupRunParams) error
 	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
+	GetBackupTarget(ctx context.Context, id pgtype.UUID) (BackupTarget, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCloudAccountMeta(ctx context.Context, arg GetCloudAccountMetaParams) (GetCloudAccountMetaRow, error)
 	GetCloudAccountSecret(ctx context.Context, arg GetCloudAccountSecretParams) (GetCloudAccountSecretRow, error)
@@ -277,6 +283,7 @@ type Querier interface {
 	LastGoodBackupOfKind(ctx context.Context, kind string) (BackupRun, error)
 	LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error)
 	ListBackupRuns(ctx context.Context, lim int32) ([]BackupRun, error)
+	ListBackupTargets(ctx context.Context) ([]BackupTarget, error)
 	// Category tree (P1-27, ADR-032). Every query takes organization_id.
 	ListCategories(ctx context.Context, organizationID pgtype.UUID) ([]ListCategoriesRow, error)
 	ListCloudAccounts(ctx context.Context, arg ListCloudAccountsParams) ([]ListCloudAccountsRow, error)
@@ -385,6 +392,8 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	// Live devices placed in a rack (for U overlap checks and the rack view).
 	RackOccupancy(ctx context.Context, arg RackOccupancyParams) ([]RackOccupancyRow, error)
+	// previous status is returned by the caller's read; the scheduler e-mails on a change to failed.
+	RecordBackupTargetResult(ctx context.Context, arg RecordBackupTargetResultParams) error
 	// Counts a failure and locks the account once it reaches the threshold. While locked nothing is counted (no row back),
 	// so nobody can keep an account locked forever; once a lock has expired the count starts over.
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
@@ -411,10 +420,13 @@ type Querier interface {
 	ReportVlans(ctx context.Context, arg ReportVlansParams) ([]ReportVlansRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
+	RewrapBackupTarget(ctx context.Context, arg RewrapBackupTargetParams) (int64, error)
 	RewrapCloudAccount(ctx context.Context, arg RewrapCloudAccountParams) (int64, error)
 	RewrapCredential(ctx context.Context, arg RewrapCredentialParams) (int64, error)
 	RewrapSmtpPassword(ctx context.Context, arg RewrapSmtpPasswordParams) (int64, error)
 	RewrapTOTP(ctx context.Context, arg RewrapTOTPParams) (int64, error)
+	// A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
+	SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) error
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
 	// keep_password leaves the stored password as it is; otherwise the given one (NULL clears it) replaces it.
 	SaveSmtpSettings(ctx context.Context, arg SaveSmtpSettingsParams) (SmtpSetting, error)
@@ -481,6 +493,7 @@ type Querier interface {
 	// contract / credential / cloud account: live, date unchanged). title / place: what and where to show.
 	UnsentNotifications(ctx context.Context, organizationID pgtype.UUID) ([]UnsentNotificationsRow, error)
 	UpdateAlertSettingsVersioned(ctx context.Context, arg UpdateAlertSettingsVersionedParams) (AlertSetting, error)
+	UpdateBackupTarget(ctx context.Context, arg UpdateBackupTargetParams) (BackupTarget, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (int64, error)
 	UpdateCloudAccount(ctx context.Context, arg UpdateCloudAccountParams) (UpdateCloudAccountRow, error)
 	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)

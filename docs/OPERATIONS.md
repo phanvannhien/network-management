@@ -1,7 +1,7 @@
 # Vận hành — sao lưu, khôi phục, master key
 
 Tài liệu cho người cài đặt / quản trị hệ thống (system admin). Quyết định gốc: ADR-053.
-Phần cài đặt / nâng cấp và các đích sao lưu NAS / cloud sẽ bổ sung ở P2-13 bước 2–3.
+Cài đặt và nâng cấp: `docs/INSTALL.md`.
 
 ## 1. Hệ thống có những gì cần giữ
 
@@ -44,7 +44,65 @@ Dùng thư mục trên máy chủ (`NTB_BACKUP_HOST_DIR`): thư mục phải cho
 - Chỉ sau khi có bản tốt mới **dọn bản cũ**: giữ bản mới nhất của 7 ngày, 4 tuần, 12 tháng gần nhất; bản thủ công / trước nâng cấp giữ 5 bản mới nhất.
 - **Trước khi nâng cấp** (phiên bản mới có thay đổi database): tự sao lưu một bản `pre-upgrade` rồi mới nâng cấp. Sao lưu lỗi thì **không nâng cấp** (bỏ qua bằng `NTB_BACKUP_SKIP_PRE_UPGRADE=true` — chỉ khi biết mình đang làm gì).
 - Máy chủ tắt đúng giờ hẹn → chạy bù khi bật lại. Lỗi → thử lại sau mỗi giờ.
-- Trang **Tình trạng hệ thống** báo đỏ khi quá 2 ngày không có bản tốt, kèm lý do lỗi của từng lần.
+- Sau mỗi bản tốt (trừ bản trước nâng cấp): **gửi lên các đích** đã thêm ở Hệ thống → Sao lưu, rồi dọn bản cũ trên từng đích theo số bản giữ của đích đó. Một đích lỗi không làm hỏng bản sao lưu.
+- **Email cho system admin** (qua SMTP ở Hệ thống → Gửi email) khi sao lưu hằng ngày bắt đầu lỗi, và khi một đích chuyển sang lỗi — một email mỗi lần chuyển trạng thái, không phải mỗi giờ.
+- Trang **Tình trạng hệ thống** và **Sao lưu** báo đỏ khi quá 2 ngày không có bản tốt, vàng khi có đích gửi lỗi, kèm lý do.
+
+## 3b. Đích lưu bản sao — chọn theo cỡ khách
+
+Bản trên máy chủ chỉ chống xóa nhầm / nâng cấp hỏng; hỏng ổ cứng hay mất máy chủ là mất theo. **Quy tắc 3-2-1**: 3 bản, trên 2 loại nơi lưu, 1 bản ngoài toà nhà. Thêm đích ở **Hệ thống → Sao lưu → Thêm đích**; sau khi lưu hệ thống tự thử kết nối (tạo thư mục, ghi rồi xóa một file nhỏ). Mật khẩu / token được mã hóa bằng master key, không bao giờ hiện lại; đổi master key thì chúng được mã hóa lại theo.
+
+| Khách | Gợi ý | Chống được |
+| --- | --- | --- |
+| Cá nhân / công ty nhỏ | Google Drive / OneDrive / Dropbox, hoặc nút **Tải về** định kỳ | Hỏng máy chủ |
+| Văn phòng có NAS | NAS (thư mục mount hoặc SFTP) + bật snapshot trên NAS | Chết ổ cứng, mã độc (nhờ snapshot) |
+| Doanh nghiệp / MSP | NAS + kho S3 có **Object Lock** ở ngoài | Cháy nổ, mất trộm, ransomware |
+
+### Thư mục mount (NAS qua SMB/NFS, ổ USB)
+
+1. Mount share NAS trên máy chủ, vd `/mnt/nas` (fstab với `cifs` hoặc `nfs`).
+2. Gắn vào container `api` bằng file `deploy/docker-compose.override.yml` (các lệnh `make` tự dùng file này khi có; lệnh `docker compose` gõ tay thì thêm `-f deploy/docker-compose.yml -f deploy/docker-compose.override.yml`):
+   ```yaml
+   services:
+     api:
+       volumes:
+         - /mnt/nas/ntb:/mnt/nas/ntb
+   ```
+   Thư mục phải cho uid 10001 ghi: `sudo chown 10001 /mnt/nas/ntb`.
+3. Thêm đích **Thư mục mount**, đường dẫn `/mnt/nas/ntb`.
+
+(Cách khác: đặt cả thư mục sao lưu chính lên NAS bằng `NTB_BACKUP_HOST_DIR` — mục 3.)
+
+### SFTP (NAS Synology / QNAP, máy chủ khác)
+
+- Bật SFTP trên NAS; tạo **tài khoản riêng** chỉ ghi được một thư mục (vd `backup-ntb`).
+- Khóa máy chủ (chống giả mạo): trên máy chủ cài hệ thống chạy `ssh-keyscan -p 22 nas.congty.local`, dán toàn bộ kết quả vào ô "Khóa máy chủ SFTP".
+- Dùng khóa riêng (private key, PEM) thay mật khẩu nếu được.
+
+### Kho S3 (AWS, Backblaze B2, Wasabi, Cloudflare R2, Synology C2, MinIO)
+
+1. Tạo bucket **có bật Object Lock** và đặt thời hạn giữ mặc định (vd 30 ngày, chế độ Governance hoặc Compliance). Trong thời hạn đó không ai xóa được file — kể cả kẻ đã chiếm máy chủ và lấy được key.
+2. Tạo access key **chỉ cho bucket này**, quyền ghi + liệt kê + xóa (xóa sẽ bị Object Lock chặn tới hạn — bình thường, hệ thống bỏ qua).
+3. Thêm đích **Kho S3**: chọn nhà cung cấp, endpoint (B2: `s3.<vùng>.backblazeb2.com`; Wasabi: `s3.<vùng>.wasabisys.com`; R2: `<account-id>.r2.cloudflarestorage.com`; Synology C2: theo vùng; AWS: để trống), vùng, bucket, thư mục, access key.
+4. Nên đặt số bản giữ dài hơn cho đích ngoài toà nhà, vd `30,12,24`.
+
+### Google Drive / OneDrive / Dropbox
+
+Máy chủ thường không có trình duyệt, nên lấy token trên một máy tính khác:
+
+1. Cài rclone (rclone.org/downloads).
+2. Chạy `rclone authorize "drive"` (hoặc `"onedrive"`, `"dropbox"`), đăng nhập tài khoản sẽ chứa bản sao lưu, bấm cho phép.
+3. Lệnh in ra một dòng `{"access_token":…,"refresh_token":…}` — dán nguyên dòng vào ô Token (OneDrive: dán trong vòng 1 giờ để hệ thống tìm ra ổ đĩa).
+
+Token tự làm mới; nếu tài khoản đổi mật khẩu / thu hồi quyền, đích chuyển sang lỗi và system admin nhận email — lấy token mới.
+
+### Chống ransomware
+
+Mã độc chiếm được máy chủ có thể xóa / mã hóa mọi thứ máy chủ ghi được, kể cả ổ NAS đang mount. Cần ít nhất một bản **máy chủ không xóa được**:
+
+- **NAS Synology**: Snapshot Replication — chụp thư mục sao lưu mỗi ngày, giữ 30 ngày, bật "immutable snapshot" (DSM 7.2+). QNAP: Snapshot với thời hạn khóa.
+- **S3**: Object Lock (ở trên).
+- Hoặc định kỳ tải một bản về ổ ngoài rồi rút ra.
 
 ## 4. Lệnh
 
@@ -58,6 +116,7 @@ Chạy trong thư mục dự án (máy chủ cài Docker):
 | Khôi phục | `make restore FILE=<file>` |
 | Giải mã ra file pg_dump thường (để mở bằng công cụ khác) | `ntb backup decrypt <file> --out <file.dump>` |
 | Xem / xóa database cũ giữ lại sau khôi phục | `... exec api ntb backup drop-old` · `ntb backup drop-old <tên> --yes` |
+| Tải một bản về máy tính | Hệ thống → Sao lưu → Tải về (nhập lại mã MFA) |
 
 `<file>` là tên trong danh sách (vd `ntb-20261018T190000Z-scheduled.ntbbak`) hoặc đường dẫn đầy đủ.
 
@@ -76,7 +135,7 @@ Lỗi ở bước nào trước bước 5 → database hiện tại **không b�
 
 Sau khôi phục: mọi người phải đăng nhập lại; mật khẩu đăng nhập, MFA, dữ liệu là của thời điểm sao lưu.
 
-**Khôi phục lên máy chủ mới** (máy cũ hỏng): cài hệ thống như mới với **đúng `NTB_MASTER_KEY` cũ** và mật khẩu sao lưu cũ trong `deploy/.env`, chép file sao lưu vào volume / thư mục sao lưu, chạy `make restore FILE=...`.
+**Khôi phục lên máy chủ mới** (máy cũ hỏng): cài hệ thống như mới (`docs/INSTALL.md`) với **đúng `NTB_MASTER_KEY` cũ** và mật khẩu sao lưu cũ trong `deploy/.env`, lấy file sao lưu từ NAS / cloud (rclone, trình duyệt, hoặc ổ USB), chép vào thư mục sao lưu (`docker compose cp <file> api:/var/lib/ntb/backups/`, hoặc thư mục `NTB_BACKUP_HOST_DIR`), chạy `make restore FILE=...`. Các đích sao lưu cũng được khôi phục theo database.
 
 Postgres ngoài (không dùng container `db`): user của app cần quyền `CREATEDB` và là chủ database để đổi tên.
 

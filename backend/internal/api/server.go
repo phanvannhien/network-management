@@ -14,6 +14,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/backup"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
 
@@ -40,6 +41,10 @@ type BackupInfo struct {
 	Dir      string
 	Schedule string // "02:00" or "off"
 	Keep     string // "7,4,12"
+	// Svc runs backups and tests destinations (nil when backups are off).
+	Svc *backup.Service
+	// KeyFingerprint of the current master key: which backup files its vault passwords open.
+	KeyFingerprint string
 }
 
 // WithBackups records the backup setup for GET /admin/backups.

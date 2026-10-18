@@ -2305,6 +2305,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/backups/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Back up now (P2-13) — runs in the background; the result shows in the runs list */
+        post: operations["adminRunBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/backups/files/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** Download a backup file (still encrypted) — system admins with a recent MFA confirmation; audited */
+        get: operations["adminDownloadBackup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/backup-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a backup destination (secrets sealed with the master key, never returned) */
+        post: operations["adminCreateBackupTarget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/backup-targets/{targetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a backup destination (secret fields omitted = kept) */
+        put: operations["adminUpdateBackupTarget"];
+        post?: never;
+        /** Remove a backup destination (the files already there stay) */
+        delete: operations["adminDeleteBackupTarget"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/backup-targets/{targetId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a destination can be written (creates the folder, writes and deletes a small file) */
+        post: operations["adminTestBackupTarget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/smtp": {
         parameters: {
             query?: never;
@@ -4230,8 +4322,80 @@ export interface components {
             keep: string;
             /** @description no good backup in the last 2 days */
             stale: boolean;
+            /** @description backups in the directory, newest first */
+            files: components["schemas"]["BackupFile"][];
+            targets: components["schemas"]["BackupTarget"][];
             lastGood?: components["schemas"]["BackupRun"];
             runs: components["schemas"]["BackupRun"][];
+        };
+        BackupFile: {
+            name: string;
+            kind: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            /** @description made with the current master key (its vault passwords open) */
+            sameKey: boolean;
+            schemaVersion: number;
+        };
+        /** @enum {string} */
+        BackupTargetKind: "local" | "sftp" | "s3" | "drive" | "onedrive" | "dropbox";
+        /** @description non-secret settings; which ones apply depends on the kind */
+        BackupTargetSettings: {
+            path?: string;
+            host?: string;
+            port?: number;
+            user?: string;
+            /** @description SFTP server's known_hosts lines (ssh-keyscan) */
+            hostKey?: string;
+            provider?: string;
+            endpoint?: string;
+            region?: string;
+            bucket?: string;
+            accessKeyId?: string;
+            driveId?: string;
+            driveType?: string;
+        };
+        BackupTarget: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["BackupTargetKind"];
+            enabled: boolean;
+            settings: components["schemas"]["BackupTargetSettings"];
+            /** @description daily,weekly,monthly */
+            keep: string;
+            /** @description a password / key / token is stored (never returned) */
+            secretSet: boolean;
+            /** @enum {string} */
+            lastStatus: "" | "ok" | "failed";
+            /** Format: date-time */
+            lastAt?: string;
+            lastFile: string;
+            lastError: string;
+            version: number;
+        };
+        BackupTargetInput: {
+            name: string;
+            kind: components["schemas"]["BackupTargetKind"];
+            enabled: boolean;
+            settings: components["schemas"]["BackupTargetSettings"];
+            keep: string;
+            /** @description SFTP password (omitted = kept) */
+            password?: string;
+            /** @description SFTP private key */
+            privateKey?: string;
+            /** @description S3 secret access key (omitted = kept) */
+            secretKey?: string;
+            /** @description rclone authorize output (omitted = kept) */
+            token?: string;
+            /** @description required when changing */
+            version?: number;
+        };
+        BackupTargetTest: {
+            ok: boolean;
+            message: string;
         };
         BackupRun: {
             /** Format: uuid */
@@ -10913,6 +11077,188 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    adminRunBackup: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Backups are off, or one is already running */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    adminDownloadBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The encrypted backup */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    adminCreateBackupTarget: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackupTargetInput"];
+            };
+        };
+        responses: {
+            /** @description Added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTarget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    adminUpdateBackupTarget: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackupTargetInput"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTarget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    adminDeleteBackupTarget: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminTestBackupTarget: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Result (ok false with the tool's message when it failed) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTargetTest"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     adminGetSmtp: {

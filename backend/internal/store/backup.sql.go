@@ -11,6 +11,95 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const backupAlertRecipients = `-- name: BackupAlertRecipients :many
+SELECT email FROM users WHERE is_system_admin AND disabled_at IS NULL ORDER BY email
+`
+
+// System admins who can sign in: they receive backup failure e-mails.
+func (q *Queries) BackupAlertRecipients(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, backupAlertRecipients)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var email string
+		if err := rows.Scan(&email); err != nil {
+			return nil, err
+		}
+		items = append(items, email)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const createBackupTarget = `-- name: CreateBackupTarget :one
+INSERT INTO backup_targets (id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep, last_status, last_at, last_file, last_error, created_at, updated_at, version
+`
+
+type CreateBackupTargetParams struct {
+	ID               pgtype.UUID
+	Name             string
+	Kind             string
+	Enabled          bool
+	Settings         []byte
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	Keep             string
+}
+
+func (q *Queries) CreateBackupTarget(ctx context.Context, arg CreateBackupTargetParams) (BackupTarget, error) {
+	row := q.db.QueryRow(ctx, createBackupTarget,
+		arg.ID,
+		arg.Name,
+		arg.Kind,
+		arg.Enabled,
+		arg.Settings,
+		arg.SecretCiphertext,
+		arg.SecretWrappedDek,
+		arg.SecretKeyVersion,
+		arg.Keep,
+	)
+	var i BackupTarget
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Enabled,
+		&i.Settings,
+		&i.SecretCiphertext,
+		&i.SecretWrappedDek,
+		&i.SecretKeyVersion,
+		&i.Keep,
+		&i.LastStatus,
+		&i.LastAt,
+		&i.LastFile,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return i, err
+}
+
+const deleteBackupTarget = `-- name: DeleteBackupTarget :execrows
+DELETE FROM backup_targets WHERE id = $1
+`
+
+func (q *Queries) DeleteBackupTarget(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBackupTarget, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const failStaleBackupRuns = `-- name: FailStaleBackupRuns :exec
 UPDATE backup_runs SET status = 'failed', finished_at = now(), error = 'interrupted'
 WHERE status = 'running' AND started_at < now() - interval '6 hours'
@@ -50,6 +139,34 @@ func (q *Queries) FinishBackupRun(ctx context.Context, arg FinishBackupRunParams
 		arg.ID,
 	)
 	return err
+}
+
+const getBackupTarget = `-- name: GetBackupTarget :one
+SELECT id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep, last_status, last_at, last_file, last_error, created_at, updated_at, version FROM backup_targets WHERE id = $1
+`
+
+func (q *Queries) GetBackupTarget(ctx context.Context, id pgtype.UUID) (BackupTarget, error) {
+	row := q.db.QueryRow(ctx, getBackupTarget, id)
+	var i BackupTarget
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Enabled,
+		&i.Settings,
+		&i.SecretCiphertext,
+		&i.SecretWrappedDek,
+		&i.SecretKeyVersion,
+		&i.Keep,
+		&i.LastStatus,
+		&i.LastAt,
+		&i.LastFile,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return i, err
 }
 
 const lastBackupOfKind = `-- name: LastBackupOfKind :one
@@ -174,6 +291,47 @@ func (q *Queries) ListBackupRuns(ctx context.Context, lim int32) ([]BackupRun, e
 	return items, nil
 }
 
+const listBackupTargets = `-- name: ListBackupTargets :many
+SELECT id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep, last_status, last_at, last_file, last_error, created_at, updated_at, version FROM backup_targets ORDER BY lower(name)
+`
+
+func (q *Queries) ListBackupTargets(ctx context.Context) ([]BackupTarget, error) {
+	rows, err := q.db.Query(ctx, listBackupTargets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BackupTarget
+	for rows.Next() {
+		var i BackupTarget
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.Enabled,
+			&i.Settings,
+			&i.SecretCiphertext,
+			&i.SecretWrappedDek,
+			&i.SecretKeyVersion,
+			&i.Keep,
+			&i.LastStatus,
+			&i.LastAt,
+			&i.LastFile,
+			&i.LastError,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Version,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markBackupVerified = `-- name: MarkBackupVerified :exec
 UPDATE backup_runs SET verified_at = now(), verify_error = $1 WHERE file_name = $2 AND status = 'ok'
 `
@@ -185,6 +343,53 @@ type MarkBackupVerifiedParams struct {
 
 func (q *Queries) MarkBackupVerified(ctx context.Context, arg MarkBackupVerifiedParams) error {
 	_, err := q.db.Exec(ctx, markBackupVerified, arg.VerifyError, arg.FileName)
+	return err
+}
+
+const recordBackupTargetResult = `-- name: RecordBackupTargetResult :exec
+UPDATE backup_targets SET last_status = $1, last_at = now(), last_file = $2, last_error = $3
+WHERE id = $4
+`
+
+type RecordBackupTargetResultParams struct {
+	LastStatus string
+	LastFile   string
+	LastError  string
+	ID         pgtype.UUID
+}
+
+// previous status is returned by the caller's read; the scheduler e-mails on a change to failed.
+func (q *Queries) RecordBackupTargetResult(ctx context.Context, arg RecordBackupTargetResultParams) error {
+	_, err := q.db.Exec(ctx, recordBackupTargetResult,
+		arg.LastStatus,
+		arg.LastFile,
+		arg.LastError,
+		arg.ID,
+	)
+	return err
+}
+
+const saveBackupTargetSecret = `-- name: SaveBackupTargetSecret :exec
+UPDATE backup_targets SET secret_ciphertext = $1, secret_wrapped_dek = $2,
+    secret_key_version = $3
+WHERE id = $4
+`
+
+type SaveBackupTargetSecretParams struct {
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	ID               pgtype.UUID
+}
+
+// A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
+func (q *Queries) SaveBackupTargetSecret(ctx context.Context, arg SaveBackupTargetSecretParams) error {
+	_, err := q.db.Exec(ctx, saveBackupTargetSecret,
+		arg.SecretCiphertext,
+		arg.SecretWrappedDek,
+		arg.SecretKeyVersion,
+		arg.ID,
+	)
 	return err
 }
 
@@ -213,4 +418,59 @@ func (q *Queries) StartBackupRun(ctx context.Context, arg StartBackupRunParams) 
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const updateBackupTarget = `-- name: UpdateBackupTarget :one
+UPDATE backup_targets
+SET name = $1, enabled = $2, settings = $3, secret_ciphertext = $4,
+    secret_wrapped_dek = $5, secret_key_version = $6, keep = $7,
+    updated_at = now(), version = version + 1
+WHERE id = $8 AND version = $9
+RETURNING id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep, last_status, last_at, last_file, last_error, created_at, updated_at, version
+`
+
+type UpdateBackupTargetParams struct {
+	Name             string
+	Enabled          bool
+	Settings         []byte
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	Keep             string
+	ID               pgtype.UUID
+	Version          int32
+}
+
+func (q *Queries) UpdateBackupTarget(ctx context.Context, arg UpdateBackupTargetParams) (BackupTarget, error) {
+	row := q.db.QueryRow(ctx, updateBackupTarget,
+		arg.Name,
+		arg.Enabled,
+		arg.Settings,
+		arg.SecretCiphertext,
+		arg.SecretWrappedDek,
+		arg.SecretKeyVersion,
+		arg.Keep,
+		arg.ID,
+		arg.Version,
+	)
+	var i BackupTarget
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Enabled,
+		&i.Settings,
+		&i.SecretCiphertext,
+		&i.SecretWrappedDek,
+		&i.SecretKeyVersion,
+		&i.Keep,
+		&i.LastStatus,
+		&i.LastAt,
+		&i.LastFile,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return i, err
 }

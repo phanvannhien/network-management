@@ -56,6 +56,25 @@ type BackupRun struct {
 	VerifyError    string
 }
 
+type BackupTarget struct {
+	ID               pgtype.UUID
+	Name             string
+	Kind             string
+	Enabled          bool
+	Settings         []byte
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	Keep             string
+	LastStatus       string
+	LastAt           pgtype.Timestamptz
+	LastFile         string
+	LastError        string
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	Version          int32
+}
+
 type Category struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID

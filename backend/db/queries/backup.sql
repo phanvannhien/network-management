@@ -31,3 +31,40 @@ SELECT * FROM backup_runs WHERE kind = @kind ORDER BY started_at DESC LIMIT 1;
 
 -- name: LastGoodBackupOfKind :one
 SELECT * FROM backup_runs WHERE kind = @kind AND status = 'ok' ORDER BY started_at DESC LIMIT 1;
+
+-- name: ListBackupTargets :many
+SELECT * FROM backup_targets ORDER BY lower(name);
+
+-- name: GetBackupTarget :one
+SELECT * FROM backup_targets WHERE id = @id;
+
+-- name: CreateBackupTarget :one
+INSERT INTO backup_targets (id, name, kind, enabled, settings, secret_ciphertext, secret_wrapped_dek, secret_key_version, keep)
+VALUES (@id, @name, @kind, @enabled, @settings, @secret_ciphertext, @secret_wrapped_dek, @secret_key_version, @keep)
+RETURNING *;
+
+-- name: UpdateBackupTarget :one
+UPDATE backup_targets
+SET name = @name, enabled = @enabled, settings = @settings, secret_ciphertext = @secret_ciphertext,
+    secret_wrapped_dek = @secret_wrapped_dek, secret_key_version = @secret_key_version, keep = @keep,
+    updated_at = now(), version = version + 1
+WHERE id = @id AND version = @version
+RETURNING *;
+
+-- name: DeleteBackupTarget :execrows
+DELETE FROM backup_targets WHERE id = @id;
+
+-- name: RecordBackupTargetResult :exec
+-- previous status is returned by the caller's read; the scheduler e-mails on a change to failed.
+UPDATE backup_targets SET last_status = @last_status, last_at = now(), last_file = @last_file, last_error = @last_error
+WHERE id = @id;
+
+-- name: SaveBackupTargetSecret :exec
+-- A refreshed OAuth token (rclone rotates some) replaces the sealed secret without touching the rest.
+UPDATE backup_targets SET secret_ciphertext = @secret_ciphertext, secret_wrapped_dek = @secret_wrapped_dek,
+    secret_key_version = @secret_key_version
+WHERE id = @id;
+
+-- name: BackupAlertRecipients :many
+-- System admins who can sign in: they receive backup failure e-mails.
+SELECT email FROM users WHERE is_system_admin AND disabled_at IS NULL ORDER BY email;

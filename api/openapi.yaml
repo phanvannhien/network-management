@@ -4469,6 +4469,163 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /admin/backups/run:
+    post:
+      operationId: adminRunBackup
+      summary: Back up now (P2-13) — runs in the background; the result shows in the runs list
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '202':
+          description: Started
+        '409':
+          description: Backups are off, or one is already running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/backups/files/{name}:
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema: {type: string, maxLength: 80}
+    get:
+      operationId: adminDownloadBackup
+      summary: Download a backup file (still encrypted) — system admins with a recent MFA confirmation; audited
+      responses:
+        '200':
+          description: The encrypted backup
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/backup-targets:
+    post:
+      operationId: adminCreateBackupTarget
+      summary: Add a backup destination (secrets sealed with the master key, never returned)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupTargetInput'
+      responses:
+        '201':
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupTarget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /admin/backup-targets/{targetId}:
+    parameters:
+      - name: targetId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    put:
+      operationId: adminUpdateBackupTarget
+      summary: Change a backup destination (secret fields omitted = kept)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupTargetInput'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupTarget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: adminDeleteBackupTarget
+      summary: Remove a backup destination (the files already there stay)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/backup-targets/{targetId}/test:
+    parameters:
+      - name: targetId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    post:
+      operationId: adminTestBackupTarget
+      summary: Check a destination can be written (creates the folder, writes and deletes a small file)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Result (ok false with the tool's message when it failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupTargetTest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /admin/smtp:
     get:
       operationId: adminGetSmtp
@@ -8401,19 +8558,99 @@ components:
 
     BackupStatus:
       type: object
-      required: [enabled, dir, schedule, keep, stale, runs]
+      required: [enabled, dir, schedule, keep, stale, runs, files, targets]
       properties:
         enabled: {type: boolean, description: a backup passphrase is set}
         dir: {type: string}
         schedule: {type: string, description: "daily time HH:MM, or off"}
         keep: {type: string, description: "daily,weekly,monthly"}
         stale: {type: boolean, description: no good backup in the last 2 days}
+        files:
+          type: array
+          description: backups in the directory, newest first
+          items:
+            $ref: '#/components/schemas/BackupFile'
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupTarget'
         lastGood:
           $ref: '#/components/schemas/BackupRun'
         runs:
           type: array
           items:
             $ref: '#/components/schemas/BackupRun'
+
+    BackupFile:
+      type: object
+      required: [name, kind, createdAt, sizeBytes, sameKey, schemaVersion]
+      properties:
+        name: {type: string}
+        kind: {type: string}
+        createdAt: {type: string, format: date-time}
+        sizeBytes: {type: integer, format: int64}
+        sameKey: {type: boolean, description: made with the current master key (its vault passwords open)}
+        schemaVersion: {type: integer}
+
+    BackupTargetKind:
+      type: string
+      enum: [local, sftp, s3, drive, onedrive, dropbox]
+
+    BackupTargetSettings:
+      type: object
+      description: non-secret settings; which ones apply depends on the kind
+      properties:
+        path: {type: string, maxLength: 500}
+        host: {type: string, maxLength: 255}
+        port: {type: integer, minimum: 0, maximum: 65535}
+        user: {type: string, maxLength: 200}
+        hostKey: {type: string, maxLength: 8000, description: "SFTP server's known_hosts lines (ssh-keyscan)"}
+        provider: {type: string, maxLength: 40}
+        endpoint: {type: string, maxLength: 255}
+        region: {type: string, maxLength: 60}
+        bucket: {type: string, maxLength: 255}
+        accessKeyId: {type: string, maxLength: 200}
+        driveId: {type: string, maxLength: 200}
+        driveType: {type: string, maxLength: 40}
+
+    BackupTarget:
+      type: object
+      required: [id, name, kind, enabled, settings, keep, secretSet, lastStatus, lastFile, lastError, version]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {$ref: '#/components/schemas/BackupTargetKind'}
+        enabled: {type: boolean}
+        settings: {$ref: '#/components/schemas/BackupTargetSettings'}
+        keep: {type: string, description: "daily,weekly,monthly"}
+        secretSet: {type: boolean, description: a password / key / token is stored (never returned)}
+        lastStatus: {type: string, enum: ['', ok, failed]}
+        lastAt: {type: string, format: date-time}
+        lastFile: {type: string}
+        lastError: {type: string}
+        version: {type: integer}
+
+    BackupTargetInput:
+      type: object
+      required: [name, kind, enabled, settings, keep]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        kind: {$ref: '#/components/schemas/BackupTargetKind'}
+        enabled: {type: boolean}
+        settings: {$ref: '#/components/schemas/BackupTargetSettings'}
+        keep: {type: string, maxLength: 20}
+        password: {type: string, maxLength: 500, description: SFTP password (omitted = kept)}
+        privateKey: {type: string, maxLength: 20000, description: SFTP private key, PEM (omitted = kept)}
+        secretKey: {type: string, maxLength: 500, description: S3 secret access key (omitted = kept)}
+        token: {type: string, maxLength: 20000, description: rclone authorize output (omitted = kept)}
+        version: {type: integer, description: required when changing}
+
+    BackupTargetTest:
+      type: object
+      required: [ok, message]
+      properties:
+        ok: {type: boolean}
+        message: {type: string}
 
     BackupRun:
       type: object

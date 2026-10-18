@@ -934,5 +934,16 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - lỗi trước bước đổi tên thì database hiện tại không bị đụng.
   - **Theo dõi:** bảng `backup_runs` cấp hệ thống (không có `organization_id`, như users / sessions; chỉ system admin xem). Trang Tình trạng hệ thống có khối "Sao lưu", đỏ khi quá 2 ngày không có bản tốt. Danh sách bản lấy từ thư mục (đọc phần đầu file), vì bảng cũng bị khôi phục về quá khứ.
   - **Docker:** volume `ntb_backups`, hoặc thư mục máy chủ `NTB_BACKUP_HOST_DIR` (NAS đã mount). Lệnh `make backup | backup-list | restore FILE=…`.
-- **Để sau (P2-13 bước 2–3):** đích NAS / SFTP / S3 (Object Lock) / Google Drive / OneDrive / Dropbox qua rclone, trang cấu hình cho system admin, tải bản sao lưu về máy (nhập lại MFA), email khi sao lưu lỗi; tài liệu cài đặt / nâng cấp, snapshot NAS chống ransomware.
+  - **Đích lưu (bước 2):**
+    - bảng `backup_targets` cấp hệ thống; loại `local` (thư mục mount: NAS SMB/NFS, USB), `sftp`, `s3` (AWS / B2 qua S3 / Wasabi / Cloudflare R2 / Synology C2 / MinIO), `drive`, `onedrive`, `dropbox`;
+    - cấu hình thường ở JSON; mật khẩu / khóa / token là một JSON mã hóa bằng master key (AAD `backup_target:<id>`), không bao giờ trả về hay ghi vào audit, được mã hóa lại khi `rotate-master-key`.
+    - Gửi bằng **rclone** (gói alpine trong image `api`) với file cấu hình tạm (0600, xóa sau mỗi lần). Token OAuth rclone làm mới thì được lưu lại.
+    - SFTP nhận khóa máy chủ (kết quả `ssh-keyscan`) để không gửi nhầm tới máy giả mạo. S3 đặt `no_check_bucket` (key chỉ cần quyền ghi object).
+    - Object Lock là thiết lập của bucket; xóa bị khóa thì bỏ qua, không tính là lỗi.
+    - OneDrive: tự tìm `drive_id` từ token lúc lưu.
+    - Mỗi bản tốt (trừ pre-upgrade) được gửi lên mọi đích đang bật, rồi dọn bản cũ trên đích theo số bản giữ riêng của đích. Đích lỗi không làm hỏng bản sao lưu.
+  - **Email cho system admin** (SMTP hệ thống) khi sao lưu hằng ngày bắt đầu lỗi và khi một đích chuyển sang lỗi — chỉ lúc chuyển trạng thái.
+  - **Trang Hệ thống → Sao lưu:** tình trạng, "Sao lưu ngay" (chạy nền), các đích (thêm / sửa / thử kết nối / xóa; gợi ý theo cỡ khách), các bản trên máy chủ (tải về: file vẫn mã hóa, cần MFA vừa xác nhận, có audit), lịch sử. Mọi thao tác ghi audit.
+  - **Tài liệu:** `docs/INSTALL.md` (cài, HTTPS, nâng cấp, quay về bản cũ), `docs/OPERATIONS.md` (sao lưu, đích theo cỡ khách, chống ransomware, khôi phục). Lệnh `make` tự dùng `deploy/docker-compose.override.yml` nếu có.
+- **Để sau:** thêm đích FTP / WebDAV; đặt mật khẩu sao lưu và lịch ngay trên giao diện (hiện nằm trong `deploy/.env`).
 

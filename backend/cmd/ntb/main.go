@@ -180,6 +180,7 @@ func serve(logger *slog.Logger) error {
 		Addr: cfg.HTTPAddr,
 		Handler: api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env).WithBackups(api.BackupInfo{
 			Enabled: backups != nil, Dir: cfg.BackupDir, Schedule: cfg.BackupTime, Keep: cmp.Or(cfg.BackupKeep, "7,4,12"),
+			Svc: backups, KeyFingerprint: secrets.Fingerprint(masterKey),
 		}), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
 		// Headers must come fast (slow-header clients are cut off); a whole upload / download (contract files up to
@@ -358,7 +359,8 @@ func readPassword(stdin *os.File, stderr io.Writer, email string) (string, error
 	return string(first), nil
 }
 
-// rotateMasterKey re-wraps every stored secret (credentials, cloud accounts, TOTP seeds, SMTP password) from the
+// rotateMasterKey re-wraps every stored secret (credentials, cloud accounts, TOTP seeds, SMTP password, backup
+// destinations) from the
 // current master key (NTB_MASTER_KEY, version NTB_MASTER_KEY_VERSION) to NTB_NEW_MASTER_KEY with the next version,
 // in one transaction. Stop the API first; afterwards start it with the new key and version.
 func rotateMasterKey(stderr io.Writer) error {
@@ -399,8 +401,8 @@ func rotateMasterKey(stderr io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("rotation aborted, nothing changed: %w", err)
 	}
-	_, _ = fmt.Fprintf(stderr, "Moved %d credentials, %d cloud accounts, %d MFA seeds, %d SMTP password to master key version %d.\n"+
+	_, _ = fmt.Fprintf(stderr, "Moved %d credentials, %d cloud accounts, %d MFA seeds, %d SMTP password, %d backup destinations to master key version %d.\n"+
 		"Now set NTB_MASTER_KEY to the new key and NTB_MASTER_KEY_VERSION=%d, then start the API. Keep the old key until you have checked.\n",
-		n.Credentials, n.CloudAccounts, n.TOTP, n.SMTP, next.Version(), next.Version())
+		n.Credentials, n.CloudAccounts, n.TOTP, n.SMTP, n.BackupTargets, next.Version(), next.Version())
 	return nil
 }
