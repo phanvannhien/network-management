@@ -335,6 +335,13 @@
 .react-flow__node.ntb-l2-faded {
   opacity: 0.25;
 }
+/* A down cable stays red and a selected one stays highlighted on the L2 view too (over its VLAN colour). */
+.react-flow__edge.ntb-link-down .react-flow__edge-path {
+  stroke: var(--status-down) !important;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke-selected, var(--brand)) !important;
+}
 /* Cables attach to these (drawn border to border by CableEdge). */
 .react-flow__handle.ntb-handle {
   opacity: 0;

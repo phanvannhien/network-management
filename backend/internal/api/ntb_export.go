@@ -52,7 +52,7 @@ func (s *Server) ExportDiagramNtb(ctx context.Context, req apigen.ExportDiagramN
 }
 
 func (s *Server) exportNtb(ctx context.Context, q store.Querier, m tenant.Membership, diagramID uuid.UUID) (ntbFile, bool, error) {
-	f := ntbFile{SchemaVersion: "2.0.0", ExportedAt: time.Now().UTC().Format(time.RFC3339),
+	f := ntbFile{SchemaVersion: ntbSchemaVersion, ExportedAt: time.Now().UTC().Format(time.RFC3339),
 		Source: &ntbSource{App: "Network Topology Builder", Version: s.version},
 		Sites:  []ntbSite{}, Clusters: []ntbCluster{}, Devices: []ntbDevice{}, Interfaces: []ntbInterface{}, IPs: []ntbIP{},
 		Subnets: []ntbSubnet{}, Ranges: []ntbRange{}, EndpointGroups: []ntbGroup{}, Links: []ntbLink{}}
@@ -196,7 +196,8 @@ func (s *Server) exportNtb(ctx context.Context, q store.Querier, m tenant.Member
 		if !exported[n.RefId] {
 			continue
 		}
-		nn := ntbNode{ID: n.Id, RefKind: string(n.RefKind), RefID: n.RefId.String(), X: n.X, Y: n.Y, Width: n.Width, Height: n.Height, Locked: n.Locked}
+		nn := ntbNode{ID: n.Id, RefKind: string(n.RefKind), RefID: n.RefId.String(), X: n.X, Y: n.Y, Width: n.Width, Height: n.Height, Locked: n.Locked,
+			PageID: str(n.PageId)}
 		if n.LabelStyle != nil {
 			nn.LabelStyle = *n.LabelStyle
 		}
@@ -206,7 +207,7 @@ func (s *Server) exportNtb(ctx context.Context, q store.Querier, m tenant.Member
 		if !linked[e.LinkId] {
 			continue
 		}
-		ne := ntbEdge{ID: e.Id, LinkRef: e.LinkId.String()}
+		ne := ntbEdge{ID: e.Id, LinkRef: e.LinkId.String(), PageID: str(e.PageId)}
 		if e.Routing != nil {
 			ne.Routing = string(*e.Routing)
 		}
@@ -217,7 +218,7 @@ func (s *Server) exportNtb(ctx context.Context, q store.Querier, m tenant.Member
 	}
 	for _, a := range view.Annotations {
 		na := ntbAnnotation{ID: a.Id, Kind: string(a.Kind), X: a.X, Y: a.Y, Width: a.Width, Height: a.Height, Text: str(a.Text),
-			Color: str(a.Color), FontSize: a.FontSize}
+			Color: str(a.Color), FontSize: a.FontSize, PageID: str(a.PageId)}
 		for _, p := range ptrSlice(a.Points) {
 			na.Points = append(na.Points, ntbPoint{X: p.X, Y: p.Y})
 		}
@@ -233,6 +234,9 @@ func (s *Server) exportNtb(ctx context.Context, q store.Querier, m tenant.Member
 	}
 	if view.Viewport != nil {
 		nv.Viewport = &ntbViewport{X: view.Viewport.X, Y: view.Viewport.Y, Zoom: view.Viewport.Zoom}
+	}
+	for _, p := range ptrSlice(view.Pages) {
+		nv.Pages = append(nv.Pages, ntbPage{ID: p.Id, Name: p.Name, Layer: string(p.Layer)})
 	}
 	nv.LabelTemplate = str(view.LabelTemplate)
 	if view.PortStyle != nil {

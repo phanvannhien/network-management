@@ -772,6 +772,12 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
     - Internet riêng của từng site vẫn là `provider_cloud` (ADR-033).
     - Không tự chuyển dữ liệu cũ.
   - **Thứ tự làm:** chế độ xem L2 → nhiều trang → connector ngoài trang → trang L3 → segment.
+  - **Bổ sung khi làm (2026-10-18):**
+    - phím: `1` / `2` chọn lớp, `PgUp` / `PgDn` chuyển trang, chỉ khi đang ở màn vẽ (Alt+số và Ctrl+PgUp/PgDn là phím của trình duyệt);
+    - khi có từ hai trang trở lên, mọi node / dây / chú thích đều ghi `pageId`; dây tự thêm / bỏ theo trang có đủ hai đầu;
+    - viewport lưu cùng sơ đồ là của trang đầu, các trang khác nhớ theo trình duyệt;
+    - `diagrams.layer` giữ nguyên ý nghĩa cũ (không tự đồng bộ theo trang đầu); trang không tên của sơ đồ cũ mang lớp của sơ đồ;
+    - `.ntb.json` 2.1.0 có `pages` / `pageId`; file 2.0.0 vẫn nhập được.
 - **Lý do:**
   - L2 của một site gần như trùng topology L1: vẽ riêng chỉ sinh hai bản lệch nhau.
   - L3 có tập node khác hẳn nên cần bố cục riêng.

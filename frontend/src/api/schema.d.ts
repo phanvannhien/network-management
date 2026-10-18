@@ -4550,6 +4550,8 @@ export interface components {
             /** Format: uuid */
             refId: string;
             x: number;
+            /** @description page of the diagram it is on (P2-08); absent = the first page */
+            pageId?: string;
             y: number;
             width?: number;
             height?: number;
@@ -4562,12 +4564,16 @@ export interface components {
             id: string;
             /** Format: uuid */
             linkId: string;
+            /** @description page of the diagram it is on (P2-08); absent = the first page */
+            pageId?: string;
             /** @enum {string} */
             routing?: "straight" | "orthogonal" | "curved";
             waypoints?: components["schemas"]["DiagramPoint"][];
         };
         DiagramAnnotation: {
             id: string;
+            /** @description page of the diagram it is on (P2-08); absent = the first page */
+            pageId?: string;
             /** @enum {string} */
             kind: "text" | "arrow" | "zone" | "ipPlan" | "legend";
             x: number;
@@ -4610,6 +4616,17 @@ export interface components {
              * @enum {string}
              */
             portStyle?: "compact" | "cisco" | "full";
+            /** @description P2-08 (ADR-047): the pages of the diagram in tab order; absent = one page. Nodes, edges and annotations name their page (pageId); without one they are on the first page. */
+            pages?: components["schemas"]["DiagramPage"][];
+        };
+        DiagramPage: {
+            id: string;
+            name: string;
+            /**
+             * @description how the page opens (physical, or the L2 view; l3 = an L3 page)
+             * @enum {string}
+             */
+            layer: "physical" | "l2" | "l3";
         };
         DiagramDetail: {
             diagram: components["schemas"]["Diagram"];

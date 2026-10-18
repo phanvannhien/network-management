@@ -4,6 +4,7 @@ import { addAnnotation, newId, removeAnnotations } from '../doc/commands'
 import type { DocStoreApi } from '../doc/store'
 import { ANN, isAnnotationId } from './flow'
 import { NODE_H, NODE_W, rectAround, sharedSite, type Sizes } from './frames'
+import { onPageState } from '../doc/pages'
 
 /**
  * Adding annotations (P1-19): a frame (around the selected devices — bound to their site when they share one — or an
@@ -26,7 +27,7 @@ export function useAnnotate({
     store.getState().setSelection([ANN + a.id])
   }
   const frame = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!canEdit || !s.doc) return
     const picked = s.selection.filter((id) => s.doc!.view.nodes.some((n) => n.id === id))
     const r = picked.length > 0 ? rectAround(s.doc, picked, sizes()) : null
@@ -45,7 +46,7 @@ export function useAnnotate({
   }
   /** A frame drawn by dragging (frame tool): bound to the site its devices share, nothing else gathered. */
   const frameAt = (r: { x: number; y: number; w: number; h: number }) => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!canEdit || !s.doc) return
     const z = sizes()
     const inside = s.doc.view.nodes
@@ -93,7 +94,7 @@ export function useAnnotate({
     })
   }
   const ungroup = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!canEdit || !s.doc) return
     const frames = s.selection
       .filter(isAnnotationId)

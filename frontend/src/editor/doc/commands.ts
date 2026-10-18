@@ -9,14 +9,20 @@ import type {
   LinkInput,
   LinkUpdate,
 } from './types'
+import { firstPageId } from './pages'
 
 // Editor commands (P1-13): every change to the document goes through one, so undo / redo covers the view and the
 // pending inventory changes alike. `mergeKey` folds a stream of small steps (a drag) into one undo entry.
 
+/** Where a command runs: the page being edited (P2-08). */
+export interface CommandContext {
+  pageId: string
+}
+
 export interface DocCommand {
   label: string
   mergeKey?: string
-  apply(draft: DocState): void
+  apply(draft: DocState, ctx?: CommandContext): void
 }
 
 export function newId(): string {
@@ -53,20 +59,27 @@ export function addNode(
   const id = opts.id ?? newId()
   return {
     label: 'addNode',
-    apply(d) {
-      if (d.view.nodes.some((n) => n.refId === refId && n.refKind === refKind)) return
+    apply(d, ctx) {
+      // Once per page: the same object may be placed on several pages (a landmark), never twice on one.
+      const page = ctx?.pageId ?? firstPageId(d.view)
+      const first = firstPageId(d.view)
+      if (
+        d.view.nodes.some(
+          (n) => n.refId === refId && n.refKind === refKind && (n.pageId || first) === page,
+        )
+      )
+        return
       if (opts.device && !d.devices[refId]) d.devices[refId] = opts.device
       if (opts.group && !d.groups[refId]) d.groups[refId] = opts.group
       // Inventory links of the object (ADR-015): those to objects on the view get drawn below.
       for (const l of opts.links ?? [])
         if (!d.links[l.id] && !d.deletedLinks.includes(l.id)) d.links[l.id] = l
-      d.view.nodes.push({ id, refKind, refId, x, y })
-      // Known links between this object and others on the view get an edge.
-      const onView = new Set(d.view.nodes.map((n) => n.refId))
-      const drawn = new Set(d.view.edges.map((e) => e.linkId))
-      for (const l of Object.values(d.links))
-        if (!drawn.has(l.id) && onView.has(l.aId) && onView.has(l.bId))
-          d.view.edges.push({ id: newId(), linkId: l.id })
+      d.view.nodes.push(
+        d.view.pages && d.view.pages.length > 1
+          ? { id, refKind, refId, x, y, pageId: page }
+          : { id, refKind, refId, x, y },
+      )
+      // Known links between this object and others on the page get an edge (syncEdges, after every command).
     },
   }
 }
@@ -241,6 +254,16 @@ export function updateLink(id: string, update: LinkUpdate, ports?: PortNames): D
       if (d.newLinks[id]) d.newLinks[id] = input as LinkInput
       else d.linkEdits[id] = update
       const card = d.links[id]
+      // Other ends or ports: the switchport facts read at load no longer apply (until the save reloads them).
+      const rewired =
+        card &&
+        (update.a.id !== card.aId ||
+          update.b.id !== card.bId ||
+          (ports !== undefined && (ports.aPort !== card.aPort || ports.bPort !== card.bPort)))
+      if (card && rewired) {
+        card.aL2 = undefined
+        card.bL2 = undefined
+      }
       if (card)
         Object.assign(card, {
           aId: update.a.id,
@@ -339,8 +362,8 @@ export function updateGroup(
 export function compound(label: string, commands: DocCommand[]): DocCommand {
   return {
     label,
-    apply(d) {
-      for (const c of commands) c.apply(d)
+    apply(d, ctx) {
+      for (const c of commands) c.apply(d, ctx)
     },
   }
 }

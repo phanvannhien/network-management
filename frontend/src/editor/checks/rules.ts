@@ -1,6 +1,7 @@
 import ipaddr from 'ipaddr.js'
 import type { DocState } from '../doc/types'
 import type { Problem, Severity, ValidationContext } from './types'
+import { pageOf } from '../doc/pages'
 
 // Diagram checks (P1-20, SRS §7 Phase 1 + PLAN extras). Pure functions over a plain input (built from the document and
 // the server's validation context) so they run in a Web Worker and in tests alike. Inventory errors created elsewhere
@@ -32,7 +33,7 @@ export interface CheckIface {
 }
 
 export interface CheckInput {
-  nodes: { id: string; refKind: string; refId: string; x: number; y: number }[]
+  nodes: { id: string; refKind: string; refId: string; x: number; y: number; page?: string }[]
   devices: Record<
     string,
     {
@@ -48,6 +49,8 @@ export interface CheckInput {
   /** Today, YYYY-MM-DD (local), for date rules; given by the caller so the worker stays pure. */
   today: string
   frames: {
+    /** Page of the frame (P2-08): a frame holds the devices drawn on its own page. */
+    page?: string
     siteId: string
     locationId: string | null
     x: number
@@ -133,12 +136,14 @@ export function buildCheckInput(
       refId: n.refId,
       x: n.x,
       y: n.y,
+      page: pageOf(doc.view, n),
     })),
     devices,
     today,
     frames: doc.view.annotations
       .filter((a) => a.kind === 'zone' && a.siteId)
       .map((a) => ({
+        page: pageOf(doc.view, a),
         siteId: a.siteId!,
         locationId: a.locationId ?? null,
         x: a.x,
@@ -589,7 +594,14 @@ export function runChecks(input: CheckInput): Problem[] {
     const cx = n.x + NODE_W / 2
     const cy = n.y + NODE_H / 2
     const frame = input.frames
-      .filter((f) => cx >= f.x && cx <= f.x + f.w && cy >= f.y && cy <= f.y + f.h)
+      .filter(
+        (f) =>
+          (f.page ?? '') === (n.page ?? '') &&
+          cx >= f.x &&
+          cx <= f.x + f.w &&
+          cy >= f.y &&
+          cy <= f.y + f.h,
+      )
       .sort((p, q) => p.w * p.h - q.w * q.h)[0]
     if (!frame) continue
     const loc = ctxDevice.get(n.refId)?.locationId ?? null
@@ -607,7 +619,7 @@ export function runChecks(input: CheckInput): Problem[] {
     if (n.refKind !== 'device' || cabled.has(n.refId)) continue
     const d = input.devices[n.refId]
     if (d && d.type !== 'patch_panel')
-      push('no-cable', 'info', { kind: 'node', id: n.id }, { host: d.hostname }, n.id)
+      push('no-cable', 'info', { kind: 'node', id: n.id }, { host: d.hostname }, n.refId)
   }
   for (const d of input.ctx.devices) {
     const hasIp = input.ctx.ips.some(

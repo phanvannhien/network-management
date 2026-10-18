@@ -9118,6 +9118,10 @@ components:
           format: uuid
         x:
           type: number
+        pageId:
+          type: string
+          maxLength: 64
+          description: page of the diagram it is on (P2-08); absent = the first page
         y:
           type: number
         width:
@@ -9141,6 +9145,10 @@ components:
         linkId:
           type: string
           format: uuid
+        pageId:
+          type: string
+          maxLength: 64
+          description: page of the diagram it is on (P2-08); absent = the first page
         routing:
           type: string
           enum: [straight, orthogonal, curved]
@@ -9157,6 +9165,10 @@ components:
         id:
           type: string
           maxLength: 64
+        pageId:
+          type: string
+          maxLength: 64
+          description: page of the diagram it is on (P2-08); absent = the first page
         kind:
           type: string
           enum: [text, arrow, zone, ipPlan, legend]
@@ -9234,6 +9246,30 @@ components:
           type: string
           enum: [compact, cisco, full]
           description: port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
+        pages:
+          type: array
+          maxItems: 50
+          description: >-
+            P2-08 (ADR-047): the pages of the diagram in tab order; absent = one page. Nodes, edges and annotations
+            name their page (pageId); without one they are on the first page.
+          items:
+            $ref: '#/components/schemas/DiagramPage'
+
+    DiagramPage:
+      type: object
+      required: [id, name, layer]
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        layer:
+          type: string
+          enum: [physical, l2, l3]
+          description: how the page opens (physical, or the L2 view; l3 = an L3 page)
 
     DiagramDetail:
       type: object

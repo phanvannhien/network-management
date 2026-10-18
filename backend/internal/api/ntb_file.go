@@ -39,6 +39,25 @@ type ntbView struct {
 	Viewport      *ntbViewport    `json:"viewport,omitempty"`
 	LabelTemplate string          `json:"labelTemplate,omitempty"`
 	PortStyle     string          `json:"portStyle,omitempty"`
+	// Pages (2.1.0, P2-08); absent = one page.
+	Pages []ntbPage `json:"pages,omitempty"`
+}
+
+// ntbSchemaVersion is written into exported files; 2.0.0 files (one page) still import.
+const ntbSchemaVersion = "2.1.0"
+
+// optStr is nil for "" (optional fields of the API types).
+func optStr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+type ntbPage struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Layer string `json:"layer"`
 }
 
 type ntbViewport struct {
@@ -57,6 +76,7 @@ type ntbNode struct {
 	Height     *float32          `json:"height,omitempty"`
 	Locked     *bool             `json:"locked,omitempty"`
 	LabelStyle map[string]string `json:"labelStyle,omitempty"`
+	PageID     string            `json:"pageId,omitempty"`
 }
 
 type ntbPoint struct {
@@ -69,6 +89,7 @@ type ntbEdge struct {
 	LinkRef   string     `json:"linkRef"`
 	Routing   string     `json:"routing,omitempty"`
 	Waypoints []ntbPoint `json:"waypoints,omitempty"`
+	PageID    string     `json:"pageId,omitempty"`
 }
 
 type ntbAnnotation struct {
@@ -84,6 +105,7 @@ type ntbAnnotation struct {
 	Points    []ntbPoint `json:"points,omitempty"`
 	SiteRef   *string    `json:"siteRef,omitempty"`
 	LineStyle string     `json:"lineStyle,omitempty"`
+	PageID    string     `json:"pageId,omitempty"`
 }
 
 type ntbSite struct {

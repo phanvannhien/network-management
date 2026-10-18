@@ -29,6 +29,8 @@ export type ShortcutId =
   | 'library'
   | 'lensPhysical'
   | 'lensL2'
+  | 'pagePrev'
+  | 'pageNext'
   | 'help'
 
 export interface Shortcut {
@@ -64,8 +66,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'pointer', keys: ['V'], aria: 'V' },
   { id: 'hand', keys: ['H'], aria: 'H' },
   { id: 'library', keys: ['B'], aria: 'B' },
-  { id: 'lensPhysical', keys: ['Alt', '1'], aria: 'Alt+1' },
-  { id: 'lensL2', keys: ['Alt', '2'], aria: 'Alt+2' },
+  { id: 'lensPhysical', keys: ['1'], aria: '1' },
+  { id: 'lensL2', keys: ['2'], aria: '2' },
+  { id: 'pagePrev', keys: ['PgUp'], aria: 'PageUp' },
+  { id: 'pageNext', keys: ['PgDn'], aria: 'PageDown' },
   { id: 'search', keys: ['Ctrl', 'K'] },
   { id: 'help', keys: ['?'], aria: '?' },
 ]
@@ -90,6 +94,10 @@ export function keysLabel(id: ShortcutId, mac = IS_MAC): string {
 
 /** Actions that change or select what is on the canvas: only when the canvas (or nothing) has the focus. */
 export const CANVAS_ONLY: ReadonlySet<ShortcutId> = new Set([
+  'lensPhysical',
+  'lensL2',
+  'pagePrev',
+  'pageNext',
   'remove',
   'deleteInventory',
   'selectAll',
@@ -118,9 +126,6 @@ export function actionFor(
 ): ShortcutId | null {
   const mod = e.ctrlKey || e.metaKey
   const k = e.key.toLowerCase()
-  // Alt+digit types "¡" / "™" on a Mac: match on the physical key (P2-08 views).
-  if (e.altKey && !mod && !e.shiftKey && e.code === 'Digit1') return 'lensPhysical'
-  if (e.altKey && !mod && !e.shiftKey && e.code === 'Digit2') return 'lensL2'
   if (e.altKey) return null
   if (mod) {
     if (k === 's') return 'save'
@@ -139,6 +144,12 @@ export function actionFor(
   if (e.shiftKey && (e.code === 'Digit1' || e.key === '1' || e.key === '!')) return 'fit'
   if (e.shiftKey && (e.code === 'Digit0' || e.key === '0' || e.key === ')')) return 'zoomReset'
   if (e.key === '?' || (e.shiftKey && e.code === 'Slash')) return 'help'
+  // P2-08: plain digits pick the view (Alt+digit switches browser tabs on Linux), PgUp / PgDn the page (Ctrl+PgUp /
+  // PgDn is the browser's).
+  if (!e.shiftKey && e.key === '1') return 'lensPhysical'
+  if (!e.shiftKey && e.key === '2') return 'lensL2'
+  if (e.key === 'PageUp') return 'pagePrev'
+  if (e.key === 'PageDown') return 'pageNext'
   if (e.key === '/') return 'quickAdd'
   if (e.key.toLowerCase() === 'b' && !e.shiftKey) return 'library'
   if (e.key.toLowerCase() === 'l' && !e.shiftKey) return 'connect'

@@ -7,6 +7,7 @@ import { toFlowEdges } from './flow'
 import { compound, createLink, newId, updateLink, type PortNames } from '../doc/commands'
 import type { DocStoreApi } from '../doc/store'
 import type { CableEnd, CableValue } from './CableDialog'
+import { onPageState } from '../doc/pages'
 
 interface Open {
   a: CableEnd
@@ -34,7 +35,7 @@ export function useWiring({
   const [open, setOpen] = useState<Open | null>(null)
 
   const endOf = (nodeId: string): CableEnd | null => {
-    const doc = store.getState().doc
+    const doc = onPageState(store.getState()).doc
     const n = doc?.view.nodes.find((x) => x.id === nodeId)
     if (!doc || !n) return null
     if (n.refKind === 'device') {
@@ -77,7 +78,7 @@ export function useWiring({
   }
 
   const editCable = async (edgeId: string) => {
-    const doc = store.getState().doc
+    const doc = onPageState(store.getState()).doc
     const e = doc?.view.edges.find((x) => x.id === edgeId)
     const card = e && doc?.links[e.linkId]
     if (!doc || !card || !canEdit) return
@@ -86,7 +87,11 @@ export function useWiring({
       (x) => x.id === edgeId,
     )?.data?.bundle
     if (bundle && bundle.length > 1) {
-      toast.info(t('panel.bundleGuide'))
+      // A LAG line on the L2 view, or an endpoint group's cables.
+      const lag = toFlowEdges(doc, undefined, { lens: store.getState().lens }).find(
+        (x) => x.id === edgeId,
+      )?.data?.lag
+      toast.info(t(lag ? 'panel.lagGuide' : 'panel.bundleGuide'))
       return
     }
     const nodeOf = (refId: string) => doc.view.nodes.find((n) => n.refId === refId)?.id ?? ''
@@ -146,7 +151,7 @@ export function useWiring({
   const save = (input: LinkInput, ports: PortNames, more?: { id: string; name: string }[]) => {
     const o = open
     if (!o) return
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!o.edit && more && more.length > 0) {
       // A port range to an endpoint group: one cable per port, one undo step (ADR-036).
       const side = input.a.kind === 'device' ? 'a' : 'b'

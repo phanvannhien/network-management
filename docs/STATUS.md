@@ -5,6 +5,39 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-08 (bước 2/5) Nhiều trang trong một sơ đồ; sửa lỗ hổng link mời và lỗi L2
+- Đã làm:
+  - **Trang trong sơ đồ** (như sheet Excel):
+    - tab ở đáy màn vẽ: thêm, bấm đúp đổi tên, nhân bản, chuyển trái / phải, mở mặc định ở L1 / L2, xóa (có xác nhận, kho giữ nguyên);
+    - `PgUp` / `PgDn` chuyển trang; `?page=` trên URL;
+    - chuột phải thiết bị → **Chuyển sang trang** / **Đặt thêm vào trang** (làm mốc); badge `↗ Tầng 2` cho thiết bị cũng ở trang khác;
+    - một lần lưu, một lịch sử hoàn tác cho mọi trang; hoàn tác thay đổi ở trang khác thì tự chuyển sang trang đó và báo;
+    - Problems chạy trên mọi trang, bấm vào lỗi ở trang khác thì chuyển trang rồi zoom; luật khung site chỉ xét thiết bị cùng trang;
+    - thư viện "Trong kho" chỉ ẩn thiết bị đã có trên trang đang mở;
+    - mỗi trang nhớ chỗ đang xem riêng.
+  - **Server:** `view.pages`, `pageId` trên node / dây / chú thích; kiểm tra trang tồn tại, tên 1–80 ký tự, tối đa 50 trang, mỗi đối tượng một lần mỗi trang. `.ntb.json` lên 2.1.0, giữ trang khi export / import.
+  - **Phím:** chọn lớp đổi từ Alt+1/2 sang `1` / `2` (Alt+số là phím đổi tab của trình duyệt trên Linux).
+  - **Sửa từ rà soát:**
+    - **lỗ hổng:** người có `user.manage` tạo lại link mời của owner / admin đang chờ để chiếm tài khoản (commit riêng);
+    - gộp LAG khi dây vẽ ngược chiều;
+    - dây LAG ở L2 hiện lệch của mọi dây thành viên;
+    - dây gộp không render lại khi kéo;
+    - dây đang chọn / dây down vẫn đúng màu ở L2;
+    - đổi lớp thì bỏ chọn dây;
+    - dây nối lại cổng thì bỏ thông tin VLAN cũ;
+    - nháp cũ lấy lại thông tin VLAN;
+    - chú giải ghi đủ VLAN hai đầu.
+- Test / cách kiểm tra:
+  - `make check` pass. Go: `TestDiagramPages`, `TestRegenerateInviteFollowsRoleRules`. Vitest: `pages.test.ts`.
+  - Trình duyệt thật (API / Vite riêng, sơ đồ "L2 lab"): thêm trang, chuyển thiết bị, đặt mốc, đổi tên, PgUp, hoàn tác nhảy trang, lưu rồi mở lại đúng trang; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Dây có một đầu ở trang khác chưa hiện mốc: bước 3 (connector ngoài trang).
+  - Panel "Sơ đồ" vẫn đếm đối tượng / dây của cả sơ đồ.
+  - Chưa kéo thả để đổi thứ tự tab (dùng menu).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 bước 3, connector cho dây đi ra ngoài trang.
+
 ## 2026-10-18 — P2-01 Chốt chính sách link mời và nâng quyền (ADR-046)
 - Người dùng chốt:
   1. Link mời được copy gửi qua kênh khác, không bắt buộc email: giữ như hiện tại.

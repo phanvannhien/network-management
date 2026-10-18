@@ -286,13 +286,18 @@ export function carries(e: L2Edge, vid: number): Carry {
   return 'maybe'
 }
 
-/** VLAN ids a cable names explicitly (legend): an access VLAN, a trunk's list and its native VLAN. */
+/**
+ * VLAN ids a cable names explicitly (legend), from its switchport ends: access VLANs (both, when they differ), trunk
+ * lists and a native VLAN other than the default.
+ */
 export function namedVids(e: L2Edge): number[] {
-  if (e.kind === 'access') return vlanIds(e.vlans, 1)
-  if (e.kind !== 'trunk') return []
-  const out = vlanIds(e.vlans, 512)
-  if (e.native) out.push(e.native)
-  return out
+  const out = new Set<number>()
+  for (const end of e.ends) {
+    const access = Array.isArray(end.tagged) && end.tagged.length === 0
+    if (end.untagged !== null && (access || end.untagged !== DEFAULT_NATIVE)) out.add(end.untagged)
+    if (Array.isArray(end.tagged)) for (const v of vlanIds(end.tagged, 512)) out.add(v)
+  }
+  return [...out].sort((a, b) => a - b)
 }
 
 // Cards are shared between document versions (Immer): an unchanged cable keeps its facts object, so React Flow sees an
@@ -307,4 +312,30 @@ export function l2Of(card: { aL2?: PortL2; bL2?: PortL2 }): L2Edge {
     cache.set(card, e)
   }
   return e
+}
+
+const merged = new WeakMap<object, { cards: object[]; value: L2Edge }>()
+
+/**
+ * One line for several cables (a LAG on the L2 view): drawn like the first member, with every member's ends and
+ * mismatches. Cached on the first card while the members stay the same objects.
+ */
+export function mergedL2(cards: { aL2?: PortL2; bL2?: PortL2 }[]): L2Edge {
+  const first = cards[0]!
+  const hit = merged.get(first)
+  if (hit && hit.cards.length === cards.length && hit.cards.every((c, i) => c === cards[i]))
+    return hit.value
+  const all = cards.map(l2Of)
+  const seen = new Set<string>()
+  const issues = all
+    .flatMap((e) => e.issues)
+    .filter((i) => {
+      const k = `${i.key}|${JSON.stringify(i.values)}`
+      if (seen.has(k)) return false
+      seen.add(k)
+      return true
+    })
+  const value: L2Edge = { ...all[0]!, issues, ends: all.flatMap((e) => e.ends) }
+  merged.set(first, { cards: [...cards], value })
+  return value
 }

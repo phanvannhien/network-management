@@ -21,7 +21,11 @@
   ],
   "properties": {
     "schemaVersion": {
-      "const": "2.0.0"
+      "enum": [
+        "2.0.0",
+        "2.1.0"
+      ],
+      "description": "2.1.0 adds diagram pages (P2-08); 2.0.0 files have one page"
     },
     "exportedAt": {
       "type": "string",
@@ -892,6 +896,10 @@
                   "type": "string",
                   "maxLength": 40
                 }
+              },
+              "pageId": {
+                "type": "string",
+                "maxLength": 64
               }
             }
           }
@@ -941,6 +949,10 @@
                     }
                   }
                 }
+              },
+              "pageId": {
+                "type": "string",
+                "maxLength": 64
               }
             }
           }
@@ -1031,6 +1043,10 @@
                   "solid",
                   "dashed"
                 ]
+              },
+              "pageId": {
+                "type": "string",
+                "maxLength": 64
               }
             }
           }
@@ -1066,6 +1082,39 @@
             "cisco",
             "full"
           ]
+        },
+        "pages": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "layer"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "layer": {
+                "type": "string",
+                "enum": [
+                  "physical",
+                  "l2",
+                  "l3"
+                ]
+              }
+            }
+          }
         }
       }
     }

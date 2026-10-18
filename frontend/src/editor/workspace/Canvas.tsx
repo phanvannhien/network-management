@@ -21,6 +21,7 @@ import { useSiteGraph } from '../overview/siteGraph'
 import { moveAnnotation, moveNodes, updateAnnotation } from '../doc/commands'
 import { decodeItem, LIBRARY_MIME, type LibraryItem } from '../library/items'
 import { useDoc, useDocStoreApi } from './context'
+import { docOnPage, firstPageId } from '../doc/pages'
 import {
   ANN,
   fitOptions,
@@ -101,9 +102,18 @@ export function Canvas({
   const { t } = useTranslation()
   const store = useDocStoreApi()
   const flow = useReactFlow()
-  const doc = useDoc((s) => s.doc)
+  // What this page shows (P2-08): the same inventory, the view reduced to the page.
+  const doc = useDoc((s) => (s.doc ? docOnPage(s.doc, s.page) : null))
   const selection = useDoc((s) => s.selection)
-  const [initialViewport] = useState(() => startViewport(diagramId, store.getState().viewport))
+  // Each page remembers where this user looked (the canvas is remounted per page); the saved viewport is the first
+  // page's.
+  const [viewKey] = useState(() => {
+    const s = store.getState()
+    return s.doc && s.page !== firstPageId(s.doc.view) ? `${diagramId}:${s.page}` : diagramId
+  })
+  const [initialViewport] = useState(() =>
+    startViewport(viewKey, viewKey === diagramId ? store.getState().viewport : null),
+  )
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({})
   const measuredRef = useRef(measured)
   measuredRef.current = measured
@@ -386,7 +396,9 @@ export function Canvas({
       }}
       onNodeDragStart={(e, node) => {
         dragKey.current = `drag:${crypto.randomUUID()}`
-        const s = store.getState()
+        const st = store.getState()
+        // Geometry of this page only: frames hold the devices drawn on the same page.
+        const s = { ...st, doc: st.doc ? docOnPage(st.doc, st.page) : null }
         // Dragging devices: the site frames holding any of them will wrap around their devices.
         fitPlan.current = null
         if (s.doc && !isOverlayId(node.id)) {
@@ -435,7 +447,7 @@ export function Canvas({
       onMoveEnd={(_e, vp: Viewport) => {
         store.getState().setViewport(vp)
         try {
-          localStorage.setItem(VIEWPORT_KEY(diagramId), JSON.stringify(vp))
+          localStorage.setItem(VIEWPORT_KEY(viewKey), JSON.stringify(vp))
         } catch {
           // storage full or blocked
         }

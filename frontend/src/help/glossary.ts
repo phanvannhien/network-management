@@ -475,12 +475,25 @@ export const GLOSSARY: GlossaryEntry[] = [
     'vlan',
     ['Lớp L1 / L2 / L3 của sơ đồ', 'Diagram layers L1 / L2 / L3'],
     [
-      'Ba cách nhìn cùng một mạng. L1 vật lý: dây thật, cổng, loại cáp. L2: VLAN nào đi trên dây nào (access tô màu VLAN, trunk kèm danh sách VLAN, LAG gộp một dây). L3: subnet và thiết bị định tuyến. L1 và L2 dùng chung bố cục: bấm L1 / L2 trên thanh công cụ (Alt+1 / Alt+2).',
-      'Three ways to look at one network. L1 physical: real cables, ports, cable types. L2: which VLANs ride which cable (access in its VLAN colour, trunks with their VLAN list, a LAG as one line). L3: subnets and routing devices. L1 and L2 share one layout: L1 / L2 on the toolbar (Alt+1 / Alt+2).',
+      'Ba cách nhìn cùng một mạng. L1 vật lý: dây thật, cổng, loại cáp. L2: VLAN nào đi trên dây nào (access tô màu VLAN, trunk kèm danh sách VLAN, LAG gộp một dây). L3: subnet và thiết bị định tuyến. L1 và L2 dùng chung bố cục: bấm L1 / L2 trên thanh công cụ (phím 1 / 2).',
+      'Three ways to look at one network. L1 physical: real cables, ports, cable types. L2: which VLANs ride which cable (access in its VLAN colour, trunks with their VLAN list, a LAG as one line). L3: subnets and routing devices. L1 and L2 share one layout: L1 / L2 on the toolbar (keys 1 / 2).',
     ],
     [
       'Lọc "VLAN 20 Camera" trên L2 → thấy dây camera đi qua switch nào, gateway ở đâu.',
       'Pick "VLAN 20 Camera" on L2 → see which switches the camera VLAN crosses and where its gateway is.',
+    ],
+  ),
+  e(
+    'diagram-pages',
+    'org',
+    ['Trang của sơ đồ', 'Diagram pages'],
+    [
+      'Một sơ đồ chia thành nhiều trang như các sheet của Excel (Tầng 1, Tầng 2, Phòng server…): chung một lần lưu, một lịch sử hoàn tác, một file xuất. Một thiết bị đặt được trên nhiều trang để làm mốc, vẫn là một thiết bị trong kho. Xóa trang chỉ gỡ khỏi bản vẽ.',
+      'One diagram split into pages like workbook sheets (Floor 1, Floor 2, Server room…): one save, one undo history, one export. A device can sit on several pages as a landmark and is still one device in the inventory. Removing a page only takes things off the drawing.',
+    ],
+    [
+      'Tab ở đáy màn vẽ; PgUp / PgDn chuyển trang; chuột phải thiết bị → Chuyển sang trang.',
+      'Tabs at the bottom of the canvas; PgUp / PgDn switch; right-click a device → Move to page.',
     ],
   ),
   e(

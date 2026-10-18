@@ -67,6 +67,18 @@ import { fitOptions } from './workspace/flow'
 import { DocStoreContext } from './workspace/context'
 import { togglePanel, useEditorPrefs } from './workspace/prefs'
 import { VlanLegend } from './l2/VlanLegend'
+import { ANN } from './doc/types'
+import { docOnPage, firstPageId, pageLabel, pageOf, pagesOf, type PageLayer } from './doc/pages'
+import {
+  addPage,
+  duplicatePage,
+  movePage,
+  removePage,
+  renamePage,
+  sendToPage,
+  setPageLayer,
+} from './doc/pageCommands'
+import { PageTabs } from './workspace/PageTabs'
 import { actionFor, CANVAS_ONLY, isTyping, keysLabel } from './workspace/shortcuts'
 import { ShortcutsDialog } from './workspace/ShortcutsDialog'
 import { Tips } from './workspace/Tips'
@@ -300,6 +312,10 @@ function Workspace({
   const canUndo = useStore(store, (s) => s.past.length > 0)
   const canRedo = useStore(store, (s) => s.future.length > 0)
   const lens = useStore(store, (s) => s.lens)
+  // Pages (P2-08): the canvas, the library and the edit actions work on the page being edited.
+  const page = useStore(store, (s) => s.page)
+  const pageDoc = useMemo(() => docOnPage(doc, page), [doc, page])
+  const pages = useMemo(() => pagesOf(doc.view, meta.layer), [doc.view, meta.layer])
   const width = useFlowStore((s) => s.width)
   const height = useFlowStore((s) => s.height)
   const [prefs, setPrefs] = useEditorPrefs()
@@ -311,7 +327,10 @@ function Workspace({
     at: { x: number; y: number }
   } | null>(null)
   const [lastSite, setLastSite] = useState<string | null>(null)
-  const onView = useMemo(() => new Set(doc.view.nodes.map((n) => n.refId)), [doc.view.nodes])
+  const onView = useMemo(
+    () => new Set(pageDoc.view.nodes.map((n) => n.refId)),
+    [pageDoc.view.nodes],
+  )
   const hostnames = useMemo(
     () => new Set(Object.values(doc.devices).map((d) => d.hostname)),
     [doc.devices],
@@ -362,20 +381,33 @@ function Workspace({
   const [openedFocused] = useState(() => focusRef !== null)
   // useNodesInitialized stays false with frames and notes (no handles): wait for any measured node instead — and for
   // the zoom controller, or fitView is silently dropped (a diagram opening at a saved viewport).
+  const pageNodeIds = useMemo(() => new Set(pageDoc.view.nodes.map((n) => n.id)), [pageDoc])
   const nodesReady = useFlowStore(
-    (st) => st.panZoom !== null && st.nodes.some((n) => n.measured?.width),
+    (st) =>
+      st.panZoom !== null &&
+      st.nodes.some((n) => n.measured?.width && (pageNodeIds.size === 0 || pageNodeIds.has(n.id))),
   )
   useEffect(() => {
     // Still showing the previous diagram (moving from an overview to a detail diagram): wait for the new one.
     if (!focusRef || !nodesReady || meta.id !== diagramId) return
+    // The object may be on another page: open that page first (this runs again once it is drawn).
+    const anywhere =
+      doc.view.nodes.find((n) => n.refId === focusRef) ??
+      doc.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef) ??
+      doc.view.annotations.find((a) => a.kind === 'zone' && a.siteId === focusRef)
+    if (anywhere && pageOf(doc.view, anywhere) !== page) {
+      store.getState().setPage(pageOf(doc.view, anywhere))
+      return
+    }
+    const doc_ = pageDoc
     // A cluster is drawn through its members: its first member on the diagram.
     const node =
-      doc.view.nodes.find((n) => n.refId === focusRef) ??
-      doc.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef)
+      doc_.view.nodes.find((n) => n.refId === focusRef) ??
+      doc_.view.nodes.find((n) => doc.devices[n.refId]?.clusterId === focusRef)
     // A site (drilling down from an overview, P2-21): its frame, zoomed to fill the view.
     const frame = node
       ? undefined
-      : doc.view.annotations.find((a) => a.kind === 'zone' && a.siteId === focusRef)
+      : doc_.view.annotations.find((a) => a.kind === 'zone' && a.siteId === focusRef)
     if (frame) {
       // Fit the frame in what the side panels leave visible, centred there.
       const left = libraryOpen ? 312 : 32
@@ -391,7 +423,7 @@ function Workspace({
     }
     // Neither a node nor a frame: the site's devices on the diagram, else the whole drawing.
     if (!node && !frame) {
-      const here = doc.view.nodes.filter((n) => doc.devices[n.refId]?.siteId === focusRef)
+      const here = doc_.view.nodes.filter((n) => doc.devices[n.refId]?.siteId === focusRef)
       if (here.length > 0)
         void flow.fitView({
           ...fitOptions(libraryOpen, panelOpen),
@@ -426,7 +458,7 @@ function Workspace({
       },
       { replace: true },
     )
-  }, [focusRef, nodesReady, meta.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [focusRef, nodesReady, meta.id, page]) // eslint-disable-line react-hooks/exhaustive-deps
   // Double click (P2-21): a site opens its detail diagram (one: straight away; several or none: a dialog); a diagram
   // node opens that diagram. The overview stays in the URL for the breadcrumb.
   const siteGraph = useSiteGraph(
@@ -572,7 +604,7 @@ function Workspace({
           void flow.zoomTo(1, { duration: ZOOM_MS })
           break
         case 'selectAll':
-          s.setSelection(s.doc?.view.nodes.map((n) => n.id) ?? [])
+          s.setSelection(pageDoc.view.nodes.map((n) => n.id))
           break
         case 'deselect':
           s.setSelection([])
@@ -586,6 +618,13 @@ function Workspace({
           setHand(false)
           wiring.toggle()
           break
+        case 'pagePrev':
+        case 'pageNext': {
+          const i = pages.findIndex((x) => x.id === s.page)
+          const next = pages[i + (action === 'pageNext' ? 1 : -1)]
+          if (next) s.setPage(next.id)
+          break
+        }
         case 'lensPhysical':
         case 'lensL2':
           // The overview diagram has sites, not cables with VLANs.
@@ -650,6 +689,89 @@ function Workspace({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  /** Selected nodes and frames to another page (moved, or also placed there). */
+  const sendSelection = (pageId: string, copy: boolean) => {
+    const s = store.getState()
+    const nodeIds = s.selection.filter((id) => !isAnnotationId(id))
+    const annIds = s.selection.filter(isAnnotationId).map((id) => id.slice(ANN.length))
+    if (nodeIds.length + annIds.length === 0) return
+    s.dispatch(sendToPage(nodeIds, annIds, pageId, copy))
+    const target = pages.find((x) => x.id === pageId)
+    if (!copy && target)
+      toast.success(
+        t('pages.moved', {
+          count: nodeIds.length + annIds.length,
+          name: pageLabel(target, pages.indexOf(target), t),
+        }),
+      )
+  }
+  // Page tabs: commands (undoable); the implicit single page gets a real name when a second page comes.
+  const firstName = pageLabel(pages[0]!, 0, t)
+  const firstLayer = pages[0]!.layer
+  const pageActions = {
+    add: () => {
+      const id = newId()
+      store
+        .getState()
+        .dispatch(
+          addPage(
+            id,
+            t('pages.untitled', { n: pages.length + 1 }),
+            'physical',
+            firstName,
+            firstLayer,
+          ),
+        )
+      store.getState().setPage(id)
+    },
+    rename: (id: string, name: string) =>
+      store.getState().dispatch(renamePage(id, name, firstLayer)),
+    duplicate: (id: string) => {
+      const src = pages.find((x) => x.id === id)
+      if (!src) return
+      const copyId = newId()
+      const name = t('pages.copyName', { name: pageLabel(src, pages.indexOf(src), t) }).slice(0, 80)
+      store.getState().dispatch(duplicatePage(id, copyId, name, firstName))
+      store.getState().setPage(copyId)
+    },
+    layer: (id: string, layer: PageLayer) => {
+      store.getState().dispatch(setPageLayer(id, layer, firstName))
+      if (id === store.getState().page) store.getState().setLens(layer === 'l2' ? 'l2' : 'physical')
+    },
+    move: (id: string, delta: -1 | 1) => store.getState().dispatch(movePage(id, delta)),
+    remove: (id: string) => store.getState().dispatch(removePage(id)),
+  }
+  const pageCounts = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const n of doc.view.nodes) out[pageOf(doc.view, n)] = (out[pageOf(doc.view, n)] ?? 0) + 1
+    for (const a of doc.view.annotations)
+      out[pageOf(doc.view, a)] = (out[pageOf(doc.view, a)] ?? 0) + 1
+    return out
+  }, [doc.view])
+  // ?page= follows the tab (a link opens the same page); undo on another page says where it went.
+  useEffect(() => {
+    if (meta.id !== diagramId) return
+    const wanted = params.get('page')
+    if (wanted && wanted !== store.getState().page) store.getState().setPage(wanted)
+  }, [meta.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (meta.id !== diagramId) return
+    setParams(
+      (p) => {
+        if (page === firstPageId(doc.view)) p.delete('page')
+        else p.set('page', page)
+        return p
+      },
+      { replace: true },
+    )
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+  const pageJump = useStore(store, (s) => s.pageJump)
+  useEffect(() => {
+    if (!pageJump) return
+    const target = pages.find((x) => x.id === pageJump.pageId)
+    if (target) toast.info(t('pages.jumped', { name: pageLabel(target, pages.indexOf(target), t) }))
+  }, [pageJump]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const menuItems = (m: { kind: 'node' | 'edge' | 'pane'; id?: string }): MenuItem[] => {
     const keys = (id: Parameters<typeof keysLabel>[0]) => keysLabel(id)
     if (m.kind === 'pane')
@@ -666,7 +788,7 @@ function Workspace({
           id: 'all',
           label: t('editorCanvas.keys.selectAll'),
           keys: keys('selectAll'),
-          onSelect: () => store.getState().setSelection(doc.view.nodes.map((n) => n.id)),
+          onSelect: () => store.getState().setSelection(pageDoc.view.nodes.map((n) => n.id)),
         },
       ]
     if (m.kind === 'edge')
@@ -739,6 +861,32 @@ function Workspace({
         disabled: !canEdit,
         onSelect: () => m.id && wiring.toggle(m.id),
       },
+      // Another page (P2-08): move what is selected there, or also place a device there as a landmark.
+      ...pages
+        .filter((x) => x.id !== page)
+        .slice(0, 8)
+        .flatMap((x, i): MenuItem[] => {
+          const name = pageLabel(x, pages.indexOf(x), t)
+          return [
+            {
+              id: `move-${x.id}`,
+              label: `${t('pages.moveTo')}: ${name}`,
+              disabled: !canEdit,
+              separated: i === 0,
+              onSelect: () => sendSelection(x.id, false),
+            },
+            ...(node?.refKind === 'device'
+              ? [
+                  {
+                    id: `copy-${x.id}`,
+                    label: `${t('pages.copyTo')}: ${name}`,
+                    disabled: !canEdit,
+                    onSelect: () => sendSelection(x.id, true),
+                  },
+                ]
+              : []),
+          ]
+        }),
       {
         id: 'open',
         label: t('editorEdit.openDevice'),
@@ -771,6 +919,7 @@ function Workspace({
   return (
     <div ref={root} className="contents">
       <Canvas
+        key={page}
         focusing={openedFocused}
         onNodeOpen={openNode}
         diagramId={diagramId}
@@ -913,7 +1062,25 @@ function Workspace({
           </p>
         </div>
       )}
-      {lens === 'l2' && meta.layer !== 'overview' && <VlanLegend left={libraryOpen ? 312 : 12} />}
+      {lens === 'l2' && meta.layer !== 'overview' && (
+        <VlanLegend left={libraryOpen ? 312 : 12} bottom={60} />
+      )}
+      {meta.layer !== 'overview' && (
+        <PageTabs
+          pages={pages}
+          current={page}
+          canEdit={canEdit}
+          counts={pageCounts}
+          left={libraryOpen ? 312 : 12}
+          onSelect={(id) => store.getState().setPage(id)}
+          onAdd={pageActions.add}
+          onRename={pageActions.rename}
+          onDuplicate={pageActions.duplicate}
+          onLayer={pageActions.layer}
+          onMove={pageActions.move}
+          onRemove={pageActions.remove}
+        />
+      )}
       {/* Same spot as the Problems panel: the panel wins while open. */}
       {prefs.tips && !problemsOpen && <Tips onHide={() => setPrefs({ tips: false })} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}

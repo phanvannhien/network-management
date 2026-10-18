@@ -17,6 +17,7 @@ import type { Severity } from '../checks/types'
 import { useDoc, useDocStoreApi } from './context'
 import type { RefData } from './flow'
 import { renderLabel, tagColor, type LabelLine } from './labels'
+import { pageLabel, pagesOfRefs } from '../doc/pages'
 
 // Canvas nodes (P1-14). Each node subscribes to its own card only, so editing one device re-renders one node
 // (CLAUDE.md editor rule). Links attach to the hidden handles; picking ports comes with wiring (P1-17).
@@ -177,6 +178,19 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
           .join(',')
       : '',
   )
+  // Other pages this device is drawn on (P2-08), as one string so other nodes do not re-render.
+  const alsoOn = useDoc((s) => {
+    if (!s.doc?.view.pages || s.doc.view.pages.length < 2) return ''
+    const pages = s.doc.view.pages
+    const others = (pagesOfRefs(s.doc.view).get(data.refId) ?? []).filter((p) => p !== s.page)
+    return others
+      .map((id) => {
+        const i = pages.findIndex((p) => p.id === id)
+        return i >= 0 ? pageLabel(pages[i]!, i, t) : ''
+      })
+      .filter(Boolean)
+      .join(', ')
+  })
   const { orgId = '' } = useParams()
   const store = useDocStoreApi()
   // The photo button exists only while the node is hovered or selected: the catalog lookup is not paid per node.
@@ -202,12 +216,24 @@ function DeviceNodeImpl({ id, data, selected, isConnectable }: NodeProps<RefFlow
       problem={problem}
       onHover={setHover}
       badge={
-        gateways ? (
-          <span
-            className="rounded-sm border border-border bg-card px-1 font-mono text-[10px] leading-4"
-            title={t('l2.gateway', { list: gateways })}
-          >
-            GW {gateways}
+        gateways || alsoOn ? (
+          <span className="flex gap-1">
+            {alsoOn && (
+              <span
+                className="max-w-28 truncate rounded-sm border border-dashed border-border bg-card px-1 text-[10px] leading-4 text-muted-foreground"
+                title={t('pages.alsoOn', { pages: alsoOn })}
+              >
+                ↗ {alsoOn}
+              </span>
+            )}
+            {gateways && (
+              <span
+                className="rounded-sm border border-border bg-card px-1 font-mono text-[10px] leading-4"
+                title={t('l2.gateway', { list: gateways })}
+              >
+                GW {gateways}
+              </span>
+            )}
           </span>
         ) : null
       }

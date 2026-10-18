@@ -20,7 +20,7 @@ type ntbBuilder struct {
 
 func newNtbBuilder(name, layer string) *ntbBuilder {
 	return &ntbBuilder{
-		f: ntbFile{SchemaVersion: "2.0.0", ExportedAt: "2026-10-17T00:00:00Z", Source: &ntbSource{App: "ntb seed"},
+		f: ntbFile{SchemaVersion: ntbSchemaVersion, ExportedAt: "2026-10-17T00:00:00Z", Source: &ntbSource{App: "ntb seed"},
 			Diagram: ntbDiagram{Name: name, Layer: layer, View: ntbView{Nodes: []ntbNode{}, Edges: []ntbEdge{}, Annotations: []ntbAnnotation{}}},
 			Sites:   []ntbSite{}, Clusters: []ntbCluster{}, Devices: []ntbDevice{}, Interfaces: []ntbInterface{}, IPs: []ntbIP{},
 			Subnets: []ntbSubnet{}, Ranges: []ntbRange{}, EndpointGroups: []ntbGroup{}, Links: []ntbLink{}},

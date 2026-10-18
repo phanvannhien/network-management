@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useDoc, useDocStoreApi } from '../workspace/context'
 import { SeverityIcon } from './SeverityIcon'
 import { countProblems, SEVERITY_ORDER, type Problem, type Severity } from './types'
+import { pageOf } from '../doc/pages'
 
 const LEVELS: Severity[] = ['error', 'warning', 'info']
 
@@ -50,27 +51,38 @@ export function ProblemsPanel({
 
   const focus = (p: Problem) => {
     const s = store.getState()
+    // Checks cover every page (P2-08): a problem on another page opens that page first (its canvas mounts anew).
+    const view = s.doc?.view
+    const item =
+      p.target.kind === 'node'
+        ? view?.nodes.find((n) => n.id === p.target.id)
+        : view?.edges.find((e) => e.id === p.target.id)
+    const page = view && item ? pageOf(view, item) : s.page
+    const switching = page !== s.page
+    if (switching) s.setPage(page)
+    const later = (f: () => void) => (switching ? window.setTimeout(f, 250) : f())
     if (p.target.kind === 'node') {
+      const id = p.target.id
       s.setEdgeSelection([])
-      s.setSelection([p.target.id])
-      void flow.fitView({
-        ...fitPadding,
-        nodes: [{ id: p.target.id }],
-        maxZoom: 1.2,
-        duration: 150,
-      })
+      s.setSelection([id])
+      later(
+        () => void flow.fitView({ ...fitPadding, nodes: [{ id }], maxZoom: 1.2, duration: 150 }),
+      )
       return
     }
-    const edge = flow.getEdge(p.target.id)
+    const id = p.target.id
     s.setSelection([])
-    s.setEdgeSelection([p.target.id])
-    if (edge)
-      void flow.fitView({
-        ...fitPadding,
-        nodes: [{ id: edge.source }, { id: edge.target }],
-        maxZoom: 1.2,
-        duration: 150,
-      })
+    s.setEdgeSelection([id])
+    later(() => {
+      const edge = flow.getEdge(id)
+      if (edge)
+        void flow.fitView({
+          ...fitPadding,
+          nodes: [{ id: edge.source }, { id: edge.target }],
+          maxZoom: 1.2,
+          duration: 150,
+        })
+    })
   }
 
   return (

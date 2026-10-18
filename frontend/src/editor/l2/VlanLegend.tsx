@@ -3,23 +3,25 @@ import { useTranslation } from 'react-i18next'
 import { FieldHelp } from '@/components/FieldHelp'
 import { cn } from '@/lib/utils'
 import { useDoc } from '../workspace/context'
+import { docOnPage } from '../doc/pages'
 import { legendItems } from './legend'
 
 /**
  * L2 view legend (P2-08): the VLANs on the diagram with their IPAM colour; clicking one picks it (cables carrying it
  * stand out, the rest fade), clicking it again clears the pick.
  */
-export function VlanLegend({ left }: { left: number }) {
+export function VlanLegend({ left, bottom = 12 }: { left: number; bottom?: number }) {
   const { t } = useTranslation()
-  const doc = useDoc((s) => s.doc)
+  // This page's cables only (P2-08).
+  const doc = useDoc((s) => (s.doc ? docOnPage(s.doc, s.page) : null))
   const filter = useDoc((s) => s.vlanFilter)
   const setFilter = useDoc((s) => s.setVlanFilter)
   const items = useMemo(() => (doc ? legendItems(doc) : []), [doc])
   return (
     <section
       aria-label={t('l2.legend')}
-      className="absolute bottom-3 z-10 max-h-[45vh] w-60 overflow-y-auto rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"
-      style={{ left }}
+      className="absolute z-10 max-h-[45vh] w-60 overflow-y-auto rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"
+      style={{ left, bottom }}
     >
       <header className="mb-1 flex items-center gap-1">
         <h2 className="font-semibold">{t('l2.legend')}</h2>

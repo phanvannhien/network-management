@@ -19,6 +19,7 @@ import { HOSTNAME_PREFIX } from '../library/hostname'
 import { clipboard, copySelection, mustClone, planPaste, type Clip } from './clipboard'
 import { ANN, isAnnotationId, toFlowEdges } from './flow'
 import type { DeleteTarget } from './DeleteFromInventoryDialog'
+import { onPageState } from '../doc/pages'
 
 type Link = Awaited<ReturnType<typeof fetchLinks>>[number]
 
@@ -44,7 +45,7 @@ export function useEditActions({
   const busy = useRef(false)
 
   const selectedNodes = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     const ids = new Set(s.selection)
     return (s.doc?.view.nodes ?? []).filter((n) => ids.has(n.id))
   }
@@ -61,7 +62,7 @@ export function useEditActions({
   }
 
   const copy = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!s.doc) return
     const c = copySelection(s.doc, s.selection, orgId)
     if (!c) return
@@ -78,7 +79,7 @@ export function useEditActions({
   }
 
   const pasteClip = async (c: Clip, duplicate: boolean) => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!canEdit || !s.doc || busy.current || saving()) return
     if (c.orgId !== orgId) {
       toast.error(t('editorEdit.otherOrg'))
@@ -116,7 +117,7 @@ export function useEditActions({
       const step = clone ? ++pastes.current * Math.max(2 * grid, 40) : 0
       if (saving()) return
       const plan = planPaste(
-        store.getState().doc!,
+        onPageState(store.getState()).doc!,
         c,
         { x: c.x + step, y: c.y + step },
         { clone, sources, links, taken, templates },
@@ -141,7 +142,7 @@ export function useEditActions({
 
   /** Ctrl+D: clones the selection without touching the clipboard. */
   const duplicate = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!s.doc) return
     const c = copySelection(s.doc, s.selection, orgId)
     if (c) {
@@ -190,7 +191,7 @@ export function useEditActions({
   }
 
   const requestDelete = () => {
-    const s = store.getState()
+    const s = onPageState(store.getState())
     if (!canEdit || !s.doc) return
     const nodes = selectedNodes().filter((n) => n.refKind === 'device')
     // Nodes win: cables count only when no node is selected (a stale cable pick never rides along).
@@ -217,7 +218,7 @@ export function useEditActions({
 
   const confirmDelete = () => {
     if (!deleting || saving()) return
-    const doc = store.getState().doc
+    const doc = onPageState(store.getState()).doc
     const devs = new Set(deleting.deviceIds)
     const commands: DocCommand[] = deleting.deviceIds.map((id) => deleteDevice(id))
     for (const id of deleting.linkIds) {

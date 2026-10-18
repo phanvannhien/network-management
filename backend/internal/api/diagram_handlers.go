@@ -8,6 +8,7 @@ import (
 	"math"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -533,6 +534,59 @@ func checkViewShape(v apigen.DiagramView) string {
 	}
 	if v.LabelTemplate != nil && len(*v.LabelTemplate) > 200 {
 		return "Mẫu nhãn tối đa 200 ký tự"
+	}
+	return checkPages(v)
+}
+
+// maxPages bounds the tabs of one diagram (P2-08).
+const maxPages = 50
+
+// checkPages: pages have unique ids, a name and a layer; everything on the view names an existing page (or none = the
+// first page); an object is placed at most once per page.
+func checkPages(v apigen.DiagramView) string {
+	pages := ptrSlice(v.Pages)
+	if len(pages) > maxPages {
+		return fmt.Sprintf("Sơ đồ tối đa %d trang", maxPages)
+	}
+	known := map[string]bool{}
+	for _, p := range pages {
+		name := strings.TrimSpace(p.Name)
+		if p.Id == "" || len(p.Id) > 64 || known[p.Id] || name == "" || utf8.RuneCountInString(name) > 80 || !p.Layer.Valid() {
+			return "Trang không hợp lệ (id trùng/trống, tên 1–80 ký tự, lớp physical / l2 / l3)"
+		}
+		known[p.Id] = true
+	}
+	first := ""
+	if len(pages) > 0 {
+		first = pages[0].Id
+	}
+	page := func(id *string) (string, bool) {
+		if id == nil || *id == "" {
+			return first, true
+		}
+		return *id, known[*id]
+	}
+	placed := map[string]bool{}
+	for _, n := range v.Nodes {
+		pid, ok := page(n.PageId)
+		if !ok {
+			return "Node nằm trên trang không tồn tại"
+		}
+		key := pid + "|" + string(n.RefKind) + "|" + n.RefId.String()
+		if placed[key] {
+			return "Một đối tượng chỉ đặt một lần trên mỗi trang"
+		}
+		placed[key] = true
+	}
+	for _, e := range v.Edges {
+		if _, ok := page(e.PageId); !ok {
+			return "Cạnh nằm trên trang không tồn tại"
+		}
+	}
+	for _, a := range v.Annotations {
+		if _, ok := page(a.PageId); !ok {
+			return "Chú thích nằm trên trang không tồn tại"
+		}
 	}
 	return ""
 }

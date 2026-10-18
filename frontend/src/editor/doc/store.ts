@@ -2,7 +2,8 @@ import { produce } from 'immer'
 import { create } from 'zustand'
 import type { Problem, Severity } from '../checks/types'
 import { SEVERITY_ORDER } from '../checks/types'
-import type { DocCommand } from './commands'
+import { newId, type DocCommand } from './commands'
+import { assignPage, firstPageId, pagesOf, SINGLE_PAGE, syncEdges, validPage } from './pages'
 import {
   ANN,
   changesOf,
@@ -55,6 +56,11 @@ export interface DocStore {
   vlanFilter: string | null
   setLens(lens: Lens): void
   setVlanFilter(key: string | null): void
+  /** The page being edited (P2-08): editor state, not history. */
+  page: string
+  /** Set when undo / redo moved to another page (the editor says so). */
+  pageJump: { pageId: string; n: number } | null
+  setPage(pageId: string): void
   setViewport(viewport: DiagramViewport): void
   setSelection(ids: string[]): void
   setEdgeSelection(ids: string[]): void
@@ -91,6 +97,69 @@ function liveEdges(selection: string[], doc: DocState): string[] {
   return live.length === selection.length ? selection : live
 }
 
+/** A draft from before the L2 view: the loaded VLANs, gateways and the switchport facts of unchanged cables. */
+function withLoadedFacts(draft: DocState, loaded: DocState | null): DocState {
+  if (!loaded) return draft
+  const links = { ...draft.links }
+  for (const [id, l] of Object.entries(links)) {
+    const was = loaded.links[id]
+    if (!l.aL2 && !l.bL2 && was && was.aPort === l.aPort && was.bPort === l.bPort)
+      links[id] = { ...l, aL2: was.aL2, bL2: was.bL2 }
+  }
+  return { ...draft, links, vlans: loaded.vlans, gateways: loaded.gateways }
+}
+
+/** The view of a page as it opens: an L2 page opens in the L2 view (ADR-047). */
+function lensOfPage(doc: DocState, meta: DiagramMeta | null, pageId: string): { lens: Lens } {
+  const page = pagesOf(doc.view, meta?.layer ?? 'physical').find((p) => p.id === pageId)
+  return { lens: page?.layer === 'l2' ? 'l2' : 'physical' }
+}
+
+/** Did a command change what is on which page (items added / removed / moved between pages, links, pages)? */
+function structureChanged(a: DocState, b: DocState): boolean {
+  if (a.links !== b.links || a.view.pages !== b.view.pages) return true
+  if (a.view.edges.length !== b.view.edges.length) return true
+  if (a.view.annotations.length !== b.view.annotations.length) return true
+  const an = a.view.nodes
+  const bn = b.view.nodes
+  if (an === bn) return false
+  if (an.length !== bn.length) return true
+  for (let i = 0; i < an.length; i++) {
+    const x = an[i]!
+    const y = bn[i]!
+    if (x !== y && (x.id !== y.id || x.refId !== y.refId || x.pageId !== y.pageId)) return true
+  }
+  return false
+}
+
+/**
+ * Undo / redo of a change made on another page shows that page (and the editor says so); a page that no longer
+ * exists falls back to the first one.
+ */
+function pageAfterHistory(
+  s: DocStore,
+  from: DocState,
+  to: DocState,
+): Partial<Pick<DocStore, 'page' | 'pageJump'>> {
+  const current = validPage(to.view, s.page)
+  const touched = new Set<string>()
+  const first = firstPageId(to.view)
+  const diff = <T extends { id: string; pageId?: string }>(xs: T[], ys: T[]) => {
+    const byId = new Map(xs.map((x) => [x.id, x]))
+    for (const y of ys) {
+      if (byId.get(y.id) !== y) touched.add(y.pageId || first)
+      byId.delete(y.id)
+    }
+    for (const x of byId.values()) touched.add(x.pageId || first)
+  }
+  diff(from.view.nodes, to.view.nodes)
+  diff(from.view.annotations, to.view.annotations)
+  if (touched.size === 0 || touched.has(current)) return { page: current }
+  const target = validPage(to.view, [...touched][0])
+  if (target === current) return { page: current }
+  return { page: target, pageJump: { pageId: target, n: (s.pageJump?.n ?? 0) + 1 } }
+}
+
 /** Undo / redo landing exactly on the saved document is clean again; a conflict stays a conflict. */
 function statusAfterHistory(s: DocStore, doc: DocState): SaveStatus {
   if (s.status === 'conflict') return 'conflict'
@@ -124,8 +193,19 @@ export function createDocStore() {
     loadId: 0,
     lens: 'physical',
     vlanFilter: null,
-    setLens: (lens) => set({ lens, vlanFilter: lens === 'l2' ? get().vlanFilter : null }),
+    // Cables are grouped differently per view (a LAG is one line on L2): the cable selection does not carry over.
+    setLens: (lens) =>
+      set({ lens, vlanFilter: lens === 'l2' ? get().vlanFilter : null, edgeSelection: [] }),
     setVlanFilter: (vlanFilter) => set({ vlanFilter }),
+    page: SINGLE_PAGE,
+    pageJump: null,
+    setPage: (pageId) => {
+      const { doc, meta, page } = get()
+      if (!doc) return
+      const id = validPage(doc.view, pageId)
+      if (id === page) return
+      set({ page: id, selection: [], edgeSelection: [], ...lensOfPage(doc, meta, id) })
+    },
     setViewport: (viewport) => set({ viewport }),
     setSelection: (ids) => {
       const cur = get().selection
@@ -181,19 +261,21 @@ export function createDocStore() {
         selection: [],
         edgeSelection: [],
         loadId: s.loadId + 1,
-        // Another diagram opens with the view of its layer; reloading the same one keeps the current view.
+        // Another diagram opens on its first page with that page's view; reloading the same one keeps both.
         ...(s.meta?.id === detail.diagram.id
-          ? {}
+          ? { page: validPage(doc.view, s.page) }
           : {
-              lens: detail.diagram.layer === 'l2' ? ('l2' as const) : ('physical' as const),
+              page: firstPageId(doc.view),
               vlanFilter: null,
+              pageJump: null,
+              ...lensOfPage(doc, detail.diagram, firstPageId(doc.view)),
             }),
       }))
     },
     restore: (doc) =>
       set((s) => ({
         // Drafts kept before the L2 view have no VLAN facts: the loaded diagram's are still right.
-        doc: doc.vlans ? doc : { ...doc, vlans: s.doc?.vlans, gateways: s.doc?.gateways },
+        doc: doc.vlans ? doc : withLoadedFacts(doc, s.doc),
         past: [],
         future: [],
         status: 'dirty',
@@ -204,8 +286,15 @@ export function createDocStore() {
       const { doc, past, status } = get()
       // The answer of a save replaces the document: edits made meanwhile would be lost, so they wait.
       if (!doc || status === 'saving') return
-      const next = produce(doc, (draft) => command.apply(draft))
+      const page = validPage(doc.view, get().page)
+      let next = produce(doc, (draft) => command.apply(draft, { pageId: page }))
       if (next === doc) return // no-op command
+      // What is on which page changed: new items land on this page, edges follow their ends (P2-08).
+      if (structureChanged(doc, next))
+        next = produce(next, (draft) => {
+          assignPage(draft, doc, page)
+          syncEdges(draft, newId)
+        })
       const top = past.at(-1)
       const merged = command.mergeKey !== undefined && top?.mergeKey === command.mergeKey
       set({
@@ -215,6 +304,7 @@ export function createDocStore() {
         status: status === 'conflict' ? 'conflict' : 'dirty',
         selection: liveSelection(get().selection, next),
         edgeSelection: liveEdges(get().edgeSelection, next),
+        page: validPage(next.view, page),
       })
     },
     undo: () => {
@@ -228,6 +318,7 @@ export function createDocStore() {
         status: statusAfterHistory(get(), prev.doc),
         selection: liveSelection(get().selection, prev.doc),
         edgeSelection: liveEdges(get().edgeSelection, prev.doc),
+        ...pageAfterHistory(get(), doc, prev.doc),
       })
     },
     redo: () => {
@@ -241,12 +332,14 @@ export function createDocStore() {
         status: statusAfterHistory(get(), next),
         selection: liveSelection(get().selection, next),
         edgeSelection: liveEdges(get().edgeSelection, next),
+        ...pageAfterHistory(get(), doc, next),
       })
     },
     saveRequest: () => {
-      const { doc, meta, viewport } = get()
+      const { doc, meta, viewport, page } = get()
       if (!doc || !meta) return null
-      const view = viewport ? { ...doc.view, viewport } : doc.view
+      // The saved viewport is the first page's (the others are remembered per browser).
+      const view = viewport && page === firstPageId(doc.view) ? { ...doc.view, viewport } : doc.view
       return { version: meta.version, view, changes: changesOf(doc) }
     },
     setStatus: (status, error = null) => set({ status, error }),
@@ -262,6 +355,7 @@ export function createDocStore() {
         error: null,
         selection: liveSelection(s.selection, doc),
         edgeSelection: liveEdges(s.edgeSelection, doc),
+        page: validPage(doc.view, s.page),
       }))
     },
   }))

@@ -784,6 +784,27 @@ func (e DiagramNodeRefKind) Valid() bool {
 	}
 }
 
+// Defines values for DiagramPageLayer.
+const (
+	DiagramPageLayerL2       DiagramPageLayer = "l2"
+	DiagramPageLayerL3       DiagramPageLayer = "l3"
+	DiagramPageLayerPhysical DiagramPageLayer = "physical"
+)
+
+// Valid indicates whether the value is a known member of the DiagramPageLayer enum.
+func (e DiagramPageLayer) Valid() bool {
+	switch e {
+	case DiagramPageLayerL2:
+		return true
+	case DiagramPageLayerL3:
+		return true
+	case DiagramPageLayerPhysical:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DiagramViewPortStyle.
 const (
 	DiagramViewPortStyleCisco   DiagramViewPortStyle = "cisco"
@@ -3002,7 +3023,10 @@ type DiagramAnnotation struct {
 
 	// LocationId zone only — a frame bound to a location of the site (building / floor / room)
 	LocationId *openapi_types.UUID `json:"locationId,omitempty"`
-	Points     *[]DiagramPoint     `json:"points,omitempty"`
+
+	// PageId page of the diagram it is on (P2-08); absent = the first page
+	PageId *string         `json:"pageId,omitempty"`
+	Points *[]DiagramPoint `json:"points,omitempty"`
 
 	// SiteId zone only (ADR-032): a frame bound to a site, named after it; a new device dropped inside takes this site
 	SiteId *openapi_types.UUID `json:"siteId,omitempty"`
@@ -3061,8 +3085,11 @@ type DiagramDetail struct {
 
 // DiagramEdge defines model for DiagramEdge.
 type DiagramEdge struct {
-	Id        string              `json:"id"`
-	LinkId    openapi_types.UUID  `json:"linkId"`
+	Id     string             `json:"id"`
+	LinkId openapi_types.UUID `json:"linkId"`
+
+	// PageId page of the diagram it is on (P2-08); absent = the first page
+	PageId    *string             `json:"pageId,omitempty"`
 	Routing   *DiagramEdgeRouting `json:"routing,omitempty"`
 	Waypoints *[]DiagramPoint     `json:"waypoints,omitempty"`
 }
@@ -3117,15 +3144,30 @@ type DiagramNode struct {
 	Id         string             `json:"id"`
 	LabelStyle *map[string]string `json:"labelStyle,omitempty"`
 	Locked     *bool              `json:"locked,omitempty"`
-	RefId      openapi_types.UUID `json:"refId"`
-	RefKind    DiagramNodeRefKind `json:"refKind"`
-	Width      *float32           `json:"width,omitempty"`
-	X          float32            `json:"x"`
-	Y          float32            `json:"y"`
+
+	// PageId page of the diagram it is on (P2-08); absent = the first page
+	PageId  *string            `json:"pageId,omitempty"`
+	RefId   openapi_types.UUID `json:"refId"`
+	RefKind DiagramNodeRefKind `json:"refKind"`
+	Width   *float32           `json:"width,omitempty"`
+	X       float32            `json:"x"`
+	Y       float32            `json:"y"`
 }
 
 // DiagramNodeRefKind defines model for DiagramNode.RefKind.
 type DiagramNodeRefKind string
+
+// DiagramPage defines model for DiagramPage.
+type DiagramPage struct {
+	Id string `json:"id"`
+
+	// Layer how the page opens (physical, or the L2 view; l3 = an L3 page)
+	Layer DiagramPageLayer `json:"layer"`
+	Name  string           `json:"name"`
+}
+
+// DiagramPageLayer how the page opens (physical, or the L2 view; l3 = an L3 page)
+type DiagramPageLayer string
 
 // DiagramPoint defines model for DiagramPoint.
 type DiagramPoint struct {
@@ -3161,6 +3203,9 @@ type DiagramView struct {
 	Edges         []DiagramEdge       `json:"edges"`
 	LabelTemplate *string             `json:"labelTemplate,omitempty"`
 	Nodes         []DiagramNode       `json:"nodes"`
+
+	// Pages P2-08 (ADR-047): the pages of the diagram in tab order; absent = one page. Nodes, edges and annotations name their page (pageId); without one they are on the first page.
+	Pages *[]DiagramPage `json:"pages,omitempty"`
 
 	// PortStyle port names at cable ends — compact g1/0/24 (default), cisco Gi1/0/24, full GigabitEthernet1/0/24
 	PortStyle *DiagramViewPortStyle `json:"portStyle,omitempty"`

@@ -837,7 +837,7 @@ func (im *ntbImporter) importDiagram(name string, f ntbFile) (pgtype.UUID, error
 			continue
 		}
 		dn := apigen.DiagramNode{Id: n.ID, RefKind: apigen.DiagramNodeRefKind(n.RefKind), RefId: uuid.UUID(ref.Bytes), X: n.X, Y: n.Y,
-			Width: n.Width, Height: n.Height, Locked: n.Locked}
+			Width: n.Width, Height: n.Height, Locked: n.Locked, PageId: optStr(n.PageID)}
 		if n.LabelStyle != nil && validColor(n.LabelStyle["color"]) {
 			ls := n.LabelStyle
 			dn.LabelStyle = &ls
@@ -849,7 +849,7 @@ func (im *ntbImporter) importDiagram(name string, f ntbFile) (pgtype.UUID, error
 		if !ok {
 			continue
 		}
-		de := apigen.DiagramEdge{Id: e.ID, LinkId: uuid.UUID(link.Bytes)}
+		de := apigen.DiagramEdge{Id: e.ID, LinkId: uuid.UUID(link.Bytes), PageId: optStr(e.PageID)}
 		if e.Routing != "" {
 			r := apigen.DiagramEdgeRouting(e.Routing)
 			de.Routing = &r
@@ -865,7 +865,7 @@ func (im *ntbImporter) importDiagram(name string, f ntbFile) (pgtype.UUID, error
 	}
 	for _, a := range f.Diagram.View.Annotations {
 		da := apigen.DiagramAnnotation{Id: a.ID, Kind: apigen.DiagramAnnotationKind(a.Kind), X: a.X, Y: a.Y, Width: a.Width, Height: a.Height,
-			FontSize: a.FontSize}
+			FontSize: a.FontSize, PageId: optStr(a.PageID)}
 		if a.Text != "" {
 			t := a.Text
 			da.Text = &t
@@ -895,6 +895,13 @@ func (im *ntbImporter) importDiagram(name string, f ntbFile) (pgtype.UUID, error
 	}
 	if v := f.Diagram.View.Viewport; v != nil {
 		view.Viewport = &apigen.DiagramViewport{X: v.X, Y: v.Y, Zoom: v.Zoom}
+	}
+	if len(f.Diagram.View.Pages) > 0 {
+		pages := make([]apigen.DiagramPage, 0, len(f.Diagram.View.Pages))
+		for _, p := range f.Diagram.View.Pages {
+			pages = append(pages, apigen.DiagramPage{Id: p.ID, Name: p.Name, Layer: apigen.DiagramPageLayer(p.Layer)})
+		}
+		view.Pages = &pages
 	}
 	if f.Diagram.View.LabelTemplate != "" {
 		lt := f.Diagram.View.LabelTemplate

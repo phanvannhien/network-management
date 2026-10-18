@@ -5,7 +5,7 @@ import type { CableData } from './CableEdge'
 import { arrowOrigin, type ClusterBox } from './frames'
 import { ANN, type DiagramNode, type DocState, type LinkCard } from '../doc/types'
 import type { Lens } from '../doc/store'
-import { carries, l2Of, vidOfKey, vlanInfo, type Carry, type L2Edge } from '../l2/l2'
+import { carries, l2Of, mergedL2, vidOfKey, vlanInfo, type Carry, type L2Edge } from '../l2/l2'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
 // ends of a link. Node components read their own card from the store, so a node's data only carries references:
@@ -72,6 +72,8 @@ export function toFlowEdges(
   const bundlePorts = new Map<Edge<CableData>, string[]>()
   // L1: member cables of one LAG between one pair, for the ring drawn across them.
   const lagMembers = new Map<string, Edge<CableData>[]>()
+  // L2: the member cards of each LAG line, so the line shows what all its members carry.
+  const lagCards = new Map<Edge<CableData>, LinkCard[]>()
   for (const e of doc.view.edges) {
     const l = doc.links[e.linkId]
     if (!l) continue
@@ -83,14 +85,17 @@ export function toFlowEdges(
     const groupAt = doc.groups[l.aId] ? 'a' : doc.groups[l.bId] ? 'b' : null
     const lagKey =
       l.aL2?.lagId || l.bL2?.lagId
-        ? `${pair}|lag|${l.aL2?.lagId ?? ''}|${l.bL2?.lagId ?? ''}`
+        ? `${pair}|lag|${[l.aL2?.lagId ?? '', l.bL2?.lagId ?? ''].sort().join('|')}`
         : null
     const bundleKey = groupAt ? `${pair}|${l.kind}` : l2 ? lagKey : null
     const rep = bundleKey ? bundles.get(bundleKey) : undefined
     if (rep) {
       rep.data!.bundle!.push(l.id)
       bundlePorts.get(rep)!.push((groupAt === 'a' ? l.bPort : l.aPort) ?? '')
-      if (rep.data!.lag) rep.data!.lagCount = (rep.data!.lagCount ?? 1) + 1
+      if (rep.data!.lag) {
+        rep.data!.lagCount = (rep.data!.lagCount ?? 1) + 1
+        lagCards.get(rep)!.push(l)
+      }
       if (selection.has(e.id)) rep.selected = true
       continue
     }
@@ -132,6 +137,7 @@ export function toFlowEdges(
       bundlePorts.set(edge, [(groupAt === 'a' ? l.bPort : l.aPort) ?? ''])
       edge.data!.groupAt = groupAt
       if (!groupAt) {
+        lagCards.set(edge, [l])
         edge.data!.lag = l.aL2?.lagName || l.bL2?.lagName || 'LAG'
         edge.data!.lagCount = 1
         // The LAG's name at each end instead of one member's port.
@@ -143,6 +149,22 @@ export function toFlowEdges(
       members.push(edge)
       lagMembers.set(lagKey, members)
     }
+  }
+  // L2: a LAG line takes the facts of all its members (they may differ when the LAG itself has no mode).
+  for (const [edge, cards] of lagCards) {
+    if (cards.length < 2) continue
+    const facts = mergedL2(cards)
+    edge.data!.l2 = facts
+    const carry =
+      filter !== null ? worstCarry(cards.map((c) => carriesRecord(doc, c, l2Of(c), filter))) : null
+    edge.className = [
+      ...(edge.className ?? '').split(' ').filter((c) => c && !c.startsWith('ntb-l2-')),
+      `ntb-l2-${facts.kind}`,
+      carry === 'no' && 'ntb-l2-faded',
+      carry === 'maybe' && 'ntb-l2-maybe',
+    ]
+      .filter(Boolean)
+      .join(' ')
   }
   // L1: the ring across a LAG's member cables (Cisco / Visio symbol) is drawn by the first member.
   for (const members of lagMembers.values()) {
@@ -162,6 +184,13 @@ export function toFlowEdges(
     else edge.data!.aPort = label
   }
   return out
+}
+
+/** All members carry it → yes; none → no; else maybe. */
+function worstCarry(list: Carry[]): Carry {
+  if (list.every((c) => c === 'yes')) return 'yes'
+  if (list.every((c) => c === 'no')) return 'no'
+  return 'maybe'
 }
 
 function siteOf(doc: DocState, refId: string): string | undefined {
@@ -211,7 +240,18 @@ function sameShallow(a: unknown, b: unknown): boolean {
   const ka = Object.keys(a)
   if (ka.length !== Object.keys(b).length) return false
   return ka.every((k) =>
-    Object.is((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+    sameList((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+  )
+}
+
+/** Same value, or two arrays with the same members (a bundle's link ids are a new array each time). */
+function sameList(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((x, i) => Object.is(x, b[i]))
   )
 }
 

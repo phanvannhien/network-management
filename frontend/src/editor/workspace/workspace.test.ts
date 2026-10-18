@@ -144,7 +144,12 @@ describe('editor shortcuts (SRS §6.4)', () => {
     expect(actionFor(key('L', { ctrlKey: true, shiftKey: true }))).toBe('lock')
     expect(actionFor(key('/'))).toBe('quickAdd')
     expect(actionFor(key('b'))).toBe('library')
-    expect(actionFor(key('1'))).toBeNull()
+    // P2-08: plain digits pick the view, PgUp / PgDn the page; Alt+digit stays the browser's.
+    expect(actionFor(key('1'))).toBe('lensPhysical')
+    expect(actionFor(key('2'))).toBe('lensL2')
+    expect(actionFor(key('1', { altKey: true }))).toBeNull()
+    expect(actionFor(key('PageDown'))).toBe('pageNext')
+    expect(actionFor(key('PageUp'))).toBe('pagePrev')
     expect(actionFor(key('s', { ctrlKey: true, altKey: true }))).toBeNull()
   })
   it('shows ⌘ instead of Ctrl on macOS', () => {
