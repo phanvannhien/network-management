@@ -44,8 +44,8 @@ func New(t *testing.T, newHandler func(pool *pgxpool.Pool) http.Handler) *Fixtur
 	fx := &Fixture{t: t, Pool: pool, Server: srv}
 	fx.OrgA = fx.NewOrg(t, "Org A")
 	fx.OrgB = fx.NewOrg(t, "Org B")
-	fx.A = fx.NewUser(t, "owner-a@example.com", false, Member{fx.OrgA, "owner"})
-	fx.B = fx.NewUser(t, "owner-b@example.com", false, Member{fx.OrgB, "owner"})
+	fx.A = fx.NewUser(t, "owner-a@example.com", false, Member{Org: fx.OrgA, Role: "owner"})
+	fx.B = fx.NewUser(t, "owner-b@example.com", false, Member{Org: fx.OrgB, Role: "owner"})
 	return fx
 }
 
@@ -53,6 +53,8 @@ func New(t *testing.T, newHandler func(pool *pgxpool.Pool) http.Handler) *Fixtur
 type Member struct {
 	Org  uuid.UUID
 	Role string
+	// Extra permissions (user.manage, credential.reveal…); none when nil.
+	Permissions []string
 }
 
 // NewOrg inserts an organization directly (no API, no audit).
@@ -79,7 +81,8 @@ func (fx *Fixture) NewUser(t *testing.T, email string, systemAdmin bool, members
 	}
 	for _, m := range members {
 		if _, err := fx.Pool.Exec(ctx,
-			`INSERT INTO memberships (organization_id, user_id, role) VALUES ($1, $2, $3)`, m.Org, userID, m.Role); err != nil {
+			`INSERT INTO memberships (organization_id, user_id, role, permissions) VALUES ($1, $2, $3, $4)`, m.Org, userID, m.Role,
+			append([]string{}, m.Permissions...)); err != nil {
 			t.Fatalf("insert membership: %v", err)
 		}
 	}

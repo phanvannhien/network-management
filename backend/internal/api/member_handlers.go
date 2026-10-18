@@ -36,10 +36,15 @@ func canManageMembers(m tenant.Membership) bool { return m.CanAdmin() || m.Has(p
 // role `to` ("" = remove) and set the given permissions. Returns a user-facing reason, or "" if allowed.
 //   - managing members needs owner/admin/user.manage;
 //   - only owners grant, change or remove the owner role;
-//   - only owners/admins grant, change or remove the admin role, and grant extra permissions.
+//   - only owners/admins grant, change or remove the admin role, and grant extra permissions;
+//   - below owner, nobody grants a role above their own or changes / removes someone ranked above them (a viewer with
+//     user.manage cannot make anyone editor), so a raise always comes from higher up.
 func checkRoleChange(actor tenant.Membership, from, to string, permsChanged bool) string {
 	if !canManageMembers(actor) {
 		return "Bạn không có quyền quản lý thành viên"
+	}
+	if actor.Role != tenant.RoleOwner && (roleRank(to) > roleRank(actor.Role) || roleRank(from) > roleRank(actor.Role)) {
+		return "Không cấp hoặc đổi được vai trò cao hơn vai trò của chính bạn"
 	}
 	if (from == tenant.RoleOwner || to == tenant.RoleOwner) && actor.Role != tenant.RoleOwner {
 		return "Chỉ owner được cấp, đổi hoặc gỡ vai trò owner"
@@ -51,6 +56,35 @@ func checkRoleChange(actor tenant.Membership, from, to string, permsChanged bool
 }
 
 var validRoles = []string{tenant.RoleOwner, tenant.RoleAdmin, tenant.RoleEditor, tenant.RoleViewer}
+
+// roleRank orders organization roles (0 = none / grant-only member).
+func roleRank(role string) int {
+	switch role {
+	case tenant.RoleOwner:
+		return 4
+	case tenant.RoleAdmin:
+		return 3
+	case tenant.RoleEditor:
+		return 2
+	case tenant.RoleViewer:
+		return 1
+	}
+	return 0
+}
+
+// selfRaise: changing one's own membership may only step down — a higher role or an extra permission must be given
+// by someone above (owner, or the system administrator).
+func selfRaise(beforeRole string, beforePerms []string, role string, perms []string) bool {
+	if roleRank(role) > roleRank(beforeRole) {
+		return true
+	}
+	for _, p := range perms {
+		if !slices.Contains(beforePerms, p) {
+			return true
+		}
+	}
+	return false
+}
 
 // normalizePermissions validates against the enum and removes duplicates (stable order).
 func normalizePermissions(in *[]apigen.Permission) ([]string, bool) {
@@ -224,8 +258,16 @@ func (s *Server) UpdateMember(ctx context.Context, req apigen.UpdateMemberReques
 		if err != nil {
 			return fmt.Errorf("load member: %w", err)
 		}
-		if forbidden = checkRoleChange(m, before.Role, role, !sameStrings(before.Permissions, perms)); forbidden != "" {
+		self := before.UserID == m.UserID
+		if self && selfRaise(before.Role, before.Permissions, role, perms) {
+			forbidden = "Không tự nâng vai trò hoặc thêm quyền cho chính mình — nhờ owner cấp"
 			return errRollback
+		}
+		// Stepping down oneself is always allowed (the last-owner guard below still applies).
+		if !self {
+			if forbidden = checkRoleChange(m, before.Role, role, !sameStrings(before.Permissions, perms)); forbidden != "" {
+				return errRollback
+			}
 		}
 		if before.Role == tenant.RoleOwner && role != tenant.RoleOwner {
 			if n, err := q.CountOtherActiveOwners(ctx, store.CountOtherActiveOwnersParams{OrganizationID: m.OrgID, UserID: before.UserID}); err != nil {

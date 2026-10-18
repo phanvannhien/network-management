@@ -732,6 +732,11 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **MFA bắt buộc** thêm cho người có quyền `credential.reveal`, `credential.manage`, `user.manage`.
   - **Owner cuối cùng:** chỉ tính owner còn hoạt động (đã kích hoạt, không bị khóa); khóa mọi dòng owner theo một thứ tự khi đếm, để hai owner hạ quyền nhau cùng lúc phải chờ nhau (không mất owner, không deadlock).
   - **Import `.ntb.json`:** site đích phải là site còn sống của tổ chức, nếu không thì trả 400.
+  - **Link mời** (người dùng chốt 2026-10-18): vẫn hiện để người quản lý copy và gửi qua kênh bất kỳ (Zalo, Teams, email…), không bắt buộc gửi email. Link dùng một lần, có hạn, chỉ cho tài khoản chưa kích hoạt.
+  - **Không tự nâng quyền** (người dùng chốt 2026-10-18):
+    - không ai tự nâng vai trò hoặc thêm quyền cho chính mình; tự hạ thì được (vẫn giữ luật owner cuối cùng);
+    - dưới owner, không ai cấp vai trò cao hơn vai trò của chính mình, hay sửa / gỡ người có vai trò cao hơn (viewer có `user.manage` không biến ai thành editor được);
+    - nâng quyền luôn đến từ cấp trên: owner, hoặc admin hệ thống.
   - **Cấu hình triển khai:**
     - `POSTGRES_PASSWORD` bắt buộc;
     - `NTB_TRUSTED_PROXIES` chỉnh được (thêm đúng địa chỉ reverse proxy TLS phía trước, không bao giờ cả dải mạng);
@@ -742,7 +747,6 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Không đặt `limit_req` ở nginx: sau reverse proxy mọi người dùng chung một IP. Giới hạn do API làm theo IP thật.
 - **Để sau / cần chốt:**
   - **Postgres RLS** (ADR-016): khoảng 4–6 ngày, cần tách role DB không phải superuser. Đề xuất làm trước khi chạy production cho nhiều khách hàng.
-  - Chính sách link mời / thêm thành viên đã có tài khoản (link qua email, người được thêm phải đồng ý).
   - Xác nhận lại MFA (step-up) cho thao tác admin hệ thống: reset MFA, tạo link đặt lại mật khẩu, khóa tài khoản.
 
 ### ADR-047 — Lớp theo trang, L2 là chế độ xem, L3 suy ra từ IPAM, segment cho mạng dùng chung nhiều site (P2-08)

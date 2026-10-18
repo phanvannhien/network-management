@@ -1466,6 +1466,8 @@ export const en: Strings = {
     you: 'you',
     edit: 'Edit role and permissions',
     editTitle: 'Role and permissions — {{name}}',
+    selfHint:
+      'You can only lower your own role or drop your own permissions. To be raised, ask an owner.',
     editHint:
       'Owners/Admins have every permission in the organization. Extra permissions apply to Editors/Viewers.',
     saveChanges: 'Save changes',

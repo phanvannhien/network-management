@@ -64,13 +64,29 @@ interface Abilities {
   isOwner: boolean
   canAdmin: boolean
   canManage: boolean
+  /** Rank of the current user's own role (owner 4 … viewer 1). */
+  rank: number
 }
 
-const editableBy = (a: Abilities, m: Member) =>
-  a.canManage && (a.isOwner || m.role !== 'owner') && (a.canAdmin || m.role !== 'admin')
+/** owner 4, admin 3, editor 2, viewer 1. */
+const roleRank = (r: Role | undefined) => (r ? ROLES.length - ROLES.indexOf(r) : 0)
 
-const assignableRoles = (a: Abilities) =>
-  ROLES.filter((r) => (a.isOwner || r !== 'owner') && (a.canAdmin || r !== 'admin'))
+// Below owner, nobody touches someone ranked above them or grants a role above their own (decision 2026-10-18).
+const editableBy = (a: Abilities, m: Member) =>
+  a.canManage &&
+  (a.isOwner || m.role !== 'owner') &&
+  (a.canAdmin || m.role !== 'admin') &&
+  (a.isOwner || roleRank(m.role) <= a.rank)
+
+/** Roles the current user may give; `ceiling` = editing oneself, who may only step down. */
+const assignableRoles = (a: Abilities, ceiling?: Role) =>
+  ROLES.filter(
+    (r) =>
+      (a.isOwner || r !== 'owner') &&
+      (a.canAdmin || r !== 'admin') &&
+      (a.isOwner || roleRank(r) <= a.rank) &&
+      (!ceiling || roleRank(r) <= roleRank(ceiling)),
+  )
 
 function memberStatus(m: Member) {
   return m.disabled ? 'disabled' : m.pendingInvite ? 'pending' : 'active'
@@ -87,11 +103,14 @@ function EditMemberSheet({
   orgId,
   member,
   abilities,
+  self,
   onClose,
 }: {
   orgId: string
   member: Member | null
   abilities: Abilities
+  /** Editing one's own membership: only stepping down (a raise is given by an owner). */
+  self: boolean
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -136,7 +155,7 @@ function EditMemberSheet({
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
                 >
-                  {assignableRoles(abilities).map((r) => (
+                  {assignableRoles(abilities, self ? member?.role : undefined).map((r) => (
                     <option key={r} value={r}>
                       {t(`roles.${r}`)}
                     </option>
@@ -144,12 +163,13 @@ function EditMemberSheet({
                 </NativeSelect>
               )}
             </FormField>
+            {self && <p className="text-label text-muted-foreground">{t('members.selfHint')}</p>}
             <fieldset className="space-y-2">
               <legend className="mb-1 font-medium">{t('members.extraPermissions')}</legend>
               {ALL_PERMISSIONS.map((p) => (
                 <label key={p} className="flex items-center gap-2">
                   <Checkbox
-                    disabled={!abilities.canAdmin}
+                    disabled={self ? !member?.permissions.includes(p) : !abilities.canAdmin}
                     checked={permissions.includes(p)}
                     onCheckedChange={(on) =>
                       setPermissions(on ? [...permissions, p] : permissions.filter((x) => x !== p))
@@ -293,6 +313,7 @@ export function MembersPage() {
     isOwner,
     canAdmin,
     canManage: canAdmin || (my?.permissions.includes('user.manage') ?? false),
+    rank: roleRank(my?.role as Role | undefined),
   }
 
   const filtered = useMemo(() => {
@@ -513,6 +534,7 @@ export function MembersPage() {
         orgId={orgId}
         member={editing}
         abilities={abilities}
+        self={editing?.userId === myId}
         onClose={() => setEditing(null)}
       />
       <ConfirmDialog

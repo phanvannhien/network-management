@@ -332,3 +332,45 @@ func TestAdminUserManagement(t *testing.T) {
 		}
 	}
 }
+
+// Decision 2026-10-18: nobody raises their own role or permissions, and below owner nobody grants a role above their
+// own or touches someone ranked above them — a raise always comes from higher up (owner / system administrator).
+func TestNoSelfOrUpwardRaise(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	mgr := fx.NewUser(t, "viewer-mgr@example.com", false, tenanttest.Member{Org: org, Role: "viewer", Permissions: []string{"user.manage"}})
+	edMgr := fx.NewUser(t, "editor-mgr@example.com", false, tenanttest.Member{Org: org, Role: "editor", Permissions: []string{"user.manage"}})
+	admin := fx.NewUser(t, "admin-raise@example.com", false, tenanttest.Member{Org: org, Role: "admin"})
+	viewer := fx.NewUser(t, "plain-viewer@example.com", false, tenanttest.Member{Org: org, Role: "viewer"})
+	patch := func(c *tenanttest.Client, target uuid.UUID, role string, perms []string) int {
+		status, _ := c.Do("PATCH", memberPath(org, target), map[string]any{
+			"role": role, "permissions": perms, "version": memberVersion(t, fx.Pool, org, target),
+		})
+		return status
+	}
+	if s := patch(mgr, mgr.UserID, "editor", []string{"user.manage"}); s != http.StatusForbidden {
+		t.Errorf("viewer with user.manage raising self to editor: %d, want 403", s)
+	}
+	if s := patch(mgr, viewer.UserID, "editor", []string{}); s != http.StatusForbidden {
+		t.Errorf("viewer with user.manage making someone editor: %d, want 403", s)
+	}
+	if s := patch(mgr, edMgr.UserID, "viewer", []string{"user.manage"}); s != http.StatusForbidden {
+		t.Errorf("viewer with user.manage demoting an editor: %d, want 403", s)
+	}
+	if status, _ := mgr.Do("POST", membersPath(org), map[string]any{"email": "new-ed@example.com", "role": "editor"}); status != http.StatusForbidden {
+		t.Errorf("viewer with user.manage inviting an editor: %d, want 403", status)
+	}
+	if s := patch(admin, admin.UserID, "admin", []string{"credential.reveal"}); s != http.StatusForbidden {
+		t.Errorf("admin giving self a permission: %d, want 403", s)
+	}
+	// Within one's own rank it still works, and stepping down oneself is fine.
+	if s := patch(edMgr, viewer.UserID, "editor", []string{}); s != http.StatusOK {
+		t.Errorf("editor with user.manage making a viewer editor: %d, want 200", s)
+	}
+	if s := patch(mgr, mgr.UserID, "viewer", []string{}); s != http.StatusOK {
+		t.Errorf("dropping one's own permission: %d, want 200", s)
+	}
+	if s := patch(fx.A, admin.UserID, "admin", []string{"credential.reveal"}); s != http.StatusOK {
+		t.Errorf("owner granting a permission: %d, want 200", s)
+	}
+}

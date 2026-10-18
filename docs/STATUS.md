@@ -5,6 +5,23 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-01 Chốt chính sách link mời và nâng quyền (ADR-046)
+- Người dùng chốt:
+  1. Link mời được copy gửi qua kênh khác, không bắt buộc email: giữ như hiện tại.
+  2. Không ai tự nâng quyền; nâng quyền phải do owner / admin hệ thống cấp.
+- Đã làm:
+  - **Backend:**
+    - chặn tự nâng vai trò hoặc thêm quyền cho chính mình (tự hạ vẫn được);
+    - dưới owner không cấp được vai trò cao hơn mình, không sửa / gỡ được người cao hơn mình.
+  - **Giao diện Thành viên:**
+    - chỉ hiện vai trò được phép cấp;
+    - tự sửa mình thì chỉ hạ được, quyền chỉ bỏ được, có dòng hướng dẫn.
+- Test / cách kiểm tra: `TestNoSelfOrUpwardRaise` (viewer + `user.manage` không tự lên editor, không biến người khác thành editor, không hạ editor; admin không tự thêm quyền; editor + `user.manage` nâng viewer lên editor được; owner cấp quyền được); `make check` pass.
+- Còn dở / lỗi đã biết: chưa có step-up MFA cho thao tác admin hệ thống. RLS để sau.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 bước 2, nhiều trang trong một sơ đồ.
+
 ## 2026-10-18 — P2-08 (bước 1/5) Chế độ xem L2 (ADR-047); sửa thêm P2-01
 - Người dùng chốt 4 câu thiết kế P2-08 theo đề xuất (ADR-047):
   - lớp gắn theo trang;
@@ -50,7 +67,7 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
   - Trunk giữa hai site cùng số VLAN nhưng khác bản ghi: chưa ghi chú riêng.
   - Đổi mode cổng trong panel thì cần mở lại sơ đồ mới thấy ở L2.
   - Các lệch VLAN chưa vào panel Problems (P2-10 sẽ dùng chung logic).
-- Câu hỏi cho người dùng: (từ P2-01, vẫn chờ) chính sách link mời; `user.manage` có được tự nâng vai trò không.
+- Câu hỏi cho người dùng: không (hai câu P2-01 đã chốt ở mục trên).
 - Đề xuất quyết định cần chốt: không.
 - Task tiếp theo đề xuất: P2-08 bước 2, nhiều trang trong một sơ đồ.
 

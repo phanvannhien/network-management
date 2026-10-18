@@ -1453,6 +1453,8 @@ export const vi = {
     you: 'bạn',
     edit: 'Sửa vai trò và quyền',
     editTitle: 'Vai trò và quyền — {{name}}',
+    selfHint:
+      'Bạn chỉ có thể tự hạ vai trò hoặc bỏ bớt quyền của mình. Muốn được nâng quyền, nhờ owner cấp.',
     editHint:
       'Owner/Admin có mọi quyền trong tổ chức. Quyền bổ sung chỉ áp dụng cho Editor/Viewer.',
     saveChanges: 'Lưu thay đổi',
