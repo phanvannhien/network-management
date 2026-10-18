@@ -3369,3 +3369,49 @@ describe('vendors & contracts (P2-04)', () => {
     })
   })
 })
+
+describe('password vault (P2-02 / P2-03)', () => {
+  it('a secret stays masked; showing it asks for an MFA code when needed, then shows it', async () => {
+    let revealed = 0
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/notifications`]: () => json({ notifications: [], unread: 0 }),
+      [`GET /api/orgs/${ORG_ID}/credentials`]: () =>
+        json({
+          credentials: [
+            {
+              id: 'c1',
+              name: 'Switch admin',
+              kind: 'ssh',
+              username: 'admin',
+              hasSecret: true,
+              rotateDays: 90,
+              lastRotatedOn: '2026-10-01',
+              rotateDue: '2026-12-30',
+              deviceCount: 3,
+              notes: '',
+              version: 1,
+            },
+          ],
+        }),
+      // First look: MFA too old (428); after the code, the secret.
+      [`POST /api/orgs/${ORG_ID}/credentials/c1/reveal`]: () =>
+        revealed++ === 0
+          ? json({ message: 'Nhập mã MFA để xác nhận trước khi xem mật khẩu' }, 428)
+          : json({ secret: 'Sw1tch!pass', clearAfterSeconds: 30 }),
+      'POST /api/auth/mfa/verify': () => json(SESSION),
+    })
+    renderAt(`/o/${ORG_ID}/vault`)
+    expect(await screen.findByText('Switch admin')).toBeInTheDocument()
+    expect(screen.getByText('••••••••')).toBeInTheDocument()
+    expect(screen.queryByText('Sw1tch!pass')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Hiện mật khẩu của Switch admin' }))
+    const mfa = await screen.findByRole('dialog', { name: 'Xác nhận MFA' })
+    fireEvent.change(within(mfa).getByLabelText('Mã MFA'), { target: { value: '123456' } })
+    fireEvent.click(within(mfa).getByRole('button', { name: 'Xác nhận' }))
+    expect(await screen.findByText('Sw1tch!pass')).toBeInTheDocument()
+    const verify = calls.find((c) => c.url.endsWith('/auth/mfa/verify'))!
+    expect(await verify.clone().json()).toEqual({ code: '123456' })
+    expect(calls.filter((c) => c.url.endsWith('/reveal')).length).toBe(2)
+  })
+})

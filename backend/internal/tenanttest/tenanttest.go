@@ -160,6 +160,26 @@ func (c *Client) Upload(path, filename string, data []byte) (int, map[string]any
 	return resp.StatusCode, out
 }
 
+// Post sends a JSON POST and returns the raw response (headers) with the body read.
+func (c *Client) Post(path string, body any) (*http.Response, []byte) {
+	c.t.Helper()
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", c.base+path, bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", c.base)
+	if c.token != "" {
+		req.Header.Set("X-CSRF-Token", c.csrf)
+		req.AddCookie(&http.Cookie{Name: "ntb_session", Value: c.token})
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.t.Fatalf("POST %s: %v", path, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	out, _ := io.ReadAll(resp.Body)
+	return resp, out
+}
+
 // Raw sends a GET and returns the response with its body read (binary endpoints: images, files).
 func (c *Client) Raw(path string) (*http.Response, []byte) {
 	c.t.Helper()

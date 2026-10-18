@@ -5,6 +5,56 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-02 + P2-03 Kho mật khẩu và tài khoản cloud (ADR-045); P2-05 hoàn tất
+- Người dùng chốt: làm chung P2-02 + P2-03; chỉ lưu mã hóa trong hệ thống, Bitwarden / HashiCorp Vault để sau.
+- Đã làm:
+  - **Menu "Kho mật khẩu"**, 2 tab:
+    - **Mật khẩu thiết bị:** SSH / Web / console / enable / Telnet / SNMP community / API token; tài khoản; mật khẩu; chu kỳ đổi + ngày đổi gần nhất (nhập mật khẩu mới thì tự là hôm nay); gắn thiết bị kèm mục đích.
+    - **Tài khoản cloud:** FortiCloud / Meraki / UniFi / Omada / Aruba Central / Hik-Connect; portal; **người giữ MFA**; gói dịch vụ; ngày hết hạn; nhà cung cấp; thiết bị được quản lý.
+  - **Bảo mật:**
+    - mã hóa envelope, AAD gắn với id bản ghi (ciphertext chép sang dòng khác không mở được);
+    - danh sách / chi tiết / audit / log không bao giờ có mật khẩu;
+    - xóa là xóa luôn bí mật;
+    - **xem / copy** cần owner, admin hoặc `credential.reveal` + **MFA trong 5 phút** (quá hạn thì giao diện hỏi mã rồi tự thử lại); tài khoản chưa bật MFA thì bị từ chối;
+    - tối đa 30 lần xem mỗi phút; mỗi lần xem / copy đều có audit;
+    - phản hồi xem mật khẩu có `no-store`; tự ẩn sau 30 giây; clipboard được xóa (thử lại khi người dùng quay lại trang).
+  - **Tab "Truy cập" ở trang thiết bị:** mật khẩu và tài khoản cloud của thiết bị, có nút xem / copy và nút thêm mới.
+  - **Xoay master key:** `ntb rotate-master-key` (khóa cũ + `NTB_NEW_MASTER_KEY`):
+    - bọc lại khóa dữ liệu của mọi bí mật trong một giao dịch, có khóa bảng;
+    - khóa cũ sai thì dừng, không đổi gì;
+    - **API kiểm tra version khóa lúc khởi động**: sai version hoặc version không hợp lệ thì từ chối chạy.
+  - **Cảnh báo:** mật khẩu tới hạn đổi, tài khoản cloud hết hạn. P2-05 giờ đủ mọi loại → đã tick.
+  - Agent rà bảo mật không thấy rò rỉ mật khẩu. Đã sửa các điểm nó chỉ ra:
+    - **[nặng]** xoay khóa không khóa bảng, có thể làm hỏng bí mật đang được ghi;
+    - sai version khóa sau khi xoay thì mọi người bị khóa ngoài;
+    - email cảnh báo (có thể gửi ra ngoài) chứa tên đăng nhập;
+    - clipboard không được xóa khi trang mất focus;
+    - đếm độ dài theo byte thay vì ký tự;
+    - trình duyệt tự lưu mật khẩu thiết bị;
+    - thiếu test chặn tổ chức khác sửa / xóa / xem;
+    - chưa có `no-store` và giới hạn số lần xem;
+    - trả 428 khi tài khoản chưa bật MFA.
+- Test / cách kiểm tra:
+  - `vault_test.go`:
+    - mật khẩu không có trong danh sách, chi tiết, audit; ciphertext không chứa bản rõ;
+    - quyền manage / reveal; MFA cũ → 428, chưa bật MFA → 403; header `no-store`;
+    - tráo ciphertext không mở được;
+    - tổ chức khác: mọi đường đều 404 và không ghi audit;
+    - xoay khóa đúng, khóa cũ sai → dừng; kiểm tra version lúc khởi động;
+    - cảnh báo trong email và chuông.
+  - Unit test `Rewrap`.
+  - App test cho luồng xem mật khẩu → hỏi MFA → hiện.
+  - Trên trình duyệt: tạo mật khẩu gắn CN01-SW01 → hiện / copy → MFA quá hạn hiện hộp nhập mã → tài khoản FortiCloud gắn CN01-FW01 hiện trong tab Truy cập; audit đủ, không chứa mật khẩu. API riêng từ chối khởi động khi `NTB_MASTER_KEY_VERSION=2` hoặc `abc`.
+  - `make check` và `go test ./... -count=1` pass.
+- Còn dở / lỗi đã biết:
+  - Chưa có tham chiếu kho ngoài.
+  - SNMPv3 chưa đủ trường (auth / priv).
+  - Chưa cảnh báo "một mật khẩu dùng cho quá nhiều thiết bị" (để P2-10).
+  - Xoay khóa phải dừng API.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 (nhiều trang / lớp L1-L2-L3) hoặc P2-01 (review bảo mật nền tảng, trước gate P2-14).
+
 ## 2026-10-18 — P2-04 Nhà cung cấp & hợp đồng (ADR-044)
 - Đã làm:
   - **Menu "Nhà cung cấp"** (tab Nhà cung cấp / Hợp đồng):

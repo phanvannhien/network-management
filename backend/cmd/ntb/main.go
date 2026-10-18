@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -24,6 +25,7 @@ import (
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/notify"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/rotate"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/secrets"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/store"
 )
@@ -32,7 +34,8 @@ const usage = `usage:
   ntb                                   run the API server
   ntb admin create --email E [--name N] create a system admin; password is read from stdin
   ntb seed demo --owner E               create the sample organization "Tập đoàn Mẫu" owned by system admin E
-  ntb seed bench --owner E --devices N  create an organization with N devices on one diagram (performance checks)`
+  ntb seed bench --owner E --devices N  create an organization with N devices on one diagram (performance checks)
+  ntb rotate-master-key                 move every stored secret from NTB_MASTER_KEY to NTB_NEW_MASTER_KEY`
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -44,6 +47,8 @@ func main() {
 		err = adminCreate(logger, os.Args[3:], os.Stdin, os.Stderr)
 	case len(os.Args) >= 3 && os.Args[1] == "seed" && (os.Args[2] == "demo" || os.Args[2] == "bench"):
 		err = seed(logger, os.Args[2], os.Args[3:], os.Stderr)
+	case len(os.Args) == 2 && os.Args[1] == "rotate-master-key":
+		err = rotateMasterKey(os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
@@ -96,10 +101,21 @@ func serve(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	keys, err := secrets.NewKeyring(masterKey)
+	keyVersion, err := cfg.KeyVersion()
 	if err != nil {
 		return err
 	}
+	keys, err := secrets.NewKeyringVersion(masterKey, keyVersion)
+	if err != nil {
+		return err
+	}
+	// The key version must be the one stored secrets use (a rotation half applied would lock everyone out).
+	checkCtx, cancelCheck := context.WithTimeout(ctx, 10*time.Second)
+	if err := rotate.CheckVersions(checkCtx, store.New(pool), keys); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		cancelCheck()
+		return err
+	}
+	cancelCheck()
 
 	resolver, err := auth.NewClientIPResolver(cfg.TrustedProxies)
 	if err != nil {
@@ -273,4 +289,51 @@ func readPassword(stdin *os.File, stderr io.Writer, email string) (string, error
 		return "", errors.New("passwords do not match")
 	}
 	return string(first), nil
+}
+
+// rotateMasterKey re-wraps every stored secret (credentials, cloud accounts, TOTP seeds, SMTP password) from the
+// current master key (NTB_MASTER_KEY, version NTB_MASTER_KEY_VERSION) to NTB_NEW_MASTER_KEY with the next version,
+// in one transaction. Stop the API first; afterwards start it with the new key and version.
+func rotateMasterKey(stderr io.Writer) error {
+	cfg := config.Load()
+	oldKey, err := secrets.ParseMasterKey(cfg.MasterKey)
+	if err != nil {
+		return err
+	}
+	newKey, err := secrets.ParseMasterKey(os.Getenv("NTB_NEW_MASTER_KEY"))
+	if err != nil {
+		return fmt.Errorf("NTB_NEW_MASTER_KEY: %w", err)
+	}
+	if bytes.Equal(oldKey, newKey) {
+		return errors.New("NTB_NEW_MASTER_KEY is the same as NTB_MASTER_KEY")
+	}
+	oldVersion, err := cfg.KeyVersion()
+	if err != nil {
+		return err
+	}
+	if oldVersion == 32767 {
+		return errors.New("NTB_MASTER_KEY_VERSION is at its maximum")
+	}
+	old, err := secrets.NewKeyringVersion(oldKey, oldVersion)
+	if err != nil {
+		return err
+	}
+	next, err := secrets.NewKeyringVersion(newKey, oldVersion+1)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("configure database pool: %w", err)
+	}
+	defer pool.Close()
+	n, err := rotate.Run(ctx, pool, old, next)
+	if err != nil {
+		return fmt.Errorf("rotation aborted, nothing changed: %w", err)
+	}
+	_, _ = fmt.Fprintf(stderr, "Moved %d credentials, %d cloud accounts, %d MFA seeds, %d SMTP password to master key version %d.\n"+
+		"Now set NTB_MASTER_KEY to the new key and NTB_MASTER_KEY_VERSION=%d, then start the API. Keep the old key until you have checked.\n",
+		n.Credentials, n.CloudAccounts, n.TOTP, n.SMTP, next.Version(), next.Version())
+	return nil
 }

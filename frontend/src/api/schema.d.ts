@@ -957,6 +957,136 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Device credentials of the organization (P2-02) — names, kinds, users, devices; never the secret */
+        get: operations["listCredentials"];
+        put?: never;
+        /** Store a credential (owner / admin / credential.manage); the secret is envelope-encrypted */
+        post: operations["createCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/credentials/{credentialId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        /** A credential and the devices using it (never the secret) */
+        get: operations["getCredential"];
+        put?: never;
+        post?: never;
+        /** Delete a credential (its secret is erased) */
+        delete: operations["deleteCredential"];
+        options?: never;
+        head?: never;
+        /** Edit a credential; secret omitted = kept, empty = removed, new = rotated (last change today) */
+        patch: operations["updateCredential"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/credentials/{credentialId}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The secret, to show or copy — owner / admin / credential.reveal and MFA within 5 minutes; audited */
+        post: operations["revealCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/cloud-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Cloud management accounts (P2-03) — FortiCloud, Meraki, UniFi…; never the secret */
+        get: operations["listCloudAccounts"];
+        put?: never;
+        /** Store a cloud account (owner / admin / credential.manage) */
+        post: operations["createCloudAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/cloud-accounts/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        /** A cloud account and the devices it manages (never the secret) */
+        get: operations["getCloudAccount"];
+        put?: never;
+        post?: never;
+        /** Delete a cloud account (its secret is erased) */
+        delete: operations["deleteCloudAccount"];
+        options?: never;
+        head?: never;
+        /** Edit a cloud account; secret omitted = kept, empty = removed */
+        patch: operations["updateCloudAccount"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/cloud-accounts/{accountId}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The password of a cloud account — same rules as credentials; audited */
+        post: operations["revealCloudAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/vendors": {
         parameters: {
             query?: never;
@@ -3236,6 +3366,119 @@ export interface components {
             lifecycle: components["schemas"]["CatalogLifecycle"];
         };
         /**
+         * @description how it is used — SSH, Telnet, web (HTTPS), console, enable (privileged), SNMP community, API token, other
+         * @enum {string}
+         */
+        CredentialKind: "ssh" | "telnet" | "web" | "console" | "enable" | "snmp" | "api" | "other";
+        Credential: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["CredentialKind"];
+            username: string;
+            hasSecret: boolean;
+            /** @description change it every N days (none = no rotation policy) */
+            rotateDays: number | null;
+            /** Format: date */
+            lastRotatedOn: string | null;
+            /** Format: date */
+            rotateDue: string | null;
+            deviceCount: number;
+            notes: string;
+            version: number;
+        };
+        CredentialDevice: {
+            /** Format: uuid */
+            deviceId: string;
+            hostname: string;
+            siteCode: string;
+            type: components["schemas"]["DeviceType"];
+            purpose: string;
+        };
+        CredentialDetail: {
+            credential: components["schemas"]["Credential"];
+            devices: components["schemas"]["CredentialDevice"][];
+        };
+        CredentialInput: {
+            name: string;
+            kind: components["schemas"]["CredentialKind"];
+            username?: string;
+            /** @description omitted = keep the stored secret, empty = remove it, other = new secret (last change = today) */
+            secret?: string;
+            rotateDays?: number | null;
+            /** Format: date */
+            lastRotatedOn?: string | null;
+            notes?: string;
+            devices: {
+                /** Format: uuid */
+                deviceId: string;
+                purpose?: string;
+            }[];
+            version?: number;
+        };
+        RevealRequest: {
+            /**
+             * @description what the user does with it (both are audited)
+             * @enum {string}
+             */
+            action: "reveal" | "copy";
+        };
+        RevealResult: {
+            secret: string;
+            /** @description hide it / clear the clipboard after this long */
+            clearAfterSeconds: number;
+        };
+        /** @enum {string} */
+        CloudProvider: "forticloud" | "meraki" | "unifi" | "omada" | "aruba_central" | "hik_connect" | "other";
+        CloudAccount: {
+            /** Format: uuid */
+            id: string;
+            provider: components["schemas"]["CloudProvider"];
+            name: string;
+            portalUrl: string;
+            username: string;
+            hasSecret: boolean;
+            /** @description who holds the MFA device of the account */
+            mfaHolder: string;
+            plan: string;
+            /** Format: date */
+            expiresOn: string | null;
+            /** Format: uuid */
+            vendorId: string | null;
+            vendorName: string;
+            deviceCount: number;
+            notes: string;
+            version: number;
+        };
+        CloudAccountDevice: {
+            /** Format: uuid */
+            deviceId: string;
+            hostname: string;
+            siteCode: string;
+            type: components["schemas"]["DeviceType"];
+        };
+        CloudAccountDetail: {
+            account: components["schemas"]["CloudAccount"];
+            devices: components["schemas"]["CloudAccountDevice"][];
+        };
+        CloudAccountInput: {
+            provider: components["schemas"]["CloudProvider"];
+            name: string;
+            portalUrl?: string;
+            username?: string;
+            /** @description omitted = keep, empty = remove */
+            secret?: string;
+            mfaHolder?: string;
+            plan?: string;
+            /** Format: date */
+            expiresOn?: string | null;
+            /** Format: uuid */
+            vendorId?: string | null;
+            notes?: string;
+            deviceIds: string[];
+            version?: number;
+        };
+        /**
          * @description manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
          * @enum {string}
          */
@@ -3377,10 +3620,10 @@ export interface components {
             contacts: components["schemas"]["VendorContact"][];
         };
         /**
-         * @description warranty end, license end, vendor end of support, contract end (P2-04)
+         * @description warranty end, license end, vendor end of support, contract end (P2-04), credential change due (P2-02), cloud account end (P2-03)
          * @enum {string}
          */
-        AlertKind: "warranty" | "license" | "eos" | "contract";
+        AlertKind: "warranty" | "license" | "eos" | "contract" | "credential" | "cloud";
         SmtpSettings: {
             host: string;
             port: number;
@@ -3443,6 +3686,10 @@ export interface components {
             siteCode: string;
             /** Format: uuid */
             contractId: string | null;
+            /** Format: uuid */
+            credentialId: string | null;
+            /** Format: uuid */
+            cloudAccountId: string | null;
             /** Format: date */
             dueDate: string;
             /** @description days before the date when it was raised; 0 = the date had passed */
@@ -4537,6 +4784,8 @@ export interface components {
         DeviceClusterFilter: string[];
         DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "category" | "lifecycle" | "warrantyEnd";
         DeviceSortDesc: boolean;
+        CredentialId: string;
+        CloudAccountId: string;
         VendorId: string;
         ContractId: string;
         DeviceId: string;
@@ -6493,6 +6742,418 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listCredentials: {
+        parameters: {
+            query?: {
+                q?: string;
+                deviceId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK (never any secret) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        credentials: components["schemas"]["Credential"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createCredential: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCredential: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCredential: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    revealCredential: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevealRequest"];
+            };
+        };
+        responses: {
+            /** @description The secret (never cached) */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many looks in a short time */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCloudAccounts: {
+        parameters: {
+            query?: {
+                q?: string;
+                deviceId?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK (never any secret) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accounts: components["schemas"]["CloudAccount"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createCloudAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloudAccountInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudAccountDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCloudAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudAccountDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCloudAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCloudAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloudAccountInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudAccountDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    revealCloudAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                accountId: components["parameters"]["CloudAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevealRequest"];
+            };
+        };
+        responses: {
+            /** @description The secret (never cached) */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many looks in a short time */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listVendors: {

@@ -1651,6 +1651,342 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/credentials:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listCredentials
+      summary: Device credentials of the organization (P2-02) — names, kinds, users, devices; never the secret
+      parameters:
+        - name: q
+          in: query
+          schema: {type: string, maxLength: 200}
+        - name: deviceId
+          in: query
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: OK (never any secret)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [credentials]
+                properties:
+                  credentials:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Credential'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createCredential
+      summary: Store a credential (owner / admin / credential.manage); the secret is envelope-encrypted
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/credentials/{credentialId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CredentialId'
+    get:
+      operationId: getCredential
+      summary: A credential and the devices using it (never the secret)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateCredential
+      summary: Edit a credential; secret omitted = kept, empty = removed, new = rotated (last change today)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteCredential
+      summary: Delete a credential (its secret is erased)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/credentials/{credentialId}/reveal:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CredentialId'
+    post:
+      operationId: revealCredential
+      summary: The secret, to show or copy — owner / admin / credential.reveal and MFA within 5 minutes; audited
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevealRequest'
+      responses:
+        '200':
+          description: The secret (never cached)
+          headers:
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          description: Too many looks in a short time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orgs/{orgId}/cloud-accounts:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listCloudAccounts
+      summary: Cloud management accounts (P2-03) — FortiCloud, Meraki, UniFi…; never the secret
+      parameters:
+        - name: q
+          in: query
+          schema: {type: string, maxLength: 200}
+        - name: deviceId
+          in: query
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: OK (never any secret)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accounts]
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CloudAccount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createCloudAccount
+      summary: Store a cloud account (owner / admin / credential.manage)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloudAccountInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudAccountDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/cloud-accounts/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CloudAccountId'
+    get:
+      operationId: getCloudAccount
+      summary: A cloud account and the devices it manages (never the secret)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudAccountDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateCloudAccount
+      summary: Edit a cloud account; secret omitted = kept, empty = removed
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloudAccountInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudAccountDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteCloudAccount
+      summary: Delete a cloud account (its secret is erased)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/cloud-accounts/{accountId}/reveal:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/CloudAccountId'
+    post:
+      operationId: revealCloudAccount
+      summary: The password of a cloud account — same rules as credentials; audited
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevealRequest'
+      responses:
+        '200':
+          description: The secret (never cached)
+          headers:
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          description: Too many looks in a short time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '428':
+          description: Recent MFA needed — confirm a code (POST /auth/mfa/verify) and try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /orgs/{orgId}/vendors:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -4123,6 +4459,20 @@ components:
         type: boolean
         default: false
 
+    CredentialId:
+      name: credentialId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CloudAccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     VendorId:
       name: vendorId
       in: path
@@ -6541,6 +6891,239 @@ components:
         lifecycle:
           $ref: '#/components/schemas/CatalogLifecycle'
 
+    CredentialKind:
+      type: string
+      description: how it is used — SSH, Telnet, web (HTTPS), console, enable (privileged), SNMP community, API token, other
+      enum: [ssh, telnet, web, console, enable, snmp, api, other]
+
+    Credential:
+      type: object
+      required: [id, name, kind, username, hasSecret, rotateDays, lastRotatedOn, rotateDue, deviceCount, notes, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/CredentialKind'
+        username:
+          type: string
+        hasSecret:
+          type: boolean
+        rotateDays:
+          type: [integer, 'null']
+          description: change it every N days (none = no rotation policy)
+        lastRotatedOn:
+          type: [string, 'null']
+          format: date
+        rotateDue:
+          type: [string, 'null']
+          format: date
+        deviceCount:
+          type: integer
+        notes:
+          type: string
+        version:
+          type: integer
+
+    CredentialDevice:
+      type: object
+      required: [deviceId, hostname, siteCode, type, purpose]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        purpose:
+          type: string
+
+    CredentialDetail:
+      type: object
+      required: [credential, devices]
+      properties:
+        credential:
+          $ref: '#/components/schemas/Credential'
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialDevice'
+
+    CredentialInput:
+      type: object
+      required: [name, kind, devices]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/CredentialKind'
+        username:
+          type: string
+          maxLength: 200
+        secret:
+          type: string
+          maxLength: 2000
+          description: omitted = keep the stored secret, empty = remove it, other = new secret (last change = today)
+        rotateDays:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 3650
+        lastRotatedOn:
+          type: [string, 'null']
+          format: date
+        notes:
+          type: string
+          maxLength: 4000
+        devices:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required: [deviceId]
+            properties:
+              deviceId:
+                type: string
+                format: uuid
+              purpose:
+                type: string
+                maxLength: 50
+        version:
+          type: integer
+
+    RevealRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [reveal, copy]
+          description: what the user does with it (both are audited)
+
+    RevealResult:
+      type: object
+      required: [secret, clearAfterSeconds]
+      properties:
+        secret:
+          type: string
+        clearAfterSeconds:
+          type: integer
+          description: hide it / clear the clipboard after this long
+
+    CloudProvider:
+      type: string
+      enum: [forticloud, meraki, unifi, omada, aruba_central, hik_connect, other]
+
+    CloudAccount:
+      type: object
+      required: [id, provider, name, portalUrl, username, hasSecret, mfaHolder, plan, expiresOn, vendorId, vendorName, deviceCount, notes, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/CloudProvider'
+        name:
+          type: string
+        portalUrl:
+          type: string
+        username:
+          type: string
+        hasSecret:
+          type: boolean
+        mfaHolder:
+          type: string
+          description: who holds the MFA device of the account
+        plan:
+          type: string
+        expiresOn:
+          type: [string, 'null']
+          format: date
+        vendorId:
+          type: [string, 'null']
+          format: uuid
+        vendorName:
+          type: string
+        deviceCount:
+          type: integer
+        notes:
+          type: string
+        version:
+          type: integer
+
+    CloudAccountDevice:
+      type: object
+      required: [deviceId, hostname, siteCode, type]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+
+    CloudAccountDetail:
+      type: object
+      required: [account, devices]
+      properties:
+        account:
+          $ref: '#/components/schemas/CloudAccount'
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudAccountDevice'
+
+    CloudAccountInput:
+      type: object
+      required: [provider, name, deviceIds]
+      properties:
+        provider:
+          $ref: '#/components/schemas/CloudProvider'
+        name:
+          type: string
+          maxLength: 200
+        portalUrl:
+          type: string
+          maxLength: 300
+        username:
+          type: string
+          maxLength: 320
+        secret:
+          type: string
+          maxLength: 2000
+          description: omitted = keep, empty = remove
+        mfaHolder:
+          type: string
+          maxLength: 200
+        plan:
+          type: string
+          maxLength: 200
+        expiresOn:
+          type: [string, 'null']
+          format: date
+        vendorId:
+          type: [string, 'null']
+          format: uuid
+        notes:
+          type: string
+          maxLength: 4000
+        deviceIds:
+          type: array
+          maxItems: 1000
+          items:
+            type: string
+            format: uuid
+        version:
+          type: integer
+
     VendorKind:
       type: string
       description: manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
@@ -6840,8 +7423,8 @@ components:
 
     AlertKind:
       type: string
-      description: warranty end, license end, vendor end of support, contract end (P2-04)
-      enum: [warranty, license, eos, contract]
+      description: warranty end, license end, vendor end of support, contract end (P2-04), credential change due (P2-02), cloud account end (P2-03)
+      enum: [warranty, license, eos, contract, credential, cloud]
 
     SmtpSettings:
       type: object
@@ -6943,7 +7526,7 @@ components:
           type: boolean
         kinds:
           type: array
-          maxItems: 4
+          maxItems: 6
           items:
             $ref: '#/components/schemas/AlertKind'
         milestones:
@@ -6967,7 +7550,7 @@ components:
 
     Notification:
       type: object
-      required: [id, kind, deviceId, contractId, hostname, siteCode, dueDate, milestone, createdAt, unread]
+      required: [id, kind, deviceId, contractId, credentialId, cloudAccountId, hostname, siteCode, dueDate, milestone, createdAt, unread]
       properties:
         id:
           type: string
@@ -6984,6 +7567,12 @@ components:
           type: string
           description: the device's site, or the vendor name for a contract
         contractId:
+          type: [string, 'null']
+          format: uuid
+        credentialId:
+          type: [string, 'null']
+          format: uuid
+        cloudAccountId:
           type: [string, 'null']
           format: uuid
         dueDate:

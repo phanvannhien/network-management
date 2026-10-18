@@ -62,6 +62,9 @@ const DeviceImportPage = lazy(() =>
 const TemplatesPage = lazy(() =>
   import('./modules/inventory/TemplatesPage').then((m) => ({ default: m.TemplatesPage })),
 )
+const VaultPage = lazy(() =>
+  import('./modules/vault/VaultPage').then((m) => ({ default: m.VaultPage })),
+)
 const VendorsPage = lazy(() =>
   import('./modules/vendors/VendorsPage').then((m) => ({ default: m.VendorsPage })),
 )
@@ -132,6 +135,7 @@ export function AppRoutes() {
         <Route path="custom-fields" element={<CustomFieldsPage />} />
         <Route path="alerts" element={<AlertSettingsPage />} />
         <Route path="vendors" element={<VendorsPage />} />
+        <Route path="vault" element={<VaultPage />} />
         <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
         <Route path="contracts/:contractId" element={<ContractPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />

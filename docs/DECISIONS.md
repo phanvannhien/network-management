@@ -668,3 +668,45 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - chi phí và gia hạn;
   - liên kết nhà cung cấp với `links.provider` (đang là chữ);
   - ảnh thiết bị do người dùng tải lên (P2-12) dùng chung chỗ lưu file.
+
+### ADR-045 — Kho mật khẩu: mật khẩu thiết bị và tài khoản cloud, xem cần quyền + MFA 5 phút, xoay master key bằng CLI
+- **Bối cảnh:** P2-02 + P2-03 làm chung (người dùng chốt 2026-10-18).
+  - Kho ngoài (Bitwarden / Vaultwarden, HashiCorp Vault) của ADR-018 để nâng cấp sau.
+  - Đợt này chỉ lưu mã hóa trong hệ thống.
+- **Quyết định:**
+  - **Mật khẩu thiết bị** (`credentials`):
+    - tên (không trùng trong tổ chức), loại (SSH / Telnet / Web / console / enable / SNMP community / API token / khác), tài khoản;
+    - mật khẩu giữ nguyên từng ký tự, không cắt khoảng trắng;
+    - chu kỳ đổi và ngày đổi gần nhất: nhập mật khẩu mới thì ngày đổi tự là hôm nay;
+    - gắn nhiều thiết bị, mỗi thiết bị có mục đích.
+  - **Tài khoản cloud** (`cloud_accounts`):
+    - nền tảng (FortiCloud, Meraki, UniFi, Omada, Aruba Central, Hik-Connect, khác), địa chỉ portal (chỉ http(s)), tài khoản, mật khẩu;
+    - **người giữ MFA**, gói dịch vụ, ngày hết hạn, nhà cung cấp;
+    - thiết bị được quản lý.
+  - **Mã hóa:**
+    - envelope AES-256-GCM (ADR-018), AAD gắn với id bản ghi (`credential:<id>`, `cloud_account:<id>`), id do server sinh trước khi ghi;
+    - ciphertext chép sang dòng khác thì không mở được;
+    - query danh sách / chi tiết không bao giờ đọc cột bí mật;
+    - xóa bản ghi là xóa luôn bí mật.
+  - **Quyền:**
+    - thành viên xem được tên, loại, tài khoản, thiết bị (không có mật khẩu);
+    - thêm / sửa / xóa cần owner, admin hoặc `credential.manage`;
+    - **xem / copy** cần owner, admin hoặc `credential.reveal`, **và MFA trong 5 phút gần nhất**. Nếu chưa, API trả 428; giao diện hỏi mã MFA (dùng lại `/auth/mfa/verify`) rồi thử lại.
+    - Mỗi lần xem / copy ghi audit `credential.reveal` / `credential.copy` (ai, khi nào, mục nào, IP), không có mật khẩu.
+    - Mật khẩu hiện ra tự ẩn sau 30 giây; clipboard được xóa sau 30 giây (trong giới hạn trình duyệt cho phép).
+  - **Cảnh báo** (ADR-043): mật khẩu tới hạn đổi (ngày đổi + chu kỳ), tài khoản cloud hết hạn.
+  - **Xoay master key:**
+    - `ntb rotate-master-key` đọc khóa cũ (`NTB_MASTER_KEY` + `NTB_MASTER_KEY_VERSION`) và khóa mới (`NTB_NEW_MASTER_KEY`);
+    - bọc lại khóa dữ liệu của mọi bí mật (mật khẩu, tài khoản cloud, MFA seed, mật khẩu SMTP) trong **một giao dịch**, version tăng 1;
+    - không giải mã bí mật. Có bí mật nào không mở được bằng khóa cũ thì dừng, không đổi gì;
+    - sau đó đặt khóa mới và version mới rồi khởi động lại API.
+- **Lý do:** kho mật khẩu là mục tiêu tấn công số một. Quyền riêng, MFA gần đây và audit từng lần xem là mức tối thiểu. AAD theo bản ghi chặn việc tráo ciphertext. Xoay khóa không cần giải mã nên an toàn và nhanh.
+- **Đánh đổi:**
+  - Phải dừng API khi xoay khóa.
+  - Clipboard chỉ xóa được khi trang còn được focus.
+  - SNMPv3 (có auth và priv) tạm ghi một bí mật cùng ghi chú.
+- **Để sau:**
+  - tham chiếu kho ngoài (Bitwarden / Vaultwarden / HashiCorp Vault);
+  - SNMPv3 đủ trường;
+  - cảnh báo "một mật khẩu dùng cho quá nhiều thiết bị" (thuộc P2-10);
+  - lịch sử mật khẩu cũ.

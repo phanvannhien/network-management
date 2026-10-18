@@ -60,22 +60,61 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 
 // Defines values for AlertKind.
 const (
-	AlertKindContract AlertKind = "contract"
-	AlertKindEos      AlertKind = "eos"
-	AlertKindLicense  AlertKind = "license"
-	AlertKindWarranty AlertKind = "warranty"
+	AlertKindCloud      AlertKind = "cloud"
+	AlertKindContract   AlertKind = "contract"
+	AlertKindCredential AlertKind = "credential"
+	AlertKindEos        AlertKind = "eos"
+	AlertKindLicense    AlertKind = "license"
+	AlertKindWarranty   AlertKind = "warranty"
 )
 
 // Valid indicates whether the value is a known member of the AlertKind enum.
 func (e AlertKind) Valid() bool {
 	switch e {
+	case AlertKindCloud:
+		return true
 	case AlertKindContract:
+		return true
+	case AlertKindCredential:
 		return true
 	case AlertKindEos:
 		return true
 	case AlertKindLicense:
 		return true
 	case AlertKindWarranty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudProvider.
+const (
+	CloudProviderArubaCentral CloudProvider = "aruba_central"
+	CloudProviderForticloud   CloudProvider = "forticloud"
+	CloudProviderHikConnect   CloudProvider = "hik_connect"
+	CloudProviderMeraki       CloudProvider = "meraki"
+	CloudProviderOmada        CloudProvider = "omada"
+	CloudProviderOther        CloudProvider = "other"
+	CloudProviderUnifi        CloudProvider = "unifi"
+)
+
+// Valid indicates whether the value is a known member of the CloudProvider enum.
+func (e CloudProvider) Valid() bool {
+	switch e {
+	case CloudProviderArubaCentral:
+		return true
+	case CloudProviderForticloud:
+		return true
+	case CloudProviderHikConnect:
+		return true
+	case CloudProviderMeraki:
+		return true
+	case CloudProviderOmada:
+		return true
+	case CloudProviderOther:
+		return true
+	case CloudProviderUnifi:
 		return true
 	default:
 		return false
@@ -157,6 +196,42 @@ func (e ContractKind) Valid() bool {
 	case ContractKindSupport:
 		return true
 	case ContractKindWarranty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CredentialKind.
+const (
+	CredentialKindApi     CredentialKind = "api"
+	CredentialKindConsole CredentialKind = "console"
+	CredentialKindEnable  CredentialKind = "enable"
+	CredentialKindOther   CredentialKind = "other"
+	CredentialKindSnmp    CredentialKind = "snmp"
+	CredentialKindSsh     CredentialKind = "ssh"
+	CredentialKindTelnet  CredentialKind = "telnet"
+	CredentialKindWeb     CredentialKind = "web"
+)
+
+// Valid indicates whether the value is a known member of the CredentialKind enum.
+func (e CredentialKind) Valid() bool {
+	switch e {
+	case CredentialKindApi:
+		return true
+	case CredentialKindConsole:
+		return true
+	case CredentialKindEnable:
+		return true
+	case CredentialKindOther:
+		return true
+	case CredentialKindSnmp:
+		return true
+	case CredentialKindSsh:
+		return true
+	case CredentialKindTelnet:
+		return true
+	case CredentialKindWeb:
 		return true
 	default:
 		return false
@@ -1306,6 +1381,24 @@ func (e Permission) Valid() bool {
 	}
 }
 
+// Defines values for RevealRequestAction.
+const (
+	Copy   RevealRequestAction = "copy"
+	Reveal RevealRequestAction = "reveal"
+)
+
+// Valid indicates whether the value is a known member of the RevealRequestAction enum.
+func (e RevealRequestAction) Valid() bool {
+	switch e {
+	case Copy:
+		return true
+	case Reveal:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Role.
 const (
 	RoleAdmin  Role = "admin"
@@ -1747,7 +1840,7 @@ type AdminUserList struct {
 	Users []AdminUser `json:"users"`
 }
 
-// AlertKind warranty end, license end, vendor end of support, contract end (P2-04)
+// AlertKind warranty end, license end, vendor end of support, contract end (P2-04), credential change due (P2-02), cloud account end (P2-03)
 type AlertKind string
 
 // AlertSettings defines model for AlertSettings.
@@ -1949,6 +2042,61 @@ type CategoryUpdate struct {
 	Version  int32               `json:"version"`
 }
 
+// CloudAccount defines model for CloudAccount.
+type CloudAccount struct {
+	DeviceCount int                 `json:"deviceCount"`
+	ExpiresOn   *openapi_types.Date `json:"expiresOn"`
+	HasSecret   bool                `json:"hasSecret"`
+	Id          openapi_types.UUID  `json:"id"`
+
+	// MfaHolder who holds the MFA device of the account
+	MfaHolder  string              `json:"mfaHolder"`
+	Name       string              `json:"name"`
+	Notes      string              `json:"notes"`
+	Plan       string              `json:"plan"`
+	PortalUrl  string              `json:"portalUrl"`
+	Provider   CloudProvider       `json:"provider"`
+	Username   string              `json:"username"`
+	VendorId   *openapi_types.UUID `json:"vendorId"`
+	VendorName string              `json:"vendorName"`
+	Version    int                 `json:"version"`
+}
+
+// CloudAccountDetail defines model for CloudAccountDetail.
+type CloudAccountDetail struct {
+	Account CloudAccount         `json:"account"`
+	Devices []CloudAccountDevice `json:"devices"`
+}
+
+// CloudAccountDevice defines model for CloudAccountDevice.
+type CloudAccountDevice struct {
+	DeviceId openapi_types.UUID `json:"deviceId"`
+	Hostname string             `json:"hostname"`
+	SiteCode string             `json:"siteCode"`
+	Type     DeviceType         `json:"type"`
+}
+
+// CloudAccountInput defines model for CloudAccountInput.
+type CloudAccountInput struct {
+	DeviceIds []openapi_types.UUID `json:"deviceIds"`
+	ExpiresOn *openapi_types.Date  `json:"expiresOn,omitempty"`
+	MfaHolder *string              `json:"mfaHolder,omitempty"`
+	Name      string               `json:"name"`
+	Notes     *string              `json:"notes,omitempty"`
+	Plan      *string              `json:"plan,omitempty"`
+	PortalUrl *string              `json:"portalUrl,omitempty"`
+	Provider  CloudProvider        `json:"provider"`
+
+	// Secret omitted = keep, empty = remove
+	Secret   *string             `json:"secret,omitempty"`
+	Username *string             `json:"username,omitempty"`
+	VendorId *openapi_types.UUID `json:"vendorId,omitempty"`
+	Version  *int                `json:"version,omitempty"`
+}
+
+// CloudProvider defines model for CloudProvider.
+type CloudProvider string
+
 // Cluster defines model for Cluster.
 type Cluster struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
@@ -2148,6 +2296,63 @@ type CreateOrganizationRequest struct {
 	Name  string           `json:"name"`
 	Notes *string          `json:"notes,omitempty"`
 }
+
+// Credential defines model for Credential.
+type Credential struct {
+	DeviceCount int                `json:"deviceCount"`
+	HasSecret   bool               `json:"hasSecret"`
+	Id          openapi_types.UUID `json:"id"`
+
+	// Kind how it is used — SSH, Telnet, web (HTTPS), console, enable (privileged), SNMP community, API token, other
+	Kind          CredentialKind      `json:"kind"`
+	LastRotatedOn *openapi_types.Date `json:"lastRotatedOn"`
+	Name          string              `json:"name"`
+	Notes         string              `json:"notes"`
+
+	// RotateDays change it every N days (none = no rotation policy)
+	RotateDays *int                `json:"rotateDays"`
+	RotateDue  *openapi_types.Date `json:"rotateDue"`
+	Username   string              `json:"username"`
+	Version    int                 `json:"version"`
+}
+
+// CredentialDetail defines model for CredentialDetail.
+type CredentialDetail struct {
+	Credential Credential         `json:"credential"`
+	Devices    []CredentialDevice `json:"devices"`
+}
+
+// CredentialDevice defines model for CredentialDevice.
+type CredentialDevice struct {
+	DeviceId openapi_types.UUID `json:"deviceId"`
+	Hostname string             `json:"hostname"`
+	Purpose  string             `json:"purpose"`
+	SiteCode string             `json:"siteCode"`
+	Type     DeviceType         `json:"type"`
+}
+
+// CredentialInput defines model for CredentialInput.
+type CredentialInput struct {
+	Devices []struct {
+		DeviceId openapi_types.UUID `json:"deviceId"`
+		Purpose  *string            `json:"purpose,omitempty"`
+	} `json:"devices"`
+
+	// Kind how it is used — SSH, Telnet, web (HTTPS), console, enable (privileged), SNMP community, API token, other
+	Kind          CredentialKind      `json:"kind"`
+	LastRotatedOn *openapi_types.Date `json:"lastRotatedOn,omitempty"`
+	Name          string              `json:"name"`
+	Notes         *string             `json:"notes,omitempty"`
+	RotateDays    *int                `json:"rotateDays,omitempty"`
+
+	// Secret omitted = keep the stored secret, empty = remove it, other = new secret (last change = today)
+	Secret   *string `json:"secret,omitempty"`
+	Username *string `json:"username,omitempty"`
+	Version  *int    `json:"version,omitempty"`
+}
+
+// CredentialKind how it is used — SSH, Telnet, web (HTTPS), console, enable (privileged), SNMP community, API token, other
+type CredentialKind string
 
 // CurrentUser defines model for CurrentUser.
 type CurrentUser struct {
@@ -3664,16 +3869,18 @@ type NextFreeIp struct {
 
 // Notification defines model for Notification.
 type Notification struct {
-	ContractId *openapi_types.UUID `json:"contractId"`
-	CreatedAt  time.Time           `json:"createdAt"`
-	DeviceId   *openapi_types.UUID `json:"deviceId"`
-	DueDate    openapi_types.Date  `json:"dueDate"`
+	CloudAccountId *openapi_types.UUID `json:"cloudAccountId"`
+	ContractId     *openapi_types.UUID `json:"contractId"`
+	CreatedAt      time.Time           `json:"createdAt"`
+	CredentialId   *openapi_types.UUID `json:"credentialId"`
+	DeviceId       *openapi_types.UUID `json:"deviceId"`
+	DueDate        openapi_types.Date  `json:"dueDate"`
 
 	// Hostname the device, or the contract name for a contract
 	Hostname string             `json:"hostname"`
 	Id       openapi_types.UUID `json:"id"`
 
-	// Kind warranty end, license end, vendor end of support, contract end (P2-04)
+	// Kind warranty end, license end, vendor end of support, contract end (P2-04), credential change due (P2-02), cloud account end (P2-03)
 	Kind AlertKind `json:"kind"`
 
 	// Milestone days before the date when it was raised; 0 = the date had passed
@@ -3839,6 +4046,22 @@ type RackUpdate struct {
 	Notes      *string            `json:"notes,omitempty"`
 	UHeight    *int32             `json:"uHeight,omitempty"`
 	Version    int32              `json:"version"`
+}
+
+// RevealRequest defines model for RevealRequest.
+type RevealRequest struct {
+	// Action what the user does with it (both are audited)
+	Action RevealRequestAction `json:"action"`
+}
+
+// RevealRequestAction what the user does with it (both are audited)
+type RevealRequestAction string
+
+// RevealResult defines model for RevealResult.
+type RevealResult struct {
+	// ClearAfterSeconds hide it / clear the clipboard after this long
+	ClearAfterSeconds int    `json:"clearAfterSeconds"`
+	Secret            string `json:"secret"`
 }
 
 // Role organization role; it decides everything a member may do in the organization (ADR-032)
@@ -4497,11 +4720,17 @@ type AuditTo = time.Time
 // CategoryId defines model for CategoryId.
 type CategoryId = openapi_types.UUID
 
+// CloudAccountId defines model for CloudAccountId.
+type CloudAccountId = openapi_types.UUID
+
 // ClusterId defines model for ClusterId.
 type ClusterId = openapi_types.UUID
 
 // ContractId defines model for ContractId.
 type ContractId = openapi_types.UUID
+
+// CredentialId defines model for CredentialId.
+type CredentialId = openapi_types.UUID
 
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
@@ -4759,6 +4988,32 @@ type PreviewCategoryUpdateParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// ListCloudAccountsParams defines parameters for ListCloudAccounts.
+type ListCloudAccountsParams struct {
+	Q        *string             `form:"q,omitempty" json:"q,omitempty"`
+	DeviceId *openapi_types.UUID `form:"deviceId,omitempty" json:"deviceId,omitempty"`
+}
+
+// CreateCloudAccountParams defines parameters for CreateCloudAccount.
+type CreateCloudAccountParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteCloudAccountParams defines parameters for DeleteCloudAccount.
+type DeleteCloudAccountParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateCloudAccountParams defines parameters for UpdateCloudAccount.
+type UpdateCloudAccountParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RevealCloudAccountParams defines parameters for RevealCloudAccount.
+type RevealCloudAccountParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListClustersParams defines parameters for ListClusters.
 type ListClustersParams struct {
 	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
@@ -4817,6 +5072,32 @@ type UploadContractFileMultipartBody struct {
 
 // UploadContractFileParams defines parameters for UploadContractFile.
 type UploadContractFileParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ListCredentialsParams defines parameters for ListCredentials.
+type ListCredentialsParams struct {
+	Q        *string             `form:"q,omitempty" json:"q,omitempty"`
+	DeviceId *openapi_types.UUID `form:"deviceId,omitempty" json:"deviceId,omitempty"`
+}
+
+// CreateCredentialParams defines parameters for CreateCredential.
+type CreateCredentialParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteCredentialParams defines parameters for DeleteCredential.
+type DeleteCredentialParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateCredentialParams defines parameters for UpdateCredential.
+type UpdateCredentialParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// RevealCredentialParams defines parameters for RevealCredential.
+type RevealCredentialParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -5372,6 +5653,15 @@ type UpdateCategoryJSONRequestBody = CategoryUpdate
 // PreviewCategoryUpdateJSONRequestBody defines body for PreviewCategoryUpdate for application/json ContentType.
 type PreviewCategoryUpdateJSONRequestBody = CategoryUpdate
 
+// CreateCloudAccountJSONRequestBody defines body for CreateCloudAccount for application/json ContentType.
+type CreateCloudAccountJSONRequestBody = CloudAccountInput
+
+// UpdateCloudAccountJSONRequestBody defines body for UpdateCloudAccount for application/json ContentType.
+type UpdateCloudAccountJSONRequestBody = CloudAccountInput
+
+// RevealCloudAccountJSONRequestBody defines body for RevealCloudAccount for application/json ContentType.
+type RevealCloudAccountJSONRequestBody = RevealRequest
+
 // CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
 type CreateClusterJSONRequestBody = ClusterInput
 
@@ -5386,6 +5676,15 @@ type UpdateContractJSONRequestBody = ContractInput
 
 // UploadContractFileMultipartRequestBody defines body for UploadContractFile for multipart/form-data ContentType.
 type UploadContractFileMultipartRequestBody UploadContractFileMultipartBody
+
+// CreateCredentialJSONRequestBody defines body for CreateCredential for application/json ContentType.
+type CreateCredentialJSONRequestBody = CredentialInput
+
+// UpdateCredentialJSONRequestBody defines body for UpdateCredential for application/json ContentType.
+type UpdateCredentialJSONRequestBody = CredentialInput
+
+// RevealCredentialJSONRequestBody defines body for RevealCredential for application/json ContentType.
+type RevealCredentialJSONRequestBody = RevealRequest
 
 // CreateCustomFieldJSONRequestBody defines body for CreateCustomField for application/json ContentType.
 type CreateCustomFieldJSONRequestBody = CustomFieldInput
@@ -5653,6 +5952,24 @@ type ServerInterface interface {
 	// PreviewCategoryUpdate Site codes an update would change (nothing is written)
 	// (POST /orgs/{orgId}/categories/{categoryId}/preview)
 	PreviewCategoryUpdate(w http.ResponseWriter, r *http.Request, orgId OrgId, categoryId CategoryId, params PreviewCategoryUpdateParams)
+	// ListCloudAccounts Cloud management accounts (P2-03) — FortiCloud, Meraki, UniFi…; never the secret
+	// (GET /orgs/{orgId}/cloud-accounts)
+	ListCloudAccounts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCloudAccountsParams)
+	// CreateCloudAccount Store a cloud account (owner / admin / credential.manage)
+	// (POST /orgs/{orgId}/cloud-accounts)
+	CreateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCloudAccountParams)
+	// DeleteCloudAccount Delete a cloud account (its secret is erased)
+	// (DELETE /orgs/{orgId}/cloud-accounts/{accountId})
+	DeleteCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params DeleteCloudAccountParams)
+	// GetCloudAccount A cloud account and the devices it manages (never the secret)
+	// (GET /orgs/{orgId}/cloud-accounts/{accountId})
+	GetCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId)
+	// UpdateCloudAccount Edit a cloud account; secret omitted = kept, empty = removed
+	// (PATCH /orgs/{orgId}/cloud-accounts/{accountId})
+	UpdateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params UpdateCloudAccountParams)
+	// RevealCloudAccount The password of a cloud account — same rules as credentials; audited
+	// (POST /orgs/{orgId}/cloud-accounts/{accountId}/reveal)
+	RevealCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params RevealCloudAccountParams)
 	// ListClusters Device clusters visible to the caller (ADR-027)
 	// (GET /orgs/{orgId}/clusters)
 	ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams)
@@ -5689,6 +6006,24 @@ type ServerInterface interface {
 	// UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
 	// (POST /orgs/{orgId}/contracts/{contractId}/files)
 	UploadContractFile(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UploadContractFileParams)
+	// ListCredentials Device credentials of the organization (P2-02) — names, kinds, users, devices; never the secret
+	// (GET /orgs/{orgId}/credentials)
+	ListCredentials(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCredentialsParams)
+	// CreateCredential Store a credential (owner / admin / credential.manage); the secret is envelope-encrypted
+	// (POST /orgs/{orgId}/credentials)
+	CreateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCredentialParams)
+	// DeleteCredential Delete a credential (its secret is erased)
+	// (DELETE /orgs/{orgId}/credentials/{credentialId})
+	DeleteCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params DeleteCredentialParams)
+	// GetCredential A credential and the devices using it (never the secret)
+	// (GET /orgs/{orgId}/credentials/{credentialId})
+	GetCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId)
+	// UpdateCredential Edit a credential; secret omitted = kept, empty = removed, new = rotated (last change today)
+	// (PATCH /orgs/{orgId}/credentials/{credentialId})
+	UpdateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params UpdateCredentialParams)
+	// RevealCredential The secret, to show or copy — owner / admin / credential.reveal and MFA within 5 minutes; audited
+	// (POST /orgs/{orgId}/credentials/{credentialId}/reveal)
+	RevealCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params RevealCredentialParams)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -6226,6 +6561,42 @@ func (_ Unimplemented) PreviewCategoryUpdate(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListCloudAccounts Cloud management accounts (P2-03) — FortiCloud, Meraki, UniFi…; never the secret
+// (GET /orgs/{orgId}/cloud-accounts)
+func (_ Unimplemented) ListCloudAccounts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCloudAccountsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateCloudAccount Store a cloud account (owner / admin / credential.manage)
+// (POST /orgs/{orgId}/cloud-accounts)
+func (_ Unimplemented) CreateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCloudAccountParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteCloudAccount Delete a cloud account (its secret is erased)
+// (DELETE /orgs/{orgId}/cloud-accounts/{accountId})
+func (_ Unimplemented) DeleteCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params DeleteCloudAccountParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetCloudAccount A cloud account and the devices it manages (never the secret)
+// (GET /orgs/{orgId}/cloud-accounts/{accountId})
+func (_ Unimplemented) GetCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateCloudAccount Edit a cloud account; secret omitted = kept, empty = removed
+// (PATCH /orgs/{orgId}/cloud-accounts/{accountId})
+func (_ Unimplemented) UpdateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params UpdateCloudAccountParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevealCloudAccount The password of a cloud account — same rules as credentials; audited
+// (POST /orgs/{orgId}/cloud-accounts/{accountId}/reveal)
+func (_ Unimplemented) RevealCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params RevealCloudAccountParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListClusters Device clusters visible to the caller (ADR-027)
 // (GET /orgs/{orgId}/clusters)
 func (_ Unimplemented) ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams) {
@@ -6295,6 +6666,42 @@ func (_ Unimplemented) UpdateContract(w http.ResponseWriter, r *http.Request, or
 // UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
 // (POST /orgs/{orgId}/contracts/{contractId}/files)
 func (_ Unimplemented) UploadContractFile(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UploadContractFileParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListCredentials Device credentials of the organization (P2-02) — names, kinds, users, devices; never the secret
+// (GET /orgs/{orgId}/credentials)
+func (_ Unimplemented) ListCredentials(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCredentialsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateCredential Store a credential (owner / admin / credential.manage); the secret is envelope-encrypted
+// (POST /orgs/{orgId}/credentials)
+func (_ Unimplemented) CreateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCredentialParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteCredential Delete a credential (its secret is erased)
+// (DELETE /orgs/{orgId}/credentials/{credentialId})
+func (_ Unimplemented) DeleteCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params DeleteCredentialParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetCredential A credential and the devices using it (never the secret)
+// (GET /orgs/{orgId}/credentials/{credentialId})
+func (_ Unimplemented) GetCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateCredential Edit a credential; secret omitted = kept, empty = removed, new = rotated (last change today)
+// (PATCH /orgs/{orgId}/credentials/{credentialId})
+func (_ Unimplemented) UpdateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params UpdateCredentialParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RevealCredential The secret, to show or copy — owner / admin / credential.reveal and MFA within 5 minutes; audited
+// (POST /orgs/{orgId}/credentials/{credentialId}/reveal)
+func (_ Unimplemented) RevealCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params RevealCredentialParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8455,6 +8862,339 @@ func (siw *ServerInterfaceWrapper) PreviewCategoryUpdate(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// ListCloudAccounts operation middleware
+func (siw *ServerInterfaceWrapper) ListCloudAccounts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCloudAccountsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "deviceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "deviceId", r.URL.Query(), &params.DeviceId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deviceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCloudAccounts(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCloudAccount operation middleware
+func (siw *ServerInterfaceWrapper) CreateCloudAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCloudAccountParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCloudAccount(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCloudAccount operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCloudAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId CloudAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCloudAccountParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCloudAccount(w, r, orgId, accountId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCloudAccount operation middleware
+func (siw *ServerInterfaceWrapper) GetCloudAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId CloudAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCloudAccount(w, r, orgId, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCloudAccount operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCloudAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId CloudAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateCloudAccountParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCloudAccount(w, r, orgId, accountId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevealCloudAccount operation middleware
+func (siw *ServerInterfaceWrapper) RevealCloudAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId CloudAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", chi.URLParam(r, "accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevealCloudAccountParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevealCloudAccount(w, r, orgId, accountId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListClusters operation middleware
 func (siw *ServerInterfaceWrapper) ListClusters(w http.ResponseWriter, r *http.Request) {
 
@@ -9117,6 +9857,339 @@ func (siw *ServerInterfaceWrapper) UploadContractFile(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UploadContractFile(w, r, orgId, contractId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCredentials operation middleware
+func (siw *ServerInterfaceWrapper) ListCredentials(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCredentialsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "deviceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "deviceId", r.URL.Query(), &params.DeviceId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deviceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCredentials(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCredential operation middleware
+func (siw *ServerInterfaceWrapper) CreateCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCredentialParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCredential(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCredential operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "credentialId" -------------
+	var credentialId CredentialId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "credentialId", chi.URLParam(r, "credentialId"), &credentialId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "credentialId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCredentialParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCredential(w, r, orgId, credentialId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCredential operation middleware
+func (siw *ServerInterfaceWrapper) GetCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "credentialId" -------------
+	var credentialId CredentialId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "credentialId", chi.URLParam(r, "credentialId"), &credentialId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "credentialId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCredential(w, r, orgId, credentialId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCredential operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "credentialId" -------------
+	var credentialId CredentialId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "credentialId", chi.URLParam(r, "credentialId"), &credentialId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "credentialId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateCredentialParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCredential(w, r, orgId, credentialId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevealCredential operation middleware
+func (siw *ServerInterfaceWrapper) RevealCredential(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "credentialId" -------------
+	var credentialId CredentialId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "credentialId", chi.URLParam(r, "credentialId"), &credentialId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "credentialId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevealCredentialParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevealCredential(w, r, orgId, credentialId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15519,6 +16592,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/credentials", wrapper.ListCredentials)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/credentials", wrapper.CreateCredential)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/credentials/{credentialId}", wrapper.DeleteCredential)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/credentials/{credentialId}", wrapper.GetCredential)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/credentials/{credentialId}", wrapper.UpdateCredential)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/credentials/{credentialId}/reveal", wrapper.RevealCredential)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/cloud-accounts", wrapper.ListCloudAccounts)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/cloud-accounts", wrapper.CreateCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}", wrapper.DeleteCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}", wrapper.GetCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}", wrapper.UpdateCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/cloud-accounts/{accountId}/reveal", wrapper.RevealCloudAccount)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/vendors", wrapper.ListVendors)
 	})
 	r.Group(func(r chi.Router) {
@@ -17894,6 +19003,492 @@ func (response PreviewCategoryUpdate404JSONResponse) VisitPreviewCategoryUpdateR
 	return err
 }
 
+type ListCloudAccountsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListCloudAccountsParams
+}
+
+type ListCloudAccountsResponseObject interface {
+	VisitListCloudAccountsResponse(w http.ResponseWriter) error
+}
+
+type ListCloudAccounts200JSONResponse struct {
+	Accounts []CloudAccount `json:"accounts"`
+}
+
+func (response ListCloudAccounts200JSONResponse) VisitListCloudAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCloudAccounts401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCloudAccounts401JSONResponse) VisitListCloudAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCloudAccounts403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListCloudAccounts403JSONResponse) VisitListCloudAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCloudAccounts404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListCloudAccounts404JSONResponse) VisitListCloudAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccountRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateCloudAccountParams
+	Body   *CreateCloudAccountJSONRequestBody
+}
+
+type CreateCloudAccountResponseObject interface {
+	VisitCreateCloudAccountResponse(w http.ResponseWriter) error
+}
+
+type CreateCloudAccount201JSONResponse CloudAccountDetail
+
+func (response CreateCloudAccount201JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccount400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCloudAccount400JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCloudAccount401JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccount403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateCloudAccount403JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccount404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateCloudAccount404JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCloudAccount409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCloudAccount409JSONResponse) VisitCreateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCloudAccountRequestObject struct {
+	OrgId     OrgId          `json:"orgId"`
+	AccountId CloudAccountId `json:"accountId"`
+	Params    DeleteCloudAccountParams
+}
+
+type DeleteCloudAccountResponseObject interface {
+	VisitDeleteCloudAccountResponse(w http.ResponseWriter) error
+}
+
+type DeleteCloudAccount204Response struct {
+}
+
+func (response DeleteCloudAccount204Response) VisitDeleteCloudAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCloudAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCloudAccount401JSONResponse) VisitDeleteCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCloudAccount403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteCloudAccount403JSONResponse) VisitDeleteCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCloudAccount404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCloudAccount404JSONResponse) VisitDeleteCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCloudAccountRequestObject struct {
+	OrgId     OrgId          `json:"orgId"`
+	AccountId CloudAccountId `json:"accountId"`
+}
+
+type GetCloudAccountResponseObject interface {
+	VisitGetCloudAccountResponse(w http.ResponseWriter) error
+}
+
+type GetCloudAccount200JSONResponse CloudAccountDetail
+
+func (response GetCloudAccount200JSONResponse) VisitGetCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCloudAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCloudAccount401JSONResponse) VisitGetCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCloudAccount403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetCloudAccount403JSONResponse) VisitGetCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCloudAccount404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCloudAccount404JSONResponse) VisitGetCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccountRequestObject struct {
+	OrgId     OrgId          `json:"orgId"`
+	AccountId CloudAccountId `json:"accountId"`
+	Params    UpdateCloudAccountParams
+	Body      *UpdateCloudAccountJSONRequestBody
+}
+
+type UpdateCloudAccountResponseObject interface {
+	VisitUpdateCloudAccountResponse(w http.ResponseWriter) error
+}
+
+type UpdateCloudAccount200JSONResponse CloudAccountDetail
+
+func (response UpdateCloudAccount200JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccount400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateCloudAccount400JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateCloudAccount401JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccount403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateCloudAccount403JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccount404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCloudAccount404JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCloudAccount409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateCloudAccount409JSONResponse) VisitUpdateCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccountRequestObject struct {
+	OrgId     OrgId          `json:"orgId"`
+	AccountId CloudAccountId `json:"accountId"`
+	Params    RevealCloudAccountParams
+	Body      *RevealCloudAccountJSONRequestBody
+}
+
+type RevealCloudAccountResponseObject interface {
+	VisitRevealCloudAccountResponse(w http.ResponseWriter) error
+}
+
+type RevealCloudAccount200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevealCloudAccount200JSONResponse struct {
+	Body    RevealResult
+	Headers RevealCloudAccount200ResponseHeaders
+}
+
+func (response RevealCloudAccount200JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RevealCloudAccount401JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccount403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RevealCloudAccount403JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccount404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RevealCloudAccount404JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccount428JSONResponse Error
+
+func (response RevealCloudAccount428JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCloudAccount429JSONResponse Error
+
+func (response RevealCloudAccount429JSONResponse) VisitRevealCloudAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListClustersRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListClustersParams
@@ -18810,6 +20405,492 @@ func (response UploadContractFile413JSONResponse) VisitUploadContractFileRespons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCredentialsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListCredentialsParams
+}
+
+type ListCredentialsResponseObject interface {
+	VisitListCredentialsResponse(w http.ResponseWriter) error
+}
+
+type ListCredentials200JSONResponse struct {
+	Credentials []Credential `json:"credentials"`
+}
+
+func (response ListCredentials200JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCredentials401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCredentials401JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCredentials403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListCredentials403JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCredentials404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListCredentials404JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredentialRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateCredentialParams
+	Body   *CreateCredentialJSONRequestBody
+}
+
+type CreateCredentialResponseObject interface {
+	VisitCreateCredentialResponse(w http.ResponseWriter) error
+}
+
+type CreateCredential201JSONResponse CredentialDetail
+
+func (response CreateCredential201JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredential400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCredential400JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredential401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCredential401JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredential403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateCredential403JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredential404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateCredential404JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCredential409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCredential409JSONResponse) VisitCreateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCredentialRequestObject struct {
+	OrgId        OrgId        `json:"orgId"`
+	CredentialId CredentialId `json:"credentialId"`
+	Params       DeleteCredentialParams
+}
+
+type DeleteCredentialResponseObject interface {
+	VisitDeleteCredentialResponse(w http.ResponseWriter) error
+}
+
+type DeleteCredential204Response struct {
+}
+
+func (response DeleteCredential204Response) VisitDeleteCredentialResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCredential401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCredential401JSONResponse) VisitDeleteCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCredential403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteCredential403JSONResponse) VisitDeleteCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCredential404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCredential404JSONResponse) VisitDeleteCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCredentialRequestObject struct {
+	OrgId        OrgId        `json:"orgId"`
+	CredentialId CredentialId `json:"credentialId"`
+}
+
+type GetCredentialResponseObject interface {
+	VisitGetCredentialResponse(w http.ResponseWriter) error
+}
+
+type GetCredential200JSONResponse CredentialDetail
+
+func (response GetCredential200JSONResponse) VisitGetCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCredential401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCredential401JSONResponse) VisitGetCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCredential403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetCredential403JSONResponse) VisitGetCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCredential404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCredential404JSONResponse) VisitGetCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredentialRequestObject struct {
+	OrgId        OrgId        `json:"orgId"`
+	CredentialId CredentialId `json:"credentialId"`
+	Params       UpdateCredentialParams
+	Body         *UpdateCredentialJSONRequestBody
+}
+
+type UpdateCredentialResponseObject interface {
+	VisitUpdateCredentialResponse(w http.ResponseWriter) error
+}
+
+type UpdateCredential200JSONResponse CredentialDetail
+
+func (response UpdateCredential200JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredential400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateCredential400JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredential401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateCredential401JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredential403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateCredential403JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredential404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCredential404JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCredential409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateCredential409JSONResponse) VisitUpdateCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredentialRequestObject struct {
+	OrgId        OrgId        `json:"orgId"`
+	CredentialId CredentialId `json:"credentialId"`
+	Params       RevealCredentialParams
+	Body         *RevealCredentialJSONRequestBody
+}
+
+type RevealCredentialResponseObject interface {
+	VisitRevealCredentialResponse(w http.ResponseWriter) error
+}
+
+type RevealCredential200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevealCredential200JSONResponse struct {
+	Body    RevealResult
+	Headers RevealCredential200ResponseHeaders
+}
+
+func (response RevealCredential200JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredential401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RevealCredential401JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredential403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RevealCredential403JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredential404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RevealCredential404JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredential428JSONResponse Error
+
+func (response RevealCredential428JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(428)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealCredential429JSONResponse Error
+
+func (response RevealCredential429JSONResponse) VisitRevealCredentialResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -27761,6 +29842,24 @@ type StrictServerInterface interface {
 	// PreviewCategoryUpdate Site codes an update would change (nothing is written)
 	// (POST /orgs/{orgId}/categories/{categoryId}/preview)
 	PreviewCategoryUpdate(ctx context.Context, request PreviewCategoryUpdateRequestObject) (PreviewCategoryUpdateResponseObject, error)
+	// ListCloudAccounts Cloud management accounts (P2-03) — FortiCloud, Meraki, UniFi…; never the secret
+	// (GET /orgs/{orgId}/cloud-accounts)
+	ListCloudAccounts(ctx context.Context, request ListCloudAccountsRequestObject) (ListCloudAccountsResponseObject, error)
+	// CreateCloudAccount Store a cloud account (owner / admin / credential.manage)
+	// (POST /orgs/{orgId}/cloud-accounts)
+	CreateCloudAccount(ctx context.Context, request CreateCloudAccountRequestObject) (CreateCloudAccountResponseObject, error)
+	// DeleteCloudAccount Delete a cloud account (its secret is erased)
+	// (DELETE /orgs/{orgId}/cloud-accounts/{accountId})
+	DeleteCloudAccount(ctx context.Context, request DeleteCloudAccountRequestObject) (DeleteCloudAccountResponseObject, error)
+	// GetCloudAccount A cloud account and the devices it manages (never the secret)
+	// (GET /orgs/{orgId}/cloud-accounts/{accountId})
+	GetCloudAccount(ctx context.Context, request GetCloudAccountRequestObject) (GetCloudAccountResponseObject, error)
+	// UpdateCloudAccount Edit a cloud account; secret omitted = kept, empty = removed
+	// (PATCH /orgs/{orgId}/cloud-accounts/{accountId})
+	UpdateCloudAccount(ctx context.Context, request UpdateCloudAccountRequestObject) (UpdateCloudAccountResponseObject, error)
+	// RevealCloudAccount The password of a cloud account — same rules as credentials; audited
+	// (POST /orgs/{orgId}/cloud-accounts/{accountId}/reveal)
+	RevealCloudAccount(ctx context.Context, request RevealCloudAccountRequestObject) (RevealCloudAccountResponseObject, error)
 	// ListClusters Device clusters visible to the caller (ADR-027)
 	// (GET /orgs/{orgId}/clusters)
 	ListClusters(ctx context.Context, request ListClustersRequestObject) (ListClustersResponseObject, error)
@@ -27797,6 +29896,24 @@ type StrictServerInterface interface {
 	// UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
 	// (POST /orgs/{orgId}/contracts/{contractId}/files)
 	UploadContractFile(ctx context.Context, request UploadContractFileRequestObject) (UploadContractFileResponseObject, error)
+	// ListCredentials Device credentials of the organization (P2-02) — names, kinds, users, devices; never the secret
+	// (GET /orgs/{orgId}/credentials)
+	ListCredentials(ctx context.Context, request ListCredentialsRequestObject) (ListCredentialsResponseObject, error)
+	// CreateCredential Store a credential (owner / admin / credential.manage); the secret is envelope-encrypted
+	// (POST /orgs/{orgId}/credentials)
+	CreateCredential(ctx context.Context, request CreateCredentialRequestObject) (CreateCredentialResponseObject, error)
+	// DeleteCredential Delete a credential (its secret is erased)
+	// (DELETE /orgs/{orgId}/credentials/{credentialId})
+	DeleteCredential(ctx context.Context, request DeleteCredentialRequestObject) (DeleteCredentialResponseObject, error)
+	// GetCredential A credential and the devices using it (never the secret)
+	// (GET /orgs/{orgId}/credentials/{credentialId})
+	GetCredential(ctx context.Context, request GetCredentialRequestObject) (GetCredentialResponseObject, error)
+	// UpdateCredential Edit a credential; secret omitted = kept, empty = removed, new = rotated (last change today)
+	// (PATCH /orgs/{orgId}/credentials/{credentialId})
+	UpdateCredential(ctx context.Context, request UpdateCredentialRequestObject) (UpdateCredentialResponseObject, error)
+	// RevealCredential The secret, to show or copy — owner / admin / credential.reveal and MFA within 5 minutes; audited
+	// (POST /orgs/{orgId}/credentials/{credentialId}/reveal)
+	RevealCredential(ctx context.Context, request RevealCredentialRequestObject) (RevealCredentialResponseObject, error)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(ctx context.Context, request ListCustomFieldsRequestObject) (ListCustomFieldsResponseObject, error)
@@ -29142,6 +31259,192 @@ func (sh *strictHandler) PreviewCategoryUpdate(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// ListCloudAccounts operation middleware
+func (sh *strictHandler) ListCloudAccounts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCloudAccountsParams) {
+	var request ListCloudAccountsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCloudAccounts(ctx, request.(ListCloudAccountsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCloudAccounts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCloudAccountsResponseObject); ok {
+		if err := validResponse.VisitListCloudAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCloudAccount operation middleware
+func (sh *strictHandler) CreateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCloudAccountParams) {
+	var request CreateCloudAccountRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateCloudAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCloudAccount(ctx, request.(CreateCloudAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCloudAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCloudAccountResponseObject); ok {
+		if err := validResponse.VisitCreateCloudAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCloudAccount operation middleware
+func (sh *strictHandler) DeleteCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params DeleteCloudAccountParams) {
+	var request DeleteCloudAccountRequestObject
+
+	request.OrgId = orgId
+	request.AccountId = accountId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCloudAccount(ctx, request.(DeleteCloudAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCloudAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCloudAccountResponseObject); ok {
+		if err := validResponse.VisitDeleteCloudAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCloudAccount operation middleware
+func (sh *strictHandler) GetCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId) {
+	var request GetCloudAccountRequestObject
+
+	request.OrgId = orgId
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCloudAccount(ctx, request.(GetCloudAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCloudAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCloudAccountResponseObject); ok {
+		if err := validResponse.VisitGetCloudAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCloudAccount operation middleware
+func (sh *strictHandler) UpdateCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params UpdateCloudAccountParams) {
+	var request UpdateCloudAccountRequestObject
+
+	request.OrgId = orgId
+	request.AccountId = accountId
+	request.Params = params
+
+	var body UpdateCloudAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCloudAccount(ctx, request.(UpdateCloudAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCloudAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCloudAccountResponseObject); ok {
+		if err := validResponse.VisitUpdateCloudAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevealCloudAccount operation middleware
+func (sh *strictHandler) RevealCloudAccount(w http.ResponseWriter, r *http.Request, orgId OrgId, accountId CloudAccountId, params RevealCloudAccountParams) {
+	var request RevealCloudAccountRequestObject
+
+	request.OrgId = orgId
+	request.AccountId = accountId
+	request.Params = params
+
+	var body RevealCloudAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevealCloudAccount(ctx, request.(RevealCloudAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevealCloudAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevealCloudAccountResponseObject); ok {
+		if err := validResponse.VisitRevealCloudAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListClusters operation middleware
 func (sh *strictHandler) ListClusters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListClustersParams) {
 	var request ListClustersRequestObject
@@ -29499,6 +31802,192 @@ func (sh *strictHandler) UploadContractFile(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UploadContractFileResponseObject); ok {
 		if err := validResponse.VisitUploadContractFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCredentials operation middleware
+func (sh *strictHandler) ListCredentials(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListCredentialsParams) {
+	var request ListCredentialsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCredentials(ctx, request.(ListCredentialsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCredentials")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCredentialsResponseObject); ok {
+		if err := validResponse.VisitListCredentialsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCredential operation middleware
+func (sh *strictHandler) CreateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateCredentialParams) {
+	var request CreateCredentialRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateCredentialJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCredential(ctx, request.(CreateCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCredentialResponseObject); ok {
+		if err := validResponse.VisitCreateCredentialResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCredential operation middleware
+func (sh *strictHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params DeleteCredentialParams) {
+	var request DeleteCredentialRequestObject
+
+	request.OrgId = orgId
+	request.CredentialId = credentialId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCredential(ctx, request.(DeleteCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCredentialResponseObject); ok {
+		if err := validResponse.VisitDeleteCredentialResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCredential operation middleware
+func (sh *strictHandler) GetCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId) {
+	var request GetCredentialRequestObject
+
+	request.OrgId = orgId
+	request.CredentialId = credentialId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCredential(ctx, request.(GetCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCredentialResponseObject); ok {
+		if err := validResponse.VisitGetCredentialResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCredential operation middleware
+func (sh *strictHandler) UpdateCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params UpdateCredentialParams) {
+	var request UpdateCredentialRequestObject
+
+	request.OrgId = orgId
+	request.CredentialId = credentialId
+	request.Params = params
+
+	var body UpdateCredentialJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCredential(ctx, request.(UpdateCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCredentialResponseObject); ok {
+		if err := validResponse.VisitUpdateCredentialResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevealCredential operation middleware
+func (sh *strictHandler) RevealCredential(w http.ResponseWriter, r *http.Request, orgId OrgId, credentialId CredentialId, params RevealCredentialParams) {
+	var request RevealCredentialRequestObject
+
+	request.OrgId = orgId
+	request.CredentialId = credentialId
+	request.Params = params
+
+	var body RevealCredentialJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevealCredential(ctx, request.(RevealCredentialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevealCredential")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevealCredentialResponseObject); ok {
+		if err := validResponse.VisitRevealCredentialResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

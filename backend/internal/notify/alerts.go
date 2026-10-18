@@ -29,7 +29,7 @@ const DigestHour = 7
 const PassedWindowDays = 30
 
 // SMTPPasswordAAD binds the stored SMTP password ciphertext to its purpose.
-var SMTPPasswordAAD = []byte("smtp_settings.password")
+var SMTPPasswordAAD = secrets.SMTPPasswordAAD
 
 // Milestone is the milestone a date `days` away has reached: the smallest milestone ≥ days, 0 once it has passed;
 // false while it is further than every milestone.
@@ -57,6 +57,10 @@ func KindLabel(kind string) string {
 		return "Hãng ngừng hỗ trợ"
 	case "contract":
 		return "Hợp đồng hết hạn"
+	case "credential":
+		return "Đến hạn đổi mật khẩu"
+	case "cloud":
+		return "Tài khoản cloud hết hạn"
 	}
 	return kind
 }
@@ -64,12 +68,14 @@ func KindLabel(kind string) string {
 // DigestItem is one line of a digest: a device date, or a contract end (ContractID set; Hostname = contract name,
 // SiteCode = vendor).
 type DigestItem struct {
-	DeviceID   uuid.UUID
-	ContractID uuid.UUID
-	Hostname   string
-	SiteCode   string
-	Kind       string
-	Due        time.Time
+	DeviceID     uuid.UUID
+	ContractID   uuid.UUID
+	CredentialID uuid.UUID
+	CloudID      uuid.UUID
+	Hostname     string
+	SiteCode     string
+	Kind         string
+	Due          time.Time
 }
 
 // Digest renders the e-mail of an organization's new notifications.
@@ -103,6 +109,10 @@ func Digest(orgName string, orgID uuid.UUID, publicURL string, today time.Time, 
 		case base == "":
 		case it.ContractID != uuid.Nil:
 			link = fmt.Sprintf("%s/o/%s/contracts/%s", base, orgID, it.ContractID)
+		case it.CredentialID != uuid.Nil:
+			link = fmt.Sprintf("%s/o/%s/vault?credential=%s", base, orgID, it.CredentialID)
+		case it.CloudID != uuid.Nil:
+			link = fmt.Sprintf("%s/o/%s/vault?tab=cloud&account=%s", base, orgID, it.CloudID)
 		default:
 			link = fmt.Sprintf("%s/o/%s/devices/%s", base, orgID, it.DeviceID)
 		}
@@ -262,6 +272,36 @@ func raise(ctx context.Context, q *store.Queries, o store.AlertOrganizationsRow,
 			}
 		}
 	}
+	since := pgtype.Date{Time: today.AddDate(0, 0, -PassedWindowDays), Valid: true}
+	until := pgtype.Date{Time: today.AddDate(0, 0, int(horizon)), Valid: true}
+	if slices.Contains(o.Kinds, "credential") {
+		due, err := q.AlertCredentialCandidates(ctx, store.AlertCredentialCandidatesParams{OrganizationID: o.ID, Since: since, Until: until})
+		if err != nil {
+			return fmt.Errorf("credential candidates: %w", err)
+		}
+		for _, c := range due {
+			if m, ok := Milestone(int(c.Day.Time.Sub(today).Hours()/24), o.Milestones); ok {
+				if _, err := q.InsertCredentialNotification(ctx, store.InsertCredentialNotificationParams{OrganizationID: o.ID,
+					CredentialID: c.CredentialID, DueDate: c.Day, Milestone: m}); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+					return fmt.Errorf("insert credential notification: %w", err)
+				}
+			}
+		}
+	}
+	if slices.Contains(o.Kinds, "cloud") {
+		ends, err := q.AlertCloudCandidates(ctx, store.AlertCloudCandidatesParams{OrganizationID: o.ID, Since: since, Until: until})
+		if err != nil {
+			return fmt.Errorf("cloud candidates: %w", err)
+		}
+		for _, c := range ends {
+			if m, ok := Milestone(int(c.Day.Time.Sub(today).Hours()/24), o.Milestones); ok {
+				if _, err := q.InsertCloudNotification(ctx, store.InsertCloudNotificationParams{OrganizationID: o.ID,
+					CloudAccountID: c.CloudAccountID, DueDate: c.Day, Milestone: m}); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+					return fmt.Errorf("insert cloud notification: %w", err)
+				}
+			}
+		}
+	}
 	for _, c := range cands {
 		if !slices.Contains(o.Kinds, c.Kind) {
 			continue
@@ -294,6 +334,7 @@ func (r Runner) digest(ctx context.Context, q *store.Queries, o store.AlertOrgan
 		ids = append(ids, n.ID)
 		if n.Current && slices.Contains(o.Kinds, n.Kind) {
 			items = append(items, DigestItem{DeviceID: uuid.UUID(n.DeviceID.Bytes), ContractID: uuid.UUID(n.ContractID.Bytes),
+				CredentialID: uuid.UUID(n.CredentialID.Bytes), CloudID: uuid.UUID(n.CloudAccountID.Bytes),
 				Hostname: n.Title, SiteCode: n.Place, Kind: n.Kind, Due: n.DueDate.Time})
 		}
 	}

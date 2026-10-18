@@ -54,12 +54,40 @@ func ParseMasterKey(encoded string) ([]byte, error) {
 
 // NewKeyring wraps a 32-byte master key as version 1.
 func NewKeyring(master []byte) (*Keyring, error) {
+	return NewKeyringVersion(master, 1)
+}
+
+// NewKeyringVersion wraps a master key with its version (NTB_MASTER_KEY_VERSION; bumped by each rotation).
+func NewKeyringVersion(master []byte, version int16) (*Keyring, error) {
 	if len(master) != KeySize {
 		return nil, fmt.Errorf("master key must be %d bytes", KeySize)
 	}
+	if version < 1 {
+		return nil, fmt.Errorf("master key version must be ≥ 1, got %d", version)
+	}
 	k := make([]byte, KeySize)
 	copy(k, master)
-	return &Keyring{current: k, version: 1}, nil
+	return &Keyring{current: k, version: version}, nil
+}
+
+// Version is the master key version new secrets are wrapped with.
+func (k *Keyring) Version() int16 { return k.version }
+
+// Rewrap moves a secret from this keyring to next (master key rotation): only the data key is unwrapped and
+// wrapped again; the secret's ciphertext does not change and the plaintext is never handled.
+func (k *Keyring) Rewrap(s Sealed, aad []byte, next *Keyring) (Sealed, error) {
+	if s.KeyVersion != k.version {
+		return Sealed{}, ErrDecrypt
+	}
+	dek, err := gcmOpen(k.current, s.WrappedDEK, aad)
+	if err != nil {
+		return Sealed{}, ErrDecrypt
+	}
+	wrapped, err := gcmSeal(next.current, dek, aad)
+	if err != nil {
+		return Sealed{}, err
+	}
+	return Sealed{Ciphertext: s.Ciphertext, WrappedDEK: wrapped, KeyVersion: next.version}, nil
 }
 
 // Seal encrypts plaintext under a fresh DEK. aad binds the ciphertext to its context (e.g. "totp:<user id>")

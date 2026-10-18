@@ -25,7 +25,7 @@ import (
 // sendMail delivers e-mail (a fake in tests).
 var sendMail notify.Sender = notify.SendSMTP
 
-var defaultAlertKinds = []string{"warranty", "license", "eos", "contract"}
+var defaultAlertKinds = []string{"warranty", "license", "eos", "contract", "credential", "cloud"}
 
 func smtpView(row store.SmtpSetting) apigen.SmtpSettings {
 	return apigen.SmtpSettings{Host: row.Host, Port: int(row.Port), Security: apigen.SmtpSettingsSecurity(row.Security),
@@ -326,7 +326,8 @@ func (s *Server) ListNotifications(ctx context.Context, req apigen.ListNotificat
 			out.Unread++
 		}
 		out.Notifications = append(out.Notifications, apigen.Notification{Id: uuid.UUID(r.ID.Bytes), Kind: apigen.AlertKind(r.Kind),
-			DeviceId: optUUID(r.DeviceID), ContractId: optUUID(r.ContractID), Hostname: r.Title, SiteCode: r.Place,
+			DeviceId: optUUID(r.DeviceID), ContractId: optUUID(r.ContractID), CredentialId: optUUID(r.CredentialID),
+			CloudAccountId: optUUID(r.CloudAccountID), Hostname: r.Title, SiteCode: r.Place,
 			DueDate: *apiDate(r.DueDate), Milestone: int(r.Milestone), CreatedAt: r.CreatedAt.Time, Unread: unread})
 	}
 	return out, nil

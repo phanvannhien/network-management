@@ -37,7 +37,7 @@ RETURNING *;
 -- name: AlertOrganizations :many
 -- Live organizations with their alert settings (defaults when they never saved any).
 SELECT o.id, o.name, COALESCE(a.enabled, true)::boolean AS enabled,
-       COALESCE(a.kinds, '{warranty,license,eos,contract}')::text[] AS kinds,
+       COALESCE(a.kinds, '{warranty,license,eos,contract,credential,cloud}')::text[] AS kinds,
        COALESCE(a.milestones, '{90,60,30,7}')::integer[] AS milestones,
        COALESCE(a.email_admins, true)::boolean AS email_admins,
        COALESCE(a.extra_emails, '{}')::text[] AS extra_emails,
@@ -86,12 +86,43 @@ VALUES (@organization_id, 'contract', @contract_id, @due_date, @milestone)
 ON CONFLICT (organization_id, contract_id, due_date, milestone) WHERE contract_id IS NOT NULL DO NOTHING
 RETURNING id;
 
+-- name: AlertCredentialCandidates :many
+-- Credentials due for change (P2-02): last change + rotation period in [@since, @until].
+SELECT c.id AS credential_id, (c.last_rotated_on + c.rotate_days)::date AS day
+FROM credentials c
+WHERE c.organization_id = @organization_id AND c.deleted_at IS NULL AND c.rotate_days IS NOT NULL
+  AND c.last_rotated_on IS NOT NULL
+  AND c.last_rotated_on + c.rotate_days >= @since::date AND c.last_rotated_on + c.rotate_days <= @until::date;
+
+-- name: InsertCredentialNotification :one
+INSERT INTO notifications (organization_id, kind, credential_id, due_date, milestone)
+VALUES (@organization_id, 'credential', @credential_id, @due_date, @milestone)
+ON CONFLICT (organization_id, credential_id, due_date, milestone) WHERE credential_id IS NOT NULL DO NOTHING
+RETURNING id;
+
+-- name: AlertCloudCandidates :many
+-- Cloud accounts ending (P2-03) in [@since, @until].
+SELECT a.id AS cloud_account_id, a.expires_on::date AS day
+FROM cloud_accounts a
+WHERE a.organization_id = @organization_id AND a.deleted_at IS NULL AND a.expires_on IS NOT NULL
+  AND a.expires_on >= @since::date AND a.expires_on <= @until::date;
+
+-- name: InsertCloudNotification :one
+INSERT INTO notifications (organization_id, kind, cloud_account_id, due_date, milestone)
+VALUES (@organization_id, 'cloud', @cloud_account_id, @due_date, @milestone)
+ON CONFLICT (organization_id, cloud_account_id, due_date, milestone) WHERE cloud_account_id IS NOT NULL DO NOTHING
+RETURNING id;
+
 -- name: UnsentNotifications :many
 -- Notifications not e-mailed yet; current = the subject still counts (device: date unchanged, not muted, in use;
--- contract: live, end date unchanged). title / place: hostname and site, or contract name and vendor.
-SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id,
-       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place,
+-- contract / credential / cloud account: live, date unchanged). title / place: what and where to show.
+SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id, n.credential_id, n.cloud_account_id,
+       COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
+       COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place,
        (CASE WHEN n.contract_id IS NOT NULL THEN k.deleted_at IS NULL AND k.end_date IS NOT DISTINCT FROM n.due_date
+             WHEN n.credential_id IS NOT NULL THEN c.deleted_at IS NULL
+                  AND (c.last_rotated_on + c.rotate_days) IS NOT DISTINCT FROM n.due_date
+             WHEN n.cloud_account_id IS NOT NULL THEN a.deleted_at IS NULL AND a.expires_on IS NOT DISTINCT FROM n.due_date
              ELSE d.deleted_at IS NULL AND NOT d.alerts_muted AND d.lifecycle IN ('active', 'spare')
                   AND (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END)
                       IS NOT DISTINCT FROM n.due_date END)::boolean AS current
@@ -100,8 +131,10 @@ LEFT JOIN devices d ON d.id = n.device_id
 LEFT JOIN sites s ON s.id = d.site_id
 LEFT JOIN contracts k ON k.id = n.contract_id
 LEFT JOIN vendors v ON v.id = k.vendor_id
+LEFT JOIN credentials c ON c.id = n.credential_id
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id
 WHERE n.organization_id = @organization_id AND n.emailed_at IS NULL
-ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, '')), n.kind;
+ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, c.name, a.name, '')), n.kind;
 
 -- name: MarkNotificationsEmailed :exec
 UPDATE notifications SET emailed_at = now()
@@ -120,15 +153,19 @@ WHERE m.organization_id = @organization_id AND m.role IN ('owner', 'admin')
 ORDER BY lower(u.email::text);
 
 -- name: ListNotifications :many
--- The latest notifications of an organization for the bell: devices (live) and contracts (live).
-SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contract_id,
-       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place
+-- The latest notifications of an organization for the bell, of subjects still there.
+SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contract_id, n.credential_id, n.cloud_account_id,
+       COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
+       COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place
 FROM notifications n
 LEFT JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
 LEFT JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 LEFT JOIN contracts k ON k.id = n.contract_id AND k.deleted_at IS NULL
 LEFT JOIN vendors v ON v.id = k.vendor_id
-WHERE n.organization_id = @organization_id AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL)
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.deleted_at IS NULL
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.deleted_at IS NULL
+WHERE n.organization_id = @organization_id
+  AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL OR c.id IS NOT NULL OR a.id IS NOT NULL)
 ORDER BY n.created_at DESC, n.due_date
 LIMIT @lim;
 

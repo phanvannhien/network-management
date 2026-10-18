@@ -53,6 +53,33 @@ type Category struct {
 	Version        int32
 }
 
+type CloudAccount struct {
+	ID               pgtype.UUID
+	OrganizationID   pgtype.UUID
+	Provider         string
+	Name             string
+	PortalUrl        string
+	Username         string
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	MfaHolder        string
+	Plan             string
+	ExpiresOn        pgtype.Date
+	VendorID         pgtype.UUID
+	Notes            string
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	Version          int32
+	DeletedAt        pgtype.Timestamptz
+}
+
+type CloudAccountDevice struct {
+	OrganizationID pgtype.UUID
+	CloudAccountID pgtype.UUID
+	DeviceID       pgtype.UUID
+}
+
 type Contract struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -75,6 +102,31 @@ type ContractItem struct {
 	ContractID     pgtype.UUID
 	DeviceID       pgtype.UUID
 	LinkID         pgtype.UUID
+}
+
+type Credential struct {
+	ID               pgtype.UUID
+	OrganizationID   pgtype.UUID
+	Name             string
+	Kind             string
+	Username         string
+	SecretCiphertext []byte
+	SecretWrappedDek []byte
+	SecretKeyVersion pgtype.Int2
+	RotateDays       pgtype.Int4
+	LastRotatedOn    pgtype.Date
+	Notes            string
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	Version          int32
+	DeletedAt        pgtype.Timestamptz
+}
+
+type CredentialDevice struct {
+	OrganizationID pgtype.UUID
+	CredentialID   pgtype.UUID
+	DeviceID       pgtype.UUID
+	Purpose        string
 }
 
 type CustomFieldDef struct {
@@ -365,6 +417,8 @@ type Notification struct {
 	CreatedAt      pgtype.Timestamptz
 	EmailedAt      pgtype.Timestamptz
 	ContractID     pgtype.UUID
+	CredentialID   pgtype.UUID
+	CloudAccountID pgtype.UUID
 }
 
 type NotificationRead struct {

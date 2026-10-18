@@ -1,4 +1,4 @@
-import { History, KeyRound, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
+import { History, MoreHorizontal, Network, Pencil, Server } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -28,6 +28,7 @@ import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import { PhotoButton } from './PhotoDialog'
 import { useMuteAlerts } from '@/modules/alerts/alerts'
 import { DeviceContracts } from '@/modules/vendors/DeviceContracts'
+import { DeviceAccess } from '@/modules/vault/DeviceAccess'
 import {
   useCustomFields,
   useDeleteDevices,
@@ -330,7 +331,7 @@ export function DeviceDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="access" className="pt-3">
-          <Soon icon={<KeyRound />} text={t('devices.accessSoon')} />
+          <DeviceAccess orgId={orgId} deviceId={d.id} hostname={d.hostname} />
         </TabsContent>
         <TabsContent value="contracts" className="space-y-2 pt-3">
           <DeviceContracts

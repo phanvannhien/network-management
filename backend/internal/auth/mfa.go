@@ -65,7 +65,7 @@ type TOTPSetup struct {
 	QRDataURL  string // data:image/png;base64,...
 }
 
-func totpAAD(s Session) []byte { return []byte("totp:" + uuidString(s.UserID.Bytes)) }
+func totpAAD(s Session) []byte { return secrets.TOTPAAD(uuidString(s.UserID.Bytes)) }
 
 // SetupTOTP starts (or restarts) enrollment with a fresh seed, envelope-encrypted at rest.
 func (s *Service) SetupTOTP(ctx context.Context, sess Session, meta RequestMeta) (TOTPSetup, error) {

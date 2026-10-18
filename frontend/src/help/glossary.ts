@@ -138,6 +138,28 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'credential',
+    'device',
+    ['Mật khẩu thiết bị (credential)', 'Device credential'],
+    [
+      'Thông tin đăng nhập vào thiết bị: tài khoản + mật khẩu SSH / web / console, mật khẩu enable, chuỗi community SNMP, API token. Một credential có thể dùng cho nhiều thiết bị. Nên đặt chu kỳ đổi (vd 90 ngày) và tránh dùng chung một mật khẩu cho quá nhiều thiết bị — lộ một chỗ là lộ hết.',
+      'How to log in to a device: user + password for SSH / web / console, an enable password, an SNMP community, an API token. One credential may serve many devices. Set a change period (e.g. 90 days) and avoid one password on too many devices — one leak exposes them all.',
+    ],
+    [
+      'Admin SSH chung cho 20 switch chi nhánh, đổi mỗi 90 ngày.',
+      'One SSH admin for 20 branch switches, changed every 90 days.',
+    ],
+  ),
+  e(
+    'mfa-holder',
+    'org',
+    ['Người giữ MFA của tài khoản cloud', 'MFA holder of a cloud account'],
+    [
+      'Tài khoản cloud (FortiCloud, Meraki…) thường bật xác thực hai lớp: mã gửi về một điện thoại hay ứng dụng. Ghi rõ ai đang giữ thiết bị đó — khi người này nghỉ việc mà không bàn giao, công ty có thể mất quyền vào portal quản lý toàn bộ thiết bị.',
+      'Cloud accounts (FortiCloud, Meraki…) usually have two-factor login: codes go to one phone or app. Record who holds it — if that person leaves without handing over, the company can lose access to the portal managing every device.',
+    ],
+  ),
+  e(
     'sla',
     'org',
     ['SLA và hợp đồng hỗ trợ', 'SLA and support contracts'],

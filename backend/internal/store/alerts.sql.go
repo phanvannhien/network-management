@@ -93,6 +93,45 @@ func (q *Queries) AlertCandidates(ctx context.Context, arg AlertCandidatesParams
 	return items, nil
 }
 
+const alertCloudCandidates = `-- name: AlertCloudCandidates :many
+SELECT a.id AS cloud_account_id, a.expires_on::date AS day
+FROM cloud_accounts a
+WHERE a.organization_id = $1 AND a.deleted_at IS NULL AND a.expires_on IS NOT NULL
+  AND a.expires_on >= $2::date AND a.expires_on <= $3::date
+`
+
+type AlertCloudCandidatesParams struct {
+	OrganizationID pgtype.UUID
+	Since          pgtype.Date
+	Until          pgtype.Date
+}
+
+type AlertCloudCandidatesRow struct {
+	CloudAccountID pgtype.UUID
+	Day            pgtype.Date
+}
+
+// Cloud accounts ending (P2-03) in [@since, @until].
+func (q *Queries) AlertCloudCandidates(ctx context.Context, arg AlertCloudCandidatesParams) ([]AlertCloudCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, alertCloudCandidates, arg.OrganizationID, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AlertCloudCandidatesRow
+	for rows.Next() {
+		var i AlertCloudCandidatesRow
+		if err := rows.Scan(&i.CloudAccountID, &i.Day); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const alertContractCandidates = `-- name: AlertContractCandidates :many
 SELECT k.id AS contract_id, k.end_date::date AS day
 FROM contracts k
@@ -132,9 +171,49 @@ func (q *Queries) AlertContractCandidates(ctx context.Context, arg AlertContract
 	return items, nil
 }
 
+const alertCredentialCandidates = `-- name: AlertCredentialCandidates :many
+SELECT c.id AS credential_id, (c.last_rotated_on + c.rotate_days)::date AS day
+FROM credentials c
+WHERE c.organization_id = $1 AND c.deleted_at IS NULL AND c.rotate_days IS NOT NULL
+  AND c.last_rotated_on IS NOT NULL
+  AND c.last_rotated_on + c.rotate_days >= $2::date AND c.last_rotated_on + c.rotate_days <= $3::date
+`
+
+type AlertCredentialCandidatesParams struct {
+	OrganizationID pgtype.UUID
+	Since          pgtype.Date
+	Until          pgtype.Date
+}
+
+type AlertCredentialCandidatesRow struct {
+	CredentialID pgtype.UUID
+	Day          pgtype.Date
+}
+
+// Credentials due for change (P2-02): last change + rotation period in [@since, @until].
+func (q *Queries) AlertCredentialCandidates(ctx context.Context, arg AlertCredentialCandidatesParams) ([]AlertCredentialCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, alertCredentialCandidates, arg.OrganizationID, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AlertCredentialCandidatesRow
+	for rows.Next() {
+		var i AlertCredentialCandidatesRow
+		if err := rows.Scan(&i.CredentialID, &i.Day); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const alertOrganizations = `-- name: AlertOrganizations :many
 SELECT o.id, o.name, COALESCE(a.enabled, true)::boolean AS enabled,
-       COALESCE(a.kinds, '{warranty,license,eos,contract}')::text[] AS kinds,
+       COALESCE(a.kinds, '{warranty,license,eos,contract,credential,cloud}')::text[] AS kinds,
        COALESCE(a.milestones, '{90,60,30,7}')::integer[] AS milestones,
        COALESCE(a.email_admins, true)::boolean AS email_admins,
        COALESCE(a.extra_emails, '{}')::text[] AS extra_emails,
@@ -292,6 +371,32 @@ func (q *Queries) InsertAlertSettings(ctx context.Context, arg InsertAlertSettin
 	return i, err
 }
 
+const insertCloudNotification = `-- name: InsertCloudNotification :one
+INSERT INTO notifications (organization_id, kind, cloud_account_id, due_date, milestone)
+VALUES ($1, 'cloud', $2, $3, $4)
+ON CONFLICT (organization_id, cloud_account_id, due_date, milestone) WHERE cloud_account_id IS NOT NULL DO NOTHING
+RETURNING id
+`
+
+type InsertCloudNotificationParams struct {
+	OrganizationID pgtype.UUID
+	CloudAccountID pgtype.UUID
+	DueDate        pgtype.Date
+	Milestone      int32
+}
+
+func (q *Queries) InsertCloudNotification(ctx context.Context, arg InsertCloudNotificationParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, insertCloudNotification,
+		arg.OrganizationID,
+		arg.CloudAccountID,
+		arg.DueDate,
+		arg.Milestone,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const insertContractNotification = `-- name: InsertContractNotification :one
 INSERT INTO notifications (organization_id, kind, contract_id, due_date, milestone)
 VALUES ($1, 'contract', $2, $3, $4)
@@ -310,6 +415,32 @@ func (q *Queries) InsertContractNotification(ctx context.Context, arg InsertCont
 	row := q.db.QueryRow(ctx, insertContractNotification,
 		arg.OrganizationID,
 		arg.ContractID,
+		arg.DueDate,
+		arg.Milestone,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertCredentialNotification = `-- name: InsertCredentialNotification :one
+INSERT INTO notifications (organization_id, kind, credential_id, due_date, milestone)
+VALUES ($1, 'credential', $2, $3, $4)
+ON CONFLICT (organization_id, credential_id, due_date, milestone) WHERE credential_id IS NOT NULL DO NOTHING
+RETURNING id
+`
+
+type InsertCredentialNotificationParams struct {
+	OrganizationID pgtype.UUID
+	CredentialID   pgtype.UUID
+	DueDate        pgtype.Date
+	Milestone      int32
+}
+
+func (q *Queries) InsertCredentialNotification(ctx context.Context, arg InsertCredentialNotificationParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, insertCredentialNotification,
+		arg.OrganizationID,
+		arg.CredentialID,
 		arg.DueDate,
 		arg.Milestone,
 	)
@@ -347,14 +478,18 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 }
 
 const listNotifications = `-- name: ListNotifications :many
-SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contract_id,
-       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place
+SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contract_id, n.credential_id, n.cloud_account_id,
+       COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
+       COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place
 FROM notifications n
 LEFT JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
 LEFT JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
 LEFT JOIN contracts k ON k.id = n.contract_id AND k.deleted_at IS NULL
 LEFT JOIN vendors v ON v.id = k.vendor_id
-WHERE n.organization_id = $1 AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL)
+LEFT JOIN credentials c ON c.id = n.credential_id AND c.deleted_at IS NULL
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id AND a.deleted_at IS NULL
+WHERE n.organization_id = $1
+  AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL OR c.id IS NOT NULL OR a.id IS NOT NULL)
 ORDER BY n.created_at DESC, n.due_date
 LIMIT $2
 `
@@ -365,18 +500,20 @@ type ListNotificationsParams struct {
 }
 
 type ListNotificationsRow struct {
-	ID         pgtype.UUID
-	Kind       string
-	DueDate    pgtype.Date
-	Milestone  int32
-	CreatedAt  pgtype.Timestamptz
-	DeviceID   pgtype.UUID
-	ContractID pgtype.UUID
-	Title      string
-	Place      string
+	ID             pgtype.UUID
+	Kind           string
+	DueDate        pgtype.Date
+	Milestone      int32
+	CreatedAt      pgtype.Timestamptz
+	DeviceID       pgtype.UUID
+	ContractID     pgtype.UUID
+	CredentialID   pgtype.UUID
+	CloudAccountID pgtype.UUID
+	Title          string
+	Place          string
 }
 
-// The latest notifications of an organization for the bell: devices (live) and contracts (live).
+// The latest notifications of an organization for the bell, of subjects still there.
 func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error) {
 	rows, err := q.db.Query(ctx, listNotifications, arg.OrganizationID, arg.Lim)
 	if err != nil {
@@ -394,6 +531,8 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 			&i.CreatedAt,
 			&i.DeviceID,
 			&i.ContractID,
+			&i.CredentialID,
+			&i.CloudAccountID,
 			&i.Title,
 			&i.Place,
 		); err != nil {
@@ -538,9 +677,13 @@ func (q *Queries) SetDeviceAlertsMuted(ctx context.Context, arg SetDeviceAlertsM
 }
 
 const unsentNotifications = `-- name: UnsentNotifications :many
-SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id,
-       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place,
+SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id, n.credential_id, n.cloud_account_id,
+       COALESCE(d.hostname, k.name, c.name, a.name, '')::text AS title,
+       COALESCE(s.code::text, v.name, c.kind, a.provider, '')::text AS place,
        (CASE WHEN n.contract_id IS NOT NULL THEN k.deleted_at IS NULL AND k.end_date IS NOT DISTINCT FROM n.due_date
+             WHEN n.credential_id IS NOT NULL THEN c.deleted_at IS NULL
+                  AND (c.last_rotated_on + c.rotate_days) IS NOT DISTINCT FROM n.due_date
+             WHEN n.cloud_account_id IS NOT NULL THEN a.deleted_at IS NULL AND a.expires_on IS NOT DISTINCT FROM n.due_date
              ELSE d.deleted_at IS NULL AND NOT d.alerts_muted AND d.lifecycle IN ('active', 'spare')
                   AND (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END)
                       IS NOT DISTINCT FROM n.due_date END)::boolean AS current
@@ -549,24 +692,28 @@ LEFT JOIN devices d ON d.id = n.device_id
 LEFT JOIN sites s ON s.id = d.site_id
 LEFT JOIN contracts k ON k.id = n.contract_id
 LEFT JOIN vendors v ON v.id = k.vendor_id
+LEFT JOIN credentials c ON c.id = n.credential_id
+LEFT JOIN cloud_accounts a ON a.id = n.cloud_account_id
 WHERE n.organization_id = $1 AND n.emailed_at IS NULL
-ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, '')), n.kind
+ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, c.name, a.name, '')), n.kind
 `
 
 type UnsentNotificationsRow struct {
-	ID         pgtype.UUID
-	Kind       string
-	DueDate    pgtype.Date
-	Milestone  int32
-	DeviceID   pgtype.UUID
-	ContractID pgtype.UUID
-	Title      string
-	Place      string
-	Current    bool
+	ID             pgtype.UUID
+	Kind           string
+	DueDate        pgtype.Date
+	Milestone      int32
+	DeviceID       pgtype.UUID
+	ContractID     pgtype.UUID
+	CredentialID   pgtype.UUID
+	CloudAccountID pgtype.UUID
+	Title          string
+	Place          string
+	Current        bool
 }
 
 // Notifications not e-mailed yet; current = the subject still counts (device: date unchanged, not muted, in use;
-// contract: live, end date unchanged). title / place: hostname and site, or contract name and vendor.
+// contract / credential / cloud account: live, date unchanged). title / place: what and where to show.
 func (q *Queries) UnsentNotifications(ctx context.Context, organizationID pgtype.UUID) ([]UnsentNotificationsRow, error) {
 	rows, err := q.db.Query(ctx, unsentNotifications, organizationID)
 	if err != nil {
@@ -583,6 +730,8 @@ func (q *Queries) UnsentNotifications(ctx context.Context, organizationID pgtype
 			&i.Milestone,
 			&i.DeviceID,
 			&i.ContractID,
+			&i.CredentialID,
+			&i.CloudAccountID,
 			&i.Title,
 			&i.Place,
 			&i.Current,

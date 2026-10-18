@@ -11,8 +11,10 @@ import (
 )
 
 type Querier interface {
+	AddCloudAccountDevices(ctx context.Context, arg AddCloudAccountDevicesParams) error
 	AddContractDevices(ctx context.Context, arg AddContractDevicesParams) error
 	AddContractLinks(ctx context.Context, arg AddContractLinksParams) error
+	AddCredentialDevices(ctx context.Context, arg AddCredentialDevicesParams) error
 	AddMembership(ctx context.Context, arg AddMembershipParams) (Membership, error)
 	AddMembershipWithPermissions(ctx context.Context, arg AddMembershipWithPermissionsParams) (Membership, error)
 	// Every holder of a host address in a VRF: interface / NAT addresses of live devices, cluster shared IPs (VRF ''),
@@ -27,15 +29,24 @@ type Querier interface {
 	// Dates of devices in use (or spare) of an organization up to @until; muted devices and retired / planned ones are
 	// left out, like the dashboard's expiry block.
 	AlertCandidates(ctx context.Context, arg AlertCandidatesParams) ([]AlertCandidatesRow, error)
+	// Cloud accounts ending (P2-03) in [@since, @until].
+	AlertCloudCandidates(ctx context.Context, arg AlertCloudCandidatesParams) ([]AlertCloudCandidatesRow, error)
 	// End dates of live contracts (P2-04) in [@since, @until].
 	AlertContractCandidates(ctx context.Context, arg AlertContractCandidatesParams) ([]AlertContractCandidatesRow, error)
+	// Credentials due for change (P2-02): last change + rotation period in [@since, @until].
+	AlertCredentialCandidates(ctx context.Context, arg AlertCredentialCandidatesParams) ([]AlertCredentialCandidatesRow, error)
 	// Live organizations with their alert settings (defaults when they never saved any).
 	AlertOrganizations(ctx context.Context) ([]AlertOrganizationsRow, error)
+	AllSealedCloudAccounts(ctx context.Context) ([]AllSealedCloudAccountsRow, error)
+	// Master key rotation (ntb rotate-master-key): every stored secret of the installation, across organizations.
+	AllSealedCredentials(ctx context.Context) ([]AllSealedCredentialsRow, error)
+	AllSealedTOTP(ctx context.Context) ([]AllSealedTOTPRow, error)
 	CategoryPath(ctx context.Context, id pgtype.UUID) (string, error)
 	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
 	ClearDeviceSupplier(ctx context.Context, arg ClearDeviceSupplierParams) error
+	CloudAccountDevices(ctx context.Context, arg CloudAccountDevicesParams) ([]CloudAccountDevicesRow, error)
 	ContractItems(ctx context.Context, arg ContractItemsParams) ([]ContractItemsRow, error)
 	// Many ports of one device in one round trip (a .ntb.json import of a new device); the caller reads the ids back.
 	CopyInterfaces(ctx context.Context, arg []CopyInterfacesParams) (int64, error)
@@ -48,6 +59,7 @@ type Querier interface {
 	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
 	CountLinksInOrg(ctx context.Context, arg CountLinksInOrgParams) (int64, error)
 	CountLiveContractsOfVendor(ctx context.Context, arg CountLiveContractsOfVendorParams) (int64, error)
+	CountLiveDevicesIn(ctx context.Context, arg CountLiveDevicesInParams) (int64, error)
 	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
 	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
@@ -60,8 +72,10 @@ type Querier interface {
 	CountUnusedRecoveryCodes(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
+	CreateCloudAccount(ctx context.Context, arg CreateCloudAccountParams) (CreateCloudAccountRow, error)
 	CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error)
 	CreateContract(ctx context.Context, arg CreateContractParams) (Contract, error)
+	CreateCredential(ctx context.Context, arg CreateCredentialParams) (CreateCredentialRow, error)
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
@@ -89,6 +103,7 @@ type Querier interface {
 	CreateVendor(ctx context.Context, arg CreateVendorParams) (Vendor, error)
 	CreateVendorContact(ctx context.Context, arg CreateVendorContactParams) (VendorContact, error)
 	CreateVlan(ctx context.Context, arg CreateVlanParams) (pgtype.UUID, error)
+	CredentialDevices(ctx context.Context, arg CredentialDevicesParams) ([]CredentialDevicesRow, error)
 	// Dashboard (P1-24, SRS §2, DESIGN.md §7c): figures and org-wide problems. Every query takes organization_id and the
 	// topbar category (NULL = whole organization; a category includes its subtree, ADR-032).
 	DashboardBySite(ctx context.Context, arg DashboardBySiteParams) ([]DashboardBySiteRow, error)
@@ -116,9 +131,11 @@ type Querier interface {
 	// DHCP pool hands its addresses out, they are not free). The API keeps those ≥ 90 % full.
 	DashboardSubnets(ctx context.Context, arg DashboardSubnetsParams) ([]DashboardSubnetsRow, error)
 	DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error)
+	DeleteCloudAccountDevices(ctx context.Context, arg DeleteCloudAccountDevicesParams) error
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
 	DeleteContractFiles(ctx context.Context, arg DeleteContractFilesParams) ([]DeleteContractFilesRow, error)
 	DeleteContractItems(ctx context.Context, arg DeleteContractItemsParams) error
+	DeleteCredentialDevices(ctx context.Context, arg DeleteCredentialDevicesParams) error
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
 	DeleteDiagram(ctx context.Context, arg DeleteDiagramParams) (int64, error)
@@ -160,8 +177,12 @@ type Querier interface {
 	FindTemplateForCatalog(ctx context.Context, arg FindTemplateForCatalogParams) (DeviceTemplate, error)
 	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
+	GetCloudAccountMeta(ctx context.Context, arg GetCloudAccountMetaParams) (GetCloudAccountMetaRow, error)
+	GetCloudAccountSecret(ctx context.Context, arg GetCloudAccountSecretParams) (GetCloudAccountSecretRow, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
 	GetContract(ctx context.Context, arg GetContractParams) (Contract, error)
+	GetCredentialMeta(ctx context.Context, arg GetCredentialMetaParams) (GetCredentialMetaRow, error)
+	GetCredentialSecret(ctx context.Context, arg GetCredentialSecretParams) (GetCredentialSecretRow, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
@@ -217,7 +238,9 @@ type Querier interface {
 	// First save of an organization that still had the defaults (no row); nothing back = someone saved meanwhile.
 	InsertAlertSettings(ctx context.Context, arg InsertAlertSettingsParams) (AlertSetting, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	InsertCloudNotification(ctx context.Context, arg InsertCloudNotificationParams) (pgtype.UUID, error)
 	InsertContractNotification(ctx context.Context, arg InsertContractNotificationParams) (pgtype.UUID, error)
+	InsertCredentialNotification(ctx context.Context, arg InsertCredentialNotificationParams) (pgtype.UUID, error)
 	InsertNotification(ctx context.Context, arg InsertNotificationParams) (pgtype.UUID, error)
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
@@ -225,6 +248,7 @@ type Querier interface {
 	LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error)
 	// Category tree (P1-27, ADR-032). Every query takes organization_id.
 	ListCategories(ctx context.Context, organizationID pgtype.UUID) ([]ListCategoriesRow, error)
+	ListCloudAccounts(ctx context.Context, arg ListCloudAccountsParams) ([]ListCloudAccountsRow, error)
 	ListClusterMembers(ctx context.Context, arg ListClusterMembersParams) ([]ListClusterMembersRow, error)
 	// Device clusters (P1-09b, ADR-027). Every query takes organization_id.
 	ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error)
@@ -232,6 +256,9 @@ type Querier interface {
 	ListContractFiles(ctx context.Context, arg ListContractFilesParams) ([]ListContractFilesRow, error)
 	// Live contracts, optionally of one vendor / covering one device or link / ending by a date.
 	ListContracts(ctx context.Context, arg ListContractsParams) ([]ListContractsRow, error)
+	// Device credentials and cloud accounts (P2-02 / P2-03, ADR-045). Every query is scoped to @organization_id.
+	// List / detail queries never select the secret columns; only the *Secret queries (reveal, rotation) do.
+	ListCredentials(ctx context.Context, arg ListCredentialsParams) ([]ListCredentialsRow, error)
 	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
 	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
 	ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryParams) ([]ListDeviceHistoryRow, error)
@@ -263,7 +290,7 @@ type Querier interface {
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
 	ListMyOrganizations(ctx context.Context, userID pgtype.UUID) ([]ListMyOrganizationsRow, error)
-	// The latest notifications of an organization for the bell: devices (live) and contracts (live).
+	// The latest notifications of an organization for the bell, of subjects still there.
 	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
@@ -326,9 +353,14 @@ type Querier interface {
 	RecordLoginFailure(ctx context.Context, arg RecordLoginFailureParams) (RecordLoginFailureRow, error)
 	ResetLoginFailures(ctx context.Context, id pgtype.UUID) error
 	ResetUserMFA(ctx context.Context, userID pgtype.UUID) error
+	RewrapCloudAccount(ctx context.Context, arg RewrapCloudAccountParams) (int64, error)
+	RewrapCredential(ctx context.Context, arg RewrapCredentialParams) (int64, error)
+	RewrapSmtpPassword(ctx context.Context, arg RewrapSmtpPasswordParams) (int64, error)
+	RewrapTOTP(ctx context.Context, arg RewrapTOTPParams) (int64, error)
 	SaveDiagramView(ctx context.Context, arg SaveDiagramViewParams) (int32, error)
 	// keep_password leaves the stored password as it is; otherwise the given one (NULL clears it) replaces it.
 	SaveSmtpSettings(ctx context.Context, arg SaveSmtpSettingsParams) (SmtpSetting, error)
+	SealedSmtpPassword(ctx context.Context) ([]SealedSmtpPasswordRow, error)
 	// Live members of the clusters: a cluster is drawn through its members.
 	SearchClusterMembers(ctx context.Context, arg SearchClusterMembersParams) ([]SearchClusterMembersRow, error)
 	// Stacks / HA pairs / VCs by name or hostname (their VIP is found by SearchIPs).
@@ -345,6 +377,8 @@ type Querier interface {
 	// Interfaces and endpoint group members by MAC, compared as bare hex (any of aa:bb:cc…, aabb.cc…, aa-bb-cc…).
 	// For a group member: hostname = the member's name, interface_name = the group's name.
 	SearchMACs(ctx context.Context, arg SearchMACsParams) ([]SearchMACsRow, error)
+	// Master key versions in use, across every table holding a sealed secret (startup check, rotation).
+	SecretKeyVersions(ctx context.Context) ([]int16, error)
 	// Live, not retired devices with this serial (trimmed, case-insensitive).
 	SerialHolders(ctx context.Context, arg SerialHoldersParams) ([]SerialHoldersRow, error)
 	SetAlertDigestDay(ctx context.Context, arg SetAlertDigestDayParams) error
@@ -366,7 +400,10 @@ type Querier interface {
 	SiteGraphSites(ctx context.Context, arg SiteGraphSitesParams) ([]SiteGraphSitesRow, error)
 	// The site's lines to an ISP: links between a device of the site and a provider cloud.
 	SiteGraphWan(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphWanRow, error)
+	SoftDeleteCloudAccount(ctx context.Context, arg SoftDeleteCloudAccountParams) (int64, error)
 	SoftDeleteContract(ctx context.Context, arg SoftDeleteContractParams) (int64, error)
+	// The secret is dropped with it: a deleted credential keeps no password.
+	SoftDeleteCredential(ctx context.Context, arg SoftDeleteCredentialParams) (int64, error)
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) (int64, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
@@ -375,12 +412,15 @@ type Querier interface {
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
 	// Notifications not e-mailed yet; current = the subject still counts (device: date unchanged, not muted, in use;
-	// contract: live, end date unchanged). title / place: hostname and site, or contract name and vendor.
+	// contract / credential / cloud account: live, date unchanged). title / place: what and where to show.
 	UnsentNotifications(ctx context.Context, organizationID pgtype.UUID) ([]UnsentNotificationsRow, error)
 	UpdateAlertSettingsVersioned(ctx context.Context, arg UpdateAlertSettingsVersionedParams) (AlertSetting, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (int64, error)
+	UpdateCloudAccount(ctx context.Context, arg UpdateCloudAccountParams) (UpdateCloudAccountRow, error)
 	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)
 	UpdateContract(ctx context.Context, arg UpdateContractParams) (Contract, error)
+	// keep_secret leaves the stored secret; otherwise the given one (NULL clears it) replaces it.
+	UpdateCredential(ctx context.Context, arg UpdateCredentialParams) (UpdateCredentialRow, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)

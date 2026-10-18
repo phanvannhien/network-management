@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   MapPin,
   Handshake,
+  KeyRound,
   Hash,
   Network,
   LayoutTemplate,
@@ -444,6 +445,7 @@ export function OrgShell() {
         { to: `${base}/ipam`, label: t('nav.ipam'), icon: Hash },
         { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
         { to: `${base}/vendors`, label: t('nav.vendors'), icon: Handshake },
+        { to: `${base}/vault`, label: t('nav.vault'), icon: KeyRound },
       ],
     },
     {

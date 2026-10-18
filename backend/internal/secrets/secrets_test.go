@@ -81,3 +81,32 @@ func TestParseMasterKey(t *testing.T) {
 		}
 	}
 }
+
+func TestRewrapMovesToTheNextKey(t *testing.T) {
+	old := testKeyring(t)
+	next, err := NewKeyringVersion(bytes.Repeat([]byte{9}, KeySize), 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	aad := []byte("credential:1")
+	sealed, err := old.Seal([]byte("s3cret"), aad)
+	if err != nil {
+		t.Fatal(err)
+	}
+	moved, err := old.Rewrap(sealed, aad, next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if moved.KeyVersion != 2 || !bytes.Equal(moved.Ciphertext, sealed.Ciphertext) {
+		t.Fatalf("rewrapped: %+v", moved)
+	}
+	if pt, err := next.Open(moved, aad); err != nil || string(pt) != "s3cret" {
+		t.Fatalf("open with the new key: %q %v", pt, err)
+	}
+	if _, err := old.Open(moved, aad); err == nil {
+		t.Error("the old key still opens it")
+	}
+	if _, err := old.Rewrap(sealed, []byte("credential:2"), next); err == nil {
+		t.Error("rewrap with another row's aad")
+	}
+}
