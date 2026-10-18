@@ -62,6 +62,15 @@ const DeviceImportPage = lazy(() =>
 const TemplatesPage = lazy(() =>
   import('./modules/inventory/TemplatesPage').then((m) => ({ default: m.TemplatesPage })),
 )
+const VendorsPage = lazy(() =>
+  import('./modules/vendors/VendorsPage').then((m) => ({ default: m.VendorsPage })),
+)
+const VendorDetailPage = lazy(() =>
+  import('./modules/vendors/VendorDetailPage').then((m) => ({ default: m.VendorDetailPage })),
+)
+const ContractPage = lazy(() =>
+  import('./modules/vendors/ContractPage').then((m) => ({ default: m.ContractPage })),
+)
 const AlertSettingsPage = lazy(() =>
   import('./modules/alerts/AlertSettingsPage').then((m) => ({ default: m.AlertSettingsPage })),
 )
@@ -122,6 +131,9 @@ export function AppRoutes() {
         <Route path="glossary" element={<GlossaryPage />} />
         <Route path="custom-fields" element={<CustomFieldsPage />} />
         <Route path="alerts" element={<AlertSettingsPage />} />
+        <Route path="vendors" element={<VendorsPage />} />
+        <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
+        <Route path="contracts/:contractId" element={<ContractPage />} />
         <Route path="*" element={<NotFoundPage inShell />} />
       </Route>
       <Route path="/admin" element={guard(<SystemShell />)}>

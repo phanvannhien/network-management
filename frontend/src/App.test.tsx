@@ -3299,3 +3299,73 @@ describe('expiry alerts (P2-05)', () => {
     )
   })
 })
+
+describe('vendors & contracts (P2-04)', () => {
+  const VENDOR = {
+    id: 'v1',
+    kind: 'isp',
+    name: 'FPT Telecom',
+    taxCode: '',
+    website: '',
+    supportPhone: '1900 6600',
+    supportEmail: '',
+    supportPortal: '',
+    notes: '',
+    contactCount: 1,
+    contractCount: 1,
+    nextEnd: '2026-12-31',
+    version: 1,
+  }
+
+  it('lists vendors with a callable hotline and saves a new contract', async () => {
+    const calls = fakeApi({
+      'GET /api/auth/me': () => json(SESSION),
+      [`GET /api/orgs/${ORG_ID}/vendors`]: () => json({ vendors: [VENDOR] }),
+      [`GET /api/orgs/${ORG_ID}/notifications`]: () => json({ notifications: [], unread: 0 }),
+      [`POST /api/orgs/${ORG_ID}/contracts`]: () =>
+        json(
+          {
+            contract: { id: 'k1', name: 'Leased line' },
+            devices: [],
+            hiddenDevices: 0,
+            links: [],
+            files: [],
+            contacts: [],
+          },
+          201,
+        ),
+      [`GET /api/orgs/${ORG_ID}/contracts/k1`]: () => new Response('', { status: 404 }),
+    })
+    renderAt(`/o/${ORG_ID}/vendors`)
+    expect(await screen.findByRole('link', { name: 'FPT Telecom' })).toHaveAttribute(
+      'href',
+      `/o/${ORG_ID}/vendors/v1`,
+    )
+    expect(screen.getByRole('link', { name: '1900 6600' })).toHaveAttribute('href', 'tel:1900 6600')
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm hợp đồng' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Thêm hợp đồng' })
+    await within(dialog).findByRole('option', { name: 'FPT Telecom' })
+    fireEvent.change(within(dialog).getByLabelText(/Nhà cung cấp/), { target: { value: 'v1' } })
+    fireEvent.change(within(dialog).getByLabelText('Loại', { exact: true }), {
+      target: { value: 'isp' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/Tên hợp đồng/), {
+      target: { value: 'Leased line' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/Ngày hết hạn/), {
+      target: { value: '2027-03-31' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu' }))
+    const post = (r: Request) => r.method === 'POST' && r.url.endsWith('/contracts')
+    await waitFor(() => expect(calls.some(post)).toBe(true))
+    expect(await calls.find(post)!.clone().json()).toMatchObject({
+      vendorId: 'v1',
+      kind: 'isp',
+      name: 'Leased line',
+      endDate: '2027-03-31',
+      startDate: null,
+      deviceIds: [],
+      linkIds: [],
+    })
+  })
+})

@@ -138,6 +138,19 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
   ),
   e(
+    'sla',
+    'org',
+    ['SLA và hợp đồng hỗ trợ', 'SLA and support contracts'],
+    [
+      'SLA (Service Level Agreement) là cam kết của bên cung cấp: phản hồi trong bao lâu, khắc phục / thay thiết bị trong bao lâu, hỗ trợ giờ nào. Hợp đồng hỗ trợ của hãng (Cisco SmartNet, Fortinet FortiCare) cho quyền mở ticket kỹ thuật, nhận bản cập nhật và thay phần cứng hỏng; license / subscription (FortiGuard, Cisco DNA, Meraki) là gói tính năng có hạn — hết hạn là mất tính năng hoặc mất cập nhật bảo mật.',
+      'An SLA (Service Level Agreement) is what the provider commits to: response time, fix / replacement time, support hours. A vendor support contract (Cisco SmartNet, Fortinet FortiCare) gives technical cases, updates and hardware replacement; a license / subscription (FortiGuard, Cisco DNA, Meraki) is a time-limited feature set — when it ends, features or security updates stop.',
+    ],
+    [
+      'SmartNet 8x5xNBD: hỗ trợ giờ hành chính, thay thiết bị ngày làm việc kế tiếp. 24x7x4: mọi lúc, thay trong 4 giờ.',
+      'SmartNet 8x5xNBD: business hours, replacement next business day. 24x7x4: any time, replacement within 4 hours.',
+    ],
+  ),
+  e(
     'smtp',
     'org',
     ['SMTP (máy chủ gửi email)', 'SMTP (mail server)'],

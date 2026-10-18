@@ -12,11 +12,11 @@ import (
 // testdataDir is the repo-root /testdata, resolved relative to this file.
 const testdataDir = "../../../testdata"
 
-// TestRoundTripWithTestdata unmarshals every file in /testdata and re-marshals it,
+// TestRoundTripWithTestdata unmarshals every v1 sample in /testdata/legacy and re-marshals it,
 // requiring the result to be byte-identical to the input (modulo key order and
 // trailing newline). This keeps the Go structs in sync with ntb.schema.json.
 func TestRoundTripWithTestdata(t *testing.T) {
-	files, err := filepath.Glob(filepath.Join(testdataDir, "*.ntb.json"))
+	files, err := filepath.Glob(filepath.Join(testdataDir, "legacy", "*.ntb.json"))
 	if err != nil {
 		t.Fatalf("glob testdata: %v", err)
 	}

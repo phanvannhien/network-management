@@ -11,6 +11,8 @@ import (
 )
 
 type Querier interface {
+	AddContractDevices(ctx context.Context, arg AddContractDevicesParams) error
+	AddContractLinks(ctx context.Context, arg AddContractLinksParams) error
 	AddMembership(ctx context.Context, arg AddMembershipParams) (Membership, error)
 	AddMembershipWithPermissions(ctx context.Context, arg AddMembershipWithPermissionsParams) (Membership, error)
 	// Every holder of a host address in a VRF: interface / NAT addresses of live devices, cluster shared IPs (VRF ''),
@@ -25,20 +27,27 @@ type Querier interface {
 	// Dates of devices in use (or spare) of an organization up to @until; muted devices and retired / planned ones are
 	// left out, like the dashboard's expiry block.
 	AlertCandidates(ctx context.Context, arg AlertCandidatesParams) ([]AlertCandidatesRow, error)
+	// End dates of live contracts (P2-04) in [@since, @until].
+	AlertContractCandidates(ctx context.Context, arg AlertContractCandidatesParams) ([]AlertContractCandidatesRow, error)
 	// Live organizations with their alert settings (defaults when they never saved any).
 	AlertOrganizations(ctx context.Context) ([]AlertOrganizationsRow, error)
 	CategoryPath(ctx context.Context, id pgtype.UUID) (string, error)
 	CategorySubtree(ctx context.Context, id pgtype.UUID) ([]pgtype.UUID, error)
 	// Atomically accepts a time step only if it is newer than the last one used (blocks code replay).
 	ClaimTOTPStep(ctx context.Context, arg ClaimTOTPStepParams) (int64, error)
+	ClearDeviceSupplier(ctx context.Context, arg ClearDeviceSupplierParams) error
+	ContractItems(ctx context.Context, arg ContractItemsParams) ([]ContractItemsRow, error)
 	// Many ports of one device in one round trip (a .ntb.json import of a new device); the caller reads the ids back.
 	CopyInterfaces(ctx context.Context, arg []CopyInterfacesParams) (int64, error)
 	CountActiveSystemAdmins(ctx context.Context) (int64, error)
+	CountContractFiles(ctx context.Context, arg CountContractFilesParams) (int64, error)
 	CountDevices(ctx context.Context, arg CountDevicesParams) (int64, error)
 	CountEndpointGroupsInSite(ctx context.Context, arg CountEndpointGroupsInSiteParams) (int64, error)
 	// Live devices with the same hostname, other than the device itself and other members of its cluster.
 	CountHostnameConflicts(ctx context.Context, arg CountHostnameConflictsParams) (int64, error)
 	CountInterfaceIPs(ctx context.Context, arg CountInterfaceIPsParams) (int64, error)
+	CountLinksInOrg(ctx context.Context, arg CountLinksInOrgParams) (int64, error)
+	CountLiveContractsOfVendor(ctx context.Context, arg CountLiveContractsOfVendorParams) (int64, error)
 	CountLiveDevicesInLocation(ctx context.Context, arg CountLiveDevicesInLocationParams) (int64, error)
 	CountLiveDevicesInRack(ctx context.Context, arg CountLiveDevicesInRackParams) (int64, error)
 	CountLiveDevicesInSite(ctx context.Context, arg CountLiveDevicesInSiteParams) (int64, error)
@@ -52,12 +61,14 @@ type Querier interface {
 	CountUserMemberships(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateCluster(ctx context.Context, arg CreateClusterParams) (pgtype.UUID, error)
+	CreateContract(ctx context.Context, arg CreateContractParams) (Contract, error)
 	CreateCustomFieldDef(ctx context.Context, arg CreateCustomFieldDefParams) (CustomFieldDef, error)
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (pgtype.UUID, error)
 	CreateDeviceTemplate(ctx context.Context, arg CreateDeviceTemplateParams) (DeviceTemplate, error)
 	CreateDiagram(ctx context.Context, arg CreateDiagramParams) (pgtype.UUID, error)
 	CreateEndpointGroup(ctx context.Context, arg CreateEndpointGroupParams) (pgtype.UUID, error)
 	CreateEndpointMember(ctx context.Context, arg CreateEndpointMemberParams) (pgtype.UUID, error)
+	CreateFile(ctx context.Context, arg CreateFileParams) (CreateFileRow, error)
 	CreateIP(ctx context.Context, arg CreateIPParams) (IpAddress, error)
 	CreateInterface(ctx context.Context, arg CreateInterfaceParams) (Interface, error)
 	// Applying a template adds the ports a device does not have yet (by name, case-insensitive).
@@ -75,6 +86,8 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Account tokens (invite / password reset).
 	CreateUserToken(ctx context.Context, arg CreateUserTokenParams) error
+	CreateVendor(ctx context.Context, arg CreateVendorParams) (Vendor, error)
+	CreateVendorContact(ctx context.Context, arg CreateVendorContactParams) (VendorContact, error)
 	CreateVlan(ctx context.Context, arg CreateVlanParams) (pgtype.UUID, error)
 	// Dashboard (P1-24, SRS §2, DESIGN.md §7c): figures and org-wide problems. Every query takes organization_id and the
 	// topbar category (NULL = whole organization; a category includes its subtree, ADR-032).
@@ -104,12 +117,15 @@ type Querier interface {
 	DashboardSubnets(ctx context.Context, arg DashboardSubnetsParams) ([]DashboardSubnetsRow, error)
 	DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error)
 	DeleteCluster(ctx context.Context, arg DeleteClusterParams) (int64, error)
+	DeleteContractFiles(ctx context.Context, arg DeleteContractFilesParams) ([]DeleteContractFilesRow, error)
+	DeleteContractItems(ctx context.Context, arg DeleteContractItemsParams) error
 	DeleteCustomFieldDef(ctx context.Context, arg DeleteCustomFieldDefParams) (int64, error)
 	DeleteDeviceTemplate(ctx context.Context, arg DeleteDeviceTemplateParams) (int64, error)
 	DeleteDiagram(ctx context.Context, arg DeleteDiagramParams) (int64, error)
 	DeleteEndpointGroup(ctx context.Context, arg DeleteEndpointGroupParams) (int64, error)
 	DeleteEndpointMember(ctx context.Context, arg DeleteEndpointMemberParams) (int64, error)
 	DeleteExpiredSessions(ctx context.Context) (int64, error)
+	DeleteFile(ctx context.Context, arg DeleteFileParams) (int64, error)
 	DeleteIP(ctx context.Context, arg DeleteIPParams) (int64, error)
 	DeleteInterface(ctx context.Context, arg DeleteInterfaceParams) (int64, error)
 	DeleteLink(ctx context.Context, arg DeleteLinkParams) (int64, error)
@@ -124,6 +140,7 @@ type Querier interface {
 	DeleteSubnet(ctx context.Context, arg DeleteSubnetParams) (int64, error)
 	DeleteTOTP(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
+	DeleteVendorContact(ctx context.Context, arg DeleteVendorContactParams) (int64, error)
 	DeleteVlan(ctx context.Context, arg DeleteVlanParams) (int64, error)
 	// What deleting devices takes along (ADR-033): cluster left behind and IPs released, per device.
 	DeviceDeleteImpact(ctx context.Context, arg DeviceDeleteImpactParams) ([]DeviceDeleteImpactRow, error)
@@ -144,12 +161,16 @@ type Querier interface {
 	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCluster(ctx context.Context, arg GetClusterParams) (GetClusterRow, error)
+	GetContract(ctx context.Context, arg GetContractParams) (Contract, error)
 	GetCustomFieldDef(ctx context.Context, arg GetCustomFieldDefParams) (CustomFieldDef, error)
 	GetDevice(ctx context.Context, arg GetDeviceParams) (GetDeviceRow, error)
 	GetDeviceTemplate(ctx context.Context, arg GetDeviceTemplateParams) (DeviceTemplate, error)
 	GetDiagramView(ctx context.Context, arg GetDiagramViewParams) ([]byte, error)
 	GetEndpointGroup(ctx context.Context, arg GetEndpointGroupParams) (GetEndpointGroupRow, error)
 	GetEndpointMember(ctx context.Context, arg GetEndpointMemberParams) (EndpointMember, error)
+	// The file and its contract, live.
+	GetFile(ctx context.Context, arg GetFileParams) (File, error)
+	GetFileMeta(ctx context.Context, arg GetFileMetaParams) (GetFileMetaRow, error)
 	GetIP(ctx context.Context, arg GetIPParams) (IpAddress, error)
 	GetInterface(ctx context.Context, arg GetInterfaceParams) (Interface, error)
 	GetLinkEndInterface(ctx context.Context, arg GetLinkEndInterfaceParams) (GetLinkEndInterfaceRow, error)
@@ -178,6 +199,8 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserToken(ctx context.Context, tokenHash []byte) (GetUserTokenRow, error)
+	GetVendor(ctx context.Context, arg GetVendorParams) (Vendor, error)
+	GetVendorContact(ctx context.Context, arg GetVendorContactParams) (VendorContact, error)
 	GetVlan(ctx context.Context, arg GetVlanParams) (GetVlanRow, error)
 	// The VRF of an endpoint group's members: that of its range's subnet, '' without one.
 	GroupVrf(ctx context.Context, arg GroupVrfParams) (string, error)
@@ -194,6 +217,7 @@ type Querier interface {
 	// First save of an organization that still had the defaults (no row); nothing back = someone saved meanwhile.
 	InsertAlertSettings(ctx context.Context, arg InsertAlertSettingsParams) (AlertSetting, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	InsertContractNotification(ctx context.Context, arg InsertContractNotificationParams) (pgtype.UUID, error)
 	InsertNotification(ctx context.Context, arg InsertNotificationParams) (pgtype.UUID, error)
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
@@ -204,6 +228,10 @@ type Querier interface {
 	ListClusterMembers(ctx context.Context, arg ListClusterMembersParams) ([]ListClusterMembersRow, error)
 	// Device clusters (P1-09b, ADR-027). Every query takes organization_id.
 	ListClusters(ctx context.Context, arg ListClustersParams) ([]ListClustersRow, error)
+	ListContactsOfVendors(ctx context.Context, arg ListContactsOfVendorsParams) ([]VendorContact, error)
+	ListContractFiles(ctx context.Context, arg ListContractFilesParams) ([]ListContractFilesRow, error)
+	// Live contracts, optionally of one vendor / covering one device or link / ending by a date.
+	ListContracts(ctx context.Context, arg ListContractsParams) ([]ListContractsRow, error)
 	ListCustomFieldDefs(ctx context.Context, organizationID pgtype.UUID) ([]CustomFieldDef, error)
 	// Audit entries of one device, newest first (the detail page "Lịch sử thay đổi" tab).
 	ListDeviceHistory(ctx context.Context, arg ListDeviceHistoryParams) ([]ListDeviceHistoryRow, error)
@@ -235,7 +263,7 @@ type Querier interface {
 	// Organization members (P1-04). Every query is scoped by organization_id.
 	ListMembers(ctx context.Context, organizationID pgtype.UUID) ([]ListMembersRow, error)
 	ListMyOrganizations(ctx context.Context, userID pgtype.UUID) ([]ListMyOrganizationsRow, error)
-	// The latest notifications of an organization for the bell (the caller filters them by device visibility).
+	// The latest notifications of an organization for the bell: devices (live) and contracts (live).
 	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	// Audit log reads (P1-05). Filters are optional: NULL / '' / empty array mean "any".
 	// @q must already have LIKE wildcards escaped by the caller.
@@ -256,10 +284,14 @@ type Querier interface {
 	// System-level events only (no organization): sign-ins, MFA, user administration (ADR-023).
 	ListSystemAudit(ctx context.Context, arg ListSystemAuditParams) ([]ListSystemAuditRow, error)
 	ListUserOrganizationNames(ctx context.Context, userID pgtype.UUID) ([]string, error)
+	ListVendorContacts(ctx context.Context, arg ListVendorContactsParams) ([]VendorContact, error)
+	// Vendors, contacts, contracts, contract files (P2-04, ADR-044). Every query is scoped to @organization_id.
+	ListVendors(ctx context.Context, arg ListVendorsParams) ([]ListVendorsRow, error)
 	// IPAM (P1-10, SRS §5, ADR-014). Every query takes organization_id. VLANs and subnets of a site follow the site's
 	// visibility (ADR-031); site-less ones are for organization-wide roles. Interface IPs carry a `visible` flag so callers
 	// can count addresses of devices they may not see without showing them.
 	ListVlans(ctx context.Context, arg ListVlansParams) ([]ListVlansRow, error)
+	LockContract(ctx context.Context, arg LockContractParams) (pgtype.UUID, error)
 	// Serializes writes of one hostname (key "<org>/<lower hostname>"): the uniqueness rule below cannot be an index (ADR-027).
 	LockHostname(ctx context.Context, lockKey string) error
 	// Serializes link writes touching one interface (one physical link per physical port).
@@ -318,6 +350,7 @@ type Querier interface {
 	SetAlertDigestDay(ctx context.Context, arg SetAlertDigestDayParams) error
 	SetDeviceAlertsMuted(ctx context.Context, arg SetDeviceAlertsMutedParams) (int64, error)
 	SetDeviceMgmtInterface(ctx context.Context, arg SetDeviceMgmtInterfaceParams) error
+	SetDeviceSupplier(ctx context.Context, arg SetDeviceSupplierParams) (int64, error)
 	SetSessionActiveOrganization(ctx context.Context, arg SetSessionActiveOrganizationParams) error
 	SetSiteCode(ctx context.Context, arg SetSiteCodeParams) error
 	SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) (SetUserDisabledRow, error)
@@ -333,17 +366,21 @@ type Querier interface {
 	SiteGraphSites(ctx context.Context, arg SiteGraphSitesParams) ([]SiteGraphSitesRow, error)
 	// The site's lines to an ISP: links between a device of the site and a provider cloud.
 	SiteGraphWan(ctx context.Context, organizationID pgtype.UUID) ([]SiteGraphWanRow, error)
+	SoftDeleteContract(ctx context.Context, arg SoftDeleteContractParams) (int64, error)
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) (int64, error)
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
+	SoftDeleteVendor(ctx context.Context, arg SoftDeleteVendorParams) (int64, error)
 	// Interface / IP changes bump the device version so open device forms see the change.
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchSession(ctx context.Context, arg TouchSessionParams) error
-	// Notifications not e-mailed yet; current = the device still counts (date unchanged, not muted, still in use).
+	// Notifications not e-mailed yet; current = the subject still counts (device: date unchanged, not muted, in use;
+	// contract: live, end date unchanged). title / place: hostname and site, or contract name and vendor.
 	UnsentNotifications(ctx context.Context, organizationID pgtype.UUID) ([]UnsentNotificationsRow, error)
 	UpdateAlertSettingsVersioned(ctx context.Context, arg UpdateAlertSettingsVersionedParams) (AlertSetting, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (int64, error)
 	UpdateCluster(ctx context.Context, arg UpdateClusterParams) (int64, error)
+	UpdateContract(ctx context.Context, arg UpdateContractParams) (Contract, error)
 	UpdateCustomFieldDef(ctx context.Context, arg UpdateCustomFieldDefParams) (CustomFieldDef, error)
 	UpdateDevice(ctx context.Context, arg UpdateDeviceParams) (int64, error)
 	UpdateDeviceTemplate(ctx context.Context, arg UpdateDeviceTemplateParams) (DeviceTemplate, error)
@@ -361,6 +398,8 @@ type Querier interface {
 	UpdateRange(ctx context.Context, arg UpdateRangeParams) (IpRange, error)
 	UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, error)
 	UpdateSubnet(ctx context.Context, arg UpdateSubnetParams) (int64, error)
+	UpdateVendor(ctx context.Context, arg UpdateVendorParams) (Vendor, error)
+	UpdateVendorContact(ctx context.Context, arg UpdateVendorContactParams) (VendorContact, error)
 	UpdateVlan(ctx context.Context, arg UpdateVlanParams) (int64, error)
 	// Starts (or restarts) enrollment. Never overwrites an enabled seed: the caller must disable first.
 	UpsertPendingTOTP(ctx context.Context, arg UpsertPendingTOTPParams) (int64, error)

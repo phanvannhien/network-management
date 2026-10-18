@@ -27,6 +27,7 @@ import { LinksPanel } from './LinksPanel'
 import { InterfacesTab, IpsTab } from './DeviceInterfaces'
 import { PhotoButton } from './PhotoDialog'
 import { useMuteAlerts } from '@/modules/alerts/alerts'
+import { DeviceContracts } from '@/modules/vendors/DeviceContracts'
 import {
   useCustomFields,
   useDeleteDevices,
@@ -332,6 +333,13 @@ export function DeviceDetailPage() {
           <Soon icon={<KeyRound />} text={t('devices.accessSoon')} />
         </TabsContent>
         <TabsContent value="contracts" className="space-y-2 pt-3">
+          <DeviceContracts
+            orgId={orgId}
+            deviceId={d.id}
+            hostname={d.hostname}
+            supplierId={d.supplierId ?? null}
+            canEdit={canEdit}
+          />
           <div className="rounded-lg border border-border bg-card p-3">
             <KeyValueList
               columns={2}
@@ -352,7 +360,6 @@ export function DeviceDetailPage() {
             muted={d.alertsMuted === true}
             canEdit={canEdit}
           />
-          <p className="text-muted-foreground">{t('devices.contractsHint')}</p>
         </TabsContent>
         <TabsContent value="diagrams" className="pt-3">
           <Soon icon={<Network />} text={t('devices.diagramsSoon')} />

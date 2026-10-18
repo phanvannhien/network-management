@@ -5,6 +5,49 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-04 Nhà cung cấp & hợp đồng (ADR-044)
+- Đã làm:
+  - **Menu "Nhà cung cấp"** (tab Nhà cung cấp / Hợp đồng):
+    - nhà cung cấp gồm hãng, nhà phân phối, ISP, bảo trì, khách hàng; hotline bấm gọi được, email, cổng hỗ trợ, mã số thuế; nhiều **người liên hệ**;
+    - lọc hợp đồng theo hạn (hết trong 30 / 90 ngày, đã hết).
+  - **Hợp đồng = một gói với một ngày hết hạn**, áp cho nhiều thiết bị và link WAN; FortiCare và FortiGuard của một máy là hai hợp đồng. Trường: loại, số, ngày bắt đầu / hết hạn, SLA, ghi chú.
+  - **File đính kèm** (PDF / ảnh / Office / TXT / CSV, tối đa 10 MB, 20 file mỗi hợp đồng):
+    - lưu trong Postgres;
+    - kiểm tra nội dung thật, không chỉ phần mở rộng;
+    - tải xuống luôn dạng attachment.
+  - **Tab "Hợp đồng & bảo hành" của thiết bị:** chọn "mua từ" nhà cung cấp; mọi hợp đồng áp cho thiết bị kèm hotline / cổng hỗ trợ; nút thêm hợp đồng cho thiết bị.
+  - **Cảnh báo hợp đồng sắp hết hạn** vào email tổng hợp và chuông (P2-05), link tới trang hợp đồng.
+  - Agent rà code đã chỉ ra, và đã sửa:
+    - làm sạch tên file chạy O(n²) (tên rất dài làm treo CPU); thêm bỏ ký tự đảo chiều (bidi);
+    - file của hợp đồng đã xóa bị bỏ rơi trong DB;
+    - N+1 khi gắn hàng trăm thiết bị / link;
+    - hộp thoại hợp đồng vẫn lưu link bị ẩn khi bỏ thiết bị;
+    - mỗi lần xem hợp đồng phải tải mọi hợp đồng của nhà cung cấp;
+    - đếm số file bị race khi tải lên đồng thời;
+    - tải xuống chưa có `no-store`;
+    - join nhà cung cấp chưa lọc tổ chức;
+    - xóa file chưa có hộp xác nhận;
+    - link hỗ trợ chưa kiểm tra http(s) ở frontend.
+  - Tự tìm thêm: file `.doc` / `.xls` được bỏ qua kiểm tra nội dung (giờ kiểm tra chữ ký OLE).
+  - Sửa test round-trip `.ntb.json` hỏng từ khi file mẫu chuyển vào `testdata/legacy` (trước đó `make check` vẫn báo pass do Go dùng lại kết quả test đã cache).
+- Test / cách kiểm tra:
+  - `vendor_test.go`:
+    - quyền (người chỉ xem không ghi được), tên trùng, 409, link không an toàn, audit;
+    - hợp đồng: thay danh sách thiết bị / link, thiết bị / link / nhà cung cấp của tổ chức khác bị từ chối;
+    - chặn tổ chức khác đọc, sửa, xóa hợp đồng, nhà cung cấp, file;
+    - file: chặn `.exe`, HTML đổi đuôi `.pdf` / `.doc`, file quá lớn; tên rất dài; header khi tải xuống; xóa hợp đồng thì file cũng mất;
+    - cảnh báo hợp đồng trong email và chuông.
+  - App test cho trang nhà cung cấp và hộp thoại hợp đồng.
+  - Trên trình duyệt: tạo nhà cung cấp + liên hệ → hợp đồng FortiGuard cho 2 firewall + 1 link → đính kèm PDF → tải xuống → tab thiết bị hiện hợp đồng và hotline; chọn "mua từ".
+  - `make check` và `go test ./... -count=1` pass.
+- Còn dở / lỗi đã biết:
+  - Chưa nhập nhà cung cấp / hợp đồng từ Excel.
+  - `links.provider` vẫn là chữ, chưa gắn với nhà cung cấp.
+  - Ô "Hết license" của thiết bị vẫn còn song song với hợp đồng license.
+- Câu hỏi cho người dùng: có cần nhập danh sách hợp đồng sẵn có từ Excel không?
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-02 Kho mật khẩu (P2-05 còn chờ cảnh báo credential) hoặc P2-08.
+
 ## 2026-10-18 — P2-05 Cảnh báo hết hạn — phần thiết bị (ADR-043)
 - Người dùng chốt:
   - SMTP chung cho cả hệ thống, SMTP riêng theo tổ chức để sau;

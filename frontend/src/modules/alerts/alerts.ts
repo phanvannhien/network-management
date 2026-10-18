@@ -12,7 +12,7 @@ export type AlertSettingsInput = components['schemas']['AlertSettingsInput']
 export type AlertKind = components['schemas']['AlertKind']
 export type Notification = components['schemas']['Notification']
 
-export const ALERT_KINDS: AlertKind[] = ['warranty', 'license', 'eos']
+export const ALERT_KINDS: AlertKind[] = ['warranty', 'license', 'eos', 'contract']
 
 function fail(error: unknown, status: number, fallback: string): never {
   throw new Error(errorMessage(error, status, fallback))

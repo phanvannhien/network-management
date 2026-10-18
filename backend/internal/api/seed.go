@@ -140,7 +140,7 @@ func (s *Server) SeedDemo(ctx context.Context, ownerEmail string) (SeedResult, e
 			return SeedResult{}, fmt.Errorf("%s already exists (delete it in Hệ thống › Tổ chức to seed again)", demoOrgName)
 		}
 	}
-	ctx, org, err := s.seedOrg(ctx, u, demoOrgName, "MAU", apigen.Customer, "Dữ liệu mẫu (tên và số seri giả) — P1-25")
+	ctx, org, err := s.seedOrg(ctx, u, demoOrgName, "MAU", apigen.OrganizationKindCustomer, "Dữ liệu mẫu (tên và số seri giả) — P1-25")
 	if err != nil {
 		return SeedResult{}, err
 	}
@@ -323,7 +323,7 @@ func (s *Server) SeedBench(ctx context.Context, ownerEmail string, n int) (SeedR
 		return SeedResult{}, err
 	}
 	name := fmt.Sprintf("Benchmark %d thiết bị", n)
-	ctx, org, err := s.seedOrg(ctx, u, name, fmt.Sprintf("B%d", n), apigen.Internal, "Dữ liệu đo hiệu năng — P1-25")
+	ctx, org, err := s.seedOrg(ctx, u, name, fmt.Sprintf("B%d", n), apigen.OrganizationKindInternal, "Dữ liệu đo hiệu năng — P1-25")
 	if err != nil {
 		return SeedResult{}, err
 	}

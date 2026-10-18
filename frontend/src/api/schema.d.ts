@@ -957,6 +957,201 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/vendors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Vendors of the organization (P2-04) — manufacturers, suppliers, ISPs, maintenance companies */
+        get: operations["listVendors"];
+        put?: never;
+        /** Add a vendor (editors) */
+        post: operations["createVendor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/vendors/{vendorId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        /** A vendor with its contacts and contracts */
+        get: operations["getVendor"];
+        put?: never;
+        post?: never;
+        /** Remove a vendor without live contracts (devices bought from it keep no supplier) */
+        delete: operations["deleteVendor"];
+        options?: never;
+        head?: never;
+        /** Edit a vendor (editors, optimistic lock) */
+        patch: operations["updateVendor"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/vendors/{vendorId}/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a contact person to a vendor */
+        post: operations["createVendorContact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/vendor-contacts/{contactId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contactId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a contact */
+        delete: operations["deleteVendorContact"];
+        options?: never;
+        head?: never;
+        /** Edit a contact */
+        patch: operations["updateVendorContact"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /** Contracts of the organization (P2-04) — of a vendor, covering a device or a link, ending soon */
+        get: operations["listContracts"];
+        put?: never;
+        /** Add a contract and what it covers (editors) */
+        post: operations["createContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/contracts/{contractId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        /** A contract with the devices / links it covers (those the caller can see), its files and the vendor contacts */
+        get: operations["getContract"];
+        put?: never;
+        post?: never;
+        /** Remove a contract (its files go with it) */
+        delete: operations["deleteContract"];
+        options?: never;
+        head?: never;
+        /** Edit a contract; the device / link lists replace the old ones (editors, optimistic lock) */
+        patch: operations["updateContract"];
+        trace?: never;
+    };
+    "/orgs/{orgId}/contracts/{contractId}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract) */
+        post: operations["uploadContractFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        /** Download an attached file (always as an attachment) */
+        get: operations["downloadFile"];
+        put?: never;
+        post?: never;
+        /** Remove an attached file (editors) */
+        delete: operations["deleteFile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/devices/{deviceId}/supplier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Where the device was bought (a vendor of the organization, or none) — edit access, audited */
+        put: operations["setDeviceSupplier"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/alert-settings": {
         parameters: {
             query?: never;
@@ -2448,6 +2643,11 @@ export interface components {
             alertsMuted?: boolean;
             /**
              * Format: uuid
+             * @description the vendor it was bought from (P2-04)
+             */
+            supplierId?: string | null;
+            /**
+             * Format: uuid
              * @description the site's category (null = attached straight to the organization)
              */
             categoryId: string | null;
@@ -3036,10 +3236,151 @@ export interface components {
             lifecycle: components["schemas"]["CatalogLifecycle"];
         };
         /**
-         * @description warranty end, license end, vendor end of support
+         * @description manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
          * @enum {string}
          */
-        AlertKind: "warranty" | "license" | "eos";
+        VendorKind: "manufacturer" | "supplier" | "isp" | "maintenance" | "customer" | "other";
+        Vendor: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["VendorKind"];
+            name: string;
+            taxCode: string;
+            website: string;
+            supportPhone: string;
+            supportEmail: string;
+            supportPortal: string;
+            notes: string;
+            contactCount: number;
+            contractCount: number;
+            /**
+             * Format: date
+             * @description the nearest end date of its live contracts from today
+             */
+            nextEnd: string | null;
+            version: number;
+        };
+        VendorInput: {
+            kind: components["schemas"]["VendorKind"];
+            name: string;
+            taxCode?: string;
+            website?: string;
+            supportPhone?: string;
+            supportEmail?: string;
+            supportPortal?: string;
+            notes?: string;
+            /** @description update only — the version read */
+            version?: number;
+        };
+        VendorContact: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            vendorId: string;
+            name: string;
+            title: string;
+            phone: string;
+            email: string;
+            notes: string;
+            version: number;
+        };
+        VendorContactInput: {
+            name: string;
+            title?: string;
+            phone?: string;
+            email?: string;
+            notes?: string;
+            version?: number;
+        };
+        VendorDetail: {
+            vendor: components["schemas"]["Vendor"];
+            contacts: components["schemas"]["VendorContact"][];
+            contracts: components["schemas"]["Contract"][];
+        };
+        /**
+         * @description vendor support (SmartNet, FortiCare…), hardware warranty, license / subscription, internet service, maintenance, other
+         * @enum {string}
+         */
+        ContractKind: "support" | "warranty" | "license" | "isp" | "maintenance" | "other";
+        Contract: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            vendorId: string;
+            vendorName: string;
+            vendorKind: components["schemas"]["VendorKind"];
+            supportPhone: string;
+            supportEmail: string;
+            supportPortal: string;
+            kind: components["schemas"]["ContractKind"];
+            number: string;
+            name: string;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            sla: string;
+            notes: string;
+            deviceCount: number;
+            linkCount: number;
+            fileCount: number;
+            version: number;
+        };
+        ContractInput: {
+            /** Format: uuid */
+            vendorId: string;
+            kind: components["schemas"]["ContractKind"];
+            number?: string;
+            name: string;
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            sla?: string;
+            notes?: string;
+            deviceIds: string[];
+            linkIds: string[];
+            version?: number;
+        };
+        ContractDevice: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            siteCode: string;
+            model: string;
+            type: components["schemas"]["DeviceType"];
+        };
+        ContractLink: {
+            /** Format: uuid */
+            id: string;
+            aName: string;
+            bName: string;
+            provider: string;
+            circuitId: string;
+        };
+        ContractFile: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            contentType: string;
+            size: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ContractDetail: {
+            contract: components["schemas"]["Contract"];
+            devices: components["schemas"]["ContractDevice"][];
+            /** @description covered devices the caller cannot see (unit grants) */
+            hiddenDevices: number;
+            links: components["schemas"]["ContractLink"][];
+            files: components["schemas"]["ContractFile"][];
+            contacts: components["schemas"]["VendorContact"][];
+        };
+        /**
+         * @description warranty end, license end, vendor end of support, contract end (P2-04)
+         * @enum {string}
+         */
+        AlertKind: "warranty" | "license" | "eos" | "contract";
         SmtpSettings: {
             host: string;
             port: number;
@@ -3095,9 +3436,13 @@ export interface components {
             id: string;
             kind: components["schemas"]["AlertKind"];
             /** Format: uuid */
-            deviceId: string;
+            deviceId: string | null;
+            /** @description the device, or the contract name for a contract */
             hostname: string;
+            /** @description the device's site, or the vendor name for a contract */
             siteCode: string;
+            /** Format: uuid */
+            contractId: string | null;
             /** Format: date */
             dueDate: string;
             /** @description days before the date when it was raised; 0 = the date had passed */
@@ -4192,6 +4537,8 @@ export interface components {
         DeviceClusterFilter: string[];
         DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "category" | "lifecycle" | "warrantyEnd";
         DeviceSortDesc: boolean;
+        VendorId: string;
+        ContractId: string;
         DeviceId: string;
         TemplateId: string;
         InterfaceId: string;
@@ -6146,6 +6493,545 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listVendors: {
+        parameters: {
+            query?: {
+                q?: string;
+                kind?: components["schemas"]["VendorKind"];
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        vendors: components["schemas"]["Vendor"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createVendor: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vendor"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getVendor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteVendor: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateVendor: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vendor"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createVendorContact: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                vendorId: components["parameters"]["VendorId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorContactInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorContact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteVendorContact: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contactId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateVendorContact: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contactId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorContactInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorContact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listContracts: {
+        parameters: {
+            query?: {
+                q?: string;
+                vendorId?: string;
+                deviceId?: string;
+                linkId?: string;
+                /** @description ending before today + N days (already ended included) */
+                endsWithinDays?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        contracts: components["schemas"]["Contract"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createContract: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteContract: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateContract: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    uploadContractFile: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                contractId: components["parameters"]["ContractId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Uploaded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractFile"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            413: components["responses"]["BadRequest"];
+        };
+    };
+    downloadFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteFile: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setDeviceSupplier: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+                deviceId: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    supplierId: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getAlertSettings: {

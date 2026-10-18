@@ -9,6 +9,7 @@ import {
   ChevronsRight,
   LayoutDashboard,
   MapPin,
+  Handshake,
   Hash,
   Network,
   LayoutTemplate,
@@ -442,6 +443,7 @@ export function OrgShell() {
         { to: `${base}/devices`, label: t('nav.devices'), icon: Server },
         { to: `${base}/ipam`, label: t('nav.ipam'), icon: Hash },
         { to: `${base}/sites`, label: t('nav.sites'), icon: MapPin },
+        { to: `${base}/vendors`, label: t('nav.vendors'), icon: Handshake },
       ],
     },
     {

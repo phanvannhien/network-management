@@ -1651,6 +1651,464 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /orgs/{orgId}/vendors:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listVendors
+      summary: Vendors of the organization (P2-04) — manufacturers, suppliers, ISPs, maintenance companies
+      parameters:
+        - name: q
+          in: query
+          schema: {type: string, maxLength: 200}
+        - name: kind
+          in: query
+          schema:
+            $ref: '#/components/schemas/VendorKind'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [vendors]
+                properties:
+                  vendors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vendor'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createVendor
+      summary: Add a vendor (editors)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vendor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/vendors/{vendorId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/VendorId'
+    get:
+      operationId: getVendor
+      summary: A vendor with its contacts and contracts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateVendor
+      summary: Edit a vendor (editors, optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vendor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteVendor
+      summary: Remove a vendor without live contracts (devices bought from it keep no supplier)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/vendors/{vendorId}/contacts:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/VendorId'
+    post:
+      operationId: createVendorContact
+      summary: Add a contact person to a vendor
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorContactInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorContact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/vendor-contacts/{contactId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - name: contactId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    patch:
+      operationId: updateVendorContact
+      summary: Edit a contact
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorContactInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorContact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteVendorContact
+      summary: Remove a contact
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/contracts:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    get:
+      operationId: listContracts
+      summary: Contracts of the organization (P2-04) — of a vendor, covering a device or a link, ending soon
+      parameters:
+        - name: q
+          in: query
+          schema: {type: string, maxLength: 200}
+        - name: vendorId
+          in: query
+          schema: {type: string, format: uuid}
+        - name: deviceId
+          in: query
+          schema: {type: string, format: uuid}
+        - name: linkId
+          in: query
+          schema: {type: string, format: uuid}
+        - name: endsWithinDays
+          in: query
+          description: ending before today + N days (already ended included)
+          schema: {type: integer, minimum: 0, maximum: 3650}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contracts]
+                properties:
+                  contracts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contract'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createContract
+      summary: Add a contract and what it covers (editors)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/contracts/{contractId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/ContractId'
+    get:
+      operationId: getContract
+      summary: A contract with the devices / links it covers (those the caller can see), its files and the vendor contacts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateContract
+      summary: Edit a contract; the device / link lists replace the old ones (editors, optimistic lock)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteContract
+      summary: Remove a contract (its files go with it)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/contracts/{contractId}/files:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/ContractId'
+    post:
+      operationId: uploadContractFile
+      summary: Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/BadRequest'
+
+  /orgs/{orgId}/files/{fileId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - name: fileId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: downloadFile
+      summary: Download an attached file (always as an attachment)
+      responses:
+        '200':
+          description: The file
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+            X-Content-Type-Options:
+              schema: {type: string}
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteFile
+      summary: Remove an attached file (editors)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{orgId}/devices/{deviceId}/supplier:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/DeviceId'
+    put:
+      operationId: setDeviceSupplier
+      summary: Where the device was bought (a vendor of the organization, or none) — edit access, audited
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplierId]
+              properties:
+                supplierId:
+                  type: [string, 'null']
+                  format: uuid
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /orgs/{orgId}/alert-settings:
     parameters:
       - $ref: '#/components/parameters/OrgId'
@@ -3665,6 +4123,20 @@ components:
         type: boolean
         default: false
 
+    VendorId:
+      name: vendorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ContractId:
+      name: contractId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     DeviceId:
       name: deviceId
       in: path
@@ -4929,6 +5401,10 @@ components:
         alertsMuted:
           type: boolean
           description: expiry alerts are turned off for this device (P2-05)
+        supplierId:
+          type: [string, 'null']
+          format: uuid
+          description: the vendor it was bought from (P2-04)
         categoryId:
           type: [string, 'null']
           format: uuid
@@ -6065,10 +6541,307 @@ components:
         lifecycle:
           $ref: '#/components/schemas/CatalogLifecycle'
 
+    VendorKind:
+      type: string
+      description: manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
+      enum: [manufacturer, supplier, isp, maintenance, customer, other]
+
+    Vendor:
+      type: object
+      required: [id, kind, name, taxCode, website, supportPhone, supportEmail, supportPortal, notes, contactCount, contractCount, nextEnd, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/VendorKind'
+        name:
+          type: string
+        taxCode:
+          type: string
+        website:
+          type: string
+        supportPhone:
+          type: string
+        supportEmail:
+          type: string
+        supportPortal:
+          type: string
+        notes:
+          type: string
+        contactCount:
+          type: integer
+        contractCount:
+          type: integer
+        nextEnd:
+          type: [string, 'null']
+          format: date
+          description: the nearest end date of its live contracts from today
+        version:
+          type: integer
+
+    VendorInput:
+      type: object
+      required: [kind, name]
+      properties:
+        kind:
+          $ref: '#/components/schemas/VendorKind'
+        name:
+          type: string
+          maxLength: 200
+        taxCode:
+          type: string
+          maxLength: 50
+        website:
+          type: string
+          maxLength: 300
+        supportPhone:
+          type: string
+          maxLength: 100
+        supportEmail:
+          type: string
+          maxLength: 320
+        supportPortal:
+          type: string
+          maxLength: 300
+        notes:
+          type: string
+          maxLength: 4000
+        version:
+          type: integer
+          description: update only — the version read
+
+    VendorContact:
+      type: object
+      required: [id, vendorId, name, title, phone, email, notes, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        title:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        notes:
+          type: string
+        version:
+          type: integer
+
+    VendorContactInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        title:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          maxLength: 320
+        notes:
+          type: string
+          maxLength: 2000
+        version:
+          type: integer
+
+    VendorDetail:
+      type: object
+      required: [vendor, contacts, contracts]
+      properties:
+        vendor:
+          $ref: '#/components/schemas/Vendor'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/VendorContact'
+        contracts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+
+    ContractKind:
+      type: string
+      description: vendor support (SmartNet, FortiCare…), hardware warranty, license / subscription, internet service, maintenance, other
+      enum: [support, warranty, license, isp, maintenance, other]
+
+    Contract:
+      type: object
+      required: [id, vendorId, vendorName, vendorKind, supportPhone, supportEmail, supportPortal, kind, number, name, startDate, endDate, sla, notes, deviceCount, linkCount, fileCount, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        vendorName:
+          type: string
+        vendorKind:
+          $ref: '#/components/schemas/VendorKind'
+        supportPhone:
+          type: string
+        supportEmail:
+          type: string
+        supportPortal:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ContractKind'
+        number:
+          type: string
+        name:
+          type: string
+        startDate:
+          type: [string, 'null']
+          format: date
+        endDate:
+          type: [string, 'null']
+          format: date
+        sla:
+          type: string
+        notes:
+          type: string
+        deviceCount:
+          type: integer
+        linkCount:
+          type: integer
+        fileCount:
+          type: integer
+        version:
+          type: integer
+
+    ContractInput:
+      type: object
+      required: [vendorId, kind, name, deviceIds, linkIds]
+      properties:
+        vendorId:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ContractKind'
+        number:
+          type: string
+          maxLength: 100
+        name:
+          type: string
+          maxLength: 200
+        startDate:
+          type: [string, 'null']
+          format: date
+        endDate:
+          type: [string, 'null']
+          format: date
+        sla:
+          type: string
+          maxLength: 500
+        notes:
+          type: string
+          maxLength: 4000
+        deviceIds:
+          type: array
+          maxItems: 1000
+          items:
+            type: string
+            format: uuid
+        linkIds:
+          type: array
+          maxItems: 1000
+          items:
+            type: string
+            format: uuid
+        version:
+          type: integer
+
+    ContractDevice:
+      type: object
+      required: [id, hostname, siteCode, model, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        siteCode:
+          type: string
+        model:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+
+    ContractLink:
+      type: object
+      required: [id, aName, bName, provider, circuitId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        aName:
+          type: string
+        bName:
+          type: string
+        provider:
+          type: string
+        circuitId:
+          type: string
+
+    ContractFile:
+      type: object
+      required: [id, name, contentType, size, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ContractDetail:
+      type: object
+      required: [contract, devices, hiddenDevices, links, files, contacts]
+      properties:
+        contract:
+          $ref: '#/components/schemas/Contract'
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractDevice'
+        hiddenDevices:
+          type: integer
+          description: covered devices the caller cannot see (unit grants)
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractLink'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractFile'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/VendorContact'
+
     AlertKind:
       type: string
-      description: warranty end, license end, vendor end of support
-      enum: [warranty, license, eos]
+      description: warranty end, license end, vendor end of support, contract end (P2-04)
+      enum: [warranty, license, eos, contract]
 
     SmtpSettings:
       type: object
@@ -6170,7 +6943,7 @@ components:
           type: boolean
         kinds:
           type: array
-          maxItems: 3
+          maxItems: 4
           items:
             $ref: '#/components/schemas/AlertKind'
         milestones:
@@ -6194,7 +6967,7 @@ components:
 
     Notification:
       type: object
-      required: [id, kind, deviceId, hostname, siteCode, dueDate, milestone, createdAt, unread]
+      required: [id, kind, deviceId, contractId, hostname, siteCode, dueDate, milestone, createdAt, unread]
       properties:
         id:
           type: string
@@ -6202,12 +6975,17 @@ components:
         kind:
           $ref: '#/components/schemas/AlertKind'
         deviceId:
-          type: string
+          type: [string, 'null']
           format: uuid
         hostname:
           type: string
+          description: the device, or the contract name for a contract
         siteCode:
           type: string
+          description: the device's site, or the vendor name for a contract
+        contractId:
+          type: [string, 'null']
+          format: uuid
         dueDate:
           type: string
           format: date

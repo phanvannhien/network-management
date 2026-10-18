@@ -1,0 +1,17 @@
+DELETE FROM notifications WHERE contract_id IS NOT NULL;
+UPDATE alert_settings SET kinds = array_remove(kinds, 'contract');
+ALTER TABLE alert_settings ALTER COLUMN kinds SET DEFAULT '{warranty,license,eos}';
+ALTER TABLE alert_settings DROP CONSTRAINT alert_settings_kinds_check;
+ALTER TABLE alert_settings ADD CONSTRAINT alert_settings_kinds_check CHECK (kinds <@ ARRAY['warranty', 'license', 'eos']::text[]);
+DROP INDEX notifications_contract_once;
+ALTER TABLE notifications DROP CONSTRAINT notifications_subject_check;
+ALTER TABLE notifications DROP CONSTRAINT notifications_kind_check;
+ALTER TABLE notifications ADD CONSTRAINT notifications_kind_check CHECK (kind IN ('warranty', 'license', 'eos'));
+ALTER TABLE notifications DROP COLUMN contract_id;
+ALTER TABLE notifications ALTER COLUMN device_id SET NOT NULL;
+ALTER TABLE devices DROP COLUMN supplier_id;
+DROP TABLE files;
+DROP TABLE contract_items;
+DROP TABLE contracts;
+DROP TABLE vendor_contacts;
+DROP TABLE vendors;

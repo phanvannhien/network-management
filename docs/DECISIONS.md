@@ -633,3 +633,38 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - SMTP riêng theo tổ chức;
   - người nhận theo site / danh mục;
   - dọn thông báo cũ.
+
+### ADR-044 — Nhà cung cấp & hợp đồng: mỗi hợp đồng một ngày hết hạn, áp cho thiết bị / link; file lưu trong Postgres
+- **Bối cảnh:** P2-04 (SRS §8), người dùng duyệt 2026-10-18 qua "ok task tiếp theo".
+  - Một thiết bị thường có nhiều gói với ngày khác nhau (FortiCare / FortiGuard, SmartNet / DNA); ô "Hết license" không đủ.
+  - SRS yêu cầu "từ thiết bị hoặc link WAN bấm ra ngay hotline, liên hệ và hợp đồng liên quan".
+- **Quyết định:**
+  - **Nhà cung cấp** (`vendors`, theo tổ chức):
+    - loại: hãng / nhà phân phối / ISP / bảo trì / khách hàng / khác;
+    - tên không trùng trong tổ chức; mã số thuế, website, hotline, email, cổng hỗ trợ;
+    - website và cổng hỗ trợ chỉ nhận http(s);
+    - có nhiều **người liên hệ**.
+  - **Hợp đồng = một dịch vụ với một ngày hết hạn.**
+    - Thuộc một nhà cung cấp; loại: hỗ trợ hãng / bảo hành / license / ISP / bảo trì / khác; số hợp đồng, ngày bắt đầu / kết thúc, SLA.
+    - **Áp cho nhiều thiết bị và link** (`contract_items`); FortiCare và FortiGuard của cùng một máy là hai hợp đồng.
+    - Thiết bị / link phải thuộc cùng tổ chức. Sửa hợp đồng là thay toàn bộ danh sách áp dụng.
+  - Thiết bị có **"mua từ" (supplier)**, chỉnh qua endpoint riêng, để mọi đường cập nhật thiết bị khác không vô tình xóa mất.
+    - Ô "hãng" của thiết bị vẫn là tên hãng sản xuất in trên máy.
+  - **File đính kèm hợp đồng lưu trong Postgres (bytea).**
+    - Tối đa 10 MB mỗi file, 20 file mỗi hợp đồng.
+    - Chỉ nhận PDF / ảnh / Office / TXT / CSV. Kiểm tra cả phần mở rộng lẫn nội dung thật (chữ ký OLE cho .doc / .xls).
+    - Loại file lưu theo bảng cho phép, không tin client. Tên file bỏ phần đường dẫn và ký tự điều khiển.
+    - Luôn tải xuống dạng `attachment`, `application/octet-stream`, `nosniff`, không mở trong origin của ứng dụng.
+    - Backup DB là có luôn file. Lưu file ra ổ đĩa / S3 để sau, nếu dung lượng lớn.
+  - Quyền: thành viên nào cũng xem; biên tập viên trở lên được sửa; mọi thao tác ghi có audit (audit file chỉ ghi tên, kích thước, sha256).
+  - **Cảnh báo hợp đồng sắp hết hạn** nối vào ADR-043 (loại `contract`, mặc định bật, mỗi mốc báo một lần, link tới trang hợp đồng).
+  - Tab "Hợp đồng & bảo hành" của thiết bị hiện nhà cung cấp "mua từ" và mọi hợp đồng áp cho thiết bị, kèm hotline / cổng hỗ trợ / người liên hệ.
+- **Lý do:** một hợp đồng một ngày hết hạn khớp cách hãng bán gói, nên cảnh báo đúng từng gói. File trong DB đơn giản cho bản tự cài đặt và chung một bản backup.
+- **Đánh đổi:**
+  - DB lớn dần theo số file.
+  - Ô "Hết license" cũ của thiết bị vẫn còn, có thể trùng với hợp đồng license; khi đã dùng hợp đồng thì nên bỏ trống ô đó.
+- **Để sau:**
+  - nhập nhà cung cấp / hợp đồng từ Excel;
+  - chi phí và gia hạn;
+  - liên kết nhà cung cấp với `links.provider` (đang là chữ);
+  - ảnh thiết bị do người dùng tải lên (P2-12) dùng chung chỗ lưu file.

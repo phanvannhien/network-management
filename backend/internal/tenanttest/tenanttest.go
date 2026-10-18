@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -124,6 +125,34 @@ func (c *Client) Do(method, path string, body any) (int, map[string]any) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.t.Fatalf("%s %s: %v", method, path, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var out map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&out)
+	return resp.StatusCode, out
+}
+
+// Upload posts one file as multipart/form-data (field "file") and decodes the JSON answer.
+func (c *Client) Upload(path, filename string, data []byte) (int, map[string]any) {
+	c.t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, err := w.CreateFormFile("file", filename)
+	if err != nil {
+		c.t.Fatalf("form file: %v", err)
+	}
+	_, _ = part.Write(data)
+	_ = w.Close()
+	req, _ := http.NewRequest("POST", c.base+path, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Origin", c.base)
+	if c.token != "" {
+		req.Header.Set("X-CSRF-Token", c.csrf)
+		req.AddCookie(&http.Cookie{Name: "ntb_session", Value: c.token})
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.t.Fatalf("POST %s: %v", path, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	var out map[string]any

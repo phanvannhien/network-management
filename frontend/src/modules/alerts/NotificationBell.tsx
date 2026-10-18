@@ -64,8 +64,16 @@ export function NotificationBell() {
             {items.map((n) => (
               <li key={n.id} className={cn('px-3 py-2 text-sm', n.unread && 'bg-muted/50')}>
                 <Link
-                  to={`/o/${orgId}/devices/${n.deviceId}`}
-                  className="font-mono text-tech hover:underline"
+                  to={
+                    n.contractId
+                      ? `/o/${orgId}/contracts/${n.contractId}`
+                      : `/o/${orgId}/devices/${n.deviceId}`
+                  }
+                  className={
+                    n.contractId
+                      ? 'font-medium hover:underline'
+                      : 'font-mono text-tech hover:underline'
+                  }
                 >
                   {n.hostname}
                 </Link>{' '}

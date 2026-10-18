@@ -37,7 +37,7 @@ RETURNING *;
 -- name: AlertOrganizations :many
 -- Live organizations with their alert settings (defaults when they never saved any).
 SELECT o.id, o.name, COALESCE(a.enabled, true)::boolean AS enabled,
-       COALESCE(a.kinds, '{warranty,license,eos}')::text[] AS kinds,
+       COALESCE(a.kinds, '{warranty,license,eos,contract}')::text[] AS kinds,
        COALESCE(a.milestones, '{90,60,30,7}')::integer[] AS milestones,
        COALESCE(a.email_admins, true)::boolean AS email_admins,
        COALESCE(a.extra_emails, '{}')::text[] AS extra_emails,
@@ -73,17 +73,35 @@ VALUES (@organization_id, @kind, @device_id, @due_date, @milestone)
 ON CONFLICT (organization_id, device_id, kind, due_date, milestone) DO NOTHING
 RETURNING id;
 
+-- name: AlertContractCandidates :many
+-- End dates of live contracts (P2-04) in [@since, @until].
+SELECT k.id AS contract_id, k.end_date::date AS day
+FROM contracts k
+WHERE k.organization_id = @organization_id AND k.deleted_at IS NULL AND k.end_date IS NOT NULL
+  AND k.end_date >= @since::date AND k.end_date <= @until::date;
+
+-- name: InsertContractNotification :one
+INSERT INTO notifications (organization_id, kind, contract_id, due_date, milestone)
+VALUES (@organization_id, 'contract', @contract_id, @due_date, @milestone)
+ON CONFLICT (organization_id, contract_id, due_date, milestone) WHERE contract_id IS NOT NULL DO NOTHING
+RETURNING id;
+
 -- name: UnsentNotifications :many
--- Notifications not e-mailed yet; current = the device still counts (date unchanged, not muted, still in use).
-SELECT n.id, n.kind, n.due_date, n.milestone, d.id AS device_id, d.hostname, s.code::text AS site_code,
-       (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END
-          IS NOT DISTINCT FROM n.due_date
-        AND NOT d.alerts_muted AND d.lifecycle IN ('active', 'spare'))::boolean AS current
+-- Notifications not e-mailed yet; current = the subject still counts (device: date unchanged, not muted, in use;
+-- contract: live, end date unchanged). title / place: hostname and site, or contract name and vendor.
+SELECT n.id, n.kind, n.due_date, n.milestone, n.device_id, n.contract_id,
+       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place,
+       (CASE WHEN n.contract_id IS NOT NULL THEN k.deleted_at IS NULL AND k.end_date IS NOT DISTINCT FROM n.due_date
+             ELSE d.deleted_at IS NULL AND NOT d.alerts_muted AND d.lifecycle IN ('active', 'spare')
+                  AND (CASE n.kind WHEN 'warranty' THEN d.warranty_end WHEN 'license' THEN d.license_end ELSE d.eos_date END)
+                      IS NOT DISTINCT FROM n.due_date END)::boolean AS current
 FROM notifications n
-JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
-JOIN sites s ON s.id = d.site_id
+LEFT JOIN devices d ON d.id = n.device_id
+LEFT JOIN sites s ON s.id = d.site_id
+LEFT JOIN contracts k ON k.id = n.contract_id
+LEFT JOIN vendors v ON v.id = k.vendor_id
 WHERE n.organization_id = @organization_id AND n.emailed_at IS NULL
-ORDER BY n.due_date, lower(d.hostname), n.kind;
+ORDER BY n.due_date, lower(COALESCE(d.hostname, k.name, '')), n.kind;
 
 -- name: MarkNotificationsEmailed :exec
 UPDATE notifications SET emailed_at = now()
@@ -102,12 +120,15 @@ WHERE m.organization_id = @organization_id AND m.role IN ('owner', 'admin')
 ORDER BY lower(u.email::text);
 
 -- name: ListNotifications :many
--- The latest notifications of an organization for the bell (the caller filters them by device visibility).
-SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, d.id AS device_id, d.hostname, s.code::text AS site_code
+-- The latest notifications of an organization for the bell: devices (live) and contracts (live).
+SELECT n.id, n.kind, n.due_date, n.milestone, n.created_at, n.device_id, n.contract_id,
+       COALESCE(d.hostname, k.name, '')::text AS title, COALESCE(s.code::text, v.name, '')::text AS place
 FROM notifications n
-JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
-JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
-WHERE n.organization_id = @organization_id
+LEFT JOIN devices d ON d.id = n.device_id AND d.deleted_at IS NULL
+LEFT JOIN sites s ON s.id = d.site_id AND s.deleted_at IS NULL
+LEFT JOIN contracts k ON k.id = n.contract_id AND k.deleted_at IS NULL
+LEFT JOIN vendors v ON v.id = k.vendor_id
+WHERE n.organization_id = @organization_id AND ((d.id IS NOT NULL AND s.id IS NOT NULL) OR k.id IS NOT NULL)
 ORDER BY n.created_at DESC, n.due_date
 LIMIT @lim;
 

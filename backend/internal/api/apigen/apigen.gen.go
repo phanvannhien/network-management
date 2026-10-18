@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -59,6 +60,7 @@ func (e AccountTokenInfoPurpose) Valid() bool {
 
 // Defines values for AlertKind.
 const (
+	AlertKindContract AlertKind = "contract"
 	AlertKindEos      AlertKind = "eos"
 	AlertKindLicense  AlertKind = "license"
 	AlertKindWarranty AlertKind = "warranty"
@@ -67,6 +69,8 @@ const (
 // Valid indicates whether the value is a known member of the AlertKind enum.
 func (e AlertKind) Valid() bool {
 	switch e {
+	case AlertKindContract:
+		return true
 	case AlertKindEos:
 		return true
 	case AlertKindLicense:
@@ -123,6 +127,36 @@ func (e ClusterRole) Valid() bool {
 	case ClusterRolePrimary:
 		return true
 	case ClusterRoleSecondary:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractKind.
+const (
+	ContractKindIsp         ContractKind = "isp"
+	ContractKindLicense     ContractKind = "license"
+	ContractKindMaintenance ContractKind = "maintenance"
+	ContractKindOther       ContractKind = "other"
+	ContractKindSupport     ContractKind = "support"
+	ContractKindWarranty    ContractKind = "warranty"
+)
+
+// Valid indicates whether the value is a known member of the ContractKind enum.
+func (e ContractKind) Valid() bool {
+	switch e {
+	case ContractKindIsp:
+		return true
+	case ContractKindLicense:
+		return true
+	case ContractKindMaintenance:
+		return true
+	case ContractKindOther:
+		return true
+	case ContractKindSupport:
+		return true
+	case ContractKindWarranty:
 		return true
 	default:
 		return false
@@ -1235,16 +1269,16 @@ func (e NtbImportDeviceActions) Valid() bool {
 
 // Defines values for OrganizationKind.
 const (
-	Customer OrganizationKind = "customer"
-	Internal OrganizationKind = "internal"
+	OrganizationKindCustomer OrganizationKind = "customer"
+	OrganizationKindInternal OrganizationKind = "internal"
 )
 
 // Valid indicates whether the value is a known member of the OrganizationKind enum.
 func (e OrganizationKind) Valid() bool {
 	switch e {
-	case Customer:
+	case OrganizationKindCustomer:
 		return true
-	case Internal:
+	case OrganizationKindInternal:
 		return true
 	default:
 		return false
@@ -1506,6 +1540,36 @@ func (e ValConflictSeverity) Valid() bool {
 	}
 }
 
+// Defines values for VendorKind.
+const (
+	VendorKindCustomer     VendorKind = "customer"
+	VendorKindIsp          VendorKind = "isp"
+	VendorKindMaintenance  VendorKind = "maintenance"
+	VendorKindManufacturer VendorKind = "manufacturer"
+	VendorKindOther        VendorKind = "other"
+	VendorKindSupplier     VendorKind = "supplier"
+)
+
+// Valid indicates whether the value is a known member of the VendorKind enum.
+func (e VendorKind) Valid() bool {
+	switch e {
+	case VendorKindCustomer:
+		return true
+	case VendorKindIsp:
+		return true
+	case VendorKindMaintenance:
+		return true
+	case VendorKindManufacturer:
+		return true
+	case VendorKindOther:
+		return true
+	case VendorKindSupplier:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeviceSort.
 const (
 	DeviceSortCategory    DeviceSort = "category"
@@ -1683,7 +1747,7 @@ type AdminUserList struct {
 	Users []AdminUser `json:"users"`
 }
 
-// AlertKind warranty end, license end, vendor end of support
+// AlertKind warranty end, license end, vendor end of support, contract end (P2-04)
 type AlertKind string
 
 // AlertSettings defines model for AlertSettings.
@@ -1986,6 +2050,91 @@ type ClusterUpdate struct {
 	Notes   *string            `json:"notes,omitempty"`
 	SiteId  openapi_types.UUID `json:"siteId"`
 	Version int32              `json:"version"`
+}
+
+// Contract defines model for Contract.
+type Contract struct {
+	DeviceCount int                 `json:"deviceCount"`
+	EndDate     *openapi_types.Date `json:"endDate"`
+	FileCount   int                 `json:"fileCount"`
+	Id          openapi_types.UUID  `json:"id"`
+
+	// Kind vendor support (SmartNet, FortiCare…), hardware warranty, license / subscription, internet service, maintenance, other
+	Kind          ContractKind        `json:"kind"`
+	LinkCount     int                 `json:"linkCount"`
+	Name          string              `json:"name"`
+	Notes         string              `json:"notes"`
+	Number        string              `json:"number"`
+	Sla           string              `json:"sla"`
+	StartDate     *openapi_types.Date `json:"startDate"`
+	SupportEmail  string              `json:"supportEmail"`
+	SupportPhone  string              `json:"supportPhone"`
+	SupportPortal string              `json:"supportPortal"`
+	VendorId      openapi_types.UUID  `json:"vendorId"`
+
+	// VendorKind manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
+	VendorKind VendorKind `json:"vendorKind"`
+	VendorName string     `json:"vendorName"`
+	Version    int        `json:"version"`
+}
+
+// ContractDetail defines model for ContractDetail.
+type ContractDetail struct {
+	Contacts []VendorContact  `json:"contacts"`
+	Contract Contract         `json:"contract"`
+	Devices  []ContractDevice `json:"devices"`
+	Files    []ContractFile   `json:"files"`
+
+	// HiddenDevices covered devices the caller cannot see (unit grants)
+	HiddenDevices int            `json:"hiddenDevices"`
+	Links         []ContractLink `json:"links"`
+}
+
+// ContractDevice defines model for ContractDevice.
+type ContractDevice struct {
+	Hostname string             `json:"hostname"`
+	Id       openapi_types.UUID `json:"id"`
+	Model    string             `json:"model"`
+	SiteCode string             `json:"siteCode"`
+	Type     DeviceType         `json:"type"`
+}
+
+// ContractFile defines model for ContractFile.
+type ContractFile struct {
+	ContentType string             `json:"contentType"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	Size        int                `json:"size"`
+}
+
+// ContractInput defines model for ContractInput.
+type ContractInput struct {
+	DeviceIds []openapi_types.UUID `json:"deviceIds"`
+	EndDate   *openapi_types.Date  `json:"endDate,omitempty"`
+
+	// Kind vendor support (SmartNet, FortiCare…), hardware warranty, license / subscription, internet service, maintenance, other
+	Kind      ContractKind         `json:"kind"`
+	LinkIds   []openapi_types.UUID `json:"linkIds"`
+	Name      string               `json:"name"`
+	Notes     *string              `json:"notes,omitempty"`
+	Number    *string              `json:"number,omitempty"`
+	Sla       *string              `json:"sla,omitempty"`
+	StartDate *openapi_types.Date  `json:"startDate,omitempty"`
+	VendorId  openapi_types.UUID   `json:"vendorId"`
+	Version   *int                 `json:"version,omitempty"`
+}
+
+// ContractKind vendor support (SmartNet, FortiCare…), hardware warranty, license / subscription, internet service, maintenance, other
+type ContractKind string
+
+// ContractLink defines model for ContractLink.
+type ContractLink struct {
+	AName     string             `json:"aName"`
+	BName     string             `json:"bName"`
+	CircuitId string             `json:"circuitId"`
+	Id        openapi_types.UUID `json:"id"`
+	Provider  string             `json:"provider"`
 }
 
 // CreateOrganizationRequest defines model for CreateOrganizationRequest.
@@ -2311,7 +2460,10 @@ type Device struct {
 	SiteCode     string             `json:"siteCode"`
 	SiteId       openapi_types.UUID `json:"siteId"`
 	SiteName     string             `json:"siteName"`
-	Tags         []string           `json:"tags"`
+
+	// SupplierId the vendor it was bought from (P2-04)
+	SupplierId *openapi_types.UUID `json:"supplierId,omitempty"`
+	Tags       []string            `json:"tags"`
 
 	// TemplateId Template the device was created from (its ports came from it); used when cloning
 	TemplateId  *openapi_types.UUID `json:"templateId"`
@@ -3512,19 +3664,24 @@ type NextFreeIp struct {
 
 // Notification defines model for Notification.
 type Notification struct {
-	CreatedAt time.Time          `json:"createdAt"`
-	DeviceId  openapi_types.UUID `json:"deviceId"`
-	DueDate   openapi_types.Date `json:"dueDate"`
-	Hostname  string             `json:"hostname"`
-	Id        openapi_types.UUID `json:"id"`
+	ContractId *openapi_types.UUID `json:"contractId"`
+	CreatedAt  time.Time           `json:"createdAt"`
+	DeviceId   *openapi_types.UUID `json:"deviceId"`
+	DueDate    openapi_types.Date  `json:"dueDate"`
 
-	// Kind warranty end, license end, vendor end of support
+	// Hostname the device, or the contract name for a contract
+	Hostname string             `json:"hostname"`
+	Id       openapi_types.UUID `json:"id"`
+
+	// Kind warranty end, license end, vendor end of support, contract end (P2-04)
 	Kind AlertKind `json:"kind"`
 
 	// Milestone days before the date when it was raised; 0 = the date had passed
-	Milestone int    `json:"milestone"`
-	SiteCode  string `json:"siteCode"`
-	Unread    bool   `json:"unread"`
+	Milestone int `json:"milestone"`
+
+	// SiteCode the device's site, or the vendor name for a contract
+	SiteCode string `json:"siteCode"`
+	Unread   bool   `json:"unread"`
 }
 
 // NtbFile a .ntb.json document — its shape is schema/ntb.schema.json (v2), checked by the server
@@ -4198,6 +4355,75 @@ type ValidationRequest struct {
 	InterfaceIds *[]openapi_types.UUID `json:"interfaceIds,omitempty"`
 }
 
+// Vendor defines model for Vendor.
+type Vendor struct {
+	ContactCount  int                `json:"contactCount"`
+	ContractCount int                `json:"contractCount"`
+	Id            openapi_types.UUID `json:"id"`
+
+	// Kind manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
+	Kind VendorKind `json:"kind"`
+	Name string     `json:"name"`
+
+	// NextEnd the nearest end date of its live contracts from today
+	NextEnd       *openapi_types.Date `json:"nextEnd"`
+	Notes         string              `json:"notes"`
+	SupportEmail  string              `json:"supportEmail"`
+	SupportPhone  string              `json:"supportPhone"`
+	SupportPortal string              `json:"supportPortal"`
+	TaxCode       string              `json:"taxCode"`
+	Version       int                 `json:"version"`
+	Website       string              `json:"website"`
+}
+
+// VendorContact defines model for VendorContact.
+type VendorContact struct {
+	Email    string             `json:"email"`
+	Id       openapi_types.UUID `json:"id"`
+	Name     string             `json:"name"`
+	Notes    string             `json:"notes"`
+	Phone    string             `json:"phone"`
+	Title    string             `json:"title"`
+	VendorId openapi_types.UUID `json:"vendorId"`
+	Version  int                `json:"version"`
+}
+
+// VendorContactInput defines model for VendorContactInput.
+type VendorContactInput struct {
+	Email   *string `json:"email,omitempty"`
+	Name    string  `json:"name"`
+	Notes   *string `json:"notes,omitempty"`
+	Phone   *string `json:"phone,omitempty"`
+	Title   *string `json:"title,omitempty"`
+	Version *int    `json:"version,omitempty"`
+}
+
+// VendorDetail defines model for VendorDetail.
+type VendorDetail struct {
+	Contacts  []VendorContact `json:"contacts"`
+	Contracts []Contract      `json:"contracts"`
+	Vendor    Vendor          `json:"vendor"`
+}
+
+// VendorInput defines model for VendorInput.
+type VendorInput struct {
+	// Kind manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
+	Kind          VendorKind `json:"kind"`
+	Name          string     `json:"name"`
+	Notes         *string    `json:"notes,omitempty"`
+	SupportEmail  *string    `json:"supportEmail,omitempty"`
+	SupportPhone  *string    `json:"supportPhone,omitempty"`
+	SupportPortal *string    `json:"supportPortal,omitempty"`
+	TaxCode       *string    `json:"taxCode,omitempty"`
+
+	// Version update only — the version read
+	Version *int    `json:"version,omitempty"`
+	Website *string `json:"website,omitempty"`
+}
+
+// VendorKind manufacturer, supplier / distributor, internet provider, maintenance company, customer, other
+type VendorKind string
+
 // Vlan defines model for Vlan.
 type Vlan struct {
 	// Access The caller's access on a record, from the organization role — view, edit (data), admin (manage users, delete)
@@ -4273,6 +4499,9 @@ type CategoryId = openapi_types.UUID
 
 // ClusterId defines model for ClusterId.
 type ClusterId = openapi_types.UUID
+
+// ContractId defines model for ContractId.
+type ContractId = openapi_types.UUID
 
 // CsrfToken defines model for CsrfToken.
 type CsrfToken = string
@@ -4360,6 +4589,9 @@ type TemplateId = openapi_types.UUID
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
+
+// VendorId defines model for VendorId.
+type VendorId = openapi_types.UUID
 
 // VlanId defines model for VlanId.
 type VlanId = openapi_types.UUID
@@ -4550,6 +4782,42 @@ type UpdateClusterParams struct {
 // PreviewOrganizationCodeParams defines parameters for PreviewOrganizationCode.
 type PreviewOrganizationCodeParams struct {
 	Code string `form:"code" json:"code"`
+}
+
+// ListContractsParams defines parameters for ListContracts.
+type ListContractsParams struct {
+	Q        *string             `form:"q,omitempty" json:"q,omitempty"`
+	VendorId *openapi_types.UUID `form:"vendorId,omitempty" json:"vendorId,omitempty"`
+	DeviceId *openapi_types.UUID `form:"deviceId,omitempty" json:"deviceId,omitempty"`
+	LinkId   *openapi_types.UUID `form:"linkId,omitempty" json:"linkId,omitempty"`
+
+	// EndsWithinDays ending before today + N days (already ended included)
+	EndsWithinDays *int `form:"endsWithinDays,omitempty" json:"endsWithinDays,omitempty"`
+}
+
+// CreateContractParams defines parameters for CreateContract.
+type CreateContractParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteContractParams defines parameters for DeleteContract.
+type DeleteContractParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateContractParams defines parameters for UpdateContract.
+type UpdateContractParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UploadContractFileMultipartBody defines parameters for UploadContractFile.
+type UploadContractFileMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
+// UploadContractFileParams defines parameters for UploadContractFile.
+type UploadContractFileParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
 // CreateCustomFieldParams defines parameters for CreateCustomField.
@@ -4744,6 +5012,16 @@ type SetDeviceMgmtIpParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// SetDeviceSupplierJSONBody defines parameters for SetDeviceSupplier.
+type SetDeviceSupplierJSONBody struct {
+	SupplierId *openapi_types.UUID `json:"supplierId"`
+}
+
+// SetDeviceSupplierParams defines parameters for SetDeviceSupplier.
+type SetDeviceSupplierParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // CreateDiagramParams defines parameters for CreateDiagram.
 type CreateDiagramParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
@@ -4806,6 +5084,11 @@ type PromoteEndpointMemberParams struct {
 
 // RecordExportParams defines parameters for RecordExport.
 type RecordExportParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteFileParams defines parameters for DeleteFile.
+type DeleteFileParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -4994,6 +5277,42 @@ type ValidationContextParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
+// DeleteVendorContactParams defines parameters for DeleteVendorContact.
+type DeleteVendorContactParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateVendorContactParams defines parameters for UpdateVendorContact.
+type UpdateVendorContactParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// ListVendorsParams defines parameters for ListVendors.
+type ListVendorsParams struct {
+	Q    *string     `form:"q,omitempty" json:"q,omitempty"`
+	Kind *VendorKind `form:"kind,omitempty" json:"kind,omitempty"`
+}
+
+// CreateVendorParams defines parameters for CreateVendor.
+type CreateVendorParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// DeleteVendorParams defines parameters for DeleteVendor.
+type DeleteVendorParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// UpdateVendorParams defines parameters for UpdateVendor.
+type UpdateVendorParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// CreateVendorContactParams defines parameters for CreateVendorContact.
+type CreateVendorContactParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
 // ListVlansParams defines parameters for ListVlans.
 type ListVlansParams struct {
 	SiteId *openapi_types.UUID `form:"siteId,omitempty" json:"siteId,omitempty"`
@@ -5059,6 +5378,15 @@ type CreateClusterJSONRequestBody = ClusterInput
 // UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
 type UpdateClusterJSONRequestBody = ClusterUpdate
 
+// CreateContractJSONRequestBody defines body for CreateContract for application/json ContentType.
+type CreateContractJSONRequestBody = ContractInput
+
+// UpdateContractJSONRequestBody defines body for UpdateContract for application/json ContentType.
+type UpdateContractJSONRequestBody = ContractInput
+
+// UploadContractFileMultipartRequestBody defines body for UploadContractFile for multipart/form-data ContentType.
+type UploadContractFileMultipartRequestBody UploadContractFileMultipartBody
+
 // CreateCustomFieldJSONRequestBody defines body for CreateCustomField for application/json ContentType.
 type CreateCustomFieldJSONRequestBody = CustomFieldInput
 
@@ -5121,6 +5449,9 @@ type UpdateDeviceIpJSONRequestBody = IpAddressUpdate
 
 // SetDeviceMgmtIpJSONRequestBody defines body for SetDeviceMgmtIp for application/json ContentType.
 type SetDeviceMgmtIpJSONRequestBody SetDeviceMgmtIpJSONBody
+
+// SetDeviceSupplierJSONRequestBody defines body for SetDeviceSupplier for application/json ContentType.
+type SetDeviceSupplierJSONRequestBody SetDeviceSupplierJSONBody
 
 // CreateDiagramJSONRequestBody defines body for CreateDiagram for application/json ContentType.
 type CreateDiagramJSONRequestBody = DiagramInput
@@ -5199,6 +5530,18 @@ type UpdateIpRangeJSONRequestBody = IpRangeUpdate
 
 // ValidationContextJSONRequestBody defines body for ValidationContext for application/json ContentType.
 type ValidationContextJSONRequestBody = ValidationRequest
+
+// UpdateVendorContactJSONRequestBody defines body for UpdateVendorContact for application/json ContentType.
+type UpdateVendorContactJSONRequestBody = VendorContactInput
+
+// CreateVendorJSONRequestBody defines body for CreateVendor for application/json ContentType.
+type CreateVendorJSONRequestBody = VendorInput
+
+// UpdateVendorJSONRequestBody defines body for UpdateVendor for application/json ContentType.
+type UpdateVendorJSONRequestBody = VendorInput
+
+// CreateVendorContactJSONRequestBody defines body for CreateVendorContact for application/json ContentType.
+type CreateVendorContactJSONRequestBody = VendorContactInput
 
 // CreateVlanJSONRequestBody defines body for CreateVlan for application/json ContentType.
 type CreateVlanJSONRequestBody = VlanInput
@@ -5328,6 +5671,24 @@ type ServerInterface interface {
 	// PreviewOrganizationCode Site codes a new organization code would change (nothing is written)
 	// (GET /orgs/{orgId}/code-preview)
 	PreviewOrganizationCode(w http.ResponseWriter, r *http.Request, orgId OrgId, params PreviewOrganizationCodeParams)
+	// ListContracts Contracts of the organization (P2-04) — of a vendor, covering a device or a link, ending soon
+	// (GET /orgs/{orgId}/contracts)
+	ListContracts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListContractsParams)
+	// CreateContract Add a contract and what it covers (editors)
+	// (POST /orgs/{orgId}/contracts)
+	CreateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateContractParams)
+	// DeleteContract Remove a contract (its files go with it)
+	// (DELETE /orgs/{orgId}/contracts/{contractId})
+	DeleteContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params DeleteContractParams)
+	// GetContract A contract with the devices / links it covers (those the caller can see), its files and the vendor contacts
+	// (GET /orgs/{orgId}/contracts/{contractId})
+	GetContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId)
+	// UpdateContract Edit a contract; the device / link lists replace the old ones (editors, optimistic lock)
+	// (PATCH /orgs/{orgId}/contracts/{contractId})
+	UpdateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UpdateContractParams)
+	// UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
+	// (POST /orgs/{orgId}/contracts/{contractId}/files)
+	UploadContractFile(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UploadContractFileParams)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -5439,6 +5800,9 @@ type ServerInterface interface {
 	// SetDeviceMgmtIp Set the management IP in one step (property panel) — on the management interface, created if missing
 	// (PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip)
 	SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceMgmtIpParams)
+	// SetDeviceSupplier Where the device was bought (a vendor of the organization, or none) — edit access, audited
+	// (PUT /orgs/{orgId}/devices/{deviceId}/supplier)
+	SetDeviceSupplier(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceSupplierParams)
 	// ListDiagrams Diagrams the caller may see (no view data)
 	// (GET /orgs/{orgId}/diagrams)
 	ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -5490,6 +5854,12 @@ type ServerInterface interface {
 	// RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
 	// (POST /orgs/{orgId}/export-events)
 	RecordExport(w http.ResponseWriter, r *http.Request, orgId OrgId, params RecordExportParams)
+	// DeleteFile Remove an attached file (editors)
+	// (DELETE /orgs/{orgId}/files/{fileId})
+	DeleteFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID, params DeleteFileParams)
+	// DownloadFile Download an attached file (always as an attachment)
+	// (GET /orgs/{orgId}/files/{fileId})
+	DownloadFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(w http.ResponseWriter, r *http.Request, orgId OrgId, params LookupIpParams)
@@ -5610,6 +5980,30 @@ type ServerInterface interface {
 	// ValidationContext What the diagram checks need about these objects (read only, P1-20)
 	// (POST /orgs/{orgId}/validation-context)
 	ValidationContext(w http.ResponseWriter, r *http.Request, orgId OrgId, params ValidationContextParams)
+	// DeleteVendorContact Remove a contact
+	// (DELETE /orgs/{orgId}/vendor-contacts/{contactId})
+	DeleteVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params DeleteVendorContactParams)
+	// UpdateVendorContact Edit a contact
+	// (PATCH /orgs/{orgId}/vendor-contacts/{contactId})
+	UpdateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params UpdateVendorContactParams)
+	// ListVendors Vendors of the organization (P2-04) — manufacturers, suppliers, ISPs, maintenance companies
+	// (GET /orgs/{orgId}/vendors)
+	ListVendors(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVendorsParams)
+	// CreateVendor Add a vendor (editors)
+	// (POST /orgs/{orgId}/vendors)
+	CreateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVendorParams)
+	// DeleteVendor Remove a vendor without live contracts (devices bought from it keep no supplier)
+	// (DELETE /orgs/{orgId}/vendors/{vendorId})
+	DeleteVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params DeleteVendorParams)
+	// GetVendor A vendor with its contacts and contracts
+	// (GET /orgs/{orgId}/vendors/{vendorId})
+	GetVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId)
+	// UpdateVendor Edit a vendor (editors, optimistic lock)
+	// (PATCH /orgs/{orgId}/vendors/{vendorId})
+	UpdateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params UpdateVendorParams)
+	// CreateVendorContact Add a contact person to a vendor
+	// (POST /orgs/{orgId}/vendors/{vendorId}/contacts)
+	CreateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params CreateVendorContactParams)
 	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
 	// (GET /orgs/{orgId}/vlans)
 	ListVlans(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVlansParams)
@@ -5868,6 +6262,42 @@ func (_ Unimplemented) PreviewOrganizationCode(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListContracts Contracts of the organization (P2-04) — of a vendor, covering a device or a link, ending soon
+// (GET /orgs/{orgId}/contracts)
+func (_ Unimplemented) ListContracts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListContractsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateContract Add a contract and what it covers (editors)
+// (POST /orgs/{orgId}/contracts)
+func (_ Unimplemented) CreateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateContractParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteContract Remove a contract (its files go with it)
+// (DELETE /orgs/{orgId}/contracts/{contractId})
+func (_ Unimplemented) DeleteContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params DeleteContractParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetContract A contract with the devices / links it covers (those the caller can see), its files and the vendor contacts
+// (GET /orgs/{orgId}/contracts/{contractId})
+func (_ Unimplemented) GetContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateContract Edit a contract; the device / link lists replace the old ones (editors, optimistic lock)
+// (PATCH /orgs/{orgId}/contracts/{contractId})
+func (_ Unimplemented) UpdateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UpdateContractParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
+// (POST /orgs/{orgId}/contracts/{contractId}/files)
+func (_ Unimplemented) UploadContractFile(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UploadContractFileParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListCustomFields Custom device fields of the organization
 // (GET /orgs/{orgId}/custom-fields)
 func (_ Unimplemented) ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId) {
@@ -6090,6 +6520,12 @@ func (_ Unimplemented) SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request, o
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SetDeviceSupplier Where the device was bought (a vendor of the organization, or none) — edit access, audited
+// (PUT /orgs/{orgId}/devices/{deviceId}/supplier)
+func (_ Unimplemented) SetDeviceSupplier(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceSupplierParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListDiagrams Diagrams the caller may see (no view data)
 // (GET /orgs/{orgId}/diagrams)
 func (_ Unimplemented) ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId) {
@@ -6189,6 +6625,18 @@ func (_ Unimplemented) PromoteEndpointMember(w http.ResponseWriter, r *http.Requ
 // RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
 // (POST /orgs/{orgId}/export-events)
 func (_ Unimplemented) RecordExport(w http.ResponseWriter, r *http.Request, orgId OrgId, params RecordExportParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteFile Remove an attached file (editors)
+// (DELETE /orgs/{orgId}/files/{fileId})
+func (_ Unimplemented) DeleteFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID, params DeleteFileParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DownloadFile Download an attached file (always as an attachment)
+// (GET /orgs/{orgId}/files/{fileId})
+func (_ Unimplemented) DownloadFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6429,6 +6877,54 @@ func (_ Unimplemented) UpdateIpRange(w http.ResponseWriter, r *http.Request, org
 // ValidationContext What the diagram checks need about these objects (read only, P1-20)
 // (POST /orgs/{orgId}/validation-context)
 func (_ Unimplemented) ValidationContext(w http.ResponseWriter, r *http.Request, orgId OrgId, params ValidationContextParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteVendorContact Remove a contact
+// (DELETE /orgs/{orgId}/vendor-contacts/{contactId})
+func (_ Unimplemented) DeleteVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params DeleteVendorContactParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateVendorContact Edit a contact
+// (PATCH /orgs/{orgId}/vendor-contacts/{contactId})
+func (_ Unimplemented) UpdateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params UpdateVendorContactParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListVendors Vendors of the organization (P2-04) — manufacturers, suppliers, ISPs, maintenance companies
+// (GET /orgs/{orgId}/vendors)
+func (_ Unimplemented) ListVendors(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVendorsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateVendor Add a vendor (editors)
+// (POST /orgs/{orgId}/vendors)
+func (_ Unimplemented) CreateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVendorParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteVendor Remove a vendor without live contracts (devices bought from it keep no supplier)
+// (DELETE /orgs/{orgId}/vendors/{vendorId})
+func (_ Unimplemented) DeleteVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params DeleteVendorParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetVendor A vendor with its contacts and contracts
+// (GET /orgs/{orgId}/vendors/{vendorId})
+func (_ Unimplemented) GetVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateVendor Edit a vendor (editors, optimistic lock)
+// (PATCH /orgs/{orgId}/vendors/{vendorId})
+func (_ Unimplemented) UpdateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params UpdateVendorParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateVendorContact Add a contact person to a vendor
+// (POST /orgs/{orgId}/vendors/{vendorId}/contacts)
+func (_ Unimplemented) CreateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params CreateVendorContactParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8249,6 +8745,378 @@ func (siw *ServerInterfaceWrapper) PreviewOrganizationCode(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewOrganizationCode(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListContracts operation middleware
+func (siw *ServerInterfaceWrapper) ListContracts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListContractsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "vendorId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "vendorId", r.URL.Query(), &params.VendorId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "vendorId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendorId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "deviceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "deviceId", r.URL.Query(), &params.DeviceId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deviceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "linkId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "linkId", r.URL.Query(), &params.LinkId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "linkId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "linkId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "endsWithinDays" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "endsWithinDays", r.URL.Query(), &params.EndsWithinDays, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "endsWithinDays"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "endsWithinDays", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListContracts(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateContract operation middleware
+func (siw *ServerInterfaceWrapper) CreateContract(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateContractParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateContract(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteContract operation middleware
+func (siw *ServerInterfaceWrapper) DeleteContract(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contractId" -------------
+	var contractId ContractId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contractId", chi.URLParam(r, "contractId"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contractId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteContractParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteContract(w, r, orgId, contractId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetContract operation middleware
+func (siw *ServerInterfaceWrapper) GetContract(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contractId" -------------
+	var contractId ContractId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contractId", chi.URLParam(r, "contractId"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contractId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetContract(w, r, orgId, contractId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateContract operation middleware
+func (siw *ServerInterfaceWrapper) UpdateContract(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contractId" -------------
+	var contractId ContractId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contractId", chi.URLParam(r, "contractId"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contractId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateContractParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateContract(w, r, orgId, contractId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadContractFile operation middleware
+func (siw *ServerInterfaceWrapper) UploadContractFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contractId" -------------
+	var contractId ContractId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contractId", chi.URLParam(r, "contractId"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contractId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UploadContractFileParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadContractFile(w, r, orgId, contractId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10374,6 +11242,69 @@ func (siw *ServerInterfaceWrapper) SetDeviceMgmtIp(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// SetDeviceSupplier operation middleware
+func (siw *ServerInterfaceWrapper) SetDeviceSupplier(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deviceId" -------------
+	var deviceId DeviceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deviceId", chi.URLParam(r, "deviceId"), &deviceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deviceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetDeviceSupplierParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetDeviceSupplier(w, r, orgId, deviceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListDiagrams operation middleware
 func (siw *ServerInterfaceWrapper) ListDiagrams(w http.ResponseWriter, r *http.Request) {
 
@@ -11294,6 +12225,104 @@ func (siw *ServerInterfaceWrapper) RecordExport(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RecordExport(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteFile operation middleware
+func (siw *ServerInterfaceWrapper) DeleteFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "fileId" -------------
+	var fileId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "fileId", chi.URLParam(r, "fileId"), &fileId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fileId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteFileParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteFile(w, r, orgId, fileId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadFile operation middleware
+func (siw *ServerInterfaceWrapper) DownloadFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "fileId" -------------
+	var fileId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "fileId", chi.URLParam(r, "fileId"), &fileId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fileId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadFile(w, r, orgId, fileId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13509,6 +14538,465 @@ func (siw *ServerInterfaceWrapper) ValidationContext(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteVendorContact operation middleware
+func (siw *ServerInterfaceWrapper) DeleteVendorContact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contactId" -------------
+	var contactId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contactId", chi.URLParam(r, "contactId"), &contactId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contactId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteVendorContactParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteVendorContact(w, r, orgId, contactId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateVendorContact operation middleware
+func (siw *ServerInterfaceWrapper) UpdateVendorContact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "contactId" -------------
+	var contactId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contactId", chi.URLParam(r, "contactId"), &contactId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contactId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateVendorContactParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateVendorContact(w, r, orgId, contactId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListVendors operation middleware
+func (siw *ServerInterfaceWrapper) ListVendors(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListVendorsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListVendors(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateVendor operation middleware
+func (siw *ServerInterfaceWrapper) CreateVendor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateVendorParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateVendor(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteVendor operation middleware
+func (siw *ServerInterfaceWrapper) DeleteVendor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vendorId" -------------
+	var vendorId VendorId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vendorId", chi.URLParam(r, "vendorId"), &vendorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendorId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteVendorParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteVendor(w, r, orgId, vendorId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVendor operation middleware
+func (siw *ServerInterfaceWrapper) GetVendor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vendorId" -------------
+	var vendorId VendorId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vendorId", chi.URLParam(r, "vendorId"), &vendorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendorId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVendor(w, r, orgId, vendorId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateVendor operation middleware
+func (siw *ServerInterfaceWrapper) UpdateVendor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vendorId" -------------
+	var vendorId VendorId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vendorId", chi.URLParam(r, "vendorId"), &vendorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendorId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateVendorParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateVendor(w, r, orgId, vendorId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateVendorContact operation middleware
+func (siw *ServerInterfaceWrapper) CreateVendorContact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "vendorId" -------------
+	var vendorId VendorId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "vendorId", chi.URLParam(r, "vendorId"), &vendorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vendorId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateVendorContactParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateVendorContact(w, r, orgId, vendorId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListVlans operation middleware
 func (siw *ServerInterfaceWrapper) ListVlans(w http.ResponseWriter, r *http.Request) {
 
@@ -14029,6 +15517,57 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-delete", wrapper.BulkDeleteDevices)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/vendors", wrapper.ListVendors)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/vendors", wrapper.CreateVendor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/vendors/{vendorId}", wrapper.DeleteVendor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/vendors/{vendorId}", wrapper.GetVendor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/vendors/{vendorId}", wrapper.UpdateVendor)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/vendors/{vendorId}/contacts", wrapper.CreateVendorContact)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/vendor-contacts/{contactId}", wrapper.DeleteVendorContact)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/vendor-contacts/{contactId}", wrapper.UpdateVendorContact)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/contracts", wrapper.ListContracts)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/contracts", wrapper.CreateContract)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/contracts/{contractId}", wrapper.DeleteContract)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/contracts/{contractId}", wrapper.GetContract)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/orgs/{orgId}/contracts/{contractId}", wrapper.UpdateContract)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/contracts/{contractId}/files", wrapper.UploadContractFile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/orgs/{orgId}/files/{fileId}", wrapper.DeleteFile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/orgs/{orgId}/files/{fileId}", wrapper.DownloadFile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/orgs/{orgId}/devices/{deviceId}/supplier", wrapper.SetDeviceSupplier)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orgs/{orgId}/alert-settings", wrapper.GetAlertSettings)
@@ -16795,6 +18334,482 @@ func (response PreviewOrganizationCode404JSONResponse) VisitPreviewOrganizationC
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListContractsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListContractsParams
+}
+
+type ListContractsResponseObject interface {
+	VisitListContractsResponse(w http.ResponseWriter) error
+}
+
+type ListContracts200JSONResponse struct {
+	Contracts []Contract `json:"contracts"`
+}
+
+func (response ListContracts200JSONResponse) VisitListContractsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListContracts400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListContracts400JSONResponse) VisitListContractsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListContracts401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListContracts401JSONResponse) VisitListContractsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListContracts403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListContracts403JSONResponse) VisitListContractsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListContracts404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListContracts404JSONResponse) VisitListContractsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateContractRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateContractParams
+	Body   *CreateContractJSONRequestBody
+}
+
+type CreateContractResponseObject interface {
+	VisitCreateContractResponse(w http.ResponseWriter) error
+}
+
+type CreateContract201JSONResponse ContractDetail
+
+func (response CreateContract201JSONResponse) VisitCreateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateContract400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateContract400JSONResponse) VisitCreateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateContract401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateContract401JSONResponse) VisitCreateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateContract403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateContract403JSONResponse) VisitCreateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateContract404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateContract404JSONResponse) VisitCreateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteContractRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	ContractId ContractId `json:"contractId"`
+	Params     DeleteContractParams
+}
+
+type DeleteContractResponseObject interface {
+	VisitDeleteContractResponse(w http.ResponseWriter) error
+}
+
+type DeleteContract204Response struct {
+}
+
+func (response DeleteContract204Response) VisitDeleteContractResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteContract401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteContract401JSONResponse) VisitDeleteContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteContract403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteContract403JSONResponse) VisitDeleteContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteContract404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteContract404JSONResponse) VisitDeleteContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetContractRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	ContractId ContractId `json:"contractId"`
+}
+
+type GetContractResponseObject interface {
+	VisitGetContractResponse(w http.ResponseWriter) error
+}
+
+type GetContract200JSONResponse ContractDetail
+
+func (response GetContract200JSONResponse) VisitGetContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetContract401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetContract401JSONResponse) VisitGetContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetContract403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetContract403JSONResponse) VisitGetContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetContract404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetContract404JSONResponse) VisitGetContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContractRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	ContractId ContractId `json:"contractId"`
+	Params     UpdateContractParams
+	Body       *UpdateContractJSONRequestBody
+}
+
+type UpdateContractResponseObject interface {
+	VisitUpdateContractResponse(w http.ResponseWriter) error
+}
+
+type UpdateContract200JSONResponse ContractDetail
+
+func (response UpdateContract200JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContract400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateContract400JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContract401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateContract401JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContract403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateContract403JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContract404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateContract404JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateContract409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateContract409JSONResponse) VisitUpdateContractResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFileRequestObject struct {
+	OrgId      OrgId      `json:"orgId"`
+	ContractId ContractId `json:"contractId"`
+	Params     UploadContractFileParams
+	Body       *multipart.Reader
+}
+
+type UploadContractFileResponseObject interface {
+	VisitUploadContractFileResponse(w http.ResponseWriter) error
+}
+
+type UploadContractFile201JSONResponse ContractFile
+
+func (response UploadContractFile201JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFile400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UploadContractFile400JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFile401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UploadContractFile401JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFile403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UploadContractFile403JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFile404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UploadContractFile404JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadContractFile413JSONResponse Error
+
+func (response UploadContractFile413JSONResponse) VisitUploadContractFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -19828,6 +21843,81 @@ func (response SetDeviceMgmtIp404JSONResponse) VisitSetDeviceMgmtIpResponse(w ht
 	return err
 }
 
+type SetDeviceSupplierRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	DeviceId DeviceId `json:"deviceId"`
+	Params   SetDeviceSupplierParams
+	Body     *SetDeviceSupplierJSONRequestBody
+}
+
+type SetDeviceSupplierResponseObject interface {
+	VisitSetDeviceSupplierResponse(w http.ResponseWriter) error
+}
+
+type SetDeviceSupplier204Response struct {
+}
+
+func (response SetDeviceSupplier204Response) VisitSetDeviceSupplierResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SetDeviceSupplier400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SetDeviceSupplier400JSONResponse) VisitSetDeviceSupplierResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceSupplier401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SetDeviceSupplier401JSONResponse) VisitSetDeviceSupplierResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceSupplier403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SetDeviceSupplier403JSONResponse) VisitSetDeviceSupplierResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetDeviceSupplier404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SetDeviceSupplier404JSONResponse) VisitSetDeviceSupplierResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListDiagramsRequestObject struct {
 	OrgId OrgId `json:"orgId"`
 }
@@ -21100,6 +23190,153 @@ func (response RecordExport403JSONResponse) VisitRecordExportResponse(w http.Res
 type RecordExport404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response RecordExport404JSONResponse) VisitRecordExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteFileRequestObject struct {
+	OrgId  OrgId              `json:"orgId"`
+	FileId openapi_types.UUID `json:"fileId"`
+	Params DeleteFileParams
+}
+
+type DeleteFileResponseObject interface {
+	VisitDeleteFileResponse(w http.ResponseWriter) error
+}
+
+type DeleteFile204Response struct {
+}
+
+func (response DeleteFile204Response) VisitDeleteFileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteFile401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteFile401JSONResponse) VisitDeleteFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteFile403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteFile403JSONResponse) VisitDeleteFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteFile404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteFile404JSONResponse) VisitDeleteFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadFileRequestObject struct {
+	OrgId  OrgId              `json:"orgId"`
+	FileId openapi_types.UUID `json:"fileId"`
+}
+
+type DownloadFileResponseObject interface {
+	VisitDownloadFileResponse(w http.ResponseWriter) error
+}
+
+type DownloadFile200ResponseHeaders struct {
+	CacheControl        *string
+	ContentDisposition  *string
+	XContentTypeOptions *string
+}
+
+type DownloadFile200ApplicationoctetStreamResponse struct {
+	Body          io.Reader
+	Headers       DownloadFile200ResponseHeaders
+	ContentLength int64
+}
+
+func (response DownloadFile200ApplicationoctetStreamResponse) VisitDownloadFileResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	if response.Headers.XContentTypeOptions != nil {
+		w.Header().Set("X-Content-Type-Options", fmt.Sprint(*response.Headers.XContentTypeOptions))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type DownloadFile401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DownloadFile401JSONResponse) VisitDownloadFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadFile403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DownloadFile403JSONResponse) VisitDownloadFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadFile404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DownloadFile404JSONResponse) VisitDownloadFileResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -24447,6 +26684,637 @@ func (response ValidationContext404JSONResponse) VisitValidationContextResponse(
 	return err
 }
 
+type DeleteVendorContactRequestObject struct {
+	OrgId     OrgId              `json:"orgId"`
+	ContactId openapi_types.UUID `json:"contactId"`
+	Params    DeleteVendorContactParams
+}
+
+type DeleteVendorContactResponseObject interface {
+	VisitDeleteVendorContactResponse(w http.ResponseWriter) error
+}
+
+type DeleteVendorContact204Response struct {
+}
+
+func (response DeleteVendorContact204Response) VisitDeleteVendorContactResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteVendorContact401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteVendorContact401JSONResponse) VisitDeleteVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendorContact403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteVendorContact403JSONResponse) VisitDeleteVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendorContact404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteVendorContact404JSONResponse) VisitDeleteVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContactRequestObject struct {
+	OrgId     OrgId              `json:"orgId"`
+	ContactId openapi_types.UUID `json:"contactId"`
+	Params    UpdateVendorContactParams
+	Body      *UpdateVendorContactJSONRequestBody
+}
+
+type UpdateVendorContactResponseObject interface {
+	VisitUpdateVendorContactResponse(w http.ResponseWriter) error
+}
+
+type UpdateVendorContact200JSONResponse VendorContact
+
+func (response UpdateVendorContact200JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContact400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateVendorContact400JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContact401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateVendorContact401JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContact403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateVendorContact403JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContact404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateVendorContact404JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorContact409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateVendorContact409JSONResponse) VisitUpdateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVendorsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListVendorsParams
+}
+
+type ListVendorsResponseObject interface {
+	VisitListVendorsResponse(w http.ResponseWriter) error
+}
+
+type ListVendors200JSONResponse struct {
+	Vendors []Vendor `json:"vendors"`
+}
+
+func (response ListVendors200JSONResponse) VisitListVendorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVendors401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListVendors401JSONResponse) VisitListVendorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVendors403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListVendors403JSONResponse) VisitListVendorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVendors404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListVendors404JSONResponse) VisitListVendorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateVendorParams
+	Body   *CreateVendorJSONRequestBody
+}
+
+type CreateVendorResponseObject interface {
+	VisitCreateVendorResponse(w http.ResponseWriter) error
+}
+
+type CreateVendor201JSONResponse Vendor
+
+func (response CreateVendor201JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendor400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateVendor400JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendor401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateVendor401JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendor403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateVendor403JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendor404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateVendor404JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendor409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateVendor409JSONResponse) VisitCreateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendorRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	VendorId VendorId `json:"vendorId"`
+	Params   DeleteVendorParams
+}
+
+type DeleteVendorResponseObject interface {
+	VisitDeleteVendorResponse(w http.ResponseWriter) error
+}
+
+type DeleteVendor204Response struct {
+}
+
+func (response DeleteVendor204Response) VisitDeleteVendorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteVendor401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteVendor401JSONResponse) VisitDeleteVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendor403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteVendor403JSONResponse) VisitDeleteVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendor404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteVendor404JSONResponse) VisitDeleteVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteVendor409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteVendor409JSONResponse) VisitDeleteVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVendorRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	VendorId VendorId `json:"vendorId"`
+}
+
+type GetVendorResponseObject interface {
+	VisitGetVendorResponse(w http.ResponseWriter) error
+}
+
+type GetVendor200JSONResponse VendorDetail
+
+func (response GetVendor200JSONResponse) VisitGetVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVendor401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetVendor401JSONResponse) VisitGetVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVendor403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetVendor403JSONResponse) VisitGetVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVendor404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetVendor404JSONResponse) VisitGetVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendorRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	VendorId VendorId `json:"vendorId"`
+	Params   UpdateVendorParams
+	Body     *UpdateVendorJSONRequestBody
+}
+
+type UpdateVendorResponseObject interface {
+	VisitUpdateVendorResponse(w http.ResponseWriter) error
+}
+
+type UpdateVendor200JSONResponse Vendor
+
+func (response UpdateVendor200JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendor400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateVendor400JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendor401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateVendor401JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendor403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateVendor403JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendor404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateVendor404JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateVendor409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateVendor409JSONResponse) VisitUpdateVendorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorContactRequestObject struct {
+	OrgId    OrgId    `json:"orgId"`
+	VendorId VendorId `json:"vendorId"`
+	Params   CreateVendorContactParams
+	Body     *CreateVendorContactJSONRequestBody
+}
+
+type CreateVendorContactResponseObject interface {
+	VisitCreateVendorContactResponse(w http.ResponseWriter) error
+}
+
+type CreateVendorContact201JSONResponse VendorContact
+
+func (response CreateVendorContact201JSONResponse) VisitCreateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorContact400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateVendorContact400JSONResponse) VisitCreateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorContact401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateVendorContact401JSONResponse) VisitCreateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorContact403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateVendorContact403JSONResponse) VisitCreateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateVendorContact404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateVendorContact404JSONResponse) VisitCreateVendorContactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListVlansRequestObject struct {
 	OrgId  OrgId `json:"orgId"`
 	Params ListVlansParams
@@ -24911,6 +27779,24 @@ type StrictServerInterface interface {
 	// PreviewOrganizationCode Site codes a new organization code would change (nothing is written)
 	// (GET /orgs/{orgId}/code-preview)
 	PreviewOrganizationCode(ctx context.Context, request PreviewOrganizationCodeRequestObject) (PreviewOrganizationCodeResponseObject, error)
+	// ListContracts Contracts of the organization (P2-04) — of a vendor, covering a device or a link, ending soon
+	// (GET /orgs/{orgId}/contracts)
+	ListContracts(ctx context.Context, request ListContractsRequestObject) (ListContractsResponseObject, error)
+	// CreateContract Add a contract and what it covers (editors)
+	// (POST /orgs/{orgId}/contracts)
+	CreateContract(ctx context.Context, request CreateContractRequestObject) (CreateContractResponseObject, error)
+	// DeleteContract Remove a contract (its files go with it)
+	// (DELETE /orgs/{orgId}/contracts/{contractId})
+	DeleteContract(ctx context.Context, request DeleteContractRequestObject) (DeleteContractResponseObject, error)
+	// GetContract A contract with the devices / links it covers (those the caller can see), its files and the vendor contacts
+	// (GET /orgs/{orgId}/contracts/{contractId})
+	GetContract(ctx context.Context, request GetContractRequestObject) (GetContractResponseObject, error)
+	// UpdateContract Edit a contract; the device / link lists replace the old ones (editors, optimistic lock)
+	// (PATCH /orgs/{orgId}/contracts/{contractId})
+	UpdateContract(ctx context.Context, request UpdateContractRequestObject) (UpdateContractResponseObject, error)
+	// UploadContractFile Attach a file (PDF, image, Office document; at most 10 MB, 20 per contract)
+	// (POST /orgs/{orgId}/contracts/{contractId}/files)
+	UploadContractFile(ctx context.Context, request UploadContractFileRequestObject) (UploadContractFileResponseObject, error)
 	// ListCustomFields Custom device fields of the organization
 	// (GET /orgs/{orgId}/custom-fields)
 	ListCustomFields(ctx context.Context, request ListCustomFieldsRequestObject) (ListCustomFieldsResponseObject, error)
@@ -25022,6 +27908,9 @@ type StrictServerInterface interface {
 	// SetDeviceMgmtIp Set the management IP in one step (property panel) — on the management interface, created if missing
 	// (PUT /orgs/{orgId}/devices/{deviceId}/mgmt-ip)
 	SetDeviceMgmtIp(ctx context.Context, request SetDeviceMgmtIpRequestObject) (SetDeviceMgmtIpResponseObject, error)
+	// SetDeviceSupplier Where the device was bought (a vendor of the organization, or none) — edit access, audited
+	// (PUT /orgs/{orgId}/devices/{deviceId}/supplier)
+	SetDeviceSupplier(ctx context.Context, request SetDeviceSupplierRequestObject) (SetDeviceSupplierResponseObject, error)
 	// ListDiagrams Diagrams the caller may see (no view data)
 	// (GET /orgs/{orgId}/diagrams)
 	ListDiagrams(ctx context.Context, request ListDiagramsRequestObject) (ListDiagramsResponseObject, error)
@@ -25073,6 +27962,12 @@ type StrictServerInterface interface {
 	// RecordExport Record an export made in the browser (PNG/SVG of a diagram, Excel of devices) in the audit log (P1-22)
 	// (POST /orgs/{orgId}/export-events)
 	RecordExport(ctx context.Context, request RecordExportRequestObject) (RecordExportResponseObject, error)
+	// DeleteFile Remove an attached file (editors)
+	// (DELETE /orgs/{orgId}/files/{fileId})
+	DeleteFile(ctx context.Context, request DeleteFileRequestObject) (DeleteFileResponseObject, error)
+	// DownloadFile Download an attached file (always as an attachment)
+	// (GET /orgs/{orgId}/files/{fileId})
+	DownloadFile(ctx context.Context, request DownloadFileRequestObject) (DownloadFileResponseObject, error)
 	// LookupIp Which subnets contain an IP and which interfaces carry it
 	// (GET /orgs/{orgId}/ipam/lookup)
 	LookupIp(ctx context.Context, request LookupIpRequestObject) (LookupIpResponseObject, error)
@@ -25193,6 +28088,30 @@ type StrictServerInterface interface {
 	// ValidationContext What the diagram checks need about these objects (read only, P1-20)
 	// (POST /orgs/{orgId}/validation-context)
 	ValidationContext(ctx context.Context, request ValidationContextRequestObject) (ValidationContextResponseObject, error)
+	// DeleteVendorContact Remove a contact
+	// (DELETE /orgs/{orgId}/vendor-contacts/{contactId})
+	DeleteVendorContact(ctx context.Context, request DeleteVendorContactRequestObject) (DeleteVendorContactResponseObject, error)
+	// UpdateVendorContact Edit a contact
+	// (PATCH /orgs/{orgId}/vendor-contacts/{contactId})
+	UpdateVendorContact(ctx context.Context, request UpdateVendorContactRequestObject) (UpdateVendorContactResponseObject, error)
+	// ListVendors Vendors of the organization (P2-04) — manufacturers, suppliers, ISPs, maintenance companies
+	// (GET /orgs/{orgId}/vendors)
+	ListVendors(ctx context.Context, request ListVendorsRequestObject) (ListVendorsResponseObject, error)
+	// CreateVendor Add a vendor (editors)
+	// (POST /orgs/{orgId}/vendors)
+	CreateVendor(ctx context.Context, request CreateVendorRequestObject) (CreateVendorResponseObject, error)
+	// DeleteVendor Remove a vendor without live contracts (devices bought from it keep no supplier)
+	// (DELETE /orgs/{orgId}/vendors/{vendorId})
+	DeleteVendor(ctx context.Context, request DeleteVendorRequestObject) (DeleteVendorResponseObject, error)
+	// GetVendor A vendor with its contacts and contracts
+	// (GET /orgs/{orgId}/vendors/{vendorId})
+	GetVendor(ctx context.Context, request GetVendorRequestObject) (GetVendorResponseObject, error)
+	// UpdateVendor Edit a vendor (editors, optimistic lock)
+	// (PATCH /orgs/{orgId}/vendors/{vendorId})
+	UpdateVendor(ctx context.Context, request UpdateVendorRequestObject) (UpdateVendorResponseObject, error)
+	// CreateVendorContact Add a contact person to a vendor
+	// (POST /orgs/{orgId}/vendors/{vendorId}/contacts)
+	CreateVendorContact(ctx context.Context, request CreateVendorContactRequestObject) (CreateVendorContactResponseObject, error)
 	// ListVlans VLANs visible to the caller; with siteId, that site's VLANs plus organization-wide ones
 	// (GET /orgs/{orgId}/vlans)
 	ListVlans(ctx context.Context, request ListVlansRequestObject) (ListVlansResponseObject, error)
@@ -26401,6 +29320,192 @@ func (sh *strictHandler) PreviewOrganizationCode(w http.ResponseWriter, r *http.
 	}
 }
 
+// ListContracts operation middleware
+func (sh *strictHandler) ListContracts(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListContractsParams) {
+	var request ListContractsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListContracts(ctx, request.(ListContractsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListContracts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListContractsResponseObject); ok {
+		if err := validResponse.VisitListContractsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateContract operation middleware
+func (sh *strictHandler) CreateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateContractParams) {
+	var request CreateContractRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateContractJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateContract(ctx, request.(CreateContractRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateContract")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateContractResponseObject); ok {
+		if err := validResponse.VisitCreateContractResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteContract operation middleware
+func (sh *strictHandler) DeleteContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params DeleteContractParams) {
+	var request DeleteContractRequestObject
+
+	request.OrgId = orgId
+	request.ContractId = contractId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteContract(ctx, request.(DeleteContractRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteContract")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteContractResponseObject); ok {
+		if err := validResponse.VisitDeleteContractResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetContract operation middleware
+func (sh *strictHandler) GetContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId) {
+	var request GetContractRequestObject
+
+	request.OrgId = orgId
+	request.ContractId = contractId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetContract(ctx, request.(GetContractRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetContract")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetContractResponseObject); ok {
+		if err := validResponse.VisitGetContractResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateContract operation middleware
+func (sh *strictHandler) UpdateContract(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UpdateContractParams) {
+	var request UpdateContractRequestObject
+
+	request.OrgId = orgId
+	request.ContractId = contractId
+	request.Params = params
+
+	var body UpdateContractJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateContract(ctx, request.(UpdateContractRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateContract")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateContractResponseObject); ok {
+		if err := validResponse.VisitUpdateContractResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadContractFile operation middleware
+func (sh *strictHandler) UploadContractFile(w http.ResponseWriter, r *http.Request, orgId OrgId, contractId ContractId, params UploadContractFileParams) {
+	var request UploadContractFileRequestObject
+
+	request.OrgId = orgId
+	request.ContractId = contractId
+	request.Params = params
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadContractFile(ctx, request.(UploadContractFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadContractFile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadContractFileResponseObject); ok {
+		if err := validResponse.VisitUploadContractFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCustomFields operation middleware
 func (sh *strictHandler) ListCustomFields(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	var request ListCustomFieldsRequestObject
@@ -27563,6 +30668,41 @@ func (sh *strictHandler) SetDeviceMgmtIp(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// SetDeviceSupplier operation middleware
+func (sh *strictHandler) SetDeviceSupplier(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params SetDeviceSupplierParams) {
+	var request SetDeviceSupplierRequestObject
+
+	request.OrgId = orgId
+	request.DeviceId = deviceId
+	request.Params = params
+
+	var body SetDeviceSupplierJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetDeviceSupplier(ctx, request.(SetDeviceSupplierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetDeviceSupplier")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetDeviceSupplierResponseObject); ok {
+		if err := validResponse.VisitSetDeviceSupplierResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListDiagrams operation middleware
 func (sh *strictHandler) ListDiagrams(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	var request ListDiagramsRequestObject
@@ -28089,6 +31229,61 @@ func (sh *strictHandler) RecordExport(w http.ResponseWriter, r *http.Request, or
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RecordExportResponseObject); ok {
 		if err := validResponse.VisitRecordExportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteFile operation middleware
+func (sh *strictHandler) DeleteFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID, params DeleteFileParams) {
+	var request DeleteFileRequestObject
+
+	request.OrgId = orgId
+	request.FileId = fileId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteFile(ctx, request.(DeleteFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteFile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteFileResponseObject); ok {
+		if err := validResponse.VisitDeleteFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DownloadFile operation middleware
+func (sh *strictHandler) DownloadFile(w http.ResponseWriter, r *http.Request, orgId OrgId, fileId openapi_types.UUID) {
+	var request DownloadFileRequestObject
+
+	request.OrgId = orgId
+	request.FileId = fileId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DownloadFile(ctx, request.(DownloadFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DownloadFile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DownloadFileResponseObject); ok {
+		if err := validResponse.VisitDownloadFileResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -29310,6 +32505,255 @@ func (sh *strictHandler) ValidationContext(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ValidationContextResponseObject); ok {
 		if err := validResponse.VisitValidationContextResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteVendorContact operation middleware
+func (sh *strictHandler) DeleteVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params DeleteVendorContactParams) {
+	var request DeleteVendorContactRequestObject
+
+	request.OrgId = orgId
+	request.ContactId = contactId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteVendorContact(ctx, request.(DeleteVendorContactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteVendorContact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteVendorContactResponseObject); ok {
+		if err := validResponse.VisitDeleteVendorContactResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateVendorContact operation middleware
+func (sh *strictHandler) UpdateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, contactId openapi_types.UUID, params UpdateVendorContactParams) {
+	var request UpdateVendorContactRequestObject
+
+	request.OrgId = orgId
+	request.ContactId = contactId
+	request.Params = params
+
+	var body UpdateVendorContactJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateVendorContact(ctx, request.(UpdateVendorContactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateVendorContact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateVendorContactResponseObject); ok {
+		if err := validResponse.VisitUpdateVendorContactResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListVendors operation middleware
+func (sh *strictHandler) ListVendors(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListVendorsParams) {
+	var request ListVendorsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListVendors(ctx, request.(ListVendorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListVendors")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListVendorsResponseObject); ok {
+		if err := validResponse.VisitListVendorsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateVendor operation middleware
+func (sh *strictHandler) CreateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateVendorParams) {
+	var request CreateVendorRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateVendorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateVendor(ctx, request.(CreateVendorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateVendor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateVendorResponseObject); ok {
+		if err := validResponse.VisitCreateVendorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteVendor operation middleware
+func (sh *strictHandler) DeleteVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params DeleteVendorParams) {
+	var request DeleteVendorRequestObject
+
+	request.OrgId = orgId
+	request.VendorId = vendorId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteVendor(ctx, request.(DeleteVendorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteVendor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteVendorResponseObject); ok {
+		if err := validResponse.VisitDeleteVendorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVendor operation middleware
+func (sh *strictHandler) GetVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId) {
+	var request GetVendorRequestObject
+
+	request.OrgId = orgId
+	request.VendorId = vendorId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVendor(ctx, request.(GetVendorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVendor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVendorResponseObject); ok {
+		if err := validResponse.VisitGetVendorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateVendor operation middleware
+func (sh *strictHandler) UpdateVendor(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params UpdateVendorParams) {
+	var request UpdateVendorRequestObject
+
+	request.OrgId = orgId
+	request.VendorId = vendorId
+	request.Params = params
+
+	var body UpdateVendorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateVendor(ctx, request.(UpdateVendorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateVendor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateVendorResponseObject); ok {
+		if err := validResponse.VisitUpdateVendorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateVendorContact operation middleware
+func (sh *strictHandler) CreateVendorContact(w http.ResponseWriter, r *http.Request, orgId OrgId, vendorId VendorId, params CreateVendorContactParams) {
+	var request CreateVendorContactRequestObject
+
+	request.OrgId = orgId
+	request.VendorId = vendorId
+	request.Params = params
+
+	var body CreateVendorContactJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateVendorContact(ctx, request.(CreateVendorContactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateVendorContact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateVendorContactResponseObject); ok {
+		if err := validResponse.VisitCreateVendorContactResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

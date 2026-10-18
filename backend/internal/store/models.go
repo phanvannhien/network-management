@@ -53,6 +53,30 @@ type Category struct {
 	Version        int32
 }
 
+type Contract struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	VendorID       pgtype.UUID
+	Kind           string
+	Number         string
+	Name           string
+	StartDate      pgtype.Date
+	EndDate        pgtype.Date
+	Sla            string
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+	DeletedAt      pgtype.Timestamptz
+}
+
+type ContractItem struct {
+	OrganizationID pgtype.UUID
+	ContractID     pgtype.UUID
+	DeviceID       pgtype.UUID
+	LinkID         pgtype.UUID
+}
+
 type CustomFieldDef struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID
@@ -108,6 +132,7 @@ type Device struct {
 	ClusterMemberNo pgtype.Int4
 	CatalogID       string
 	AlertsMuted     bool
+	SupplierID      pgtype.UUID
 }
 
 type DeviceCluster struct {
@@ -179,6 +204,19 @@ type EndpointMember struct {
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Version        int32
+}
+
+type File struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	ContractID     pgtype.UUID
+	Name           string
+	ContentType    string
+	Size           int32
+	Sha256         []byte
+	Data           []byte
+	CreatedBy      pgtype.UUID
+	CreatedAt      pgtype.Timestamptz
 }
 
 type Interface struct {
@@ -326,6 +364,7 @@ type Notification struct {
 	Milestone      int32
 	CreatedAt      pgtype.Timestamptz
 	EmailedAt      pgtype.Timestamptz
+	ContractID     pgtype.UUID
 }
 
 type NotificationRead struct {
@@ -452,6 +491,37 @@ type UserToken struct {
 	ExpiresAt pgtype.Timestamptz
 	UsedAt    pgtype.Timestamptz
 	CreatedAt pgtype.Timestamptz
+}
+
+type Vendor struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	Kind           string
+	Name           string
+	TaxCode        string
+	Website        string
+	SupportPhone   string
+	SupportEmail   string
+	SupportPortal  string
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
+	DeletedAt      pgtype.Timestamptz
+}
+
+type VendorContact struct {
+	ID             pgtype.UUID
+	OrganizationID pgtype.UUID
+	VendorID       pgtype.UUID
+	Name           string
+	Title          string
+	Phone          string
+	Email          string
+	Notes          string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Version        int32
 }
 
 type Vlan struct {

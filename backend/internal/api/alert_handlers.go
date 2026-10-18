@@ -25,7 +25,7 @@ import (
 // sendMail delivers e-mail (a fake in tests).
 var sendMail notify.Sender = notify.SendSMTP
 
-var defaultAlertKinds = []string{"warranty", "license", "eos"}
+var defaultAlertKinds = []string{"warranty", "license", "eos", "contract"}
 
 func smtpView(row store.SmtpSetting) apigen.SmtpSettings {
 	return apigen.SmtpSettings{Host: row.Host, Port: int(row.Port), Security: apigen.SmtpSettingsSecurity(row.Security),
@@ -320,26 +320,14 @@ func (s *Server) ListNotifications(ctx context.Context, req apigen.ListNotificat
 		return nil, fmt.Errorf("notifications seen: %w", err)
 	}
 	out := apigen.ListNotifications200JSONResponse{Notifications: []apigen.Notification{}}
-	visible := map[pgtype.UUID]bool{}
 	for _, r := range rows {
-		// Only devices the member can see (unit grants, ADR-029).
-		ok, known := visible[r.DeviceID]
-		if !known {
-			if _, ok, err = loadDevice(ctx, s.q, m, uuid.UUID(r.DeviceID.Bytes)); err != nil {
-				return nil, err
-			}
-			visible[r.DeviceID] = ok
-		}
-		if !ok {
-			continue
-		}
 		unread := !seen.Valid || r.CreatedAt.Time.After(seen.Time)
 		if unread {
 			out.Unread++
 		}
 		out.Notifications = append(out.Notifications, apigen.Notification{Id: uuid.UUID(r.ID.Bytes), Kind: apigen.AlertKind(r.Kind),
-			DeviceId: uuid.UUID(r.DeviceID.Bytes), Hostname: r.Hostname, SiteCode: r.SiteCode, DueDate: *apiDate(r.DueDate),
-			Milestone: int(r.Milestone), CreatedAt: r.CreatedAt.Time, Unread: unread})
+			DeviceId: optUUID(r.DeviceID), ContractId: optUUID(r.ContractID), Hostname: r.Title, SiteCode: r.Place,
+			DueDate: *apiDate(r.DueDate), Milestone: int(r.Milestone), CreatedAt: r.CreatedAt.Time, Unread: unread})
 	}
 	return out, nil
 }

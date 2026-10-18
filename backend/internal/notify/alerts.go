@@ -55,17 +55,21 @@ func KindLabel(kind string) string {
 		return "Hết license"
 	case "eos":
 		return "Hãng ngừng hỗ trợ"
+	case "contract":
+		return "Hợp đồng hết hạn"
 	}
 	return kind
 }
 
-// DigestItem is one line of a digest.
+// DigestItem is one line of a digest: a device date, or a contract end (ContractID set; Hostname = contract name,
+// SiteCode = vendor).
 type DigestItem struct {
-	DeviceID uuid.UUID
-	Hostname string
-	SiteCode string
-	Kind     string
-	Due      time.Time
+	DeviceID   uuid.UUID
+	ContractID uuid.UUID
+	Hostname   string
+	SiteCode   string
+	Kind       string
+	Due        time.Time
 }
 
 // Digest renders the e-mail of an organization's new notifications.
@@ -95,7 +99,11 @@ func Digest(orgName string, orgID uuid.UUID, publicURL string, today time.Time, 
 	fmt.Fprintf(&text, "Tổ chức %s có %d mốc hết hạn mới:\n\n", orgName, len(items))
 	for _, it := range items {
 		link := ""
-		if base != "" {
+		switch {
+		case base == "":
+		case it.ContractID != uuid.Nil:
+			link = fmt.Sprintf("%s/o/%s/contracts/%s", base, orgID, it.ContractID)
+		default:
 			link = fmt.Sprintf("%s/o/%s/devices/%s", base, orgID, it.DeviceID)
 		}
 		fmt.Fprintf(&text, "- %s (%s) — %s: %s (%s)", it.Hostname, it.SiteCode, KindLabel(it.Kind), it.Due.Format("02/01/2006"), left(it.Due))
@@ -124,7 +132,7 @@ func Digest(orgName string, orgID uuid.UUID, publicURL string, today time.Time, 
 	var h strings.Builder
 	fmt.Fprintf(&h, `<p>Tổ chức <b>%s</b> có %d mốc hết hạn mới:</p>`, html.EscapeString(orgName), len(items))
 	h.WriteString(`<table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:14px">`)
-	h.WriteString(`<tr style="text-align:left"><th>Thiết bị</th><th>Site</th><th>Loại</th><th>Ngày</th><th></th></tr>`)
+	h.WriteString(`<tr style="text-align:left"><th>Thiết bị / hợp đồng</th><th>Site / nhà cung cấp</th><th>Loại</th><th>Ngày</th><th></th></tr>`)
 	h.WriteString(rows.String())
 	h.WriteString(`</table>`)
 	if settings != "" {
@@ -236,6 +244,24 @@ func raise(ctx context.Context, q *store.Queries, o store.AlertOrganizationsRow,
 	if err != nil {
 		return fmt.Errorf("alert candidates: %w", err)
 	}
+	if slices.Contains(o.Kinds, "contract") {
+		ends, err := q.AlertContractCandidates(ctx, store.AlertContractCandidatesParams{OrganizationID: o.ID,
+			Since: pgtype.Date{Time: today.AddDate(0, 0, -PassedWindowDays), Valid: true},
+			Until: pgtype.Date{Time: today.AddDate(0, 0, int(horizon)), Valid: true}})
+		if err != nil {
+			return fmt.Errorf("contract candidates: %w", err)
+		}
+		for _, c := range ends {
+			m, ok := Milestone(int(c.Day.Time.Sub(today).Hours()/24), o.Milestones)
+			if !ok {
+				continue
+			}
+			if _, err := q.InsertContractNotification(ctx, store.InsertContractNotificationParams{OrganizationID: o.ID,
+				ContractID: c.ContractID, DueDate: c.Day, Milestone: m}); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("insert contract notification: %w", err)
+			}
+		}
+	}
 	for _, c := range cands {
 		if !slices.Contains(o.Kinds, c.Kind) {
 			continue
@@ -267,8 +293,8 @@ func (r Runner) digest(ctx context.Context, q *store.Queries, o store.AlertOrgan
 	for _, n := range rows {
 		ids = append(ids, n.ID)
 		if n.Current && slices.Contains(o.Kinds, n.Kind) {
-			items = append(items, DigestItem{DeviceID: uuid.UUID(n.DeviceID.Bytes), Hostname: n.Hostname, SiteCode: n.SiteCode,
-				Kind: n.Kind, Due: n.DueDate.Time})
+			items = append(items, DigestItem{DeviceID: uuid.UUID(n.DeviceID.Bytes), ContractID: uuid.UUID(n.ContractID.Bytes),
+				Hostname: n.Title, SiteCode: n.Place, Kind: n.Kind, Due: n.DueDate.Time})
 		}
 	}
 	to, err := Recipients(ctx, q, o)
