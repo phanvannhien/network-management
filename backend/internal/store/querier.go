@@ -189,12 +189,15 @@ type Querier interface {
 	// Same serial (trimmed, case-insensitive) on another live device; empty and placeholder values do not count.
 	DuplicateSerials(ctx context.Context, arg DuplicateSerialsParams) ([]DuplicateSerialsRow, error)
 	EnableTOTP(ctx context.Context, arg EnableTOTPParams) (int64, error)
+	// Runs left "running" by a process that died (crash, restart) are marked failed.
+	FailStaleBackupRuns(ctx context.Context) error
 	// IPAM import (P2-09): the subnet a row means (same VRF and CIDR).
 	FindSubnetID(ctx context.Context, arg FindSubnetIDParams) (pgtype.UUID, error)
 	// The organization's template already standing for a catalog model: same name, or same type and model / part number.
 	FindTemplateForCatalog(ctx context.Context, arg FindTemplateForCatalogParams) (DeviceTemplate, error)
 	// IPAM import: the VLAN a row means — the site's own (or the organization-wide one when no site).
 	FindVlanID(ctx context.Context, arg FindVlanIDParams) (pgtype.UUID, error)
+	FinishBackupRun(ctx context.Context, arg FinishBackupRunParams) error
 	GetAlertSettings(ctx context.Context, organizationID pgtype.UUID) (AlertSetting, error)
 	GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error)
 	GetCloudAccountMeta(ctx context.Context, arg GetCloudAccountMetaParams) (GetCloudAccountMetaRow, error)
@@ -268,7 +271,12 @@ type Querier interface {
 	InsertRecoveryCode(ctx context.Context, arg InsertRecoveryCodeParams) error
 	// Only the newest link is valid: issuing a new one (or using one) retires the others of that purpose.
 	InvalidateUserTokens(ctx context.Context, arg InvalidateUserTokensParams) error
+	// The newest run of a kind (any status): the scheduler's "done today?" and "failed a moment ago?".
+	LastBackupOfKind(ctx context.Context, kind string) (BackupRun, error)
+	LastGoodBackup(ctx context.Context) (BackupRun, error)
+	LastGoodBackupOfKind(ctx context.Context, kind string) (BackupRun, error)
 	LinkExists(ctx context.Context, arg LinkExistsParams) (bool, error)
+	ListBackupRuns(ctx context.Context, lim int32) ([]BackupRun, error)
 	// Category tree (P1-27, ADR-032). Every query takes organization_id.
 	ListCategories(ctx context.Context, organizationID pgtype.UUID) ([]ListCategoriesRow, error)
 	ListCloudAccounts(ctx context.Context, arg ListCloudAccountsParams) ([]ListCloudAccountsRow, error)
@@ -358,6 +366,7 @@ type Querier interface {
 	LookupIPs(ctx context.Context, arg LookupIPsParams) ([]LookupIPsRow, error)
 	// Subnets containing the address (any VRF), most specific first.
 	LookupSubnets(ctx context.Context, arg LookupSubnetsParams) ([]LookupSubnetsRow, error)
+	MarkBackupVerified(ctx context.Context, arg MarkBackupVerifiedParams) error
 	MarkNotificationsEmailed(ctx context.Context, arg MarkNotificationsEmailedParams) error
 	MarkNotificationsSeen(ctx context.Context, arg MarkNotificationsSeenParams) error
 	MarkSessionMFAVerified(ctx context.Context, tokenHash []byte) error
@@ -461,6 +470,8 @@ type Querier interface {
 	SoftDeleteOrganization(ctx context.Context, id pgtype.UUID) (Organization, error)
 	SoftDeleteSite(ctx context.Context, arg SoftDeleteSiteParams) (Site, error)
 	SoftDeleteVendor(ctx context.Context, arg SoftDeleteVendorParams) (int64, error)
+	// Backup history (P2-13, ADR-053). System-level: no organization.
+	StartBackupRun(ctx context.Context, arg StartBackupRunParams) (pgtype.UUID, error)
 	// IPAM import: the most specific subnet of a VRF holding both addresses (a range row without a subnet column).
 	SubnetHolding(ctx context.Context, arg SubnetHoldingParams) (pgtype.UUID, error)
 	// Interface / IP changes bump the device version so open device forms see the change.

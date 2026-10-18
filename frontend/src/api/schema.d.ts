@@ -2288,6 +2288,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs */
+        get: operations["adminGetBackups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/smtp": {
         parameters: {
             query?: never;
@@ -4202,6 +4219,37 @@ export interface components {
             /** @enum {string} */
             lifecycle: "planned" | "active" | "spare" | "rma" | "retired";
             quantity: number;
+        };
+        BackupStatus: {
+            /** @description a backup passphrase is set */
+            enabled: boolean;
+            dir: string;
+            /** @description daily time HH:MM, or off */
+            schedule: string;
+            /** @description daily,weekly,monthly */
+            keep: string;
+            /** @description no good backup in the last 2 days */
+            stale: boolean;
+            lastGood?: components["schemas"]["BackupRun"];
+            runs: components["schemas"]["BackupRun"][];
+        };
+        BackupRun: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "scheduled" | "manual" | "pre-upgrade";
+            /** @enum {string} */
+            status: "running" | "ok" | "failed";
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            fileName: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            error: string;
+            /** @description the file was read back completely */
+            verified: boolean;
         };
         Dashboard: {
             /** Format: date-time */
@@ -10843,6 +10891,28 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    adminGetBackups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatus"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     adminGetSmtp: {

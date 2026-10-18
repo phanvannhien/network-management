@@ -912,3 +912,27 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Thống kê thiết bị:** theo site (mỗi trạng thái một cột, tổng không tính thanh lý), theo loại, theo hãng.
   - **Phạm vi:** site / danh mục lọc báo cáo phải thuộc tổ chức (404 nếu không), giống Dashboard.
 
+### ADR-053 — Sao lưu & khôi phục (P2-13)
+- **Bối cảnh:** Mọi dữ liệu (kể cả file đính kèm) nằm trong một database Postgres. Mật khẩu kho / MFA được mã hóa bằng master key (ADR-018). Người dùng muốn nhiều lựa chọn sao lưu cho nhiều cỡ khách, từ cá nhân tới doanh nghiệp (2026-10-18).
+- **Quyết định (người dùng đồng ý, 2026-10-18):**
+  - **Bộ máy chung:** lệnh `ntb backup run | list | verify | restore | decrypt | drop-old`, cộng lịch chạy trong tiến trình API. Thêm `postgresql16-client` vào image `api`, cùng major với `postgres:16`; nâng major Postgres thì nâng cả client. Không thêm thư viện Go.
+  - **File `.ntbbak`:**
+    - `pg_dump` dạng custom (bỏ owner / quyền / dữ liệu bảng sessions), mã hóa luồng AES-256-GCM theo khối 64 KiB (kiểu STREAM);
+    - nonce = tiền tố ngẫu nhiên 7 byte + số thứ tự khối + cờ khối cuối; AAD = SHA-256 của phần đầu file;
+    - khóa = argon2id (t=3, m=64 MiB, p=4) từ **mật khẩu sao lưu riêng** `NTB_BACKUP_PASSPHRASE` (≥ 16 ký tự, hoặc đọc từ file `_FILE`), khác master key;
+    - phần đầu file ghi rõ: thời điểm, loại, phiên bản app / schema, phiên bản Postgres, dấu vân tay + phiên bản master key (không phải key).
+    - File bị sửa, bị cắt hoặc bị nối thêm đều bị từ chối. Khối cuối chỉ được niêm phong khi `pg_dump` đã thành công.
+  - **Ghi file an toàn:** `.partial` (quyền 600, thư mục 700) → fsync → đổi tên → fsync thư mục. Kiểm tra dung lượng trống ≥ 2 lần bản trước. Khóa advisory để không có hai lần sao lưu chồng nhau.
+  - **Đọc lại sau mỗi lần sao lưu:** giải mã toàn bộ, đưa thẳng vào `pg_restore --file=/dev/null` (không có bản giải mã nằm trên đĩa). Không đọc lại được thì xóa file và báo lỗi. Chỉ dọn bản cũ sau khi có bản tốt.
+  - **Giữ bản:** bản theo lịch giữ bản mới nhất của 7 ngày / 4 tuần ISO / 12 tháng (`NTB_BACKUP_KEEP`); bản thủ công / trước nâng cấp giữ 5 bản mới nhất. Không đụng file lạ.
+  - **Lịch:** hằng ngày lúc `NTB_BACKUP_TIME` (giờ địa phương). Máy tắt thì chạy bù khi bật; lỗi thì thử lại sau mỗi giờ.
+  - **Trước nâng cấp:** có migration mới thì sao lưu `pre-upgrade` trước. Lỗi thì không nâng cấp, trừ khi đặt `NTB_BACKUP_SKIP_PRE_UPGRADE=true`.
+  - **Khôi phục không bao giờ ghi đè tại chỗ:**
+    - kiểm tra trước: cùng master key (`--accept-key-mismatch` để bỏ qua), không mới hơn binary, API đã dừng (API giữ khóa advisory dùng chung khi chạy; restore lấy khóa độc quyền);
+    - `pg_restore` một giao dịch vào database mới, chạy migration, kiểm tra (đếm, phiên bản key);
+    - đổi tên database cũ → `<tên>_pre_restore_<thời điểm>` (giữ lại, xóa bằng `drop-old`), database mới → `<tên>`;
+    - lỗi trước bước đổi tên thì database hiện tại không bị đụng.
+  - **Theo dõi:** bảng `backup_runs` cấp hệ thống (không có `organization_id`, như users / sessions; chỉ system admin xem). Trang Tình trạng hệ thống có khối "Sao lưu", đỏ khi quá 2 ngày không có bản tốt. Danh sách bản lấy từ thư mục (đọc phần đầu file), vì bảng cũng bị khôi phục về quá khứ.
+  - **Docker:** volume `ntb_backups`, hoặc thư mục máy chủ `NTB_BACKUP_HOST_DIR` (NAS đã mount). Lệnh `make backup | backup-list | restore FILE=…`.
+- **Để sau (P2-13 bước 2–3):** đích NAS / SFTP / S3 (Object Lock) / Google Drive / OneDrive / Dropbox qua rclone, trang cấu hình cho system admin, tải bản sao lưu về máy (nhập lại MFA), email khi sao lưu lỗi; tài liệu cài đặt / nâng cấp, snapshot NAS chống ransomware.
+

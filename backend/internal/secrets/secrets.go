@@ -10,8 +10,11 @@ package secrets
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -158,4 +161,12 @@ func newGCM(key []byte) (cipher.AEAD, error) {
 		return nil, fmt.Errorf("gcm: %w", err)
 	}
 	return aead, nil
+}
+
+// Fingerprint names a master key without revealing it (backup files record it so a restore can tell whether the
+// current key opens their secrets): the first 8 bytes of HMAC-SHA256(key, label), hex.
+func Fingerprint(master []byte) string {
+	m := hmac.New(sha256.New, master)
+	m.Write([]byte("ntb-backup-key-fingerprint-v1"))
+	return hex.EncodeToString(m.Sum(nil)[:8])
 }

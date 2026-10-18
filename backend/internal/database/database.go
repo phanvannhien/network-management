@@ -98,3 +98,40 @@ func toMigrateURL(databaseURL string) string {
 	}
 	return databaseURL
 }
+
+// LatestVersion is the newest migration this binary carries.
+func LatestVersion() (uint, error) {
+	source, err := iofs.New(db.Migrations, "migrations")
+	if err != nil {
+		return 0, fmt.Errorf("load embedded migrations: %w", err)
+	}
+	defer func() { _ = source.Close() }()
+	v, err := source.First()
+	if err != nil {
+		return 0, fmt.Errorf("first migration: %w", err)
+	}
+	for {
+		next, err := source.Next(v)
+		if err != nil {
+			return v, nil //nolint:nilerr // os.ErrNotExist: v is the last one
+		}
+		v = next
+	}
+}
+
+// Status is the database's migration version and whether a migration failed halfway (dirty).
+func Status(databaseURL string) (version uint, dirty bool, err error) {
+	m, err := newMigrator(databaseURL)
+	if err != nil {
+		return 0, false, err
+	}
+	defer closeMigrator(m)
+	version, dirty, err = m.Version()
+	if errors.Is(err, migrate.ErrNilVersion) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("migration status: %w", err)
+	}
+	return version, dirty, nil
+}

@@ -1,10 +1,13 @@
-.PHONY: dev-web dev-api dev-env db-up gen sqlc migrate-up migrate-down types test check format seed-demo seed-bench
+.PHONY: dev-web dev-api dev-env db-up gen sqlc migrate-up migrate-down types test check format seed-demo seed-bench backup backup-list restore
 
 # Dev Postgres from deploy/docker-compose.yml (service `db`, host port 5468). Override per shell if needed.
 DATABASE_URL ?= postgres://ntb:ntb_dev_password@localhost:5468/ntb?sslmode=disable
 # Integration tests create throwaway databases on this server (see backend/internal/testdb).
 NTB_TEST_DATABASE_URL ?= $(DATABASE_URL)
-export DATABASE_URL NTB_TEST_DATABASE_URL
+# Backup tests need the PostgreSQL client of the server's major (16): this wrapper runs it from the db image in a
+# throw-away container (a newer local pg_dump writes dumps a 16 server refuses). Point it elsewhere if you have one.
+NTB_PG_BIN ?= $(CURDIR)/deploy/pg16
+export DATABASE_URL NTB_TEST_DATABASE_URL NTB_PG_BIN
 
 # Frontend dev server (Vite, hot reload); proxies /api to the Go API.
 dev-web:
@@ -75,3 +78,18 @@ format:
 test:
 	cd frontend && npm run test
 	cd backend && go test ./...
+
+# Backups (P2-13, docs/OPERATIONS.md): run in the api container (its environment and backup volume).
+COMPOSE = docker compose -f deploy/docker-compose.yml
+backup:
+	$(COMPOSE) exec api ntb backup run
+backup-list:
+	$(COMPOSE) exec api ntb backup list
+# Restore FILE (a name from make backup-list): stops the API, restores into a new database swapped in by name (the
+# current one is kept), starts the API again.
+restore:
+	@test -n "$(FILE)" || (echo "usage: make restore FILE=ntb-YYYYMMDDTHHMMSSZ-kind.ntbbak" && exit 1)
+	$(COMPOSE) stop api
+	$(COMPOSE) run --rm --no-deps api backup restore $(FILE) --yes
+	$(COMPOSE) start api
+

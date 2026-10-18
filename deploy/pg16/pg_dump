@@ -1,0 +1,17 @@
+#!/bin/sh
+# PostgreSQL 16 client tools for a dev machine whose local client is newer than the Compose db (a newer pg_dump writes
+# settings a 16 server refuses on restore). Runs the tool in a throw-away container of the db image — never the db
+# container itself. The backup engine only streams through stdin / stdout, so no file is shared.
+# Use: NTB_PG_BIN=$PWD/deploy/pg16 (pg_restore is a link to this script).
+tool=$(basename "$0")
+n=$#
+while [ "$n" -gt 0 ]; do
+  a=$1
+  shift
+  case $a in
+    *localhost* | *127.0.0.1*) a=$(printf '%s' "$a" | sed -e 's/localhost/host.docker.internal/' -e 's/127\.0\.0\.1/host.docker.internal/') ;;
+  esac
+  set -- "$@" "$a"
+  n=$((n - 1))
+done
+exec docker run --rm -i -e PGPASSWORD --add-host=host.docker.internal:host-gateway postgres:16-alpine "$tool" "$@"

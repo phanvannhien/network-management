@@ -31,6 +31,21 @@ type Server struct {
 	auth    *auth.Service
 	version string
 	env     string
+	backups BackupInfo
+}
+
+// BackupInfo is how backups are set up (environment), shown to system admins (P2-13).
+type BackupInfo struct {
+	Enabled  bool
+	Dir      string
+	Schedule string // "02:00" or "off"
+	Keep     string // "7,4,12"
+}
+
+// WithBackups records the backup setup for GET /admin/backups.
+func (s *Server) WithBackups(b BackupInfo) *Server {
+	s.backups = b
+	return s
 }
 
 var _ apigen.StrictServerInterface = (*Server)(nil)

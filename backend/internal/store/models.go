@@ -38,6 +38,24 @@ type AuditLog struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type BackupRun struct {
+	ID             pgtype.UUID
+	Kind           string
+	Status         string
+	StartedAt      pgtype.Timestamptz
+	FinishedAt     pgtype.Timestamptz
+	FileName       string
+	SizeBytes      int64
+	Sha256         string
+	AppVersion     string
+	SchemaVersion  int32
+	KeyFingerprint string
+	Pruned         int32
+	Error          string
+	VerifiedAt     pgtype.Timestamptz
+	VerifyError    string
+}
+
 type Category struct {
 	ID             pgtype.UUID
 	OrganizationID pgtype.UUID

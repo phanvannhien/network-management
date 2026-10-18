@@ -88,6 +88,48 @@ func (e AlertKind) Valid() bool {
 	}
 }
 
+// Defines values for BackupRunKind.
+const (
+	Manual     BackupRunKind = "manual"
+	PreUpgrade BackupRunKind = "pre-upgrade"
+	Scheduled  BackupRunKind = "scheduled"
+)
+
+// Valid indicates whether the value is a known member of the BackupRunKind enum.
+func (e BackupRunKind) Valid() bool {
+	switch e {
+	case Manual:
+		return true
+	case PreUpgrade:
+		return true
+	case Scheduled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BackupRunStatus.
+const (
+	BackupRunStatusFailed  BackupRunStatus = "failed"
+	BackupRunStatusOk      BackupRunStatus = "ok"
+	BackupRunStatusRunning BackupRunStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the BackupRunStatus enum.
+func (e BackupRunStatus) Valid() bool {
+	switch e {
+	case BackupRunStatusFailed:
+		return true
+	case BackupRunStatusOk:
+		return true
+	case BackupRunStatusRunning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BoqLineLifecycle.
 const (
 	BoqLineLifecycleActive  BoqLineLifecycle = "active"
@@ -2168,6 +2210,46 @@ type AuthSession struct {
 	// (enabled and verified) or (not enabled and not required).
 	Mfa  MfaStatus   `json:"mfa"`
 	User CurrentUser `json:"user"`
+}
+
+// BackupRun defines model for BackupRun.
+type BackupRun struct {
+	Error      string             `json:"error"`
+	FileName   string             `json:"fileName"`
+	FinishedAt *time.Time         `json:"finishedAt,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	Kind       BackupRunKind      `json:"kind"`
+	SizeBytes  int64              `json:"sizeBytes"`
+	StartedAt  time.Time          `json:"startedAt"`
+	Status     BackupRunStatus    `json:"status"`
+
+	// Verified the file was read back completely
+	Verified bool `json:"verified"`
+}
+
+// BackupRunKind defines model for BackupRun.Kind.
+type BackupRunKind string
+
+// BackupRunStatus defines model for BackupRun.Status.
+type BackupRunStatus string
+
+// BackupStatus defines model for BackupStatus.
+type BackupStatus struct {
+	Dir string `json:"dir"`
+
+	// Enabled a backup passphrase is set
+	Enabled bool `json:"enabled"`
+
+	// Keep daily,weekly,monthly
+	Keep     string      `json:"keep"`
+	LastGood *BackupRun  `json:"lastGood,omitempty"`
+	Runs     []BackupRun `json:"runs"`
+
+	// Schedule daily time HH:MM, or off
+	Schedule string `json:"schedule"`
+
+	// Stale no good backup in the last 2 days
+	Stale bool `json:"stale"`
 }
 
 // BoqLine defines model for BoqLine.
@@ -6709,6 +6791,9 @@ type ServerInterface interface {
 	// ListSystemAudit System-level audit events without an organization (system admin), newest first
 	// (GET /admin/audit)
 	ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams)
+	// AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
+	// (GET /admin/backups)
+	AdminGetBackups(w http.ResponseWriter, r *http.Request)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(w http.ResponseWriter, r *http.Request)
@@ -7261,6 +7346,12 @@ func (_ Unimplemented) AcceptAccountToken(w http.ResponseWriter, r *http.Request
 // ListSystemAudit System-level audit events without an organization (system admin), newest first
 // (GET /admin/audit)
 func (_ Unimplemented) ListSystemAudit(w http.ResponseWriter, r *http.Request, params ListSystemAuditParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
+// (GET /admin/backups)
+func (_ Unimplemented) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8489,6 +8580,20 @@ func (siw *ServerInterfaceWrapper) ListSystemAudit(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListSystemAudit(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetBackups operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetBackups(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18579,6 +18684,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/orgs/{orgId}/audit", wrapper.ListOrgAudit)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/backups", wrapper.AdminGetBackups)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/smtp", wrapper.AdminGetSmtp)
 	})
 	r.Group(func(r chi.Router) {
@@ -18769,6 +18877,55 @@ func (response ListSystemAudit401JSONResponse) VisitListSystemAuditResponse(w ht
 type ListSystemAudit403JSONResponse struct{ ForbiddenJSONResponse }
 
 func (response ListSystemAudit403JSONResponse) VisitListSystemAuditResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetBackupsRequestObject struct {
+}
+
+type AdminGetBackupsResponseObject interface {
+	VisitAdminGetBackupsResponse(w http.ResponseWriter) error
+}
+
+type AdminGetBackups200JSONResponse BackupStatus
+
+func (response AdminGetBackups200JSONResponse) VisitAdminGetBackupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetBackups401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminGetBackups401JSONResponse) VisitAdminGetBackupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetBackups403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetBackups403JSONResponse) VisitAdminGetBackupsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -32391,6 +32548,9 @@ type StrictServerInterface interface {
 	// ListSystemAudit System-level audit events without an organization (system admin), newest first
 	// (GET /admin/audit)
 	ListSystemAudit(ctx context.Context, request ListSystemAuditRequestObject) (ListSystemAuditResponseObject, error)
+	// AdminGetBackups Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
+	// (GET /admin/backups)
+	AdminGetBackups(ctx context.Context, request AdminGetBackupsRequestObject) (AdminGetBackupsResponseObject, error)
 	// AdminListOrganizations All organizations (system admin)
 	// (GET /admin/organizations)
 	AdminListOrganizations(ctx context.Context, request AdminListOrganizationsRequestObject) (AdminListOrganizationsResponseObject, error)
@@ -33041,6 +33201,30 @@ func (sh *strictHandler) ListSystemAudit(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListSystemAuditResponseObject); ok {
 		if err := validResponse.VisitListSystemAuditResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminGetBackups operation middleware
+func (sh *strictHandler) AdminGetBackups(w http.ResponseWriter, r *http.Request) {
+	var request AdminGetBackupsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetBackups(ctx, request.(AdminGetBackupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetBackups")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminGetBackupsResponseObject); ok {
+		if err := validResponse.VisitAdminGetBackupsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

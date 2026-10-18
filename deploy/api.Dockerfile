@@ -8,8 +8,12 @@ COPY backend/ ./
 RUN go build -trimpath -ldflags="-s -w" -o /out/ntb ./cmd/ntb
 
 # Runtime stage — small image, non-root user; busybox wget is used by the healthcheck.
+# pg_dump / pg_restore for backups (P2-13): the same major as the db image (postgres:16) — a newer client writes dumps
+# a 16 server refuses; bump both together. The backup directory belongs to the ntb user (a named volume inherits it).
 FROM alpine:3.22
-RUN adduser -D -H -u 10001 ntb
+RUN apk add --no-cache postgresql16-client \
+ && adduser -D -H -u 10001 ntb \
+ && mkdir -p /var/lib/ntb/backups && chown ntb /var/lib/ntb/backups && chmod 700 /var/lib/ntb/backups
 COPY --from=build /out/ntb /usr/local/bin/ntb
 USER ntb
 EXPOSE 8069

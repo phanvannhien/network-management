@@ -5,6 +5,48 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-13 Vận hành, bước 1: bộ máy sao lưu / khôi phục (ADR-053); sửa sau review P2-11
+- Người dùng chốt:
+  - nhiều lựa chọn sao lưu cho nhiều cỡ khách (trên máy / NAS / SFTP / S3 có khóa chống xóa / Google Drive…);
+  - mật khẩu sao lưu tách khỏi master key;
+  - system admin cấu hình cho cả bản cài đặt; thêm `pg_dump` và rclone vào image.
+- Đã làm (bước 1):
+  - **Lệnh** `ntb backup run | list | verify [--full] | restore | decrypt | drop-old`; `make backup`, `make backup-list`, `make restore FILE=…`.
+  - **File sao lưu** mã hóa AES-256 bằng mật khẩu sao lưu riêng; phát hiện file bị sửa / cắt. Mỗi lần sao lưu tự đọc lại toàn bộ; giữ 7 ngày / 4 tuần / 12 tháng.
+  - **Tự động:**
+    - sao lưu hằng ngày 02:00 (máy tắt thì chạy bù);
+    - trước khi nâng cấp database tự sao lưu, lỗi thì không nâng cấp.
+  - **Khôi phục:**
+    - vào database mới rồi đổi tên, database cũ được giữ;
+    - từ chối khi khác master key, khi API đang chạy, khi bản sao lưu mới hơn phiên bản đang chạy.
+  - **Trang Tình trạng hệ thống** có khối Sao lưu (đỏ khi quá 2 ngày không có bản tốt, kèm lỗi từng lần).
+  - **Image `api`** thêm `postgresql16-client`; compose thêm volume `ntb_backups` / `NTB_BACKUP_HOST_DIR`.
+  - **`docs/OPERATIONS.md`** (bản đầu): giữ master key, bật sao lưu, lệnh, khôi phục, khi key không khớp, diễn tập.
+  - **Sửa sau review P2-11:**
+    - port map ưu tiên dây thật hơn link VPN logic trên cùng cổng;
+    - cột site của BOQ cộng đúng;
+    - báo cáo VLAN nhanh với tổ chức lớn;
+    - tên sheet "History" không còn làm hỏng file;
+    - PDF không để sót khung nhìn của trang chưa mở.
+- Test / cách kiểm tra:
+  - `make check` pass.
+  - Go:
+    - mã hóa: khôi phục đúng, sai mật khẩu, file bị sửa / cắt / nối thêm;
+    - giữ bản, lịch, tên file;
+    - `TestBackupRestore` trên Postgres thật (sao lưu → khôi phục thử → khôi phục đổi tên → giữ / xóa database cũ; khác key, API đang chạy, bản mới hơn đều bị từ chối);
+    - `TestAdminBackups` (chỉ system admin).
+  - Máy dev có `pg_dump` 18: test dùng `deploy/pg16` (container tạm của image `postgres:16-alpine`, không đụng container db).
+  - Instance tạm trên database riêng:
+    - database bản 28 → tự sao lưu `pre-upgrade` rồi nâng lên 29; chạy bù bản theo lịch;
+    - `list` / `verify --full` (đếm được 10.645 thiết bị) / `restore` từ chối đúng / `decrypt` ra file `pg_restore` đọc được;
+    - trang Hệ thống hiển thị đúng.
+- Còn dở / lỗi đã biết:
+  - Chưa có đích ngoài máy chủ (bước 2) và email khi lỗi.
+  - Chưa test build image `api` đầy đủ (đã kiểm tra gói `postgresql16-client` trên alpine 3.22).
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-13 bước 2 — đích NAS / SFTP / S3 / Google Drive / OneDrive / Dropbox (rclone), trang cấu hình sao lưu, tải bản về máy, email khi lỗi.
+
 ## 2026-10-18 — P2-11 Báo cáo & export, bước 3: hết hạn, thiếu thông tin, thống kê (ADR-052) — xong P2-11
 - Người dùng chốt: một định nghĩa "thiếu thông tin" chung cho Dashboard, báo cáo và panel Vấn đề.
 - Đã làm:

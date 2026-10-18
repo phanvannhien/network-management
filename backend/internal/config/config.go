@@ -33,6 +33,16 @@ type Config struct {
 	TrustedProxies string
 	// CookieSecure always sets the Secure flag on the session cookie (production behind HTTPS).
 	CookieSecure bool
+	// Backups (P2-13, ADR-053): directory, passphrase (NTB_BACKUP_PASSPHRASE or a file named by
+	// NTB_BACKUP_PASSPHRASE_FILE, e.g. a Docker secret), daily time ("off" = no schedule), retention "daily,weekly,
+	// monthly", directory of the PostgreSQL client tools.
+	BackupDir        string
+	BackupPassphrase string
+	BackupTime       string
+	BackupKeep       string
+	PgBin            string
+	// BackupSkipPreUpgrade starts the upgrade even when its safety backup fails.
+	BackupSkipPreUpgrade bool
 }
 
 // Load reads settings from the environment, falling back to dev defaults.
@@ -48,7 +58,25 @@ func Load() Config {
 		Timezone:         getenv("NTB_TIMEZONE", "Asia/Ho_Chi_Minh"),
 		MasterKeyVersion: getenv("NTB_MASTER_KEY_VERSION", "1"),
 		MasterKey:        os.Getenv("NTB_MASTER_KEY"), // no default: the server refuses to start without it
+
+		BackupDir:            getenv("NTB_BACKUP_DIR", "/var/lib/ntb/backups"),
+		BackupPassphrase:     passphrase(),
+		BackupTime:           getenv("NTB_BACKUP_TIME", "02:00"),
+		BackupKeep:           os.Getenv("NTB_BACKUP_KEEP"),
+		PgBin:                os.Getenv("NTB_PG_BIN"),
+		BackupSkipPreUpgrade: getbool("NTB_BACKUP_SKIP_PRE_UPGRADE", false),
 	}
+}
+
+// passphrase reads the backup passphrase from NTB_BACKUP_PASSPHRASE or the file NTB_BACKUP_PASSPHRASE_FILE names
+// (trailing newline dropped).
+func passphrase() string {
+	if f := os.Getenv("NTB_BACKUP_PASSPHRASE_FILE"); f != "" {
+		if b, err := os.ReadFile(f); err == nil {
+			return strings.TrimRight(string(b), "\r\n")
+		}
+	}
+	return os.Getenv("NTB_BACKUP_PASSPHRASE")
 }
 
 func getenv(key, fallback string) string {

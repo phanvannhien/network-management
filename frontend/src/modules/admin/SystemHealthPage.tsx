@@ -1,6 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router'
+import { api, errorMessage } from '@/api/client'
 import { useSession } from '@/app/auth'
 import { useHealth } from '@/app/health'
 import { useBreadcrumbs } from '@/components/breadcrumbs'
@@ -9,6 +11,105 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/format'
+
+function useBackups(enabled: boolean) {
+  const { t } = useTranslation()
+  return useQuery({
+    queryKey: ['admin', 'backups'],
+    enabled,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const r = await api.GET('/admin/backups')
+      if (r.data) return r.data
+      throw new Error(errorMessage(r.error, r.response.status, t('backups.loadFailed')))
+    },
+  })
+}
+
+const kib = (n: number) =>
+  n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MiB` : `${Math.max(1, Math.round(n / 1024))} KiB`
+
+/**
+ * Backups (P2-13): whether they are on, the newest good one (red after 2 days without), the recent runs with their
+ * errors. Configuration stays in the environment (docs/OPERATIONS.md).
+ */
+function BackupsSection({ enabled }: { enabled: boolean }) {
+  const { t } = useTranslation()
+  const q = useBackups(enabled)
+  const b = q.data
+  if (!b) return null
+  const state = !b.enabled ? (
+    <StatusBadge status="down" label={t('backups.off')} />
+  ) : b.stale ? (
+    <StatusBadge status="down" label={t('backups.stale')} />
+  ) : (
+    <StatusBadge status="up" label={t('backups.ok')} />
+  )
+  return (
+    <section
+      aria-label={t('backups.title')}
+      className="max-w-3xl space-y-3 rounded-lg border border-border bg-card p-4"
+    >
+      <h2 className="text-base font-semibold">{t('backups.title')}</h2>
+      {!b.enabled && <p className="text-sm text-muted-foreground">{t('backups.offGuide')}</p>}
+      <KeyValueList
+        columns={2}
+        items={[
+          { label: t('backups.state'), value: state },
+          {
+            label: t('backups.last'),
+            value: b.lastGood
+              ? `${formatDateTime(b.lastGood.startedAt)} · ${kib(b.lastGood.sizeBytes)}`
+              : t('backups.never'),
+          },
+          {
+            label: t('backups.schedule'),
+            value:
+              b.schedule === 'off'
+                ? t('backups.scheduleOff')
+                : t('backups.daily', { time: b.schedule }),
+          },
+          { label: t('backups.keep'), value: t('backups.keepValue', { keep: b.keep }) },
+          { label: t('backups.dir'), value: <span className="font-mono text-tech">{b.dir}</span> },
+        ]}
+      />
+      {b.runs.length > 0 && (
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs text-muted-foreground">
+            <tr>
+              <th className="py-1 pr-2 font-medium">{t('backups.when')}</th>
+              <th className="py-1 pr-2 font-medium">{t('backups.kind')}</th>
+              <th className="py-1 pr-2 font-medium">{t('backups.result')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {b.runs.slice(0, 10).map((r) => (
+              <tr key={r.id} className="border-t border-border align-top">
+                <td className="py-1 pr-2 whitespace-nowrap">{formatDateTime(r.startedAt)}</td>
+                <td className="py-1 pr-2">{t(`backups.kinds.${r.kind}`)}</td>
+                <td className="py-1 pr-2">
+                  {r.status === 'ok' ? (
+                    <span>
+                      {t('backups.done', { size: kib(r.sizeBytes) })}
+                      {r.verified && ` · ${t('backups.verified')}`}
+                    </span>
+                  ) : r.status === 'running' ? (
+                    t('backups.running')
+                  ) : (
+                    <span className="text-destructive">
+                      {t('backups.failed')}: {r.error}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="text-xs text-muted-foreground">{t('backups.howTo')}</p>
+    </section>
+  )
+}
 
 /** System area › health: API/database state, version and environment (moved off business pages). */
 export function SystemHealthPage() {
@@ -71,6 +172,7 @@ export function SystemHealthPage() {
           ]}
         />
       </section>
+      <BackupsSection enabled={!!session.data?.user.isSystemAdmin} />
     </div>
   )
 }

@@ -4453,6 +4453,22 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /admin/backups:
+    get:
+      operationId: adminGetBackups
+      summary: Backups of the installation (P2-13, ADR-053) — setup, newest good backup, recent runs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /admin/smtp:
     get:
       operationId: adminGetSmtp
@@ -8382,6 +8398,36 @@ components:
         vendor: {type: string}
         lifecycle: {type: string, enum: [planned, active, spare, rma, retired]}
         quantity: {type: integer}
+
+    BackupStatus:
+      type: object
+      required: [enabled, dir, schedule, keep, stale, runs]
+      properties:
+        enabled: {type: boolean, description: a backup passphrase is set}
+        dir: {type: string}
+        schedule: {type: string, description: "daily time HH:MM, or off"}
+        keep: {type: string, description: "daily,weekly,monthly"}
+        stale: {type: boolean, description: no good backup in the last 2 days}
+        lastGood:
+          $ref: '#/components/schemas/BackupRun'
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupRun'
+
+    BackupRun:
+      type: object
+      required: [id, kind, status, startedAt, fileName, sizeBytes, error, verified]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [scheduled, manual, pre-upgrade]}
+        status: {type: string, enum: [running, ok, failed]}
+        startedAt: {type: string, format: date-time}
+        finishedAt: {type: string, format: date-time}
+        fileName: {type: string}
+        sizeBytes: {type: integer, format: int64}
+        error: {type: string}
+        verified: {type: boolean, description: the file was read back completely}
 
     Dashboard:
       type: object

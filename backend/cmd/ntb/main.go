@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"flag"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/auth"
+	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/backup"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/catalog"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/config"
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/database"
@@ -35,7 +37,8 @@ const usage = `usage:
   ntb admin create --email E [--name N] create a system admin; password is read from stdin
   ntb seed demo --owner E               create the sample organization "Tập đoàn Mẫu" owned by system admin E
   ntb seed bench --owner E --devices N  create an organization with N devices on one diagram (performance checks)
-  ntb rotate-master-key                 move every stored secret from NTB_MASTER_KEY to NTB_NEW_MASTER_KEY`
+  ntb rotate-master-key                 move every stored secret from NTB_MASTER_KEY to NTB_NEW_MASTER_KEY
+  ntb backup run|list|verify|restore|decrypt|drop-old   backups (ntb backup for details)`
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -49,6 +52,8 @@ func main() {
 		err = seed(logger, os.Args[2], os.Args[3:], os.Stderr)
 	case len(os.Args) == 2 && os.Args[1] == "rotate-master-key":
 		err = rotateMasterKey(os.Stderr)
+	case len(os.Args) >= 2 && os.Args[1] == "backup":
+		err = backupCommand(logger, os.Args[2:], os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
@@ -71,13 +76,6 @@ func serve(logger *slog.Logger) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	if cfg.MigrateOnStart {
-		logger.Info("applying database migrations")
-		if err := database.MigrateUp(cfg.DatabaseURL); err != nil {
-			return fmt.Errorf("migrate on start: %w", err)
-		}
-	}
 
 	// The pool connects lazily: the API starts even when Postgres is down and /api/healthz reports it.
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
@@ -109,6 +107,56 @@ func serve(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	// Backups (P2-13): a service when a passphrase is set; before an upgrade migrates the database, a backup first.
+	var backups *backup.Service
+	switch {
+	case cfg.BackupPassphrase == "":
+		logger.Warn("backups are off: set NTB_BACKUP_PASSPHRASE (at least 16 characters)")
+	case len([]rune(cfg.BackupPassphrase)) < backup.MinPassphrase:
+		logger.Warn("backups are off: NTB_BACKUP_PASSPHRASE is shorter than 16 characters")
+	default:
+		if backups, err = newBackupService(cfg, pool, logger); err != nil {
+			return fmt.Errorf("backups: %w", err)
+		}
+	}
+	if cfg.MigrateOnStart {
+		if backups != nil {
+			if current, _, err := database.Status(cfg.DatabaseURL); err == nil && current > 0 && current < backups.Cfg.LatestSchema {
+				logger.Info("backing up before upgrading the database", "from", current, "to", backups.Cfg.LatestSchema)
+				if res, err := backups.Run(ctx, "pre-upgrade"); err != nil {
+					if !cfg.BackupSkipPreUpgrade {
+						return fmt.Errorf("the backup before upgrading the database failed (fix it, or set NTB_BACKUP_SKIP_PRE_UPGRADE=true to upgrade without one): %w", err)
+					}
+					logger.Warn("upgrading without a backup (NTB_BACKUP_SKIP_PRE_UPGRADE)", "error", err)
+				} else {
+					logger.Info("pre-upgrade backup done", "file", res.File)
+				}
+			}
+		}
+		logger.Info("applying database migrations")
+		if err := database.MigrateUp(cfg.DatabaseURL); err != nil {
+			return fmt.Errorf("migrate on start: %w", err)
+		}
+	}
+	// A restore replaces the database: the API holds a shared lock while it serves, and waits while a restore runs.
+	for {
+		release, ok, err := backup.HoldAPI(ctx, pool)
+		if err != nil {
+			logger.Warn("api lock not taken (database unreachable?)", "error", err)
+			break
+		}
+		if ok {
+			defer release()
+			break
+		}
+		logger.Warn("a restore is running; waiting")
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+	}
+
 	// The key version must be the one stored secrets use (a rotation half applied would lock everyone out).
 	checkCtx, cancelCheck := context.WithTimeout(ctx, 10*time.Second)
 	if err := rotate.CheckVersions(checkCtx, store.New(pool), keys); err != nil && !errors.Is(err, context.DeadlineExceeded) {
@@ -129,8 +177,10 @@ func serve(logger *slog.Logger) error {
 	}
 
 	srv := &http.Server{
-		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env), resolver),
+		Addr: cfg.HTTPAddr,
+		Handler: api.NewRouter(logger, api.NewServer(logger, queries, pool, authSvc, cfg.Version, cfg.Env).WithBackups(api.BackupInfo{
+			Enabled: backups != nil, Dir: cfg.BackupDir, Schedule: cfg.BackupTime, Keep: cmp.Or(cfg.BackupKeep, "7,4,12"),
+		}), resolver),
 		ReadHeaderTimeout: 10 * time.Second,
 		// Headers must come fast (slow-header clients are cut off); a whole upload / download (contract files up to
 		// 25 MB) gets 5 minutes, enough over a slow site VPN. Idle keep-alives do not linger.
@@ -142,6 +192,17 @@ func serve(logger *slog.Logger) error {
 	go cleanupExpiredSessions(ctx, logger, queries)
 	// Expiry alerts (P2-05): notifications hourly, one digest e-mail a day per organization.
 	go notify.Runner{Pool: pool, Keys: keys, Send: notify.SendSMTP, Logger: logger}.Loop(ctx)
+	if backups != nil {
+		h, m, on, err := backup.ParseClock(cfg.BackupTime)
+		if err != nil {
+			return err
+		}
+		if on {
+			go backup.Scheduler{Svc: backups, Hour: h, Minute: m, Logger: logger}.Loop(ctx)
+		} else {
+			logger.Warn("scheduled backups are off (NTB_BACKUP_TIME=off)")
+		}
+	}
 
 	errCh := make(chan error, 1)
 	go func() {
