@@ -84,6 +84,9 @@ function downloadTemplate() {
 
 type Result = IpamImportResult['rows'][number]
 
+/** Same cap as the server: one import stays well inside the proxy timeout. */
+const MAX_ROWS = 1000
+
 /**
  * IPAM import (P2-09): pick an IP plan spreadsheet, see what each row would do (nothing written yet), then import.
  * Bad rows are listed with the reason and skipped; the others go in.
@@ -96,6 +99,7 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
   const [preview, setPreview] = useState<IpamImportResult | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [committed, setCommitted] = useState(false)
 
   const send = async (list: ParsedRow[], dryRun: boolean) => {
     const r = await api.POST('/orgs/{orgId}/ipam-imports', {
@@ -115,8 +119,9 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
       const sheet = sheets.find((s) => detectColumns(s)) ?? null
       const found = sheet && detectColumns(sheet)
       if (!sheet || !found) return setError(t('ipamImport.noColumns'))
-      const list = ipamRows(sheet, found.header, found.columns)
+      const list = ipamRows(sheet, found.header, found.columns, found.dhcpRange)
       if (list.length === 0) return setError(t('ipamImport.empty'))
+      if (list.length > MAX_ROWS) return setError(t('ipamImport.tooMany', { count: MAX_ROWS }))
       setRows(list)
       setBusy(true)
       setPreview(await send(list, true))
@@ -141,7 +146,11 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
           errors: done.errors,
         }),
       )
-      onClose()
+      // Rows refused at import time stay on screen with their reason.
+      if (done.errors > 0) {
+        setPreview(done)
+        setCommitted(true)
+      } else onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -226,6 +235,11 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
                             r.status === 'unchanged' && 'text-muted-foreground',
                           )}
                         >
+                          {src.note && (
+                            <span className="mr-1 text-status-warning">
+                              {t('ipamImport.vlanUnread', { value: src.note })}
+                            </span>
+                          )}
                           <span className="font-medium">{t(`ipamImport.status.${r.status}`)}</span>
                           {r.status === 'error'
                             ? `: ${r.message}`
@@ -243,7 +257,10 @@ export function IpamImportDialog({ orgId, onClose }: { orgId: string; onClose: (
           <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button disabled={busy || !preview || willWrite === 0} onClick={() => void commit()}>
+          <Button
+            disabled={busy || !preview || willWrite === 0 || committed}
+            onClick={() => void commit()}
+          >
             {t('ipamImport.commit', { count: willWrite })}
           </Button>
         </DialogFooter>

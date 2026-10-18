@@ -25,7 +25,7 @@ export type IpamField =
 
 /** Header words per field, already normalised (lowercase, no diacritics, letters / digits only). */
 const SYNONYMS: Record<IpamField, string[]> = {
-  site: ['site', 'masite', 'chinhanh', 'diadiem', 'location', 'vanphong', 'office', 'branch'],
+  site: ['site', 'masite', 'chinhanh', 'diadiem', 'vanphong', 'office', 'branch', 'tensite'],
   vlan: ['vlan', 'vlanid', 'vid', 'sovlan', 'mavlan', 'vlanno'],
   vlanName: ['tenvlan', 'vlanname', 'namevlan', 'tenmang'],
   cidr: [
@@ -76,7 +76,7 @@ const SYNONYMS: Record<IpamField, string[]> = {
     'ketthuc',
     'lastip',
   ],
-  range: ['dai', 'daiip', 'range', 'iprange', 'pool', 'dhcppool', 'khoangip'],
+  range: ['dai', 'daiip', 'range', 'iprange', 'pool', 'dhcppool', 'dhcp', 'khoangip'],
   rangeKind: ['loai', 'loaidai', 'type', 'kind', 'rangetype', 'kieu', 'loaiip'],
   purpose: ['mucdich', 'purpose', 'dungcho', 'sudung', 'usage', 'role'],
 }
@@ -98,21 +98,28 @@ const CIDR_RE = /^\s*[0-9a-f:.]+\/\d{1,3}\s*$/i
  */
 export function detectColumns(
   sheet: Sheet,
-): { header: number; columns: (IpamField | null)[] } | null {
+): { header: number; columns: (IpamField | null)[]; dhcpRange: boolean } | null {
+  const ipLike = /\d+\.\d+\.\d+\.\d+|[0-9a-f]*:[0-9a-f:]+/i
   for (let r = 0; r < Math.min(sheet.rows.length, 15); r++) {
     const cols = sheet.rows[r]!.map(fieldOf)
-    if (cols.includes('cidr')) {
-      // A field named twice keeps its first column.
-      const seen = new Set<IpamField>()
-      return {
-        header: r,
-        columns: cols.map((f) => {
-          if (!f || seen.has(f)) return null
-          seen.add(f)
-          return f
-        }),
-      }
-    }
+    const known = cols.filter(Boolean).length
+    const addrCol = cols.findIndex((f) => f === 'cidr' || f === 'range' || f === 'rangeStart')
+    // A real header names two columns or more, and the rows under it hold addresses in its subnet / range column
+    // (a title like "Network plan" alone is not one).
+    const data = sheet.rows.slice(r + 1, r + 6)
+    if (known < 2 || addrCol < 0 || !data.some((row) => ipLike.test(row[addrCol] ?? ''))) continue
+    // A field named twice keeps its first column.
+    const seen = new Set<IpamField>()
+    const columns = cols.map((f) => {
+      if (!f || seen.has(f)) return null
+      seen.add(f)
+      return f
+    })
+    // A column named "Pool" / "DHCP pool" holds DHCP ranges even without a kind column.
+    const rangeCol = columns.indexOf('range')
+    const dhcpRange =
+      rangeCol >= 0 && ['pool', 'dhcppool', 'dhcp'].includes(norm(sheet.rows[r]![rangeCol] ?? ''))
+    return { header: r, columns, dhcpRange }
   }
   return null
 }
@@ -121,16 +128,24 @@ export interface ParsedRow {
   /** Spreadsheet row number (1-based, as Excel shows it). */
   line: number
   row: IpamImportRow
+  /** What the reader could not use (a VLAN cell it cannot read), shown in the preview. */
+  note?: string
 }
 
 /** Data rows under the header, empty ones dropped. */
-export function ipamRows(sheet: Sheet, header: number, columns: (IpamField | null)[]): ParsedRow[] {
+export function ipamRows(
+  sheet: Sheet,
+  header: number,
+  columns: (IpamField | null)[],
+  dhcpRange = false,
+): ParsedRow[] {
   const out: ParsedRow[] = []
   for (let r = header + 1; r < sheet.rows.length; r++) {
     const cells = sheet.rows[r]!
     const v: Partial<Record<IpamField, string>> = {}
     columns.forEach((f, c) => {
-      const cell = (cells[c] ?? '').trim()
+      // macOS pastes decomposed Vietnamese ("tĩnh" as t + i + ~): compose it like the server's words.
+      const cell = (cells[c] ?? '').normalize('NFC').trim()
       if (f && cell) v[f] = cell
     })
     if (Object.keys(v).length === 0) continue
@@ -144,23 +159,26 @@ export function ipamRows(sheet: Sheet, header: number, columns: (IpamField | nul
     const cidr = withMask(v.cidr ?? '', v.mask ?? '')
     ;[start, end] = fullRange(start, end, cidr)
     // "VLAN 10", "10 - Data": the number, and the rest as its name when no name column says otherwise.
-    const vm = (v.vlan ?? '').match(/^(?:vlan\s*)?(\d{1,4})(?:\s*[-–:]\s*(.+))?$/i)
+    const vm = (v.vlan ?? '').match(
+      /^(?:vlan\s*)?(\d{1,4})(?:\.0+)?(?:\s*[-–:(]?\s*([^)]*?)\)?)?$/i,
+    )
     const vlan = vm ? Number(vm[1]) : null
+    const note = v.vlan && !vm ? v.vlan : undefined
     const row: IpamImportRow = {
       site: v.site ?? '',
       vlan,
-      vlanName: v.vlanName ?? vm?.[2]?.trim() ?? '',
+      vlanName: v.vlanName ?? (vm?.[2]?.trim() || ''),
       cidr,
       gateway: v.gateway ?? '',
       vrf: v.vrf ?? '',
       description: v.description ?? '',
       rangeStart: start,
       rangeEnd: end,
-      rangeKind: v.rangeKind ?? '',
+      rangeKind: v.rangeKind ?? (dhcpRange && (start || end) ? 'dhcp' : ''),
       purpose: v.purpose ?? '',
     }
-    if (!row.vlan && !row.cidr && !row.rangeStart && !row.rangeEnd) continue
-    out.push({ line: r + 1, row })
+    if (!row.vlan && !row.cidr && !row.rangeStart && !row.rangeEnd && !note) continue
+    out.push({ line: r + 1, row, ...(note && { note }) })
   }
   return out
 }

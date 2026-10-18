@@ -650,27 +650,24 @@ describe('Phase 2 rules (P2-10)', () => {
     expect(of(open).some((p) => p.rule === 'vlan-isolated')).toBe(false)
   })
 
-  it('duplex: auto against forced is a mismatch, SFP / 10G are always full', () => {
-    expect(
-      rules(
-        input({ ifaces: [port('p1', D1, { duplex: 'auto' }), port('p2', D2, { duplex: 'full' })] }),
-      ),
-    ).toEqual(['duplex-mismatch:warning:e1'])
-    expect(
-      rules(
-        input({ ifaces: [port('p1', D1, { duplex: 'full' }), port('p2', D2, { duplex: 'full' })] }),
-      ),
-    ).toEqual([])
-    expect(
-      rules(
+  it('duplex: forced against auto below 1G warns, at 1G is a note, full vs half warns, optics are skipped', () => {
+    const pair = (da: string, db: string, speed = '100M', media = 'RJ45') =>
+      runChecks(
         input({
           ifaces: [
-            port('p1', D1, { duplex: 'auto', media: 'SFP+' }),
-            port('p2', D2, { duplex: 'full', media: 'SFP+' }),
+            port('p1', D1, { duplex: da, speed, media }),
+            port('p2', D2, { duplex: db, speed, media }),
           ],
         }),
-      ),
-    ).toEqual([])
+      )
+        .filter((p) => p.rule === 'duplex-mismatch')
+        .map((p) => p.severity)
+    expect(pair('auto', 'full')).toEqual(['warning'])
+    expect(pair('auto', 'full', '1G')).toEqual(['info'])
+    expect(pair('full', 'half', '1G')).toEqual(['warning'])
+    expect(pair('auto', 'half')).toEqual(['info'])
+    expect(pair('full', 'full')).toEqual([])
+    expect(pair('auto', 'full', '1G', 'SFP')).toEqual([])
   })
 
   it('active devices missing S/N, part number, or a location where the site has some', () => {
@@ -692,9 +689,11 @@ describe('Phase 2 rules (P2-10)', () => {
     const c = ctx({
       devices: [dev(D1), dev(D2)],
       credentials: [
-        { id: 'c1', name: 'Admin SW', kind: 'ssh', deviceIds: [D2, ...many] },
-        { id: 'c2', name: 'public', kind: 'snmp', deviceIds: [D1, ...many] },
-        { id: 'c3', name: 'Few', kind: 'ssh', deviceIds: [D1, D2] },
+        { id: 'c1', name: 'Admin SW', kind: 'ssh', deviceIds: [D2, ...many], logicalCount: 7 },
+        { id: 'c2', name: 'public', kind: 'snmp', deviceIds: [D1, ...many], logicalCount: 7 },
+        // Six boxes that are one stack and one HA pair: two devices, not shared enough.
+        { id: 'c4', name: 'Stack', kind: 'ssh', deviceIds: many, logicalCount: 2 },
+        { id: 'c3', name: 'Few', kind: 'ssh', deviceIds: [D1, D2], logicalCount: 2 },
       ],
     })
     expect(

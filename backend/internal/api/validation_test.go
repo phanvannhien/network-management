@@ -106,7 +106,7 @@ func TestValidationContextPhase2(t *testing.T) {
 	c := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW-C", "type": "l2_switch", "siteId": bare}))
 	mustCreate(t, fx.A, devicePath(org, a)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical", "media": "RJ45", "mode": "access",
 		"accessVlan": 10, "duplex": "full"})
-	mustCreate(t, fx.A, credsPath(org), map[string]any{"name": "Admin SW", "kind": "ssh", "username": "admin",
+	mustCreate(t, fx.A, credsPath(org), map[string]any{"name": "Admin SW", "kind": "ssh", "username": "admin", "secret": "S3cret!",
 		"devices": []map[string]any{{"deviceId": a, "purpose": "ssh"}, {"deviceId": b, "purpose": "ssh"}, {"deviceId": c, "purpose": "ssh"}}})
 	status, ctx := fx.A.Do("POST", path, map[string]any{"deviceIds": []string{a, b}, "groupIds": []string{}})
 	if status != http.StatusOK {
@@ -128,7 +128,7 @@ func TestValidationContextPhase2(t *testing.T) {
 		t.Errorf("sites with locations: %v", s)
 	}
 	creds := ctx["credentials"].([]any)
-	if len(creds) != 1 || len(creds[0].(map[string]any)["deviceIds"].([]any)) != 3 {
+	if len(creds) != 1 || len(creds[0].(map[string]any)["deviceIds"].([]any)) != 3 || creds[0].(map[string]any)["logicalCount"] != float64(3) {
 		t.Errorf("credentials (all three users, SW-C off the diagram too): %v", creds)
 	}
 	if status, _ := fx.B.Do("POST", orgPath(fx.OrgB)+"/validation-context", map[string]any{"deviceIds": []string{a}, "groupIds": []string{}}); status != http.StatusOK {

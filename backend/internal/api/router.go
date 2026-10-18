@@ -107,7 +107,7 @@ func limitBody(next http.Handler) http.Handler {
 		if r.Body != nil && r.Body != http.NoBody {
 			limit := int64(maxBody)
 			p := r.URL.Path
-			if strings.HasSuffix(p, "/device-imports") || strings.Contains(p, "/ntb-imports") || strings.HasSuffix(p, "/files") {
+			if strings.HasSuffix(p, "/device-imports") || strings.HasSuffix(p, "/ipam-imports") || strings.Contains(p, "/ntb-imports") || strings.HasSuffix(p, "/files") {
 				limit = maxImportBody
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)

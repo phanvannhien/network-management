@@ -162,6 +162,20 @@ export function buildCheckInput(
 }
 
 const SHARED = new Set(['logical', 'wireless', 'cellular'])
+/** Endpoint device kinds (their addresses are often DHCP reservations). */
+const ENDPOINT_TYPES = new Set([
+  'pc',
+  'laptop',
+  'printer',
+  'ip_camera',
+  'ip_phone',
+  'iot',
+  'access_control',
+  'video_conference',
+  'nvr',
+  'server',
+  'nas',
+])
 const SFP = new Set(['SFP', 'SFP+', 'SFP28', 'QSFP'])
 
 const inRange = (ip: string, start: string, end: string) => {
@@ -249,6 +263,19 @@ export function edgeAddress(
  * The DHCP pool of the most specific subnet (same VRF) an interface IP sits in, if it sits in one (P2-09): a static
  * address there may be handed to another machine by the DHCP server. `gateway` = the IP is the subnet's gateway.
  */
+/** inRange that says no when an address cannot be read or the families differ (inRange says yes, to stay quiet). */
+function inRangeStrict(ip: string, start: string, end: string): boolean {
+  try {
+    const a = ipaddr.parse(ip)
+    const s = ipaddr.parse(start)
+    const e = ipaddr.parse(end)
+    if (a.kind() !== s.kind() || a.kind() !== e.kind()) return false
+  } catch {
+    return false
+  }
+  return inRange(ip, start, end)
+}
+
 export function dhcpPoolOf(
   address: string,
   vrf: string,
@@ -265,7 +292,7 @@ export function dhcpPoolOf(
       .sort((x, y) => y.p[1] - x.p[1])[0]
     if (!best) return null
     const host = addr.toString()
-    const pool = (best.sn.dhcp ?? []).find((r) => inRange(host, r.start, r.end))
+    const pool = (best.sn.dhcp ?? []).find((r) => inRangeStrict(host, r.start, r.end))
     if (!pool) return null
     return {
       start: pool.start,
@@ -427,10 +454,12 @@ export function runChecks(input: CheckInput): Problem[] {
       kind === 'loopback' || kind === 'tunnel'
         ? null
         : dhcpPoolOf(ip.address, ip.vrf, input.ctx.subnets)
+    // An endpoint's address inside the pool is often a DHCP reservation: a note; a network device's is a warning.
+    const endpoint = ENDPOINT_TYPES.has(ctxDevice.get(ip.deviceId)?.type ?? '')
     if (pool)
       push(
         pool.gateway ? 'gateway-in-dhcp' : 'static-in-dhcp',
-        'warning',
+        pool.gateway || !endpoint ? 'warning' : 'info',
         deviceTarget(ip.deviceId),
         {
           host: host(ip.deviceId),
@@ -509,7 +538,8 @@ export function runChecks(input: CheckInput): Problem[] {
     if (a && b && (l.kind === 'ethernet' || l.kind === 'fiber') && sa && sb && sa !== sb)
       push(
         'speed-mismatch',
-        'info',
+        // Copper auto-negotiates down to the slower end (a note); two optics of different speeds never link (P2-10).
+        SFP.has(a.media) && SFP.has(b.media) ? 'warning' : 'info',
         linkTarget(l),
         {
           a: `${host(a.deviceId)} ${a.name} ${a.speed}`,
@@ -693,8 +723,39 @@ export function runChecks(input: CheckInput): Problem[] {
 /** Shared passwords worth a warning from this many devices on (P2-10); SNMP communities are shared by design. */
 export const SHARED_CREDENTIAL_MIN = 5
 const SHARED_EXEMPT = new Set(['snmp'])
-/** Device kinds with nothing to track (no S/N / part number expected). */
-const NO_ASSET = new Set(['provider_cloud', 'vm', 'patch_panel'])
+/** Device kinds with nothing to track (no S/N / part number expected): virtual, external, passive, endpoints. */
+const NO_ASSET = new Set([
+  'provider_cloud',
+  'vm',
+  'patch_panel',
+  'pc',
+  'laptop',
+  'ip_phone',
+  'iot',
+  'other',
+  'printer',
+])
+/** Network devices (both ends of a LAG are these; a server's NIC teaming is not a LAG mismatch). */
+const NETWORK = new Set([
+  'router',
+  'l3_switch',
+  'l2_switch',
+  'poe_switch',
+  'firewall',
+  'load_balancer',
+  'wireless_controller',
+  'vpn_gateway',
+  'sdwan_edge',
+  'olt',
+  'media_converter',
+  'wireless_bridge',
+])
+const SWITCHES = new Set(['l2_switch', 'l3_switch', 'poe_switch'])
+/** An SVI's VLAN from its name: Vlan10, Vlanif10, vlan.10, irb.10. */
+const sviVid = (name: string): number | null => {
+  const m = name.match(/^(?:vlan(?:if)?|irb|bvi)\W?(\d{1,4})$/i)
+  return m ? Number(m[1]) : null
+}
 
 type Push = (
   rule: string,
@@ -743,7 +804,10 @@ function phase2(
     if (l.bIface) cabled.add(l.bIface)
     const a = l.aIface && l.aKind === 'device' ? ifById.get(l.aIface) : undefined
     const b = l.bIface && l.bKind === 'device' ? ifById.get(l.bIface) : undefined
-    if (!a || !b || l.kind === 'power' || l.kind === 'console' || l.kind === 'stack') continue
+    // Only data cables carry VLANs between two switchports.
+    if (!a || !b || (l.kind !== 'ethernet' && l.kind !== 'fiber')) continue
+    const typeA = ctxDevice.get(a.deviceId)?.type ?? ''
+    const typeB = ctxDevice.get(b.deviceId)?.type ?? ''
     // VLANs: only two switchports are compared (a camera / router end has nothing to compare with).
     const facts = classifyL2(portL2(a), portL2(b))
     // The members of one LAG pair say it once.
@@ -777,31 +841,58 @@ function phase2(
           )
           break
         case 'lagOneSide':
-          push('lag-one-side', 'warning', linkTarget(l), { ...ends, lag: v.lag! }, key)
+          if (NETWORK.has(typeA) && NETWORK.has(typeB))
+            push('lag-one-side', 'warning', linkTarget(l), { ...ends, lag: v.lag! }, key)
           break
       }
     }
-    // Duplex: both ends must agree; "auto" against a forced end is the classic slow link (the auto side falls back to
-    // half duplex). Fibre / SFP and 10G+ ports are always full duplex.
+    // Duplex (copper only; fibre / SFP and multi-gigabit are always full): full against half is wrong; a forced end
+    // against auto is the classic slow link below 1G (the auto end falls back to half) — at 1G copper auto-negotiation
+    // is mandatory, so only a note; forced half against auto both run half (a note).
     const da = a.duplex || 'auto'
     const db = b.duplex || 'auto'
-    const fixedFull = (i: CheckIface) => SFP.has(i.media) || (speedMbps(i.speed) ?? 0) >= 10000
-    if (da !== db && !fixedFull(a) && !fixedFull(b) && l.kind === 'ethernet')
+    const copper = (i: CheckIface) =>
+      i.kind === 'physical' && (i.media === 'RJ45' || i.media === '')
+    const fast = Math.min(speedMbps(a.speed) ?? 0, speedMbps(b.speed) ?? 0)
+    const fastest = Math.max(speedMbps(a.speed) ?? 0, speedMbps(b.speed) ?? 0)
+    if (da !== db && copper(a) && copper(b) && fastest <= 1000 && l.kind === 'ethernet') {
+      const pair = new Set([da, db])
+      const level: Severity =
+        pair.has('full') && pair.has('half')
+          ? 'warning'
+          : pair.has('half')
+            ? 'info'
+            : fast >= 1000
+              ? 'info'
+              : 'warning'
       push(
         'duplex-mismatch',
-        'warning',
+        level,
         linkTarget(l),
         { a: label(a), b: label(b), da, db },
         `${l.id}:duplex`,
       )
+    }
   }
 
-  // A VLAN on a switch's access ports that none of its cabled trunks carries cannot leave the switch.
+  // A VLAN on a switch's access ports that none of its cabled trunks carries cannot leave the switch. A stack / HA pair
+  // is one switch; a VLAN with an SVI on it is routed right there.
   const byDevice = new Map<string, CheckIface[]>()
-  for (const i of input.ifaces) byDevice.set(i.deviceId, [...(byDevice.get(i.deviceId) ?? []), i])
-  for (const [deviceId, ports] of byDevice) {
+  const ownerOf = (deviceId: string) => ctxDevice.get(deviceId)?.clusterId ?? deviceId
+  for (const i of input.ifaces) {
+    const k = ownerOf(i.deviceId)
+    byDevice.set(k, [...(byDevice.get(k) ?? []), i])
+  }
+  for (const [, ports] of byDevice) {
+    const deviceId = ports[0]!.deviceId
     const d = ctxDevice.get(deviceId)
-    if (!d || d.managed === false || d.type === 'provider_cloud') continue
+    if (!d || d.managed === false || !SWITCHES.has(d.type) || d.lifecycle !== 'active') continue
+    const routed = new Set(
+      ports
+        .filter((i) => i.kind === 'svi')
+        .map((i) => sviVid(i.name))
+        .filter((v) => v !== null),
+    )
     const trunks = ports
       .filter((i) => i.kind === 'physical' && cabled.has(i.id))
       .map(effective)
@@ -819,7 +910,7 @@ function phase2(
       used.set(e.accessVlan, [...(used.get(e.accessVlan) ?? []), i.name])
     }
     for (const [vid, names] of used)
-      if (!carried(vid))
+      if (!carried(vid) && !routed.has(vid))
         push(
           'vlan-isolated',
           'warning',
@@ -841,7 +932,8 @@ function phase2(
     if (!d || d.lifecycle !== 'active' || d.managed === false || NO_ASSET.has(d.type)) continue
     const missing = [
       !d.serialNumber && 'serial',
-      d.partNumber === '' && 'part',
+      // A model name is enough to look the product up; the part number is asked for only when both are missing.
+      d.partNumber === '' && !d.model && 'part',
       !d.locationId && withLocations.has(d.siteId) && 'location',
     ].filter(Boolean)
     if (missing.length > 0)
@@ -856,8 +948,16 @@ function phase2(
 
   // One password on many devices: one leak opens them all.
   for (const c of input.ctx.credentials ?? []) {
-    if (SHARED_EXEMPT.has(c.kind) || c.deviceIds.length < SHARED_CREDENTIAL_MIN) continue
+    // Boxes in use, a stack / HA pair counted once (the server counts them).
+    if (SHARED_EXEMPT.has(c.kind) || (c.logicalCount ?? c.deviceIds.length) < SHARED_CREDENTIAL_MIN)
+      continue
     const here = c.deviceIds.map((id) => deviceTarget(id)).find(Boolean) ?? null
-    push('credential-shared', 'warning', here, { name: c.name, count: c.deviceIds.length }, c.id)
+    push(
+      'credential-shared',
+      'warning',
+      here,
+      { name: c.name, count: c.logicalCount ?? c.deviceIds.length },
+      c.id,
+    )
   }
 }

@@ -939,6 +939,8 @@ export const en: Strings = {
     more_other: '… and {{count}} more subnets (see IPAM)',
   },
   ipamImport: {
+    tooMany: 'The file has more than {{count}} rows — split it (e.g. one file per branch).',
+    vlanUnread: 'Could not read VLAN "{{value}}" (VLAN skipped).',
     open: 'Import from Excel',
     title: 'Import VLANs, subnets and IP ranges from Excel',
     hint: 'Each row may carry a VLAN, a subnet and an IP range. Columns are found by name (Site, VLAN, VLAN name, Subnet, Gateway, VRF, Description, Start IP, End IP or Range, Range type, Purpose). Existing ones are completed, never duplicated; bad rows are skipped. You see a preview before anything is written.',

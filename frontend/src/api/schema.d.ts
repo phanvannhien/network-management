@@ -3013,6 +3013,8 @@ export interface components {
             id: string;
             name: string;
             kind: string;
+            /** @description devices in use sharing it, a stack / HA pair counted once */
+            logicalCount: number;
             deviceIds: string[];
         };
         ValDevice: {

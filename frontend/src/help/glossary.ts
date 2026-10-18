@@ -588,8 +588,8 @@ export const GLOSSARY: GlossaryEntry[] = [
     'port',
     ['Duplex (song công)', 'Duplex'],
     [
-      'Full = gửi và nhận cùng lúc; half = lần lượt. Hai đầu dây phải giống nhau: một đầu auto, đầu kia ép full thì đầu auto rơi về half, dây chậm và mất gói. Để cả hai auto là an toàn nhất. Cổng quang / 10G luôn full.',
-      'Full = send and receive at once; half = in turns. Both ends must agree: auto against forced full drops the auto end to half — slow link, lost frames. Leaving both on auto is safest. Fibre / 10G ports are always full.',
+      'Full = gửi và nhận cùng lúc; half = lần lượt. Hai đầu dây phải giống nhau: một đầu auto, đầu kia ép full thì đầu auto rơi về half, dây chậm và mất gói. Lỗi này hay gặp ở cổng 10/100; ở 1G chuẩn bắt buộc auto nên chỉ là ghi chú. Để cả hai auto là an toàn nhất. Cổng quang / 10G luôn full.',
+      'Full = send and receive at once; half = in turns. Both ends must agree: auto against forced full drops the auto end to half — slow link, lost frames. This bites on 10/100 ports; 1G requires auto-negotiation, so there it is only a note. Leaving both on auto is safest. Fibre / 10G ports are always full.',
     ],
   ),
   e(

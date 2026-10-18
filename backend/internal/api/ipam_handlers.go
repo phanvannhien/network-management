@@ -642,6 +642,10 @@ func writeSubnet(ctx context.Context, q store.Querier, m tenant.Membership, f su
 		}
 		// Existing ranges must still fit a resized subnet.
 		if id != nil && f.cidr != before.Cidr {
+			// Same lock as range writes: no range can be added outside the subnet while it shrinks.
+			if err := q.AdvisoryXactLock(ctx, m.OrgID.String()+"/ranges/"+uuidStr(before.ID)); err != nil {
+				return fmt.Errorf("lock ranges: %w", err)
+			}
 			ranges, err := q.ListRanges(ctx, store.ListRangesParams{OrganizationID: m.OrgID, SubnetID: before.ID})
 			if err != nil {
 				return fmt.Errorf("list ranges: %w", err)

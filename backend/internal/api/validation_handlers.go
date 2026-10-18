@@ -89,7 +89,8 @@ func validationContext(ctx context.Context, q store.Querier, m tenant.Membership
 		for _, d := range c.DeviceIds {
 			devs = append(devs, uuid.UUID(d.Bytes))
 		}
-		vc = append(vc, apigen.ValCredential{Id: uuid.UUID(c.ID.Bytes), Name: c.Name, Kind: c.Kind, DeviceIds: devs})
+		vc = append(vc, apigen.ValCredential{Id: uuid.UUID(c.ID.Bytes), Name: c.Name, Kind: c.Kind, DeviceIds: devs,
+			LogicalCount: int(c.LogicalCount)})
 	}
 	out.Credentials = &vc
 	ips, err := q.ValidationIps(ctx, store.ValidationIpsParams{OrganizationID: org, Ids: ids})

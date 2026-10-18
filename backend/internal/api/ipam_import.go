@@ -20,7 +20,8 @@ import (
 // exists is completed, never duplicated (VLAN by site + id, subnet by VRF + CIDR, range by its bounds); every write
 // goes through the same checks and audit as the forms. A bad row is rolled back alone (savepoint) and reported.
 
-const maxIpamImportRows = 5000
+// maxIpamImportRows keeps one import well inside the proxy timeout (each row is some 15–20 queries in one transaction).
+const maxIpamImportRows = 1000
 
 // rangeKindWords maps what spreadsheets write to the range kinds.
 var rangeKindWords = map[string]string{
@@ -186,7 +187,7 @@ func (r *ipamImportRun) row(q store.Querier, in apigen.IpamImportRow) (apigen.Ip
 	// Subnet: created, or completed with what the row gives (never cleared).
 	var subnet *uuid.UUID
 	if cidr != "" {
-		vrf := strings.TrimSpace(str(in.Vrf))
+		vrf := importVrf(str(in.Vrf))
 		f, msg := validateSubnet(cidr, &vrf, in.Gateway, in.Description, site, vlan)
 		if msg != "" {
 			return bad(msg)
@@ -241,7 +242,7 @@ func (r *ipamImportRun) row(q store.Querier, in apigen.IpamImportRow) (apigen.Ip
 			if err1 != nil || err2 != nil {
 				return bad("Địa chỉ đầu/cuối là địa chỉ IP, vd 10.72.114.100")
 			}
-			id, err := q.SubnetHolding(r.ctx, store.SubnetHoldingParams{OrganizationID: r.m.OrgID, Vrf: strings.TrimSpace(str(in.Vrf)),
+			id, err := q.SubnetHolding(r.ctx, store.SubnetHoldingParams{OrganizationID: r.m.OrgID, Vrf: importVrf(str(in.Vrf)),
 				FirstIp: a.Unmap(), LastIp: b.Unmap()})
 			if errors.Is(err, pgx.ErrNoRows) {
 				return bad(fmt.Sprintf("Không có subnet nào chứa dải %s–%s (thêm cột Subnet)", start, end))
@@ -283,6 +284,15 @@ func (r *ipamImportRun) row(q store.Querier, in apigen.IpamImportRow) (apigen.Ip
 		res.Status = apigen.IpamImportRowResultStatusUnchanged
 	}
 	return res, nil
+}
+
+// importVrf reads the default VRF the way spreadsheets write it ("default", "global", "-") as the default one ('').
+func importVrf(v string) string {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "", "-", "default", "global", "none", "mặc định", "mac dinh", "grt":
+		return ""
+	}
+	return strings.TrimSpace(v)
 }
 
 func (r *ipamImportRun) findVlan(q store.Querier, vid int32, site *uuid.UUID) (*uuid.UUID, error) {
@@ -340,8 +350,11 @@ func (r *ipamImportRun) completeSubnet(q store.Querier, id uuid.UUID, f subnetFi
 			kept = append(kept, "giữ mô tả đang có")
 		}
 	}
+	siteDiffers := f.site != nil && next.site != nil && *next.site != *f.site
 	switch {
 	case f.vlan == nil:
+	case siteDiffers:
+		// The row's VLAN belongs to the row's site, not the subnet's: left alone with the site difference.
 	case next.vlan == nil:
 		next.vlan, what = f.vlan, append(what, "VLAN")
 	case *next.vlan != *f.vlan:

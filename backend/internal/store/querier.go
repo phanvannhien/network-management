@@ -480,7 +480,9 @@ type Querier interface {
 	UseUserToken(ctx context.Context, tokenHash []byte) (int64, error)
 	// ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 	UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error)
-	// Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
+	// Device passwords used by any of the given devices (P2-10: shared passwords): every live device using them, and how
+	// many boxes that is (a stack / HA pair is one); only stored passwords of devices in use count (a record without a
+	// secret is usually an AAA / domain account).
 	ValidationCredentials(ctx context.Context, arg ValidationCredentialsParams) ([]ValidationCredentialsRow, error)
 	// Validation context of a diagram (P1-20): what the rules need about the objects on it, plus conflicts computed
 	// org-wide. Every query takes organization_id.

@@ -77,3 +77,31 @@ describe('IPAM import cells', () => {
     })
   })
 })
+
+describe('IPAM import, review cases', () => {
+  it('a "DHCP pool" column without a kind column is DHCP; odd VLAN cells; a title row is not a header', () => {
+    const sheet = {
+      name: 'x',
+      rows: [
+        ['Network plan 2026'],
+        ['Subnet', 'VLAN', 'DHCP pool'],
+        ['10.5.1.0/24', 'Vlan 10 Data', '10.5.1.100-10.5.1.200'],
+        ['10.5.2.0/24', 'VLAN20 (Cam)', ''],
+        ['10.5.3.0/24', '10.0', ''],
+        ['10.5.4.0/24', 'Kho', ''],
+      ],
+    }
+    const f = detectColumns(sheet)!
+    expect(f.header).toBe(1)
+    const rows = ipamRows(sheet, f.header, f.columns, f.dhcpRange)
+    expect(rows[0]!.row).toMatchObject({
+      vlan: 10,
+      vlanName: 'Data',
+      rangeKind: 'dhcp',
+      rangeStart: '10.5.1.100',
+    })
+    expect(rows[1]!.row).toMatchObject({ vlan: 20, vlanName: 'Cam', rangeKind: '' })
+    expect(rows[2]!.row.vlan).toBe(10)
+    expect(rows[3]).toMatchObject({ note: 'Kho', row: { vlan: null } })
+  })
+})

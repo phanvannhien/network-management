@@ -840,8 +840,22 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - **Lệch VLAN trên dây:** dùng chung logic với chế độ xem L2 (ADR-047). Chỉ so khi cả hai đầu là switchport; thành viên LAG lấy cấu hình của cổng LAG; mỗi cặp LAG chỉ báo một lần.
     - Cảnh báo: access khác VLAN; native khác nhau; access nối trunk mà VLAN ≠ native; LAG một đầu.
     - Ghi chú: native chỉ ghi một đầu; danh sách VLAN cho phép khác nhau. "Dải VLAN khác nhau" là ghi chú chứ không phải cảnh báo, vì một đầu giới hạn hơn là cấu hình bình thường.
-  - **"VLAN thiếu trong trunk"** hiểu là **VLAN bị cô lập**: VLAN của các cổng access (có dây) trên một thiết bị mà không trunk nào có dây của thiết bị đó mang đi. Chỉ báo khi mọi trunk đều ghi danh sách cho phép.
-  - **Duplex:** hai đầu khác nhau là cảnh báo (auto ↔ ép cố định là trường hợp kinh điển). Bỏ qua cổng SFP và 10G trở lên (luôn full).
-  - **Thiếu thông tin:** thiết bị đang dùng, có quản lý, không phải đám mây ISP / VM / patch panel, mà thiếu S/N hoặc part number. Thiếu location chỉ báo khi site đã khai location.
-  - **Mật khẩu dùng chung:** từ **5 thiết bị** trở lên là cảnh báo, mỗi mật khẩu một dòng. SNMP community được miễn (dùng chung là bình thường). Trang Kho mật khẩu đánh dấu ⚠.
+  - Chỉ so trên dây đồng / quang. "LAG một đầu" chỉ báo khi hai đầu đều là thiết bị mạng: máy chủ dùng NIC teaming là bình thường.
+  - **"VLAN thiếu trong trunk"** hiểu là **VLAN bị cô lập**: VLAN của các cổng access (có dây) mà không trunk nào có dây mang đi.
+    - Gom theo cụm (stack / HA tính là một), chỉ xét switch đang dùng.
+    - Bỏ qua VLAN có SVI trên chính thiết bị đó (đã được định tuyến).
+    - Chỉ báo khi mọi trunk đều ghi danh sách cho phép.
+  - **Duplex** (chỉ cổng đồng ≤ 1G; cổng quang / 10G luôn full):
+    - full ↔ half: cảnh báo;
+    - auto ↔ ép cố định dưới 1G: cảnh báo (đầu auto rơi về half);
+    - auto ↔ ép ở 1G: ghi chú (1000BASE-T bắt buộc auto-negotiation);
+    - một đầu half còn đầu kia auto: ghi chú.
+  - **Lệch tốc độ:** hai cổng quang khác tốc độ là cảnh báo (không bao giờ lên link); cổng đồng là ghi chú (tự hạ xuống tốc độ thấp hơn).
+  - **IP trong dải DHCP:** gateway trong dải luôn là cảnh báo. IP tĩnh trong dải là cảnh báo với thiết bị mạng / server, nhưng chỉ là ghi chú với thiết bị đầu cuối (thường là DHCP reservation).
+  - **Thiếu thông tin:** thiết bị đang dùng, có quản lý, không phải đám mây ISP / VM / patch panel / thiết bị đầu cuối (PC, laptop, điện thoại IP, IoT, máy in), mà thiếu S/N. Part number chỉ đòi khi model cũng trống. Thiếu location chỉ báo khi site đã khai location.
+  - **Mật khẩu dùng chung:** từ **5 thiết bị logic** đang dùng trở lên là cảnh báo, mỗi mật khẩu một dòng.
+    - Stack / cụm HA đếm là một.
+    - Chỉ tính mật khẩu đã lưu secret.
+    - SNMP community được miễn (dùng chung là bình thường).
+    - Trang Kho mật khẩu đánh dấu ⚠.
 - **Để sau:** ngưỡng chỉnh theo tổ chức; kiểm tra phía backend khi lưu / nhập.

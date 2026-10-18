@@ -6289,11 +6289,12 @@ components:
 
     ValCredential:
       type: object
-      required: [id, name, kind, deviceIds]
+      required: [id, name, kind, deviceIds, logicalCount]
       properties:
         id: {type: string, format: uuid}
         name: {type: string}
         kind: {type: string}
+        logicalCount: {type: integer, description: 'devices in use sharing it, a stack / HA pair counted once'}
         deviceIds:
           type: array
           items: {type: string, format: uuid}

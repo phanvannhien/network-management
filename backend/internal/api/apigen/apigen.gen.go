@@ -4838,7 +4838,10 @@ type ValCredential struct {
 	DeviceIds []openapi_types.UUID `json:"deviceIds"`
 	Id        openapi_types.UUID   `json:"id"`
 	Kind      string               `json:"kind"`
-	Name      string               `json:"name"`
+
+	// LogicalCount devices in use sharing it, a stack / HA pair counted once
+	LogicalCount int    `json:"logicalCount"`
+	Name         string `json:"name"`
 }
 
 // ValDevice defines model for ValDevice.

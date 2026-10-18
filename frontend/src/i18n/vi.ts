@@ -934,6 +934,8 @@ export const vi = {
     more_other: '… và {{count}} subnet nữa (xem đủ trong IPAM)',
   },
   ipamImport: {
+    tooMany: 'File có quá {{count}} dòng — tách thành nhiều file (vd mỗi chi nhánh một file).',
+    vlanUnread: 'Không đọc được VLAN "{{value}}" (bỏ qua VLAN).',
     open: 'Nhập từ Excel',
     title: 'Nhập VLAN, subnet, dải IP từ Excel',
     hint: 'Mỗi dòng có thể có VLAN, subnet và một dải IP. Cột nhận theo tên (Site, VLAN, Tên VLAN, Subnet, Gateway, VRF, Mô tả, IP đầu, IP cuối hoặc Dải IP, Loại dải, Mục đích). Cái đã có thì được bổ sung, không tạo trùng; dòng lỗi bị bỏ qua. Xem trước rồi mới ghi.',

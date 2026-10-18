@@ -17,7 +17,6 @@ func TestIpamImport(t *testing.T) {
 	path := func(o uuid.UUID) string { return orgPath(o) + "/ipam-imports" }
 	fx.AssertCrossTenantDenied(t, "POST", path, map[string]any{"dryRun": true, "rows": []any{map[string]any{"cidr": "10.9.0.0/24"}}})
 	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HCM01", "name": "Văn phòng HCM"}))
-	vrf := ""
 	rows := []map[string]any{
 		{"site": "hcm01", "vlan": 20, "vlanName": "Camera", "cidr": "10.1.20.0/24", "gateway": "10.1.20.1", "rangeStart": "10.1.20.100",
 			"rangeEnd": "10.1.20.200", "rangeKind": "DHCP", "purpose": "Camera"},
@@ -27,7 +26,7 @@ func TestIpamImport(t *testing.T) {
 		{"site": "HN99", "cidr": "10.2.0.0/24"},
 		{"vlan": 99, "vlanName": "MGMT"},
 		{"vlan": 30, "vlanName": "Bad", "cidr": "10.1.30.0/33"}, // its VLAN is rolled back with the row
-		{"cidr": "10.1.20.0/24", "vrf": vrf, "site": "HCM01", "rangeStart": "10.1.20.100", "rangeEnd": "10.1.20.200", "rangeKind": "dhcp"}, // same pool again
+		{"cidr": "10.1.20.0/24", "vrf": "Default", "site": "HCM01", "rangeStart": "10.1.20.100", "rangeEnd": "10.1.20.200", "rangeKind": "dhcp"}, // same pool again ("Default" = the default VRF)
 	}
 	// Preview: nothing written.
 	status, res := fx.A.Do("POST", path(org), map[string]any{"dryRun": true, "rows": rows})

@@ -24,6 +24,20 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 - Còn dở / lỗi đã biết:
   - Ngưỡng mật khẩu dùng chung cố định 5.
   - Chưa kiểm tra lại ở backend khi lưu / nhập.
+- Sửa sau review nghiệp vụ (cùng ngày):
+  - **Nhập IPAM:**
+    - tối đa 1000 dòng; VRF "default" / "global" / "-" hiểu là bảng chính;
+    - nhận cột "DHCP"; nhận dạng tiêu đề chặt hơn (phải có dữ liệu giống IP);
+    - VLAN viết "10.0", "VLAN10 (Văn phòng)" vẫn đọc được, không đọc được thì báo trên dòng;
+    - dòng lỗi lúc nhập vẫn hiện trên dialog.
+    - Đổi kích thước subnet giờ khóa cùng khóa với dải IP, không còn tranh chấp.
+  - **Kiểm tra:**
+    - duplex đúng chuẩn (1G auto ↔ ép chỉ là ghi chú; full ↔ half là cảnh báo); hai cổng quang khác tốc độ là cảnh báo;
+    - NIC teaming của server không bị báo "LAG một đầu";
+    - VLAN cô lập: gom theo stack, bỏ qua VLAN có SVI;
+    - PC / điện thoại / máy in không bị đòi S/N;
+    - mật khẩu dùng chung đếm stack / HA là một, chỉ tính mật khẩu đã lưu;
+    - IP tĩnh trong dải DHCP ở thiết bị đầu cuối chỉ là ghi chú (thường là reservation).
 - Câu hỏi cho người dùng: ngưỡng 5 thiết bị cho mật khẩu dùng chung có hợp không?
 - Đề xuất quyết định cần chốt: không.
 - Task tiếp theo đề xuất: P2-11 Báo cáo & export (PDF A4/A3 có title block, Excel IP plan / port map / BOQ / VLAN).

@@ -113,12 +113,15 @@ JOIN devices d ON d.site_id = l.site_id AND d.organization_id = l.organization_i
 WHERE l.organization_id = @organization_id AND d.id = ANY (@ids::uuid[]);
 
 -- name: ValidationCredentials :many
--- Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
-SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids
+-- Device passwords used by any of the given devices (P2-10: shared passwords): every live device using them, and how
+-- many boxes that is (a stack / HA pair is one); only stored passwords of devices in use count (a record without a
+-- secret is usually an AAA / domain account).
+SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids,
+       count(DISTINCT COALESCE(d.cluster_id, d.id)) FILTER (WHERE d.lifecycle = 'active')::bigint AS logical_count
 FROM credentials c
 JOIN credential_devices cd ON cd.credential_id = c.id AND cd.organization_id = c.organization_id
 JOIN devices d ON d.id = cd.device_id AND d.organization_id = c.organization_id AND d.deleted_at IS NULL
-WHERE c.organization_id = @organization_id AND c.deleted_at IS NULL
+WHERE c.organization_id = @organization_id AND c.deleted_at IS NULL AND c.secret_ciphertext IS NOT NULL
   AND EXISTS (SELECT 1 FROM credential_devices x WHERE x.organization_id = c.organization_id AND x.credential_id = c.id
                 AND x.device_id = ANY (@ids::uuid[]))
 GROUP BY c.id, c.name, c.kind;

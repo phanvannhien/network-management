@@ -171,11 +171,12 @@ func (q *Queries) DuplicateSerials(ctx context.Context, arg DuplicateSerialsPara
 }
 
 const validationCredentials = `-- name: ValidationCredentials :many
-SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids
+SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids,
+       count(DISTINCT COALESCE(d.cluster_id, d.id)) FILTER (WHERE d.lifecycle = 'active')::bigint AS logical_count
 FROM credentials c
 JOIN credential_devices cd ON cd.credential_id = c.id AND cd.organization_id = c.organization_id
 JOIN devices d ON d.id = cd.device_id AND d.organization_id = c.organization_id AND d.deleted_at IS NULL
-WHERE c.organization_id = $1 AND c.deleted_at IS NULL
+WHERE c.organization_id = $1 AND c.deleted_at IS NULL AND c.secret_ciphertext IS NOT NULL
   AND EXISTS (SELECT 1 FROM credential_devices x WHERE x.organization_id = c.organization_id AND x.credential_id = c.id
                 AND x.device_id = ANY ($2::uuid[]))
 GROUP BY c.id, c.name, c.kind
@@ -187,13 +188,16 @@ type ValidationCredentialsParams struct {
 }
 
 type ValidationCredentialsRow struct {
-	ID        pgtype.UUID
-	Name      string
-	Kind      string
-	DeviceIds []pgtype.UUID
+	ID           pgtype.UUID
+	Name         string
+	Kind         string
+	DeviceIds    []pgtype.UUID
+	LogicalCount int64
 }
 
-// Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
+// Device passwords used by any of the given devices (P2-10: shared passwords): every live device using them, and how
+// many boxes that is (a stack / HA pair is one); only stored passwords of devices in use count (a record without a
+// secret is usually an AAA / domain account).
 func (q *Queries) ValidationCredentials(ctx context.Context, arg ValidationCredentialsParams) ([]ValidationCredentialsRow, error) {
 	rows, err := q.db.Query(ctx, validationCredentials, arg.OrganizationID, arg.Ids)
 	if err != nil {
@@ -208,6 +212,7 @@ func (q *Queries) ValidationCredentials(ctx context.Context, arg ValidationCrede
 			&i.Name,
 			&i.Kind,
 			&i.DeviceIds,
+			&i.LogicalCount,
 		); err != nil {
 			return nil, err
 		}
