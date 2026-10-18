@@ -2018,6 +2018,8 @@ export const vi = {
     alt: 'Ảnh {{side}} của {{name}}',
     failed: 'Không tải được ảnh.',
     credit: 'Ảnh: thư viện thiết bị cộng đồng NetBox (CC0) —',
+    similar:
+      'Chưa có ảnh đúng model này — đây là ảnh model tương tự {{model}} (cùng vỏ máy, có thể khác cổng uplink / PoE).',
     creditLink: 'nguồn',
     column: 'Ảnh',
   },

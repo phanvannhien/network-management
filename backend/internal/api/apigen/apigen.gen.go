@@ -1669,6 +1669,9 @@ type CatalogImages struct {
 	Front string `json:"front"`
 	Rear  string `json:"rear"`
 
+	// SimilarTo the photos show this sibling model (same chassis, other uplinks / PoE), not the model itself; empty when they are its own
+	SimilarTo string `json:"similarTo"`
+
 	// Source where the photos come from (NetBox device type library page)
 	Source string `json:"source"`
 }

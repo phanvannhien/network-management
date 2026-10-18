@@ -62,6 +62,12 @@ function PhotoDialog({
             />
           )}
         </div>
+        {model.images.similarTo && (
+          // No photo of this exact model: a sibling on the same chassis (other uplinks / PoE) stands in, said plainly.
+          <p role="note" className="text-sm text-status-warning">
+            {t('photos.similar', { model: model.images.similarTo })}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           {model.partNumbers[0] && <span className="font-mono">{model.partNumbers[0]} · </span>}
           {t('photos.credit')}{' '}

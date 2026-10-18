@@ -17,7 +17,12 @@ const model = (id: string, model: string, front = '', partNumbers: string[] = []
     verified: true,
     source: '',
     notes: '',
-    images: { front, rear: '', source: front ? 'https://github.com/netbox-community/x' : '' },
+    images: {
+      front,
+      rear: '',
+      source: front ? 'https://github.com/netbox-community/x' : '',
+      similarTo: '',
+    },
   }) as CatalogModel
 
 describe('product photos (P2-12)', () => {

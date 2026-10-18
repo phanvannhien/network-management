@@ -537,7 +537,10 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
 - **Quyết định:**
   - **Nguồn dữ liệu là NetBox, không lấy ảnh quảng cáo trên web hãng** (có bản quyền).
     - Mỗi ảnh ghi nguồn (trang NetBox) trong `catalog/images/SOURCES.json`.
-    - Model nào không có ảnh trong NetBox thì chưa có ảnh. Ảnh do người dùng tải lên sẽ làm cùng phần lưu file đính kèm (P2-04).
+    - Model nào không có ảnh trong NetBox thì chưa có ảnh, trừ khi có ảnh **model anh em cùng vỏ máy** (chỉ khác uplink / PoE, ví dụ
+      C1300-48P-4G dùng ảnh C1300-48P-4X). Khi đó popup ghi rõ "ảnh model tương tự …" (`similarTo`, bổ sung 2026-10-18 theo
+      người dùng). Không dùng ảnh khác vỏ máy hoặc khác số cổng.
+    - Ảnh do người dùng tải lên sẽ làm cùng phần lưu file đính kèm (P2-04).
   - **Ảnh đóng gói trong binary** cùng catalog.
     - Tên file là `<catalog id>.front.jpg` / `.rear.jpg`.
     - Ảnh được chuyển một lần sang JPEG, rộng tối đa 1200 px, không phóng to ảnh nhỏ.

@@ -5810,7 +5810,7 @@ components:
     CatalogImages:
       type: object
       description: Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
-      required: [front, rear, source]
+      required: [front, rear, source, similarTo]
       properties:
         front:
           type: string
@@ -5819,6 +5819,9 @@ components:
         source:
           type: string
           description: where the photos come from (NetBox device type library page)
+        similarTo:
+          type: string
+          description: the photos show this sibling model (same chassis, other uplinks / PoE), not the model itself; empty when they are its own
 
     MgmtIpResult:
       type: object

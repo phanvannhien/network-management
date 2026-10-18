@@ -20,7 +20,7 @@ import (
 var data embed.FS
 
 // Photos (P2-12): images/<id>.front.jpg / <id>.rear.jpg, from the NetBox device type library (CC0); SOURCES.json
-// gives the page each one comes from.
+// gives the page each one comes from, and the sibling model it shows when the model itself has no photo.
 //
 //go:embed images
 var images embed.FS
@@ -142,7 +142,10 @@ func attachImages() error {
 	if err != nil {
 		return fmt.Errorf("read image sources: %w", err)
 	}
-	var sources map[string]string
+	var sources map[string]struct {
+		Source    string `json:"source"`
+		SimilarTo string `json:"similarTo"`
+	}
 	if err := json.Unmarshal(raw, &sources); err != nil {
 		return fmt.Errorf("parse image sources: %w", err)
 	}
@@ -164,7 +167,7 @@ func attachImages() error {
 			return fmt.Errorf("image %q: no catalog model %q", name, p[1])
 		}
 		src := sources[name]
-		if src == "" {
+		if src.Source == "" {
 			return fmt.Errorf("image %q: missing from SOURCES.json", name)
 		}
 		if p[2] == "front" {
@@ -172,7 +175,8 @@ func attachImages() error {
 		} else {
 			models[i].Images.Rear = name
 		}
-		models[i].Images.Source = src
+		models[i].Images.Source = src.Source
+		models[i].Images.SimilarTo = src.SimilarTo
 	}
 	for name := range sources {
 		if _, err := fs.Stat(images, "images/"+name); err != nil {

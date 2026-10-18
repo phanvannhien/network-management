@@ -2032,6 +2032,8 @@ export const en: Strings = {
     alt: '{{side}} of {{name}}',
     failed: 'The photo could not be loaded.',
     credit: 'Photo: NetBox community device type library (CC0) —',
+    similar:
+      'No photo of this exact model — this is the similar {{model}} (same chassis; uplinks / PoE may differ).',
     creditLink: 'source',
     column: 'Photo',
   },

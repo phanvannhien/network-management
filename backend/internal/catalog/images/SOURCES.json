@@ -1,257 +1,801 @@
 {
- "aruba-2530-24g-poeplus.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-24g-poep.front.png",
- "aruba-2530-24g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-24g.front.png",
- "aruba-2530-48g-poeplus.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-48g-poep.front.png",
- "aruba-2530-48g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-48g.front.png",
- "aruba-2930f-24g-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-4sfp.front.png",
- "aruba-2930f-24g-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-4sfpp.front.png",
- "aruba-2930f-24g-poeplus-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-poep-4sfp.front.png",
- "aruba-2930m-24g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-24g.front.png",
- "aruba-2930m-24g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-24g.rear.png",
- "aruba-2930m-48g-poeplus.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-48g-poep.front.png",
- "aruba-2930m-48g-poeplus.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-48g-poep.rear.png",
- "aruba-ap-505.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-505.front.png",
- "aruba-ap-505.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-505.rear.png",
- "aruba-ap-515.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-515.front.png",
- "aruba-ap-515.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-515.rear.png",
- "aruba-ap-535.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-535.front.png",
- "aruba-ap-535.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-535.rear.png",
- "aruba-cx-6000-24g-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-4sfp.front.png",
- "aruba-cx-6000-24g-4sfp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-4sfp.rear.png",
- "aruba-cx-6000-24g-poe-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-poe4-4sfp.front.png",
- "aruba-cx-6000-24g-poe-4sfp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-poe4-4sfp.rear.png",
- "aruba-cx-6000-48g-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-4sfp.front.png",
- "aruba-cx-6000-48g-4sfp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-4sfp.rear.png",
- "aruba-cx-6000-48g-poe-4sfp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-poe4-4sfp.front.png",
- "aruba-cx-6000-48g-poe-4sfp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-poe4-4sfp.rear.png",
- "aruba-cx-6100-12g-poe-2g-2sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-12g-poe4-2sfpp.front.png",
- "aruba-cx-6100-12g-poe-2g-2sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-12g-poe4-2sfpp.rear.png",
- "aruba-cx-6100-24g-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-4sfpp.front.png",
- "aruba-cx-6100-24g-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-4sfpp.rear.png",
- "aruba-cx-6100-24g-poe-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-poe4-4sfpp.front.png",
- "aruba-cx-6100-24g-poe-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-poe4-4sfpp.rear.png",
- "aruba-cx-6100-48g-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-4sfpp.front.png",
- "aruba-cx-6100-48g-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-4sfpp.rear.png",
- "aruba-cx-6100-48g-poe-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-poe4-4sfpp.front.png",
- "aruba-cx-6100-48g-poe-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-poe4-4sfpp.rear.png",
- "aruba-cx-6200f-24g-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-4sfpp.front.png",
- "aruba-cx-6200f-24g-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-4sfpp.rear.png",
- "aruba-cx-6200f-24g-poe-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-poe4-4sfpp.front.png",
- "aruba-cx-6200f-24g-poe-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-poe4-4sfpp.rear.png",
- "aruba-cx-6200f-48g-poe-4sfpp-370w.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-370w.front.png",
- "aruba-cx-6200f-48g-poe-4sfpp-370w.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-370w.rear.png",
- "aruba-cx-6200f-48g-poe-4sfpp-740w.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-740w.front.png",
- "aruba-cx-6200f-48g-poe-4sfpp-740w.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-740w.rear.png",
- "aruba-cx-6300f-24g-poe-4sfp56.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-24g-poe4-4sfp56.front.png",
- "aruba-cx-6300f-24g-poe-4sfp56.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-24g-poe4-4sfp56.rear.png",
- "aruba-cx-6300f-48g-poe-4sfp56.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-48g-poe4-4sfp56.front.png",
- "aruba-cx-6300f-48g-poe-4sfp56.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-48g-poe4-4sfp56.rear.png",
- "aruba-cx-6300m-24sfpp-4sfp56.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-24sfpp-4sfp56.front.png",
- "aruba-cx-6300m-24sfpp-4sfp56.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-24sfpp-4sfp56.rear.png",
- "aruba-cx-6300m-48g-cl4-poe-4sfp56.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-48g-poe4-4sfp56.front.png",
- "aruba-cx-6300m-48g-cl4-poe-4sfp56.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-48g-poe4-4sfp56.rear.png",
- "aruba-io-1930-48g-4sfpp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-1930-48g.front.jpg",
- "aruba-io-1930-48g-4sfpp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-1930-48g.rear.jpg",
- "cisco-c1000-48t-4g-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-48t-4g-l.front.png",
- "cisco-c1000-48t-4g-l.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-48t-4g-l.rear.png",
- "cisco-c1000-8t-2g-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-8t-2g-l.front.png",
- "cisco-c1000-8t-2g-l.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-8t-2g-l.rear.png",
- "cisco-c1111-4p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-c1111-4p.front.png",
- "cisco-c1111-4p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-c1111-4p.rear.png",
- "cisco-c1111-8p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-1111-8p.front.png",
- "cisco-c1111-8p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-1111-8p.rear.png",
- "cisco-c1200-16t-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1200-16t-2g.front.jpg",
- "cisco-c1200-24t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1200-24t-4x.front.png",
- "cisco-c1300-16p-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-2g.front.png",
- "cisco-c1300-16p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-4x.front.png",
- "cisco-c1300-16p-4x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-4x.rear.png",
- "cisco-c1300-16t-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16t-2g.front.png",
- "cisco-c1300-16t-2g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16t-2g.rear.png",
- "cisco-c1300-24fp-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24fp-4g.front.png",
- "cisco-c1300-24p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24p-4g.front.png",
- "cisco-c1300-24p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24p-4x.front.png",
- "cisco-c1300-24t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4g.front.png",
- "cisco-c1300-24t-4g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4g.rear.png",
- "cisco-c1300-24t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4x.front.png",
- "cisco-c1300-24t-4x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4x.rear.png",
- "cisco-c1300-48p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.front.png",
- "cisco-c1300-48p-4x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.rear.png",
- "cisco-c1300-48t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48t-4x.front.png",
- "cisco-c1300-8p-e-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-8p-e-2g.front.png",
- "cisco-c2951.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-2951-isr.front.png",
- "cisco-c2951.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-2951-isr.rear.png",
- "cisco-c8200-1n-4t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8200-1n-4t.front.jpg",
- "cisco-c8200-1n-4t.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8200-1n-4t.rear.jpg",
- "cisco-c8300-1n1s-6t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-1n1s-6t.front.png",
- "cisco-c8300-1n1s-6t.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-1n1s-6t.rear.png",
- "cisco-c8300-2n2s-4t2x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-2n2s-4t2x.front.jpg",
- "cisco-c8300-2n2s-4t2x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-2n2s-4t2x.rear.jpg",
- "cisco-c9200-24p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24p.front.png",
- "cisco-c9200-24t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24t.front.jpg",
- "cisco-c9200-24t.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24t.rear.png",
- "cisco-c9200-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-48p.front.png",
- "cisco-c9200-48t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-48t.front.png",
- "cisco-c9200cx-12p-2x2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200cx-12p-2x2g.front.png",
- "cisco-c9200cx-12p-2x2g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200cx-12p-2x2g.rear.png",
- "cisco-c9200l-24p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24p-4g.front.png",
- "cisco-c9200l-24p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24p-4x.front.png",
- "cisco-c9200l-24t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24t-4g.front.png",
- "cisco-c9200l-24t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24t-4x.front.png",
- "cisco-c9200l-48p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48p-4g.front.png",
- "cisco-c9200l-48p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48p-4x.front.png",
- "cisco-c9200l-48t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48t-4g.front.png",
- "cisco-c9200l-48t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48t-4x.front.png",
- "cisco-c9300-24p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-24p.front.png",
- "cisco-c9300-24p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-24p.rear.png",
- "cisco-c9300-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48p.front.png",
- "cisco-c9300-48p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48p.rear.png",
- "cisco-c9300-48t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48t.front.png",
- "cisco-c9300-48t.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48t.rear.png",
- "cisco-c9300-48u.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48u.front.png",
- "cisco-c9300-48u.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48u.rear.png",
- "cisco-c9300l-24p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4g.front.png",
- "cisco-c9300l-24p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4x.front.png",
- "cisco-c9300l-24p-4x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4x.rear.png",
- "cisco-c9300l-24t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24t-4g.front.png",
- "cisco-c9300l-24t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24t-4x.front.png",
- "cisco-c9300l-48p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4g.front.png",
- "cisco-c9300l-48p-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4x.front.png",
- "cisco-c9300l-48p-4x.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4x.rear.png",
- "cisco-c9300l-48t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48t-4g.front.png",
- "cisco-c9300l-48t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48t-4x.front.png",
- "cisco-cbs250-24t-4x.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-24t-4x.front.jpg",
- "cisco-cbs250-48t-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-48t-4g.front.jpg",
- "cisco-cbs250-8t-e-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-8t-e-2g.front.png",
- "cisco-cbs350-16t-2g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-16t-2g.front.png",
- "cisco-cbs350-24p-4g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-24p-4g.front.png",
- "cisco-isr4221.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4221.front.png",
- "cisco-isr4221.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4221.rear.png",
- "cisco-isr4321.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4321.front.png",
- "cisco-isr4321.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4321.rear.png",
- "cisco-isr4331.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4331.front.png",
- "cisco-isr4331.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4331.rear.png",
- "cisco-isr4351.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4351.front.png",
- "cisco-isr4351.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4351.rear.png",
- "cisco-isr4431.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4431.front.png",
- "cisco-isr4431.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4431.rear.png",
- "cisco-meraki-ms120-48lp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-48lp.front.png",
- "cisco-meraki-ms120-48lp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-48lp.rear.png",
- "cisco-meraki-ms120-8.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8.front.png",
- "cisco-meraki-ms120-8.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8.rear.png",
- "cisco-meraki-ms120-8lp.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8lp.front.png",
- "cisco-meraki-ms120-8lp.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8lp.rear.png",
- "cisco-ws-c2960x-24ps-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24ps-l.front.png",
- "cisco-ws-c2960x-24td-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24td-l.front.png",
- "cisco-ws-c2960x-24ts-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24ts-l.front.png",
- "cisco-ws-c2960x-48fps-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48fps-l.front.png",
- "cisco-ws-c2960x-48td-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48td-l.front.png",
- "cisco-ws-c2960x-48ts-l.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48ts-l.front.png",
- "fortinet-fortigate-100e.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100e.front.png",
- "fortinet-fortigate-100e.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100e.rear.png",
- "fortinet-fortigate-100f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100f.front.png",
- "fortinet-fortigate-120g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-120g.front.png",
- "fortinet-fortigate-120g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-120g.rear.png",
- "fortinet-fortigate-201f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-201f.front.png",
- "fortinet-fortigate-201f.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-201f.rear.png",
- "fortinet-fortigate-400f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-400f.front.png",
- "fortinet-fortigate-400f.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-400f.rear.png",
- "fortinet-fortigate-50g.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-50g.front.png",
- "fortinet-fortigate-50g.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-50g.rear.png",
- "fortinet-fortigate-600f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-600f.front.png",
- "fortinet-fortigate-600f.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-600f.rear.png",
- "fortinet-fortigate-60e.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60e.front.png",
- "fortinet-fortigate-60e.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60e.rear.png",
- "fortinet-fortigate-60f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60f.front.png",
- "fortinet-fortigate-60f.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60f.rear.png",
- "fortinet-fortigate-80f.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-80f.front.png",
- "fortinet-fortiswitch-424e-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fs-424e-poe.front.png",
- "fortinet-fortiswitch-424e-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fs-424e-poe.rear.png",
- "huawei-s5731-h24t4xc.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5731-h24t4xc.front.png",
- "huawei-s5731-h24t4xc.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5731-h24t4xc.rear.png",
- "huawei-s5735-l24p4s-a1.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l24p4s-a1.front.png",
- "huawei-s5735-l24p4x-a1.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l24p4x-a1.front.png",
- "huawei-s5735-l8p4s-a1.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l8p4s-a1.front.jpg",
- "huawei-s5735-l8p4s-a1.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l8p4s-a1.rear.jpg",
- "huawei-s6730-h24x6c.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h24x6c.front.png",
- "huawei-s6730-h24x6c.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h24x6c.rear.png",
- "huawei-s6730-h48x6c.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h48x6c.front.png",
- "huawei-s6730-h48x6c.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h48x6c.rear.png",
- "juniper-ex2300-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-48p.front.png",
- "juniper-ex2300-48p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-48p.rear.png",
- "juniper-ex2300-c-12p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-c-12p.front.png",
- "juniper-ex2300-c-12p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-c-12p.rear.png",
- "juniper-ex3400-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48p.front.png",
- "juniper-ex3400-48p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48p.rear.png",
- "juniper-ex3400-48t.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48t.front.png",
- "juniper-ex3400-48t.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48t.rear.png",
- "juniper-ex4100-24p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-24p.front.png",
- "juniper-ex4100-24p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-24p.rear.png",
- "juniper-ex4100-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-48p.front.png",
- "juniper-ex4100-48p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-48p.rear.png",
- "juniper-ex4100-f-12p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-f-12p.front.png",
- "juniper-ex4100-f-12p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-f-12p.rear.png",
- "juniper-ex4300-48p.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4300-48p.front.png",
- "juniper-ex4300-48p.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4300-48p.rear.png",
- "juniper-srx345.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx345.front.png",
- "juniper-srx345.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx345.rear.png",
- "mikrotik-ccr2004-16g-2s.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-16g-2s-plus.front.jpg",
- "mikrotik-ccr2004-16g-2s.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-16g-2s-plus.rear.jpg",
- "mikrotik-ccr2004-1g-12s-2xs.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-1g-12s-plus-2xs.front.png",
- "mikrotik-ccr2116-12g-4s.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2116-12g-4s-plus.front.png",
- "mikrotik-ccr2116-12g-4s.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2116-12g-4s-plus.rear.png",
- "mikrotik-crs112-8p-4s-in.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs112-8p-4s-in.front.jpg",
- "mikrotik-crs112-8p-4s-in.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs112-8p-4s-in.rear.jpg",
- "mikrotik-crs317-1g-16s-rm.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs317-1g-16s-plus-rm.front.png",
- "mikrotik-crs326-24g-2s-rm.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs326-24g-2s-plus-rm.front.jpg",
- "mikrotik-crs326-24g-2s-rm.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs326-24g-2s-plus-rm.rear.jpg",
- "mikrotik-crs328-24p-4s-rm.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs328-24p-4s-plus-rm.front.png",
- "mikrotik-hap-ac2.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hap-ac2.front.jpg",
- "mikrotik-hap-ac2.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hap-ac2.rear.jpg",
- "mikrotik-rb4011igs-rm.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-rb4011igs-plus-rm.front.png",
- "mikrotik-rb750gr3.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex.front.jpg",
- "mikrotik-rb750gr3.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex.rear.jpg",
- "mikrotik-rb760igs.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex-s.front.jpg",
- "mikrotik-rb760igs.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex-s.rear.jpg",
- "sophos-xgs-107.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-107.front.png",
- "sophos-xgs-107.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-107.rear.png",
- "sophos-xgs-126.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-126.front.png",
- "sophos-xgs-126.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-126.rear.png",
- "sophos-xgs-136.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-136.front.png",
- "sophos-xgs-136.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-136.rear.png",
- "sophos-xgs-2100.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-2100.front.png",
- "sophos-xgs-2100.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-2100.rear.png",
- "sophos-xgs-4300.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-4300.front.png",
- "sophos-xgs-4300.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-4300.rear.png",
- "tp-link-t1600g-28ps.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/TP-Link/tp-link-t1600g-28ps.front.png",
- "ubiquiti-ucg-ultra.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-cloud-gateway-ultra.front.png",
- "ubiquiti-ucg-ultra.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-cloud-gateway-ultra.rear.png",
- "ubiquiti-udm-pro.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro.front.png",
- "ubiquiti-udm-pro.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro.rear.png",
- "ubiquiti-udm-se.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro-special-edition.front.png",
- "ubiquiti-udm-se.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro-special-edition.rear.png",
- "ubiquiti-usw-16-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-16-poe-gen2.front.png",
- "ubiquiti-usw-aggregation.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-aggregation.front.png",
- "ubiquiti-usw-enterprise-24-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-24-poe.front.png",
- "ubiquiti-usw-enterprise-24-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-24-poe.rear.png",
- "ubiquiti-usw-enterprise-48-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-48-poe.front.png",
- "ubiquiti-usw-enterprise-48-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-48-poe.rear.png",
- "ubiquiti-usw-lite-8-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-lite-8-poe.front.png",
- "ubiquiti-usw-lite-8-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-lite-8-poe.rear.png",
- "ubiquiti-usw-pro-24-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro-poe-gen2.front.png",
- "ubiquiti-usw-pro-24-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro-poe-gen2.rear.png",
- "ubiquiti-usw-pro-24.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro.front.png",
- "ubiquiti-usw-pro-24.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro.rear.png",
- "ubiquiti-usw-pro-48-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-48-pro-poe-gen2.front.png",
- "ubiquiti-usw-pro-48-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-48-pro-poe-gen2.rear.png",
- "ubiquiti-usw-pro-aggregation.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-aggregation.front.png",
- "ubiquiti-usw-pro-aggregation.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-aggregation.rear.png",
- "ubiquiti-usw-pro-max-24-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-24-poe.front.png",
- "ubiquiti-usw-pro-max-24-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-24-poe.rear.png",
- "ubiquiti-usw-pro-max-48-poe.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-48-poe.front.png",
- "ubiquiti-usw-pro-max-48-poe.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-48-poe.rear.png",
- "ubiquiti-uxg-pro.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-gateway-pro.front.png",
- "watchguard-firebox-t25.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t25.front.png",
- "watchguard-firebox-t25.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t25.rear.png",
- "watchguard-firebox-t45.front.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t45.front.png",
- "watchguard-firebox-t45.rear.jpg": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t45.rear.png"
+ "aruba-2530-24g-poeplus.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-24g-poep.front.png"
+ },
+ "aruba-2530-24g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-24g.front.png"
+ },
+ "aruba-2530-48g-poeplus.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-48g-poep.front.png"
+ },
+ "aruba-2530-48g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2530-48g.front.png"
+ },
+ "aruba-2930f-24g-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-4sfp.front.png"
+ },
+ "aruba-2930f-24g-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-4sfpp.front.png"
+ },
+ "aruba-2930f-24g-poeplus-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930f-24g-poep-4sfp.front.png"
+ },
+ "aruba-2930m-24g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-24g.front.png"
+ },
+ "aruba-2930m-24g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-24g.rear.png"
+ },
+ "aruba-2930m-48g-poeplus.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-48g-poep.front.png"
+ },
+ "aruba-2930m-48g-poeplus.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-2930m-48g-poep.rear.png"
+ },
+ "aruba-ap-505.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-505.front.png"
+ },
+ "aruba-ap-505.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-505.rear.png"
+ },
+ "aruba-ap-515.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-515.front.png"
+ },
+ "aruba-ap-515.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-515.rear.png"
+ },
+ "aruba-ap-535.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-535.front.png"
+ },
+ "aruba-ap-535.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-ap-535.rear.png"
+ },
+ "aruba-cx-6000-24g-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-4sfp.front.png"
+ },
+ "aruba-cx-6000-24g-4sfp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-4sfp.rear.png"
+ },
+ "aruba-cx-6000-24g-poe-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-poe4-4sfp.front.png"
+ },
+ "aruba-cx-6000-24g-poe-4sfp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-24g-poe4-4sfp.rear.png"
+ },
+ "aruba-cx-6000-48g-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-4sfp.front.png"
+ },
+ "aruba-cx-6000-48g-4sfp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-4sfp.rear.png"
+ },
+ "aruba-cx-6000-48g-poe-4sfp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-poe4-4sfp.front.png"
+ },
+ "aruba-cx-6000-48g-poe-4sfp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6000-48g-poe4-4sfp.rear.png"
+ },
+ "aruba-cx-6100-12g-poe-2g-2sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-12g-poe4-2sfpp.front.png"
+ },
+ "aruba-cx-6100-12g-poe-2g-2sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-12g-poe4-2sfpp.rear.png"
+ },
+ "aruba-cx-6100-24g-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-4sfpp.front.png"
+ },
+ "aruba-cx-6100-24g-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-4sfpp.rear.png"
+ },
+ "aruba-cx-6100-24g-poe-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-poe4-4sfpp.front.png"
+ },
+ "aruba-cx-6100-24g-poe-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-24g-poe4-4sfpp.rear.png"
+ },
+ "aruba-cx-6100-48g-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-4sfpp.front.png"
+ },
+ "aruba-cx-6100-48g-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-4sfpp.rear.png"
+ },
+ "aruba-cx-6100-48g-poe-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-poe4-4sfpp.front.png"
+ },
+ "aruba-cx-6100-48g-poe-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6100-48g-poe4-4sfpp.rear.png"
+ },
+ "aruba-cx-6200f-24g-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-4sfpp.front.png"
+ },
+ "aruba-cx-6200f-24g-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-4sfpp.rear.png"
+ },
+ "aruba-cx-6200f-24g-poe-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-poe4-4sfpp.front.png"
+ },
+ "aruba-cx-6200f-24g-poe-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-24g-poe4-4sfpp.rear.png"
+ },
+ "aruba-cx-6200f-48g-poe-4sfpp-370w.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-370w.front.png"
+ },
+ "aruba-cx-6200f-48g-poe-4sfpp-370w.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-370w.rear.png"
+ },
+ "aruba-cx-6200f-48g-poe-4sfpp-740w.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-740w.front.png"
+ },
+ "aruba-cx-6200f-48g-poe-4sfpp-740w.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6200f-48g-poe4-4sfpp-740w.rear.png"
+ },
+ "aruba-cx-6300f-24g-poe-4sfp56.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-24g-poe4-4sfp56.front.png"
+ },
+ "aruba-cx-6300f-24g-poe-4sfp56.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-24g-poe4-4sfp56.rear.png"
+ },
+ "aruba-cx-6300f-48g-poe-4sfp56.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-48g-poe4-4sfp56.front.png"
+ },
+ "aruba-cx-6300f-48g-poe-4sfp56.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300f-48g-poe4-4sfp56.rear.png"
+ },
+ "aruba-cx-6300m-24sfpp-4sfp56.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-24sfpp-4sfp56.front.png"
+ },
+ "aruba-cx-6300m-24sfpp-4sfp56.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-24sfpp-4sfp56.rear.png"
+ },
+ "aruba-cx-6300m-48g-cl4-poe-4sfp56.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-48g-poe4-4sfp56.front.png"
+ },
+ "aruba-cx-6300m-48g-cl4-poe-4sfp56.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-6300m-48g-poe4-4sfp56.rear.png"
+ },
+ "aruba-io-1930-48g-4sfpp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-1930-48g.front.jpg"
+ },
+ "aruba-io-1930-48g-4sfpp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/HPE/hpe-aruba-1930-48g.rear.jpg"
+ },
+ "cisco-c1000-48t-4g-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-48t-4g-l.front.png"
+ },
+ "cisco-c1000-48t-4g-l.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-48t-4g-l.rear.png"
+ },
+ "cisco-c1000-8t-2g-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-8t-2g-l.front.png"
+ },
+ "cisco-c1000-8t-2g-l.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1000-8t-2g-l.rear.png"
+ },
+ "cisco-c1111-4p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-c1111-4p.front.png"
+ },
+ "cisco-c1111-4p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-c1111-4p.rear.png"
+ },
+ "cisco-c1111-8p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-1111-8p.front.png"
+ },
+ "cisco-c1111-8p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr-1111-8p.rear.png"
+ },
+ "cisco-c1200-16t-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1200-16t-2g.front.jpg"
+ },
+ "cisco-c1200-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1200-24t-4x.front.png"
+ },
+ "cisco-c1300-16p-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-2g.front.png"
+ },
+ "cisco-c1300-16p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-4x.front.png"
+ },
+ "cisco-c1300-16p-4x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16p-4x.rear.png"
+ },
+ "cisco-c1300-16t-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16t-2g.front.png"
+ },
+ "cisco-c1300-16t-2g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-16t-2g.rear.png"
+ },
+ "cisco-c1300-24fp-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24fp-4g.front.png"
+ },
+ "cisco-c1300-24p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24p-4g.front.png"
+ },
+ "cisco-c1300-24p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24p-4x.front.png"
+ },
+ "cisco-c1300-24t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4g.front.png"
+ },
+ "cisco-c1300-24t-4g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4g.rear.png"
+ },
+ "cisco-c1300-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4x.front.png"
+ },
+ "cisco-c1300-24t-4x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-24t-4x.rear.png"
+ },
+ "cisco-c1300-48p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.front.png",
+  "similarTo": "C1300-48P-4X"
+ },
+ "cisco-c1300-48p-4g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.rear.png",
+  "similarTo": "C1300-48P-4X"
+ },
+ "cisco-c1300-48p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.front.png"
+ },
+ "cisco-c1300-48p-4x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48p-4x.rear.png"
+ },
+ "cisco-c1300-48t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48t-4x.front.png",
+  "similarTo": "C1300-48T-4X"
+ },
+ "cisco-c1300-48t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-48t-4x.front.png"
+ },
+ "cisco-c1300-8p-e-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-8p-e-2g.front.png"
+ },
+ "cisco-c1300-8t-e-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c1300-8p-e-2g.front.png",
+  "similarTo": "C1300-8P-E-2G"
+ },
+ "cisco-c2951.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-2951-isr.front.png"
+ },
+ "cisco-c2951.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-2951-isr.rear.png"
+ },
+ "cisco-c8200-1n-4t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8200-1n-4t.front.jpg"
+ },
+ "cisco-c8200-1n-4t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8200-1n-4t.rear.jpg"
+ },
+ "cisco-c8300-1n1s-6t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-1n1s-6t.front.png"
+ },
+ "cisco-c8300-1n1s-6t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-1n1s-6t.rear.png"
+ },
+ "cisco-c8300-2n2s-4t2x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-2n2s-4t2x.front.jpg"
+ },
+ "cisco-c8300-2n2s-4t2x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c8300-2n2s-4t2x.rear.jpg"
+ },
+ "cisco-c9200-24p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24p.front.png"
+ },
+ "cisco-c9200-24t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24t.front.jpg"
+ },
+ "cisco-c9200-24t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-24t.rear.png"
+ },
+ "cisco-c9200-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-48p.front.png"
+ },
+ "cisco-c9200-48t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200-48t.front.png"
+ },
+ "cisco-c9200cx-12p-2x2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200cx-12p-2x2g.front.png"
+ },
+ "cisco-c9200cx-12p-2x2g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200cx-12p-2x2g.rear.png"
+ },
+ "cisco-c9200l-24p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24p-4g.front.png"
+ },
+ "cisco-c9200l-24p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24p-4x.front.png"
+ },
+ "cisco-c9200l-24t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24t-4g.front.png"
+ },
+ "cisco-c9200l-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-24t-4x.front.png"
+ },
+ "cisco-c9200l-48p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48p-4g.front.png"
+ },
+ "cisco-c9200l-48p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48p-4x.front.png"
+ },
+ "cisco-c9200l-48t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48t-4g.front.png"
+ },
+ "cisco-c9200l-48t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9200l-48t-4x.front.png"
+ },
+ "cisco-c9300-24p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-24p.front.png"
+ },
+ "cisco-c9300-24p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-24p.rear.png"
+ },
+ "cisco-c9300-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48p.front.png"
+ },
+ "cisco-c9300-48p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48p.rear.png"
+ },
+ "cisco-c9300-48t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48t.front.png"
+ },
+ "cisco-c9300-48t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48t.rear.png"
+ },
+ "cisco-c9300-48u.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48u.front.png"
+ },
+ "cisco-c9300-48u.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300-48u.rear.png"
+ },
+ "cisco-c9300l-24p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4g.front.png"
+ },
+ "cisco-c9300l-24p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4x.front.png"
+ },
+ "cisco-c9300l-24p-4x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24p-4x.rear.png"
+ },
+ "cisco-c9300l-24t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24t-4g.front.png"
+ },
+ "cisco-c9300l-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-24t-4x.front.png"
+ },
+ "cisco-c9300l-48p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4g.front.png"
+ },
+ "cisco-c9300l-48p-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4x.front.png"
+ },
+ "cisco-c9300l-48p-4x.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48p-4x.rear.png"
+ },
+ "cisco-c9300l-48t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48t-4g.front.png"
+ },
+ "cisco-c9300l-48t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-c9300l-48t-4x.front.png"
+ },
+ "cisco-cbs250-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-24t-4x.front.jpg"
+ },
+ "cisco-cbs250-48t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-48t-4g.front.jpg"
+ },
+ "cisco-cbs250-8t-e-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs250-8t-e-2g.front.png"
+ },
+ "cisco-cbs350-16t-2g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-16t-2g.front.png"
+ },
+ "cisco-cbs350-24p-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-24p-4g.front.png"
+ },
+ "cisco-cbs350-24t-4x.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-24t-4x.front.jpg"
+ },
+ "cisco-cbs350-48t-4g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-cbs350-48t-4g.front.png"
+ },
+ "cisco-isr4221.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4221.front.png"
+ },
+ "cisco-isr4221.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4221.rear.png"
+ },
+ "cisco-isr4321.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4321.front.png"
+ },
+ "cisco-isr4321.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4321.rear.png"
+ },
+ "cisco-isr4331.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4331.front.png"
+ },
+ "cisco-isr4331.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4331.rear.png"
+ },
+ "cisco-isr4351.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4351.front.png"
+ },
+ "cisco-isr4351.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4351.rear.png"
+ },
+ "cisco-isr4431.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4431.front.png"
+ },
+ "cisco-isr4431.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-isr4431.rear.png"
+ },
+ "cisco-meraki-ms120-48lp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-48lp.front.png"
+ },
+ "cisco-meraki-ms120-48lp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-48lp.rear.png"
+ },
+ "cisco-meraki-ms120-8.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8.front.png"
+ },
+ "cisco-meraki-ms120-8.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8.rear.png"
+ },
+ "cisco-meraki-ms120-8lp.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8lp.front.png"
+ },
+ "cisco-meraki-ms120-8lp.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-meraki-ms120-8lp.rear.png"
+ },
+ "cisco-ws-c2960x-24ps-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24ps-l.front.png"
+ },
+ "cisco-ws-c2960x-24td-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24td-l.front.png"
+ },
+ "cisco-ws-c2960x-24ts-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-24ts-l.front.png"
+ },
+ "cisco-ws-c2960x-48fps-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48fps-l.front.png"
+ },
+ "cisco-ws-c2960x-48td-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48td-l.front.png"
+ },
+ "cisco-ws-c2960x-48ts-l.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Cisco/cisco-ws-c2960x-48ts-l.front.png"
+ },
+ "fortinet-fortigate-100e.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100e.front.png"
+ },
+ "fortinet-fortigate-100e.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100e.rear.png"
+ },
+ "fortinet-fortigate-100f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-100f.front.png"
+ },
+ "fortinet-fortigate-120g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-120g.front.png"
+ },
+ "fortinet-fortigate-120g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-120g.rear.png"
+ },
+ "fortinet-fortigate-201f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-201f.front.png"
+ },
+ "fortinet-fortigate-201f.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-201f.rear.png"
+ },
+ "fortinet-fortigate-400f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-400f.front.png"
+ },
+ "fortinet-fortigate-400f.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-400f.rear.png"
+ },
+ "fortinet-fortigate-50g.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-50g.front.png"
+ },
+ "fortinet-fortigate-50g.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-50g.rear.png"
+ },
+ "fortinet-fortigate-600f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-600f.front.png"
+ },
+ "fortinet-fortigate-600f.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-600f.rear.png"
+ },
+ "fortinet-fortigate-60e.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60e.front.png"
+ },
+ "fortinet-fortigate-60e.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60e.rear.png"
+ },
+ "fortinet-fortigate-60f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60f.front.png"
+ },
+ "fortinet-fortigate-60f.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-60f.rear.png"
+ },
+ "fortinet-fortigate-80f.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fg-80f.front.png"
+ },
+ "fortinet-fortiswitch-424e-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fs-424e-poe.front.png"
+ },
+ "fortinet-fortiswitch-424e-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Fortinet/fortinet-fs-424e-poe.rear.png"
+ },
+ "huawei-s5731-h24t4xc.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5731-h24t4xc.front.png"
+ },
+ "huawei-s5731-h24t4xc.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5731-h24t4xc.rear.png"
+ },
+ "huawei-s5735-l24p4s-a1.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l24p4s-a1.front.png"
+ },
+ "huawei-s5735-l24p4x-a1.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l24p4x-a1.front.png"
+ },
+ "huawei-s5735-l8p4s-a1.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l8p4s-a1.front.jpg"
+ },
+ "huawei-s5735-l8p4s-a1.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s5735-l8p4s-a1.rear.jpg"
+ },
+ "huawei-s6730-h24x6c.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h24x6c.front.png"
+ },
+ "huawei-s6730-h24x6c.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h24x6c.rear.png"
+ },
+ "huawei-s6730-h48x6c.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h48x6c.front.png"
+ },
+ "huawei-s6730-h48x6c.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Huawei/huawei-s6730-h48x6c.rear.png"
+ },
+ "juniper-ex2300-24t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-24t.front.png"
+ },
+ "juniper-ex2300-24t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-24t.rear.png"
+ },
+ "juniper-ex2300-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-48p.front.png"
+ },
+ "juniper-ex2300-48p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-48p.rear.png"
+ },
+ "juniper-ex2300-c-12p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-c-12p.front.png"
+ },
+ "juniper-ex2300-c-12p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex2300-c-12p.rear.png"
+ },
+ "juniper-ex3400-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48p.front.png"
+ },
+ "juniper-ex3400-48p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48p.rear.png"
+ },
+ "juniper-ex3400-48t.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48t.front.png"
+ },
+ "juniper-ex3400-48t.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex3400-48t.rear.png"
+ },
+ "juniper-ex4100-24p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-24p.front.png"
+ },
+ "juniper-ex4100-24p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-24p.rear.png"
+ },
+ "juniper-ex4100-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-48p.front.png"
+ },
+ "juniper-ex4100-48p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-48p.rear.png"
+ },
+ "juniper-ex4100-f-12p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-f-12p.front.png"
+ },
+ "juniper-ex4100-f-12p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4100-f-12p.rear.png"
+ },
+ "juniper-ex4300-48p.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4300-48p.front.png"
+ },
+ "juniper-ex4300-48p.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-ex4300-48p.rear.png"
+ },
+ "juniper-srx345.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx345.front.png"
+ },
+ "juniper-srx345.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx345.rear.png"
+ },
+ "juniper-srx380.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx380.front.png"
+ },
+ "juniper-srx380.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Juniper/juniper-srx380.rear.png"
+ },
+ "mikrotik-ccr2004-16g-2s.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-16g-2s-plus.front.jpg"
+ },
+ "mikrotik-ccr2004-16g-2s.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-16g-2s-plus.rear.jpg"
+ },
+ "mikrotik-ccr2004-1g-12s-2xs.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2004-1g-12s-plus-2xs.front.png"
+ },
+ "mikrotik-ccr2116-12g-4s.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2116-12g-4s-plus.front.png"
+ },
+ "mikrotik-ccr2116-12g-4s.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-ccr2116-12g-4s-plus.rear.png"
+ },
+ "mikrotik-crs112-8p-4s-in.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs112-8p-4s-in.front.jpg"
+ },
+ "mikrotik-crs112-8p-4s-in.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs112-8p-4s-in.rear.jpg"
+ },
+ "mikrotik-crs317-1g-16s-rm.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs317-1g-16s-plus-rm.front.png"
+ },
+ "mikrotik-crs326-24g-2s-rm.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs326-24g-2s-plus-rm.front.jpg"
+ },
+ "mikrotik-crs326-24g-2s-rm.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs326-24g-2s-plus-rm.rear.jpg"
+ },
+ "mikrotik-crs328-24p-4s-rm.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-crs328-24p-4s-plus-rm.front.png"
+ },
+ "mikrotik-hap-ac2.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hap-ac2.front.jpg"
+ },
+ "mikrotik-hap-ac2.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hap-ac2.rear.jpg"
+ },
+ "mikrotik-rb4011igs-rm.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-rb4011igs-plus-rm.front.png"
+ },
+ "mikrotik-rb750gr3.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex.front.jpg"
+ },
+ "mikrotik-rb750gr3.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex.rear.jpg"
+ },
+ "mikrotik-rb760igs.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex-s.front.jpg"
+ },
+ "mikrotik-rb760igs.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/MikroTik/mikrotik-hex-s.rear.jpg"
+ },
+ "sophos-xgs-107.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-107.front.png"
+ },
+ "sophos-xgs-107.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-107.rear.png"
+ },
+ "sophos-xgs-126.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-126.front.png"
+ },
+ "sophos-xgs-126.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-126.rear.png"
+ },
+ "sophos-xgs-136.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-136.front.png"
+ },
+ "sophos-xgs-136.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-136.rear.png"
+ },
+ "sophos-xgs-2100.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-2100.front.png"
+ },
+ "sophos-xgs-2100.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-2100.rear.png"
+ },
+ "sophos-xgs-4300.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-4300.front.png"
+ },
+ "sophos-xgs-4300.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Sophos/sophos-xgs-4300.rear.png"
+ },
+ "tp-link-t1600g-28ps.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/TP-Link/tp-link-t1600g-28ps.front.png"
+ },
+ "ubiquiti-ucg-ultra.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-cloud-gateway-ultra.front.png"
+ },
+ "ubiquiti-ucg-ultra.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-cloud-gateway-ultra.rear.png"
+ },
+ "ubiquiti-udm-pro.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro.front.png"
+ },
+ "ubiquiti-udm-pro.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro.rear.png"
+ },
+ "ubiquiti-udm-se.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro-special-edition.front.png"
+ },
+ "ubiquiti-udm-se.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-dream-machine-pro-special-edition.rear.png"
+ },
+ "ubiquiti-usw-16-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-16-poe-gen2.front.png"
+ },
+ "ubiquiti-usw-aggregation.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-aggregation.front.png"
+ },
+ "ubiquiti-usw-enterprise-24-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-24-poe.front.png"
+ },
+ "ubiquiti-usw-enterprise-24-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-24-poe.rear.png"
+ },
+ "ubiquiti-usw-enterprise-48-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-48-poe.front.png"
+ },
+ "ubiquiti-usw-enterprise-48-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-enterprise-48-poe.rear.png"
+ },
+ "ubiquiti-usw-lite-8-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-lite-8-poe.front.png"
+ },
+ "ubiquiti-usw-lite-8-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-lite-8-poe.rear.png"
+ },
+ "ubiquiti-usw-pro-24-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro-poe-gen2.front.png"
+ },
+ "ubiquiti-usw-pro-24-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro-poe-gen2.rear.png"
+ },
+ "ubiquiti-usw-pro-24.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro.front.png"
+ },
+ "ubiquiti-usw-pro-24.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-24-pro.rear.png"
+ },
+ "ubiquiti-usw-pro-48-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-48-pro-poe-gen2.front.png"
+ },
+ "ubiquiti-usw-pro-48-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-48-pro-poe-gen2.rear.png"
+ },
+ "ubiquiti-usw-pro-aggregation.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-aggregation.front.png"
+ },
+ "ubiquiti-usw-pro-aggregation.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-aggregation.rear.png"
+ },
+ "ubiquiti-usw-pro-max-24-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-24-poe.front.png"
+ },
+ "ubiquiti-usw-pro-max-24-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-24-poe.rear.png"
+ },
+ "ubiquiti-usw-pro-max-48-poe.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-48-poe.front.png"
+ },
+ "ubiquiti-usw-pro-max-48-poe.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-switch-pro-max-48-poe.rear.png"
+ },
+ "ubiquiti-uxg-pro.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/Ubiquiti/ubiquiti-unifi-gateway-pro.front.png"
+ },
+ "watchguard-firebox-t25.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t25.front.png"
+ },
+ "watchguard-firebox-t25.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t25.rear.png"
+ },
+ "watchguard-firebox-t45.front.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t45.front.png"
+ },
+ "watchguard-firebox-t45.rear.jpg": {
+  "source": "https://github.com/netbox-community/devicetype-library/blob/master/elevation-images/WatchGuard/watchguard-firebox-t45.rear.png"
+ }
 }

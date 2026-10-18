@@ -54,5 +54,7 @@ Rules
 Photos (P2-12, ADR-041)
 - `images/<id>.front.jpg` / `images/<id>.rear.jpg`: orthogonal front / rear views from the NetBox community device type
   library (CC0), converted once to JPEG, at most 1200 px wide (never upscaled). No vendor marketing pictures.
-- `images/SOURCES.json` maps every file to the NetBox page it comes from. The loader refuses a photo without a model or a
+- `images/SOURCES.json` maps every file to `{ "source": <NetBox page> }`; when NetBox has no photo of the model but has
+  one of a sibling on the same chassis (other uplinks / PoE), that photo may be used with `"similarTo": "<model>"` —
+  the UI then says it is a similar model. Never for a different chassis or port count. The loader refuses a photo without a model or a
   source, and a source without a file.

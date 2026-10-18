@@ -108,6 +108,13 @@ func TestCatalogImages(t *testing.T) {
 	if n < 100 {
 		t.Fatalf("only %d models have a photo", n)
 	}
+	// No NetBox photo of the exact model: a sibling on the same chassis, named so the UI says so.
+	if c, _ := catalog.Get("cisco-c1300-48p-4g"); c.Images.Front == "" || c.Images.SimilarTo != "C1300-48P-4X" {
+		t.Errorf("C1300-48P-4G photo: %+v", c.Images)
+	}
+	if c, _ := catalog.Get("cisco-c1300-24p-4g"); c.Images.Front == "" || c.Images.SimilarTo != "" {
+		t.Errorf("C1300-24P-4G has its own photo: %+v", c.Images)
+	}
 	fx := newOrgFixture(t)
 	img := func(o uuid.UUID) string { return orgPath(o) + "/device-catalog/images/" + withPhoto.Images.Front }
 	fx.AssertCrossTenantDenied(t, "GET", img, nil)

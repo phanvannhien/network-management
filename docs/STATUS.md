@@ -5,6 +5,24 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-12 bổ sung: ảnh model tương tự (C1300-48P-4G)
+- Người dùng báo: switch C1300-48P-4G ở site DAS không có ảnh. Nguyên nhân là NetBox không có ảnh của model này.
+- Đã làm:
+  - Model chưa có ảnh nhưng có **model anh em cùng vỏ máy** thì dùng ảnh model đó (`similarTo` trong `SOURCES.json` và API). Popup ghi rõ "Chưa có ảnh đúng model này — đây là ảnh model tương tự …".
+  - Áp cho 3 model:
+    - C1300-48P-4G dùng ảnh 48P-4X;
+    - C1300-48T-4G dùng ảnh 48T-4X;
+    - C1300-8T-E-2G dùng ảnh 8P-E-2G.
+  - Thêm 6 ảnh có sẵn trong NetBox nhưng file khai báo quên đánh dấu: EX2300-24T, SRX380, CBS350-48T-4G, CBS350-24T-4X. Tổng 265 ảnh.
+- Test / cách kiểm tra:
+  - `TestCatalogImages`: 48P-4G có ảnh tương tự, 24P-4G có ảnh đúng model.
+  - Trên trình duyệt: CN01-SW01 (C1300-48P-4G) → popup có mặt trước / mặt sau và dòng ghi chú.
+  - `make check` pass.
+- Còn dở / lỗi đã biết: mọi ảnh C1300 48 cổng trong NetBox đều ghi nhãn "2.5G" ở cổng 37–48 (có lẽ dùng chung một ảnh render của Cisco), không đúng với bản 1G. Đã chấp nhận vì có dòng "ảnh tương tự".
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-22.
+
 ## 2026-10-18 — P2-12 Thư viện model theo hãng: đối chiếu NetBox + ảnh thật (ADR-041)
 - Người dùng chốt:
   - lấy dữ liệu và ảnh theo NetBox;

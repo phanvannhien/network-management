@@ -2898,6 +2898,8 @@ export interface components {
             rear: string;
             /** @description where the photos come from (NetBox device type library page) */
             source: string;
+            /** @description the photos show this sibling model (same chassis, other uplinks / PoE), not the model itself; empty when they are its own */
+            similarTo: string;
         };
         MgmtIpResult: {
             mgmtIp: string;
