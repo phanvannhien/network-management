@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import type { AnnotationData, ClusterData } from './annotationNodes'
 import type { CableData } from './CableEdge'
 import { arrowOrigin, type ClusterBox } from './frames'
-import type { DiagramNode, DocState } from '../doc/types'
+import { ANN, type DiagramNode, type DocState } from '../doc/types'
 
 // Document → React Flow (P1-14). React Flow nodes are the view nodes; edges join the view nodes that show the two
 // ends of a link. Node components read their own card from the store, so a node's data only carries references:
@@ -196,8 +196,8 @@ export function fitOptions(libraryOpen: boolean, panelOpen = false) {
 export const GRID_SIZES = [10, 20, 40] as const
 export type GridSize = (typeof GRID_SIZES)[number]
 
-/** React Flow ids of annotations and cluster boxes, apart from view node ids. */
-export const ANN = 'a:'
+/** React Flow ids of annotations (ANN, from the doc types) and cluster boxes, apart from view node ids. */
+export { ANN }
 export const CLUSTER = 'c:'
 export const isAnnotationId = (id: string) => id.startsWith(ANN)
 export const isOverlayId = (id: string) => id.startsWith(ANN) || id.startsWith(CLUSTER)

@@ -377,6 +377,11 @@
 .react-flow__node-frame:focus-visible .ntb-frame {
   border-style: solid;
 }
+/* The frame body lets clicks through (pointer-events: none); its resize handles and edges must still take them. */
+.ntb-resize-line,
+.ntb-resize-handle {
+  pointer-events: auto;
+}
 .ntb-resize-line {
   border-color: var(--brand) !important;
 }

@@ -4,6 +4,7 @@ import type { Problem, Severity } from '../checks/types'
 import { SEVERITY_ORDER } from '../checks/types'
 import type { DocCommand } from './commands'
 import {
+  ANN,
   changesOf,
   docFromDetail,
   type DiagramDetail,
@@ -66,10 +67,12 @@ export interface DocStore {
   saved(detail: DiagramDetail): void
 }
 
-/** Selected ids that still exist after a change. */
+/** Selected ids that still exist after a change: view nodes and annotations (a selected frame stays selected while
+ * it is resized or moved). */
 function liveSelection(selection: string[], doc: DocState): string[] {
   if (selection.length === 0) return selection
   const ids = new Set(doc.view.nodes.map((n) => n.id))
+  for (const a of doc.view.annotations) ids.add(ANN + a.id)
   const live = selection.filter((id) => ids.has(id))
   return live.length === selection.length ? selection : live
 }

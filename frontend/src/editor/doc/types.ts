@@ -225,3 +225,6 @@ export function changesOf(doc: DocState): DiagramChange[] {
 export function hasChanges(doc: DocState): boolean {
   return changesOf(doc).length > 0
 }
+
+/** React Flow id prefix of annotations (frames, text, arrows), apart from view node ids. */
+export const ANN = 'a:'

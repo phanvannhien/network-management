@@ -5,6 +5,18 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — Sửa lỗi: không kéo giãn được khung site
+- Đã làm (người dùng báo: chọn khung site rồi nhưng không resize được). Có ba lỗi chồng nhau:
+  - Thân khung đặt `pointer-events: none` để chuột xuyên tới thiết bị bên dưới; tay nắm resize kế thừa thuộc tính này nên không bấm được. Đã bật lại cho tay nắm và cạnh.
+  - Store bỏ khung khỏi vùng chọn ở mỗi lần thay đổi (`liveSelection` chỉ giữ id node, bỏ qua annotation), nên kéo xong tay nắm biến mất. Lỗi này cũng làm khung mất chọn sau khi kéo di chuyển.
+  - Một lần kéo bị tách thành nhiều bước hoàn tác: sự kiện React Flow đo lại kích thước (không có cờ `resizing`) bị coi là kết thúc kéo.
+  - Hằng `ANN` chuyển sang `doc/types.ts`, để store không phụ thuộc tầng canvas.
+- Test / cách kiểm tra: test store mới (khung giữ chọn khi resize, xoá thì rời vùng chọn). Trên trình duyệt: kéo góc, kéo cạnh, kéo hai lần liên tiếp, Ctrl+Z / Ctrl+Shift+Z trả đúng từng bước. `make check` pass.
+- Còn dở / lỗi đã biết: không.
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08.
+
 ## 2026-10-18 — P2-21 Sơ đồ nhiều cấp (ADR-040)
 - Người dùng chọn làm P2-21 và muốn có kỹ sư mạng tham gia. Một agent đóng vai kỹ sư mạng góp ý thiết kế từ đầu; một agent khác rà code sau khi làm xong.
 - Đã làm:

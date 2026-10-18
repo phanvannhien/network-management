@@ -204,8 +204,10 @@ export function Canvas({
     if (!a) return
     const key = dragKey.current ?? undefined
     if (c.type === 'dimensions' && a.kind === 'zone') {
+      // `resizing: false` ends the gesture; a change without the flag is just React Flow measuring the node again
+      // (it must not split one drag into many undo steps).
       if (!c.resizing) {
-        if (resizeKey.current?.id === annId) resizeKey.current = null
+        if (c.resizing === false && resizeKey.current?.id === annId) resizeKey.current = null
         return
       }
       if (!c.dimensions) return

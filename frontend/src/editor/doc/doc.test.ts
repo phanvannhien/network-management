@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addAnnotation,
   addNode,
   createDevice,
   createLink,
   deleteDevice,
   deleteLink,
   moveNodes,
+  removeAnnotations,
   removeNodes,
+  updateAnnotation,
   updateDevice,
 } from './commands'
 import { memoryDraftStore } from './drafts'
 import { createDocStore, DOC_UNDO_LIMIT } from './store'
-import { changesOf, type DiagramDetail } from './types'
+import { ANN, changesOf, type DiagramDetail } from './types'
 
 const SITE = '66666666-6666-4666-8666-666666666666'
 const FW = 'aaaaaaaa-0000-4000-8000-000000000001'
@@ -293,5 +296,17 @@ describe('diagram document store (P1-13)', () => {
     expect(fresh.getState().status).toBe('dirty')
     await drafts.remove('d1')
     expect(await drafts.get('d1')).toBeUndefined()
+  })
+
+  it('a selected frame stays selected while it is resized, and leaves the selection when removed', () => {
+    const s = loaded()
+    s.getState().dispatch(
+      addAnnotation({ id: 'z1', kind: 'zone', x: 0, y: 0, width: 200, height: 120 }),
+    )
+    s.getState().setSelection([ANN + 'z1', 'n-fw'])
+    s.getState().dispatch(updateAnnotation('z1', { width: 320 }, 'resize:z1'))
+    expect(s.getState().selection).toEqual([ANN + 'z1', 'n-fw'])
+    s.getState().dispatch(removeAnnotations(['z1']))
+    expect(s.getState().selection).toEqual(['n-fw'])
   })
 })
