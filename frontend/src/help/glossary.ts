@@ -571,6 +571,37 @@ export const GLOSSARY: GlossaryEntry[] = [
     ['Dải DHCP .100–.200, switch đặt .150.', 'DHCP pool .100–.200, switch set to .150.'],
   ),
   e(
+    'vlan-isolated',
+    'vlan',
+    ['VLAN bị cô lập', 'Isolated VLAN'],
+    [
+      'VLAN đang dùng ở cổng access của một switch nhưng không trunk nào (có dây) của switch đó mang nó lên trên, nên máy trong VLAN không ra khỏi switch được. Thêm VLAN vào danh sách cho phép của trunk uplink.',
+      'A VLAN used on access ports of a switch that none of its cabled trunks carries upstream, so its machines cannot leave the switch. Add the VLAN to the uplink trunk allowed list.',
+    ],
+    [
+      'Camera VLAN 30 ở Gi1/0/5, uplink chỉ cho 10,20.',
+      'Camera VLAN 30 on Gi1/0/5, uplink allows 10,20 only.',
+    ],
+  ),
+  e(
+    'duplex',
+    'port',
+    ['Duplex (song công)', 'Duplex'],
+    [
+      'Full = gửi và nhận cùng lúc; half = lần lượt. Hai đầu dây phải giống nhau: một đầu auto, đầu kia ép full thì đầu auto rơi về half, dây chậm và mất gói. Để cả hai auto là an toàn nhất. Cổng quang / 10G luôn full.',
+      'Full = send and receive at once; half = in turns. Both ends must agree: auto against forced full drops the auto end to half — slow link, lost frames. Leaving both on auto is safest. Fibre / 10G ports are always full.',
+    ],
+  ),
+  e(
+    'shared-credential',
+    'device',
+    ['Mật khẩu dùng chung', 'Shared password'],
+    [
+      'Một mật khẩu dùng cho nhiều thiết bị (từ 5): lộ một lần là mở được tất cả. Nên tách theo site / nhóm thiết bị hoặc dùng RADIUS / TACACS+. SNMP community dùng chung là bình thường nên không báo.',
+      'One password on many devices (5 or more): one leak opens them all. Split it per site / device group or use RADIUS / TACACS+. Shared SNMP communities are normal and not flagged.',
+    ],
+  ),
+  e(
     'vlan-mismatch',
     'vlan',
     ['Lệch VLAN giữa hai đầu dây', 'VLAN mismatch on a cable'],

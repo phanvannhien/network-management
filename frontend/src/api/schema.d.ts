@@ -3003,6 +3003,17 @@ export interface components {
             subnets: components["schemas"]["ValSubnet"][];
             groups: components["schemas"]["ValGroup"][];
             conflicts: components["schemas"]["ValConflict"][];
+            /** @description sites of the devices that have locations (P2-10 missing-location note) */
+            sitesWithLocations?: string[];
+            /** @description device passwords used by the devices, with every live device using each (P2-10) */
+            credentials?: components["schemas"]["ValCredential"][];
+        };
+        ValCredential: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: string;
+            deviceIds: string[];
         };
         ValDevice: {
             /** Format: uuid */
@@ -3021,6 +3032,8 @@ export interface components {
             locationId: string | null;
             /** Format: uuid */
             mgmtInterfaceId: string | null;
+            partNumber?: string;
+            managed?: boolean;
         };
         ValInterface: {
             /** Format: uuid */
@@ -3039,6 +3052,8 @@ export interface components {
             allowedVlans: string;
             /** Format: uuid */
             lagId: string | null;
+            /** @description auto, full or half (P2-10) */
+            duplex?: string;
         };
         ValIp: {
             /** Format: uuid */

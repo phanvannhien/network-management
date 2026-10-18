@@ -57,7 +57,8 @@ func validationContext(ctx context.Context, q store.Querier, m tenant.Membership
 	for _, d := range devs {
 		out.Devices = append(out.Devices, apigen.ValDevice{Id: uuid.UUID(d.ID.Bytes), Hostname: d.Hostname, Type: d.Type,
 			SerialNumber: d.SerialNumber, Model: d.Model, Firmware: d.Firmware, Lifecycle: d.Lifecycle, ClusterId: optUUID(d.ClusterID),
-			SiteId: uuid.UUID(d.SiteID.Bytes), LocationId: optUUID(d.LocationID), MgmtInterfaceId: optUUID(d.MgmtInterfaceID)})
+			SiteId: uuid.UUID(d.SiteID.Bytes), LocationId: optUUID(d.LocationID), MgmtInterfaceId: optUUID(d.MgmtInterfaceID),
+			PartNumber: &d.PartNumber, Managed: &d.Managed})
 	}
 	ifs, err := q.ValidationInterfaces(ctx, store.ValidationInterfacesParams{OrganizationID: org, Ids: ids, Extra: append([]pgtype.UUID{}, extra...)})
 	if err != nil {
@@ -66,8 +67,31 @@ func validationContext(ctx context.Context, q store.Querier, m tenant.Membership
 	for _, i := range ifs {
 		out.Interfaces = append(out.Interfaces, apigen.ValInterface{Id: uuid.UUID(i.ID.Bytes), DeviceId: uuid.UUID(i.DeviceID.Bytes),
 			Name: i.Name, Kind: i.Kind, Media: i.Media, Speed: i.Speed, Mode: i.Mode, AccessVlan: optInt(i.AccessVlan),
-			NativeVlan: optInt(i.NativeVlan), AllowedVlans: i.AllowedVlans, LagId: optUUID(i.LagID)})
+			NativeVlan: optInt(i.NativeVlan), AllowedVlans: i.AllowedVlans, LagId: optUUID(i.LagID), Duplex: &i.Duplex})
 	}
+	// P2-10: sites with locations (a device there without one gets a note) and passwords shared across devices.
+	withLoc, err := q.ValidationSitesWithLocations(ctx, store.ValidationSitesWithLocationsParams{OrganizationID: org, Ids: ids})
+	if err != nil {
+		return out, fmt.Errorf("validation locations: %w", err)
+	}
+	sites := make([]uuid.UUID, 0, len(withLoc))
+	for _, id := range withLoc {
+		sites = append(sites, uuid.UUID(id.Bytes))
+	}
+	out.SitesWithLocations = &sites
+	creds, err := q.ValidationCredentials(ctx, store.ValidationCredentialsParams{OrganizationID: org, Ids: ids})
+	if err != nil {
+		return out, fmt.Errorf("validation credentials: %w", err)
+	}
+	vc := make([]apigen.ValCredential, 0, len(creds))
+	for _, c := range creds {
+		devs := make([]uuid.UUID, 0, len(c.DeviceIds))
+		for _, d := range c.DeviceIds {
+			devs = append(devs, uuid.UUID(d.Bytes))
+		}
+		vc = append(vc, apigen.ValCredential{Id: uuid.UUID(c.ID.Bytes), Name: c.Name, Kind: c.Kind, DeviceIds: devs})
+	}
+	out.Credentials = &vc
 	ips, err := q.ValidationIps(ctx, store.ValidationIpsParams{OrganizationID: org, Ids: ids})
 	if err != nil {
 		return out, fmt.Errorf("validation ips: %w", err)

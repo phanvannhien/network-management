@@ -4833,6 +4833,14 @@ type ValConflictKind string
 // ValConflictSeverity warning for a NAT / public copy or a device not in service yet
 type ValConflictSeverity string
 
+// ValCredential defines model for ValCredential.
+type ValCredential struct {
+	DeviceIds []openapi_types.UUID `json:"deviceIds"`
+	Id        openapi_types.UUID   `json:"id"`
+	Kind      string               `json:"kind"`
+	Name      string               `json:"name"`
+}
+
 // ValDevice defines model for ValDevice.
 type ValDevice struct {
 	ClusterId       *openapi_types.UUID `json:"clusterId"`
@@ -4841,8 +4849,10 @@ type ValDevice struct {
 	Id              openapi_types.UUID  `json:"id"`
 	Lifecycle       string              `json:"lifecycle"`
 	LocationId      *openapi_types.UUID `json:"locationId"`
+	Managed         *bool               `json:"managed,omitempty"`
 	MgmtInterfaceId *openapi_types.UUID `json:"mgmtInterfaceId"`
 	Model           string              `json:"model"`
+	PartNumber      *string             `json:"partNumber,omitempty"`
 	SerialNumber    string              `json:"serialNumber"`
 	SiteId          openapi_types.UUID  `json:"siteId"`
 	Type            string              `json:"type"`
@@ -4865,17 +4875,20 @@ type ValGroupMember struct {
 
 // ValInterface defines model for ValInterface.
 type ValInterface struct {
-	AccessVlan   *int32              `json:"accessVlan"`
-	AllowedVlans string              `json:"allowedVlans"`
-	DeviceId     openapi_types.UUID  `json:"deviceId"`
-	Id           openapi_types.UUID  `json:"id"`
-	Kind         string              `json:"kind"`
-	LagId        *openapi_types.UUID `json:"lagId"`
-	Media        string              `json:"media"`
-	Mode         string              `json:"mode"`
-	Name         string              `json:"name"`
-	NativeVlan   *int32              `json:"nativeVlan"`
-	Speed        string              `json:"speed"`
+	AccessVlan   *int32             `json:"accessVlan"`
+	AllowedVlans string             `json:"allowedVlans"`
+	DeviceId     openapi_types.UUID `json:"deviceId"`
+
+	// Duplex auto, full or half (P2-10)
+	Duplex     *string             `json:"duplex,omitempty"`
+	Id         openapi_types.UUID  `json:"id"`
+	Kind       string              `json:"kind"`
+	LagId      *openapi_types.UUID `json:"lagId"`
+	Media      string              `json:"media"`
+	Mode       string              `json:"mode"`
+	Name       string              `json:"name"`
+	NativeVlan *int32              `json:"nativeVlan"`
+	Speed      string              `json:"speed"`
 }
 
 // ValIp defines model for ValIp.
@@ -4915,13 +4928,19 @@ type ValSubnet struct {
 
 // ValidationContext defines model for ValidationContext.
 type ValidationContext struct {
-	Conflicts  []ValConflict  `json:"conflicts"`
-	Devices    []ValDevice    `json:"devices"`
-	Groups     []ValGroup     `json:"groups"`
-	Interfaces []ValInterface `json:"interfaces"`
-	Ips        []ValIp        `json:"ips"`
-	Links      []ValLink      `json:"links"`
-	Subnets    []ValSubnet    `json:"subnets"`
+	Conflicts []ValConflict `json:"conflicts"`
+
+	// Credentials device passwords used by the devices, with every live device using each (P2-10)
+	Credentials *[]ValCredential `json:"credentials,omitempty"`
+	Devices     []ValDevice      `json:"devices"`
+	Groups      []ValGroup       `json:"groups"`
+	Interfaces  []ValInterface   `json:"interfaces"`
+	Ips         []ValIp          `json:"ips"`
+	Links       []ValLink        `json:"links"`
+
+	// SitesWithLocations sites of the devices that have locations (P2-10 missing-location note)
+	SitesWithLocations *[]openapi_types.UUID `json:"sitesWithLocations,omitempty"`
+	Subnets            []ValSubnet           `json:"subnets"`
 }
 
 // ValidationRequest defines model for ValidationRequest.

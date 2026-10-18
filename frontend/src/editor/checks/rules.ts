@@ -2,6 +2,7 @@ import ipaddr from 'ipaddr.js'
 import type { DocState } from '../doc/types'
 import type { Problem, Severity, ValidationContext } from './types'
 import { pageOf } from '../doc/pages'
+import { classifyL2, parseVlanList, vlanSetHas, type PortL2 } from '../l2/l2'
 
 // Diagram checks (P1-20, SRS §7 Phase 1 + PLAN extras). Pure functions over a plain input (built from the document and
 // the server's validation context) so they run in a Web Worker and in tests alike. Inventory errors created elsewhere
@@ -30,6 +31,8 @@ export interface CheckIface {
   nativeVlan: number | null
   allowedVlans: string
   lagId: string | null
+  /** auto, full or half (P2-10); absent on ports drawn in this editor. */
+  duplex?: string
 }
 
 export interface CheckInput {
@@ -661,6 +664,8 @@ export function runChecks(input: CheckInput): Problem[] {
       push('frame-site', 'warning', { kind: 'node', id: n.id }, { host: d.hostname }, n.id)
   }
 
+  phase2(input, push, linkTarget, deviceTarget, host, ifById, ctxDevice)
+
   // Info: devices without any cable; IPs but no management interface.
   const cabled = new Set<string>()
   for (const l of input.links) {
@@ -683,4 +688,176 @@ export function runChecks(input: CheckInput): Problem[] {
 
   const seen = new Set<string>()
   return out.filter((p) => (seen.has(p.key) ? false : (seen.add(p.key), true)))
+}
+
+/** Shared passwords worth a warning from this many devices on (P2-10); SNMP communities are shared by design. */
+export const SHARED_CREDENTIAL_MIN = 5
+const SHARED_EXEMPT = new Set(['snmp'])
+/** Device kinds with nothing to track (no S/N / part number expected). */
+const NO_ASSET = new Set(['provider_cloud', 'vm', 'patch_panel'])
+
+type Push = (
+  rule: string,
+  severity: Severity,
+  target: Problem['target'] | null,
+  params: Problem['params'],
+  key: string,
+) => void
+
+/**
+ * Phase 2 rules (SRS §7, P2-10): VLAN mismatches on a cable (the L2 view's logic), a VLAN used on a switch's access
+ * ports that none of its cabled trunks carries, duplex mismatches, active devices missing asset facts, and passwords
+ * shared by many devices.
+ */
+function phase2(
+  input: CheckInput,
+  push: Push,
+  linkTarget: (l: CheckLink) => Problem['target'] | null,
+  deviceTarget: (id: string) => Problem['target'] | null,
+  host: (id: string) => string,
+  ifById: Map<string, CheckIface>,
+  ctxDevice: Map<string, ValidationContext['devices'][number]>,
+) {
+  // A LAG member follows its LAG when the LAG has a mode (settings on the port-channel).
+  const effective = (i: CheckIface): CheckIface => {
+    const lag = i.lagId ? ifById.get(i.lagId) : undefined
+    return lag && lag.mode ? { ...lag, id: i.id, name: i.name, lagId: i.lagId } : i
+  }
+  const portL2 = (i: CheckIface): PortL2 => {
+    const e = effective(i)
+    const lag = i.lagId ? ifById.get(i.lagId) : undefined
+    return {
+      mode: e.mode as PortL2['mode'],
+      access: e.accessVlan,
+      native: e.nativeVlan,
+      allowed: e.allowedVlans,
+      lagId: i.lagId,
+      lagName: lag?.name ?? '',
+    }
+  }
+  const label = (i: CheckIface) => `${host(i.deviceId)} ${i.name}`
+  const cabled = new Set<string>()
+  const seenLag = new Set<string>()
+  for (const l of input.links) {
+    if (l.aIface) cabled.add(l.aIface)
+    if (l.bIface) cabled.add(l.bIface)
+    const a = l.aIface && l.aKind === 'device' ? ifById.get(l.aIface) : undefined
+    const b = l.bIface && l.bKind === 'device' ? ifById.get(l.bIface) : undefined
+    if (!a || !b || l.kind === 'power' || l.kind === 'console' || l.kind === 'stack') continue
+    // VLANs: only two switchports are compared (a camera / router end has nothing to compare with).
+    const facts = classifyL2(portL2(a), portL2(b))
+    // The members of one LAG pair say it once.
+    const lagKey = a.lagId && b.lagId ? [a.lagId, b.lagId].sort().join('|') : ''
+    for (const issue of facts.issues) {
+      const key = lagKey ? `${lagKey}:${issue.key}` : `${l.id}:${issue.key}`
+      if (seenLag.has(key)) continue
+      seenLag.add(key)
+      const v = issue.values
+      const ends = { a: label(a), b: label(b) }
+      switch (issue.key) {
+        case 'accessDiffers':
+          push('vlan-access', 'warning', linkTarget(l), { ...ends, va: v.a!, vb: v.b! }, key)
+          break
+        case 'nativeDiffers':
+          push('vlan-native', 'warning', linkTarget(l), { ...ends, va: v.a!, vb: v.b! }, key)
+          break
+        case 'nativeOneSide':
+          push('vlan-native-one', 'info', linkTarget(l), { ...ends, va: v.a!, vb: v.b! }, key)
+          break
+        case 'allowedOneSide':
+          push('vlan-allowed', 'info', linkTarget(l), { ...ends, vlans: v.vlans! }, key)
+          break
+        case 'accessToTrunk':
+          push(
+            'vlan-access-trunk',
+            'warning',
+            linkTarget(l),
+            { ...ends, access: v.access!, native: v.native! },
+            key,
+          )
+          break
+        case 'lagOneSide':
+          push('lag-one-side', 'warning', linkTarget(l), { ...ends, lag: v.lag! }, key)
+          break
+      }
+    }
+    // Duplex: both ends must agree; "auto" against a forced end is the classic slow link (the auto side falls back to
+    // half duplex). Fibre / SFP and 10G+ ports are always full duplex.
+    const da = a.duplex || 'auto'
+    const db = b.duplex || 'auto'
+    const fixedFull = (i: CheckIface) => SFP.has(i.media) || (speedMbps(i.speed) ?? 0) >= 10000
+    if (da !== db && !fixedFull(a) && !fixedFull(b) && l.kind === 'ethernet')
+      push(
+        'duplex-mismatch',
+        'warning',
+        linkTarget(l),
+        { a: label(a), b: label(b), da, db },
+        `${l.id}:duplex`,
+      )
+  }
+
+  // A VLAN on a switch's access ports that none of its cabled trunks carries cannot leave the switch.
+  const byDevice = new Map<string, CheckIface[]>()
+  for (const i of input.ifaces) byDevice.set(i.deviceId, [...(byDevice.get(i.deviceId) ?? []), i])
+  for (const [deviceId, ports] of byDevice) {
+    const d = ctxDevice.get(deviceId)
+    if (!d || d.managed === false || d.type === 'provider_cloud') continue
+    const trunks = ports
+      .filter((i) => i.kind === 'physical' && cabled.has(i.id))
+      .map(effective)
+      .filter((i) => i.mode === 'trunk' || i.mode === 'hybrid')
+    // Without a cabled trunk (or with one whose list nobody filled in) there is nothing to say.
+    if (trunks.length === 0 || trunks.some((i) => i.allowedVlans.trim() === '')) continue
+    const carried = (vid: number) =>
+      trunks.some(
+        (i) => vlanSetHas(parseVlanList(i.allowedVlans), vid) || (i.nativeVlan ?? 1) === vid,
+      )
+    const used = new Map<number, string[]>()
+    for (const i of ports) {
+      const e = effective(i)
+      if (e.mode !== 'access' || !e.accessVlan || !cabled.has(i.id)) continue
+      used.set(e.accessVlan, [...(used.get(e.accessVlan) ?? []), i.name])
+    }
+    for (const [vid, names] of used)
+      if (!carried(vid))
+        push(
+          'vlan-isolated',
+          'warning',
+          deviceTarget(deviceId),
+          {
+            host: host(deviceId),
+            vlan: vid,
+            ports: names.slice(0, 4).join(', ') + (names.length > 4 ? '…' : ''),
+          },
+          `${deviceId}:${vid}`,
+        )
+  }
+
+  // Active devices without the facts warranty / support needs (location only where the site has locations).
+  const withLocations = new Set(input.ctx.sitesWithLocations ?? [])
+  for (const n of input.nodes) {
+    if (n.refKind !== 'device') continue
+    const d = ctxDevice.get(n.refId)
+    if (!d || d.lifecycle !== 'active' || d.managed === false || NO_ASSET.has(d.type)) continue
+    const missing = [
+      !d.serialNumber && 'serial',
+      d.partNumber === '' && 'part',
+      !d.locationId && withLocations.has(d.siteId) && 'location',
+    ].filter(Boolean)
+    if (missing.length > 0)
+      push(
+        'missing-info',
+        'info',
+        { kind: 'node', id: n.id },
+        { host: d.hostname, fields: missing.join(',') },
+        n.refId,
+      )
+  }
+
+  // One password on many devices: one leak opens them all.
+  for (const c of input.ctx.credentials ?? []) {
+    if (SHARED_EXEMPT.has(c.kind) || c.deviceIds.length < SHARED_CREDENTIAL_MIN) continue
+    const here = c.deviceIds.map((id) => deviceTarget(id)).find(Boolean) ?? null
+    push('credential-shared', 'warning', here, { name: c.name, count: c.deviceIds.length }, c.id)
+  }
 }

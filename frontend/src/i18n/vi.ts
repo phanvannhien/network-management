@@ -2205,6 +2205,8 @@ export const vi = {
     all: 'Toàn tổ chức',
   },
   vault: {
+    sharedHint:
+      'Mật khẩu này dùng chung cho nhiều thiết bị: lộ một lần là mở được tất cả. Nên tách theo site / nhóm thiết bị hoặc dùng RADIUS / TACACS+.',
     title: 'Kho mật khẩu',
     intro:
       'Mật khẩu đăng nhập thiết bị (SSH, web, console, enable, SNMP…) và tài khoản cloud quản lý thiết bị (FortiCloud, Meraki, UniFi…). Mật khẩu được mã hóa; muốn xem hay copy cần quyền riêng và nhập mã MFA trong 5 phút gần nhất — mỗi lần đều ghi nhật ký.',
@@ -2794,6 +2796,7 @@ export const vi = {
     failed: 'Nhập thiết bị không thành công',
   },
   checks: {
+    fields: { serial: 'S/N', part: 'part number', location: 'location' },
     title: 'Vấn đề',
     toolbar: 'Vấn đề trên sơ đồ: {{error}} lỗi, {{warning}} cảnh báo, {{info}} ghi chú',
     filter: 'Lọc theo mức',
@@ -2824,6 +2827,18 @@ export const vi = {
         '{{host}}: IP tĩnh {{ip}} nằm trong dải DHCP {{start}}–{{end}} của {{cidr}}',
       'gateway-in-dhcp':
         '{{host}}: gateway {{ip}} nằm trong dải DHCP {{start}}–{{end}} của {{cidr}}',
+      'vlan-access': 'Dây {{a}} ↔ {{b}}: hai đầu access khác VLAN ({{va}} ≠ {{vb}})',
+      'vlan-native': 'Dây {{a}} ↔ {{b}}: native VLAN hai đầu trunk lệch ({{va}} ≠ {{vb}})',
+      'vlan-native-one': 'Dây {{a}} ↔ {{b}}: native VLAN chỉ ghi ở một đầu ({{va}} / {{vb}})',
+      'vlan-allowed': 'Dây {{a}} ↔ {{b}}: VLAN chỉ một đầu trunk cho phép: {{vlans}}',
+      'vlan-access-trunk':
+        'Dây {{a}} ↔ {{b}}: cổng access VLAN {{access}} nối vào trunk native {{native}}',
+      'lag-one-side': 'Dây {{a}} ↔ {{b}}: một đầu thuộc {{lag}}, đầu kia là cổng thường',
+      'vlan-isolated':
+        '{{host}}: VLAN {{vlan}} dùng ở {{ports}} nhưng không đi qua trunk nào của thiết bị',
+      'duplex-mismatch': 'Dây {{a}} ↔ {{b}}: duplex hai đầu khác nhau ({{da}} / {{db}})',
+      'missing-info': '{{host}} đang dùng nhưng thiếu {{fields}}',
+      'credential-shared': 'Mật khẩu "{{name}}" dùng chung cho {{count}} thiết bị',
       'gateway-mask':
         '{{host}}: gateway {{gateway}} của subnet {{cidr}} nằm ngoài mask của IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} là {{which}} của {{cidr}}',
@@ -2855,6 +2870,26 @@ export const vi = {
         'DHCP server không biết IP này đã có người dùng nên có thể cấp nó cho máy khác, gây trùng IP. Chuyển IP ra ngoài dải DHCP, hoặc thu hẹp dải (tách dải) để chừa IP này.',
       'gateway-in-dhcp':
         'Gateway nằm trong dải DHCP là lỗi hay gặp: DHCP có thể cấp IP gateway cho một máy, cả subnet mất mạng. Thu hẹp dải DHCP để gateway nằm ngoài (vd dải .100–.200, gateway .1).',
+      'vlan-access':
+        'Hai máy hai đầu nằm ở hai VLAN khác nhau nên không thấy nhau. Sửa access VLAN một đầu cho khớp.',
+      'vlan-native':
+        'Gói không gắn nhãn đi từ VLAN này sang VLAN khác ở đầu kia (rò VLAN, STP báo lỗi). Đặt native VLAN hai đầu giống nhau.',
+      'vlan-native-one':
+        'Một đầu để mặc định (VLAN 1). Kiểm tra cấu hình thật của đầu chưa ghi rồi khai cho đủ.',
+      'vlan-allowed':
+        'VLAN chỉ một đầu cho phép thì bị chặn trên dây này. Nếu VLAN đó cần đi qua, thêm vào danh sách allowed cả hai đầu.',
+      'vlan-access-trunk':
+        'Cổng access chỉ nhận gói không gắn nhãn, tức native VLAN của trunk đầu kia. Đổi native VLAN của trunk, hoặc để cả hai là trunk.',
+      'lag-one-side':
+        'LAG (port-channel) phải khai ở cả hai đầu; một đầu là cổng thường thì LAG không lên hoặc gây vòng lặp. Gộp cổng đầu kia vào LAG.',
+      'vlan-isolated':
+        'Máy ở VLAN này không ra được khỏi switch (không có trunk nào mang VLAN đó lên trên). Thêm VLAN vào allowed của trunk uplink.',
+      'duplex-mismatch':
+        'Một đầu tự động (auto), đầu kia ép cố định: đầu auto rơi về half duplex, dây chạy chậm và mất gói. Để cả hai auto (khuyên dùng) hoặc ép giống nhau.',
+      'missing-info':
+        'Thiếu S/N hoặc part number thì khó mở ticket bảo hành và tra hết hỗ trợ; thiếu location thì khó tìm thiết bị. Bổ sung ở trang thiết bị.',
+      'credential-shared':
+        'Lộ một mật khẩu là mở được tất cả các thiết bị dùng nó. Nên tách mật khẩu theo site / nhóm thiết bị, hoặc dùng RADIUS / TACACS+.',
       'gateway-mask':
         'Với mask này thiết bị không tới được gateway nên không ra được mạng khác. Thường là gõ sai mask (vd /24 trong khi subnet là /23) — sửa mask của IP, hoặc gateway của subnet trong IPAM.',
       'ip-edge':

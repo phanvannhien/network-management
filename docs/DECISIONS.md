@@ -833,3 +833,15 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Chưa có khái niệm "reservation" DHCP.
   - IP quản trị cụm luôn coi là VRF mặc định.
   - Bảng IP plan chỉ theo một site.
+
+### ADR-049 — Kiểm tra Phase 2 (P2-10): lệch VLAN / duplex, VLAN cô lập, thiếu thông tin tài sản, mật khẩu dùng chung
+- **Bối cảnh:** SRS §7 các luật Phase 2. Kiểm tra vẫn chạy trong Web Worker từ ngữ cảnh server gửi, không chặn lưu.
+- **Quyết định:**
+  - **Lệch VLAN trên dây:** dùng chung logic với chế độ xem L2 (ADR-047). Chỉ so khi cả hai đầu là switchport; thành viên LAG lấy cấu hình của cổng LAG; mỗi cặp LAG chỉ báo một lần.
+    - Cảnh báo: access khác VLAN; native khác nhau; access nối trunk mà VLAN ≠ native; LAG một đầu.
+    - Ghi chú: native chỉ ghi một đầu; danh sách VLAN cho phép khác nhau. "Dải VLAN khác nhau" là ghi chú chứ không phải cảnh báo, vì một đầu giới hạn hơn là cấu hình bình thường.
+  - **"VLAN thiếu trong trunk"** hiểu là **VLAN bị cô lập**: VLAN của các cổng access (có dây) trên một thiết bị mà không trunk nào có dây của thiết bị đó mang đi. Chỉ báo khi mọi trunk đều ghi danh sách cho phép.
+  - **Duplex:** hai đầu khác nhau là cảnh báo (auto ↔ ép cố định là trường hợp kinh điển). Bỏ qua cổng SFP và 10G trở lên (luôn full).
+  - **Thiếu thông tin:** thiết bị đang dùng, có quản lý, không phải đám mây ISP / VM / patch panel, mà thiếu S/N hoặc part number. Thiếu location chỉ báo khi site đã khai location.
+  - **Mật khẩu dùng chung:** từ **5 thiết bị** trở lên là cảnh báo, mỗi mật khẩu một dòng. SNMP community được miễn (dùng chung là bình thường). Trang Kho mật khẩu đánh dấu ⚠.
+- **Để sau:** ngưỡng chỉnh theo tổ chức; kiểm tra phía backend khi lưu / nhập.

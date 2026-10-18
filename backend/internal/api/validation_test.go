@@ -91,3 +91,49 @@ func TestValidationContext(t *testing.T) {
 		t.Errorf("serial conflicts (case-insensitive, both sides on the diagram, retired left out): %v", kinds["serial"])
 	}
 }
+
+// P2-10: what the Phase 2 rules need — part number, managed, duplex, sites with locations, passwords shared by devices
+// (every live device using them, also those off the diagram).
+func TestValidationContextPhase2(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	path := orgPath(org) + "/validation-context"
+	site := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "HQ01", "name": "HQ"}))
+	bare := idOf(t, mustCreate(t, fx.A, sitesPath(org), map[string]any{"code": "BR01", "name": "BR"}))
+	mustCreate(t, fx.A, sitesPath(org)+"/"+site+"/locations", map[string]any{"kind": "room", "name": "Phòng máy"})
+	a := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW-A", "type": "l2_switch", "siteId": site, "partNumber": "C9200-24P"}))
+	b := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW-B", "type": "l2_switch", "siteId": bare}))
+	c := idOf(t, mustCreate(t, fx.A, devicesPath(org), map[string]any{"hostname": "SW-C", "type": "l2_switch", "siteId": bare}))
+	mustCreate(t, fx.A, devicePath(org, a)+"/interfaces", map[string]any{"name": "Gi1", "kind": "physical", "media": "RJ45", "mode": "access",
+		"accessVlan": 10, "duplex": "full"})
+	mustCreate(t, fx.A, credsPath(org), map[string]any{"name": "Admin SW", "kind": "ssh", "username": "admin",
+		"devices": []map[string]any{{"deviceId": a, "purpose": "ssh"}, {"deviceId": b, "purpose": "ssh"}, {"deviceId": c, "purpose": "ssh"}}})
+	status, ctx := fx.A.Do("POST", path, map[string]any{"deviceIds": []string{a, b}, "groupIds": []string{}})
+	if status != http.StatusOK {
+		t.Fatalf("context: %d %v", status, ctx)
+	}
+	var devA map[string]any
+	for _, d := range ctx["devices"].([]any) {
+		if d.(map[string]any)["id"] == a {
+			devA = d.(map[string]any)
+		}
+	}
+	if devA["partNumber"] != "C9200-24P" || devA["managed"] != true {
+		t.Errorf("device facts: %v", devA)
+	}
+	if ifs := ctx["interfaces"].([]any); len(ifs) != 1 || ifs[0].(map[string]any)["duplex"] != "full" {
+		t.Errorf("interfaces: %v", ifs)
+	}
+	if s := ctx["sitesWithLocations"].([]any); len(s) != 1 || s[0] != site {
+		t.Errorf("sites with locations: %v", s)
+	}
+	creds := ctx["credentials"].([]any)
+	if len(creds) != 1 || len(creds[0].(map[string]any)["deviceIds"].([]any)) != 3 {
+		t.Errorf("credentials (all three users, SW-C off the diagram too): %v", creds)
+	}
+	if status, _ := fx.B.Do("POST", orgPath(fx.OrgB)+"/validation-context", map[string]any{"deviceIds": []string{a}, "groupIds": []string{}}); status != http.StatusOK {
+		t.Fatalf("B context: %d", status)
+	} else if _, bctx := fx.B.Do("POST", orgPath(fx.OrgB)+"/validation-context", map[string]any{"deviceIds": []string{a}, "groupIds": []string{}}); len(bctx["credentials"].([]any)) != 0 || len(bctx["devices"].([]any)) != 0 {
+		t.Errorf("B sees A's devices or passwords: %v", bctx)
+	}
+}

@@ -5,6 +5,29 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-10 Kiểm tra Phase 2 (ADR-049)
+- Đã làm (panel Problems trên sơ đồ):
+  - **Lệch VLAN trên dây:**
+    - access hai đầu khác VLAN, native lệch, access nối trunk sai native, LAG chỉ một đầu: cảnh báo;
+    - native chỉ ghi một đầu, VLAN chỉ một đầu cho phép: ghi chú.
+    - Dùng chung logic với chế độ xem L2; mỗi cặp LAG báo một lần; camera / AP / router không bị báo nhầm.
+  - **VLAN bị cô lập:** VLAN ở cổng access mà không trunk nào của switch mang lên.
+  - **Lệch duplex** (auto ↔ ép cố định; bỏ qua cổng quang / 10G).
+  - **Thiết bị đang dùng thiếu S/N, part number**; thiếu location khi site đã khai location.
+  - **Mật khẩu dùng chung ≥ 5 thiết bị** (miễn SNMP community); trang Kho mật khẩu có dấu ⚠.
+  - Các luật Phase 2 khác đã có từ trước: quá hạn hỗ trợ (P2-22); IP tĩnh / gateway trong DHCP, subnet chồng lấn (P2-09).
+  - **Server:** ngữ cảnh kiểm tra thêm part number, managed, duplex, site có location, mật khẩu dùng chung (kể cả thiết bị ngoài sơ đồ).
+  - **Glossary:** VLAN bị cô lập, duplex, mật khẩu dùng chung.
+- Test / cách kiểm tra:
+  - `make check` pass. Go: `TestValidationContextPhase2` (kể cả chặn tổ chức khác). Vitest: luật Phase 2 trong `rules.test.ts`.
+  - Trình duyệt thật: sơ đồ "L2 lab" báo access lệch VLAN, VLAN chỉ một đầu, thiếu S/N / part number; không lỗi console.
+- Còn dở / lỗi đã biết:
+  - Ngưỡng mật khẩu dùng chung cố định 5.
+  - Chưa kiểm tra lại ở backend khi lưu / nhập.
+- Câu hỏi cho người dùng: ngưỡng 5 thiết bị cho mật khẩu dùng chung có hợp không?
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-11 Báo cáo & export (PDF A4/A3 có title block, Excel IP plan / port map / BOQ / VLAN).
+
 ## 2026-10-18 — P2-09 IPAM đầy đủ (ADR-048); sửa thêm segment
 - Người dùng chốt: P2-06 (link chia sẻ) tạm hoãn vì export PNG đủ dùng; làm tuần tự P2-09.
 - Đã làm:

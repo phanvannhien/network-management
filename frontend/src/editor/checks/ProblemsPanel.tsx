@@ -47,6 +47,14 @@ export function ProblemsPanel({
     ...(p.params.which
       ? { which: t(`checks.which.${p.params.which}` as 'checks.which.network') }
       : {}),
+    ...(p.params.fields
+      ? {
+          fields: String(p.params.fields)
+            .split(',')
+            .map((f) => t(`checks.fields.${f}` as 'checks.fields.serial'))
+            .join(', '),
+        }
+      : {}),
   })
 
   const focus = (p: Problem) => {

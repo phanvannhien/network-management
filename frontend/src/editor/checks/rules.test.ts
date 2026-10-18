@@ -97,7 +97,11 @@ function input(over: Partial<CheckInput> = {}): CheckInput {
   }
 }
 
-const rules = (i: CheckInput) => runChecks(i).map((p) => `${p.rule}:${p.severity}:${p.target.id}`)
+// The asset note (P2-10) has its own tests; fixtures here leave S/N empty on purpose.
+const rules = (i: CheckInput) =>
+  runChecks(i)
+    .filter((p) => p.rule !== 'missing-info')
+    .map((p) => `${p.rule}:${p.severity}:${p.target.id}`)
 
 describe('runChecks', () => {
   it('a clean pair has no problems', () => {
@@ -288,11 +292,11 @@ describe('runChecks', () => {
         port('p4', D2, { mode: 'access', accessVlan: 10 }),
       ],
     })
-    expect(runChecks(i).map((p) => `${p.rule}:${p.params.port}`)).toEqual([
-      'vlan-mode:p1',
-      'vlan-mode:p2',
-      'vlan-mode:p3',
-    ])
+    expect(
+      runChecks(i)
+        .filter((p) => p.rule === 'vlan-mode')
+        .map((p) => `${p.rule}:${p.params.port}`),
+    ).toEqual(['vlan-mode:p1', 'vlan-mode:p2', 'vlan-mode:p3'])
   })
 
   it('LAG members: different speed warns, different media only is a note', () => {
@@ -566,5 +570,137 @@ describe('DHCP pools (P2-09)', () => {
     expect(dhcpPoolOf('10.1.20.150/24', 'GUEST', subnets)).toBeNull()
     // The most specific subnet decides (the /24 has no pool at .20.x of the /16's range).
     expect(dhcpPoolOf('10.1.20.5', '', subnets)).toBeNull()
+  })
+})
+
+describe('Phase 2 rules (P2-10)', () => {
+  const dev = (id: string, over: Record<string, unknown> = {}) => ({
+    id,
+    hostname: id === D1 ? 'SW01' : 'SW02',
+    type: 'l2_switch',
+    serialNumber: 'S1',
+    model: '',
+    firmware: '',
+    lifecycle: 'active',
+    clusterId: null,
+    siteId: SITE,
+    locationId: null,
+    mgmtInterfaceId: null,
+    partNumber: 'C9200',
+    managed: true,
+    ...over,
+  })
+  const of = (i: CheckInput) =>
+    runChecks(i).filter((p) => !['no-cable', 'cable-no-port'].includes(p.rule))
+
+  it('VLAN mismatches on a cable, once per LAG pair', () => {
+    const access = (id: string, d: string, vid: number) =>
+      port(id, d, { mode: 'access', accessVlan: vid })
+    expect(rules(input({ ifaces: [access('p1', D1, 20), access('p2', D2, 30)] }))).toEqual([
+      'vlan-access:warning:e1',
+    ])
+    const trunk = (id: string, d: string, o: Partial<CheckIface>) =>
+      port(id, d, { mode: 'trunk', allowedVlans: '10,20', ...o })
+    expect(
+      rules(
+        input({
+          ifaces: [trunk('p1', D1, { nativeVlan: 99 }), trunk('p2', D2, { nativeVlan: 1 })],
+        }),
+      ),
+    ).toEqual(['vlan-native:warning:e1'])
+    // Two members of one LAG pair with the LAG settings on the port-channels: one problem.
+    const lagged = input({
+      links: [cable('L1', 'm1', 'm2'), cable('L2', 'm3', 'm4')],
+      edgeOf: { L1: 'e1', L2: 'e2' },
+      ifaces: [
+        port('po1', D1, { kind: 'lag', mode: 'trunk', allowedVlans: '10', nativeVlan: 99 }),
+        port('po2', D2, { kind: 'lag', mode: 'trunk', allowedVlans: '10', nativeVlan: 1 }),
+        port('m1', D1, { lagId: 'po1' }),
+        port('m3', D1, { lagId: 'po1' }),
+        port('m2', D2, { lagId: 'po2' }),
+        port('m4', D2, { lagId: 'po2' }),
+      ],
+    })
+    expect(rules(lagged).filter((r) => r.startsWith('vlan-native'))).toHaveLength(1)
+    // An access port facing a camera (no mode): nothing.
+    expect(rules(input({ ifaces: [access('p1', D1, 20), port('p2', D2)] }))).toEqual([])
+  })
+
+  it('a VLAN on access ports that no cabled trunk carries', () => {
+    const c = ctx({ devices: [dev(D1), dev(D2)] })
+    const i = input({
+      ctx: c,
+      links: [
+        cable('L1', 'up', 'p2'),
+        { ...cable('L2', 'a1', null), bKind: 'endpoint_group', bId: G1 },
+      ],
+      edgeOf: { L1: 'e1' },
+      ifaces: [
+        port('up', D1, { mode: 'trunk', allowedVlans: '10,20' }),
+        port('p2', D2, { mode: 'trunk', allowedVlans: '10,20' }),
+        port('a1', D1, { mode: 'access', accessVlan: 30 }),
+      ],
+    })
+    expect(of(i).map((p) => `${p.rule}:${p.params.vlan}`)).toContain('vlan-isolated:30')
+    // An uplink whose allowed list nobody filled in: no claim.
+    const open = {
+      ...i,
+      ifaces: i.ifaces.map((x) => (x.id === 'up' ? { ...x, allowedVlans: '' } : x)),
+    }
+    expect(of(open).some((p) => p.rule === 'vlan-isolated')).toBe(false)
+  })
+
+  it('duplex: auto against forced is a mismatch, SFP / 10G are always full', () => {
+    expect(
+      rules(
+        input({ ifaces: [port('p1', D1, { duplex: 'auto' }), port('p2', D2, { duplex: 'full' })] }),
+      ),
+    ).toEqual(['duplex-mismatch:warning:e1'])
+    expect(
+      rules(
+        input({ ifaces: [port('p1', D1, { duplex: 'full' }), port('p2', D2, { duplex: 'full' })] }),
+      ),
+    ).toEqual([])
+    expect(
+      rules(
+        input({
+          ifaces: [
+            port('p1', D1, { duplex: 'auto', media: 'SFP+' }),
+            port('p2', D2, { duplex: 'full', media: 'SFP+' }),
+          ],
+        }),
+      ),
+    ).toEqual([])
+  })
+
+  it('active devices missing S/N, part number, or a location where the site has some', () => {
+    const c = ctx({
+      devices: [
+        dev(D1, { serialNumber: '', partNumber: '' }),
+        dev(D2, { lifecycle: 'planned', serialNumber: '' }),
+      ],
+      sitesWithLocations: [SITE],
+    })
+    const found = of(input({ ctx: c })).filter((p) => p.rule === 'missing-info')
+    expect(found.map((p) => [p.target.id, p.params.fields])).toEqual([
+      ['n1', 'serial,part,location'],
+    ])
+  })
+
+  it('a password shared by many devices (SNMP communities exempt)', () => {
+    const many = Array.from({ length: 6 }, (_, i) => `00000000-0000-0000-0000-00000000000${i}`)
+    const c = ctx({
+      devices: [dev(D1), dev(D2)],
+      credentials: [
+        { id: 'c1', name: 'Admin SW', kind: 'ssh', deviceIds: [D2, ...many] },
+        { id: 'c2', name: 'public', kind: 'snmp', deviceIds: [D1, ...many] },
+        { id: 'c3', name: 'Few', kind: 'ssh', deviceIds: [D1, D2] },
+      ],
+    })
+    expect(
+      of(input({ ctx: c }))
+        .filter((p) => p.rule === 'credential-shared')
+        .map((p) => [p.params.name, p.target.id]),
+    ).toEqual([['Admin SW', 'n2']])
   })
 })

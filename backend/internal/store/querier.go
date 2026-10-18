@@ -480,6 +480,8 @@ type Querier interface {
 	UseUserToken(ctx context.Context, tokenHash []byte) (int64, error)
 	// ADR-019 / SRS §10: system admins, organization owners/admins and anyone allowed to reveal secrets must use MFA.
 	UserRequiresMFA(ctx context.Context, id pgtype.UUID) (bool, error)
+	// Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
+	ValidationCredentials(ctx context.Context, arg ValidationCredentialsParams) ([]ValidationCredentialsRow, error)
 	// Validation context of a diagram (P1-20): what the rules need about the objects on it, plus conflicts computed
 	// org-wide. Every query takes organization_id.
 	ValidationDevices(ctx context.Context, arg ValidationDevicesParams) ([]ValidationDevicesRow, error)
@@ -492,6 +494,8 @@ type Querier interface {
 	ValidationIps(ctx context.Context, arg ValidationIpsParams) ([]ValidationIpsRow, error)
 	// Every cable touching the objects, also those drawn on no diagram (a port taken elsewhere is still taken).
 	ValidationLinks(ctx context.Context, arg ValidationLinksParams) ([]ValidationLinksRow, error)
+	// Sites (of the given devices) that have locations: only there is "no location" worth a note (P2-10).
+	ValidationSitesWithLocations(ctx context.Context, arg ValidationSitesWithLocationsParams) ([]pgtype.UUID, error)
 	ValidationSubnets(ctx context.Context, organizationID pgtype.UUID) ([]ValidationSubnetsRow, error)
 }
 

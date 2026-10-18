@@ -2220,6 +2220,8 @@ export const en: Strings = {
     all: 'Whole organization',
   },
   vault: {
+    sharedHint:
+      'This password is shared by many devices: one leak opens them all. Split it per site / device group or use RADIUS / TACACS+.',
     title: 'Password vault',
     intro:
       'Device logins (SSH, web, console, enable, SNMP…) and cloud management accounts (FortiCloud, Meraki, UniFi…). Secrets are encrypted; showing or copying one needs its own right and an MFA code within the last 5 minutes — every look is logged.',
@@ -2811,6 +2813,7 @@ export const en: Strings = {
     failed: 'Device import failed',
   },
   checks: {
+    fields: { serial: 'S/N', part: 'part number', location: 'location' },
     title: 'Problems',
     toolbar: 'Diagram problems: {{error}} errors, {{warning}} warnings, {{info}} notes',
     filter: 'Filter by level',
@@ -2841,6 +2844,18 @@ export const en: Strings = {
         '{{host}}: static IP {{ip}} is inside DHCP pool {{start}}–{{end}} of {{cidr}}',
       'gateway-in-dhcp':
         '{{host}}: gateway {{ip}} is inside DHCP pool {{start}}–{{end}} of {{cidr}}',
+      'vlan-access': 'Cable {{a}} ↔ {{b}}: access VLANs differ ({{va}} ≠ {{vb}})',
+      'vlan-native': 'Cable {{a}} ↔ {{b}}: trunk native VLANs differ ({{va}} ≠ {{vb}})',
+      'vlan-native-one': 'Cable {{a}} ↔ {{b}}: native VLAN set at one end only ({{va}} / {{vb}})',
+      'vlan-allowed': 'Cable {{a}} ↔ {{b}}: VLANs allowed at one trunk end only: {{vlans}}',
+      'vlan-access-trunk':
+        'Cable {{a}} ↔ {{b}}: access port in VLAN {{access}} facing a trunk with native {{native}}',
+      'lag-one-side': 'Cable {{a}} ↔ {{b}}: one end is in {{lag}}, the other a plain port',
+      'vlan-isolated':
+        '{{host}}: VLAN {{vlan}} used on {{ports}} but carried by none of its trunks',
+      'duplex-mismatch': 'Cable {{a}} ↔ {{b}}: duplex differs ({{da}} / {{db}})',
+      'missing-info': '{{host}} is in use but has no {{fields}}',
+      'credential-shared': 'Password "{{name}}" is shared by {{count}} devices',
       'gateway-mask':
         '{{host}}: gateway {{gateway}} of subnet {{cidr}} is outside the mask of IP {{ip}}',
       'ip-edge': '{{host}}: IP {{ip}} is {{which}} of {{cidr}}',
@@ -2871,6 +2886,26 @@ export const en: Strings = {
         'The DHCP server does not know this address is taken and may hand it to another machine (duplicate IP). Move the IP out of the pool, or shrink / split the pool to leave it out.',
       'gateway-in-dhcp':
         'A gateway inside the DHCP pool is a common mistake: DHCP may hand the gateway address to a PC and the whole subnet loses its way out. Shrink the pool so the gateway is outside (e.g. pool .100–.200, gateway .1).',
+      'vlan-access':
+        'The machines at the two ends are in different VLANs and cannot reach each other. Make the access VLANs match.',
+      'vlan-native':
+        'Untagged traffic crosses from one VLAN into another at the far end (VLAN leak, STP errors). Set the same native VLAN on both ends.',
+      'vlan-native-one':
+        'One end is left at the default (VLAN 1). Check its real configuration and fill it in.',
+      'vlan-allowed':
+        'A VLAN allowed at one end only is dropped on this cable. If it must pass, add it to the allowed list at both ends.',
+      'vlan-access-trunk':
+        "An access port only takes untagged frames, i.e. the far trunk's native VLAN. Change the trunk's native VLAN, or make both ends trunks.",
+      'lag-one-side':
+        'A LAG (port-channel) must exist at both ends; against a plain port it does not come up or loops. Bundle the far port into the LAG.',
+      'vlan-isolated':
+        'Machines in this VLAN cannot leave the switch (no trunk carries it upstream). Add the VLAN to the uplink trunk allowed list.',
+      'duplex-mismatch':
+        'One end auto, the other forced: the auto end falls back to half duplex — slow link and lost frames. Leave both on auto (recommended) or force both alike.',
+      'missing-info':
+        'Without S/N or part number warranty tickets and end-of-support lookups are hard; without a location the box is hard to find. Fill them in on the device page.',
+      'credential-shared':
+        'One leaked password opens every device using it. Split passwords per site / device group, or use RADIUS / TACACS+.',
       'gateway-mask':
         'With this mask the device cannot reach its gateway, so nothing beyond the subnet works. Usually a mistyped mask (e.g. /24 in a /23 subnet) — fix the IP mask, or the subnet gateway in IPAM.',
       'ip-edge':

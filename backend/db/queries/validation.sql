@@ -2,13 +2,15 @@
 -- org-wide. Every query takes organization_id.
 
 -- name: ValidationDevices :many
-SELECT id, hostname, type, serial_number, model, firmware, lifecycle, cluster_id, site_id, location_id, mgmt_interface_id
+SELECT id, hostname, type, serial_number, model, firmware, lifecycle, cluster_id, site_id, location_id, mgmt_interface_id,
+       part_number, managed
 FROM devices
 WHERE organization_id = @organization_id AND id = ANY (@ids::uuid[]) AND deleted_at IS NULL;
 
 -- name: ValidationInterfaces :many
 -- Only the ports a rule can look at (cabled, addressed, LAG, VLAN mode): a 48-port switch rarely needs all 48.
-SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id
+SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id,
+       i.duplex
 FROM interfaces i
 WHERE i.organization_id = @organization_id AND i.device_id = ANY (@ids::uuid[])
   AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag' OR i.id = ANY (@extra::uuid[])
@@ -102,3 +104,21 @@ JOIN holders o ON o.vrf = m.vrf AND o.h = m.h AND o.owner <> m.owner
   -- A VRRP / HSRP virtual IP configured on each router of the group (ADR-038).
   AND NOT (m.role = 'vip' AND o.role = 'vip')
 WHERE m.device_id = ANY (@ids::uuid[]);
+
+-- name: ValidationSitesWithLocations :many
+-- Sites (of the given devices) that have locations: only there is "no location" worth a note (P2-10).
+SELECT DISTINCT l.site_id
+FROM locations l
+JOIN devices d ON d.site_id = l.site_id AND d.organization_id = l.organization_id
+WHERE l.organization_id = @organization_id AND d.id = ANY (@ids::uuid[]);
+
+-- name: ValidationCredentials :many
+-- Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
+SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids
+FROM credentials c
+JOIN credential_devices cd ON cd.credential_id = c.id AND cd.organization_id = c.organization_id
+JOIN devices d ON d.id = cd.device_id AND d.organization_id = c.organization_id AND d.deleted_at IS NULL
+WHERE c.organization_id = @organization_id AND c.deleted_at IS NULL
+  AND EXISTS (SELECT 1 FROM credential_devices x WHERE x.organization_id = c.organization_id AND x.credential_id = c.id
+                AND x.device_id = ANY (@ids::uuid[]))
+GROUP BY c.id, c.name, c.kind;

@@ -26,6 +26,7 @@ import {
   useCredentials,
   useVaultRights,
 } from './vault'
+import { SHARED_CREDENTIAL_MIN } from '@/editor/checks/rules'
 
 /**
  * Password vault (P2-02 / P2-03, SRS §9): device credentials (SSH, web, console, enable, SNMP…) and cloud
@@ -129,7 +130,14 @@ export function VaultPage() {
                         />
                       </td>
                       <td data-numeric className="px-3 py-2 text-right">
-                        {c.deviceCount}
+                        {/* One password on many devices (P2-10): one leak opens them all; SNMP communities are shared by design. */}
+                        {c.deviceCount >= SHARED_CREDENTIAL_MIN && c.kind !== 'snmp' ? (
+                          <span className="text-status-warning" title={t('vault.sharedHint')}>
+                            ⚠ {c.deviceCount}
+                          </span>
+                        ) : (
+                          c.deviceCount
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         {c.rotateDue ? <WarrantyText date={c.rotateDue} /> : '—'}

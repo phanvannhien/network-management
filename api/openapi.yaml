@@ -6277,6 +6277,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValConflict'
+        sitesWithLocations:
+          type: array
+          description: sites of the devices that have locations (P2-10 missing-location note)
+          items: {type: string, format: uuid}
+        credentials:
+          type: array
+          description: device passwords used by the devices, with every live device using each (P2-10)
+          items:
+            $ref: '#/components/schemas/ValCredential'
+
+    ValCredential:
+      type: object
+      required: [id, name, kind, deviceIds]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string}
+        deviceIds:
+          type: array
+          items: {type: string, format: uuid}
 
     ValDevice:
       type: object
@@ -6293,6 +6313,8 @@ components:
         siteId: {type: string, format: uuid}
         locationId: {type: [string, 'null'], format: uuid}
         mgmtInterfaceId: {type: [string, 'null'], format: uuid}
+        partNumber: {type: string}
+        managed: {type: boolean}
 
     ValInterface:
       type: object
@@ -6309,6 +6331,7 @@ components:
         nativeVlan: {type: [integer, 'null'], format: int32}
         allowedVlans: {type: string}
         lagId: {type: [string, 'null'], format: uuid}
+        duplex: {type: string, description: 'auto, full or half (P2-10)'}
 
     ValIp:
       type: object

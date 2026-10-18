@@ -170,9 +170,59 @@ func (q *Queries) DuplicateSerials(ctx context.Context, arg DuplicateSerialsPara
 	return items, nil
 }
 
+const validationCredentials = `-- name: ValidationCredentials :many
+SELECT c.id, c.name, c.kind, array_agg(DISTINCT cd.device_id)::uuid[] AS device_ids
+FROM credentials c
+JOIN credential_devices cd ON cd.credential_id = c.id AND cd.organization_id = c.organization_id
+JOIN devices d ON d.id = cd.device_id AND d.organization_id = c.organization_id AND d.deleted_at IS NULL
+WHERE c.organization_id = $1 AND c.deleted_at IS NULL
+  AND EXISTS (SELECT 1 FROM credential_devices x WHERE x.organization_id = c.organization_id AND x.credential_id = c.id
+                AND x.device_id = ANY ($2::uuid[]))
+GROUP BY c.id, c.name, c.kind
+`
+
+type ValidationCredentialsParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []pgtype.UUID
+}
+
+type ValidationCredentialsRow struct {
+	ID        pgtype.UUID
+	Name      string
+	Kind      string
+	DeviceIds []pgtype.UUID
+}
+
+// Device passwords used by any of the given devices, with every live device using them (P2-10: shared passwords).
+func (q *Queries) ValidationCredentials(ctx context.Context, arg ValidationCredentialsParams) ([]ValidationCredentialsRow, error) {
+	rows, err := q.db.Query(ctx, validationCredentials, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ValidationCredentialsRow
+	for rows.Next() {
+		var i ValidationCredentialsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.DeviceIds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const validationDevices = `-- name: ValidationDevices :many
 
-SELECT id, hostname, type, serial_number, model, firmware, lifecycle, cluster_id, site_id, location_id, mgmt_interface_id
+SELECT id, hostname, type, serial_number, model, firmware, lifecycle, cluster_id, site_id, location_id, mgmt_interface_id,
+       part_number, managed
 FROM devices
 WHERE organization_id = $1 AND id = ANY ($2::uuid[]) AND deleted_at IS NULL
 `
@@ -194,6 +244,8 @@ type ValidationDevicesRow struct {
 	SiteID          pgtype.UUID
 	LocationID      pgtype.UUID
 	MgmtInterfaceID pgtype.UUID
+	PartNumber      string
+	Managed         bool
 }
 
 // Validation context of a diagram (P1-20): what the rules need about the objects on it, plus conflicts computed
@@ -219,6 +271,8 @@ func (q *Queries) ValidationDevices(ctx context.Context, arg ValidationDevicesPa
 			&i.SiteID,
 			&i.LocationID,
 			&i.MgmtInterfaceID,
+			&i.PartNumber,
+			&i.Managed,
 		); err != nil {
 			return nil, err
 		}
@@ -345,7 +399,8 @@ func (q *Queries) ValidationGroups(ctx context.Context, arg ValidationGroupsPara
 }
 
 const validationInterfaces = `-- name: ValidationInterfaces :many
-SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id
+SELECT i.id, i.device_id, i.name, i.kind, i.media, i.speed, i.mode, i.access_vlan, i.native_vlan, i.allowed_vlans, i.lag_id,
+       i.duplex
 FROM interfaces i
 WHERE i.organization_id = $1 AND i.device_id = ANY ($2::uuid[])
   AND (i.mode <> '' OR i.lag_id IS NOT NULL OR i.kind = 'lag' OR i.id = ANY ($3::uuid[])
@@ -372,6 +427,7 @@ type ValidationInterfacesRow struct {
 	NativeVlan   pgtype.Int4
 	AllowedVlans string
 	LagID        pgtype.UUID
+	Duplex       string
 }
 
 // Only the ports a rule can look at (cabled, addressed, LAG, VLAN mode): a 48-port switch rarely needs all 48.
@@ -396,6 +452,7 @@ func (q *Queries) ValidationInterfaces(ctx context.Context, arg ValidationInterf
 			&i.NativeVlan,
 			&i.AllowedVlans,
 			&i.LagID,
+			&i.Duplex,
 		); err != nil {
 			return nil, err
 		}
@@ -497,6 +554,39 @@ func (q *Queries) ValidationLinks(ctx context.Context, arg ValidationLinksParams
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const validationSitesWithLocations = `-- name: ValidationSitesWithLocations :many
+SELECT DISTINCT l.site_id
+FROM locations l
+JOIN devices d ON d.site_id = l.site_id AND d.organization_id = l.organization_id
+WHERE l.organization_id = $1 AND d.id = ANY ($2::uuid[])
+`
+
+type ValidationSitesWithLocationsParams struct {
+	OrganizationID pgtype.UUID
+	Ids            []pgtype.UUID
+}
+
+// Sites (of the given devices) that have locations: only there is "no location" worth a note (P2-10).
+func (q *Queries) ValidationSitesWithLocations(ctx context.Context, arg ValidationSitesWithLocationsParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, validationSitesWithLocations, arg.OrganizationID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var site_id pgtype.UUID
+		if err := rows.Scan(&site_id); err != nil {
+			return nil, err
+		}
+		items = append(items, site_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
