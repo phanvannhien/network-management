@@ -374,9 +374,9 @@ func (s *Server) RegenerateInvite(ctx context.Context, req apigen.RegenerateInvi
 		return apigen.RegenerateInvite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: "Bạn không có quyền quản lý thành viên"}}, nil
 	}
 	var (
-		token    string
-		notFound bool
-		conflict string
+		token               string
+		notFound            bool
+		conflict, forbidden string
 	)
 	err = s.withTx(ctx, func(q store.Querier) error {
 		member, err := q.GetMember(ctx, store.GetMemberParams{OrganizationID: m.OrgID, UserID: pgUUID(req.UserId)})
@@ -389,6 +389,11 @@ func (s *Server) RegenerateInvite(ctx context.Context, req apigen.RegenerateInvi
 		}
 		if !member.PendingInvite {
 			conflict = "Người này đã kích hoạt tài khoản"
+			return errRollback
+		}
+		// Whoever holds the link gets the account with its role and permissions: issuing one is granting them, under
+		// the same rules as inviting (a viewer with user.manage cannot get an owner's link).
+		if forbidden = checkRoleChange(m, "", member.Role, len(member.Permissions) > 0); forbidden != "" {
 			return errRollback
 		}
 		if n, err := q.CountUserMemberships(ctx, member.UserID); err != nil {
@@ -408,6 +413,8 @@ func (s *Server) RegenerateInvite(ctx context.Context, req apigen.RegenerateInvi
 	switch {
 	case notFound:
 		return apigen.RegenerateInvite404JSONResponse{NotFoundJSONResponse: apigen.NotFoundJSONResponse{Message: "Không tìm thấy thành viên"}}, nil
+	case forbidden != "":
+		return apigen.RegenerateInvite403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse{Message: forbidden}}, nil
 	case conflict != "":
 		return apigen.RegenerateInvite409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse{Message: conflict}}, nil
 	case err != nil:

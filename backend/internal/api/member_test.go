@@ -374,3 +374,30 @@ func TestNoSelfOrUpwardRaise(t *testing.T) {
 		t.Errorf("owner granting a permission: %d, want 200", s)
 	}
 }
+
+// Review 2026-10-18: a new invite link hands over the account with its role, so issuing one follows the invite rules —
+// a viewer with user.manage cannot take a pending owner's (or admin's, or permission holder's) account this way.
+func TestRegenerateInviteFollowsRoleRules(t *testing.T) {
+	fx := newOrgFixture(t)
+	org := fx.OrgA
+	mgr := fx.NewUser(t, "regen-mgr@example.com", false, tenanttest.Member{Org: org, Role: "viewer", Permissions: []string{"user.manage"}})
+	invite := func(email, role string, perms []string) uuid.UUID {
+		_, body := fx.A.Do("POST", membersPath(org), map[string]any{"email": email, "role": role, "permissions": perms})
+		return uuid.MustParse(body["member"].(map[string]any)["userId"].(string))
+	}
+	owner := invite("pending-owner@example.com", "owner", []string{})
+	admin := invite("pending-admin@example.com", "admin", []string{})
+	revealer := invite("pending-rev@example.com", "viewer", []string{"credential.reveal"})
+	viewer := invite("pending-viewer@example.com", "viewer", []string{})
+	for name, id := range map[string]uuid.UUID{"owner": owner, "admin": admin, "permission holder": revealer} {
+		if status, body := mgr.Do("POST", memberPath(org, id)+"/invite", nil); status != http.StatusForbidden || body["inviteToken"] != nil {
+			t.Errorf("viewer with user.manage regenerating a pending %s: %d %v", name, status, body)
+		}
+	}
+	if status, _ := mgr.Do("POST", memberPath(org, viewer)+"/invite", nil); status != http.StatusOK {
+		t.Errorf("regenerating a pending viewer: %d", status)
+	}
+	if status, _ := fx.A.Do("POST", memberPath(org, owner)+"/invite", nil); status != http.StatusOK {
+		t.Errorf("owner regenerating a pending owner: %d", status)
+	}
+}

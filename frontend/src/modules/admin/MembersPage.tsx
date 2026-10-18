@@ -429,7 +429,10 @@ export function MembersPage() {
       cell: ({ row: { original: m } }) => {
         const isMe = m.userId === myId
         const editable = editableBy(abilities, m)
-        if (!isMe && !editable && !(abilities.canManage && m.pendingInvite)) return null
+        // A new link hands over the account with its role: the same rule as inviting it.
+        const canRelink =
+          m.pendingInvite && editable && (abilities.canAdmin || m.permissions.length === 0)
+        if (!isMe && !editable && !canRelink) return null
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -449,7 +452,7 @@ export function MembersPage() {
                   {t('members.edit')}
                 </DropdownMenuItem>
               )}
-              {abilities.canManage && m.pendingInvite && (
+              {canRelink && (
                 <DropdownMenuItem onClick={() => regen.mutate(m.userId, { onSuccess: setLink })}>
                   {t('members.newInviteLink')}
                 </DropdownMenuItem>
