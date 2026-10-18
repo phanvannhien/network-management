@@ -579,6 +579,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/devices/fill-lifecycle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fill empty end-of-sale / end-of-support dates from the model library (P2-22) — preview, then apply
+         * @description Only empty dates are written, never a date someone typed. Devices the caller may not edit are left out.
+         */
+        post: operations["fillDeviceLifecycle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/devices/bulk-update": {
         parameters: {
             query?: never;
@@ -2891,6 +2914,32 @@ export interface components {
             source: string;
             notes: string;
             images: components["schemas"]["CatalogImages"];
+            lifecycle: components["schemas"]["CatalogLifecycle"];
+        };
+        /** @description Vendor milestones of the model (P2-22), ISO dates, empty when not announced */
+        CatalogLifecycle: {
+            /** @description last day to order */
+            endOfSale: string;
+            /** @description last day of vendor support (Cisco LDoS) */
+            endOfSupport: string;
+            /** @description the vendor's end-of-life notice */
+            source: string;
+        };
+        LifecycleFill: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            model: string;
+            /**
+             * Format: date
+             * @description end-of-sale date written (null = left as it was)
+             */
+            eolDate: string | null;
+            /**
+             * Format: date
+             * @description end-of-support date written (null = left as it was)
+             */
+            eosDate: string | null;
         };
         /** @description Photos of the model (P2-12); file names for getCatalogImage, empty when there is none */
         CatalogImages: {
@@ -3947,6 +3996,8 @@ export interface components {
         DeviceRoleFilter: components["schemas"]["DeviceRole"][];
         /** @description Devices carrying any of the tags */
         DeviceTagFilter: string[];
+        /** @description Vendor end-of-support (P2-22) — expired before today and / or ending within the next 12 months */
+        DeviceSupportFilter: ("expired" | "soon")[];
         /** @description Devices in any of the clusters */
         DeviceClusterFilter: string[];
         DeviceSort: "hostname" | "mgmtIp" | "type" | "vendor" | "model" | "serial" | "site" | "category" | "lifecycle" | "warrantyEnd";
@@ -5256,6 +5307,8 @@ export interface operations {
                 tag?: components["parameters"]["DeviceTagFilter"];
                 /** @description Devices in any of the clusters */
                 clusterId?: components["parameters"]["DeviceClusterFilter"];
+                /** @description Vendor end-of-support (P2-22) — expired before today and / or ending within the next 12 months */
+                support?: components["parameters"]["DeviceSupportFilter"];
                 sort?: components["parameters"]["DeviceSort"];
                 desc?: components["parameters"]["DeviceSortDesc"];
                 /** @description 1-based page number */
@@ -5317,6 +5370,45 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    fillDeviceLifecycle: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path: {
+                /** @description Organization (tenant) the request is scoped to (ADR-023) */
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description false = preview only */
+                    apply: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description The devices that get (or got) dates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applied: boolean;
+                        devices: components["schemas"]["LifecycleFill"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     bulkUpdateDevices: {

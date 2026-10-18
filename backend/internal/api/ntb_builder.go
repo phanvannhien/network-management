@@ -175,7 +175,6 @@ func (b *ntbBuilder) frame(site, title string, x, y, w, h float32) {
 	b.f.Diagram.View.Annotations = append(b.f.Diagram.View.Annotations, ntbAnnotation{ID: b.ref("frame"), Kind: "zone", X: x, Y: y, Width: &w, Height: &h, Text: title, SiteRef: &sr})
 }
 
-
 // subif adds a VLAN sub-interface (802.1Q tag) on a port: "internal1.20" carrying VLAN 20.
 func (b *ntbBuilder) subif(dev, parent string, vid int32) string {
 	name := fmt.Sprintf("%s.%d", parent, vid)

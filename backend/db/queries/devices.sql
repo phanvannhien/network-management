@@ -29,6 +29,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
 ORDER BY
@@ -71,6 +73,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[]);
 
@@ -91,6 +95,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
 GROUP BY 2
@@ -110,6 +116,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
 GROUP BY 2
@@ -129,6 +137,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@site_ids::uuid[]), 0) = 0 OR d.site_id = ANY (@site_ids::uuid[]))
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
 GROUP BY 2
@@ -168,6 +178,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
 GROUP BY 2
 UNION ALL
@@ -188,6 +200,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
 GROUP BY 2
 UNION ALL
@@ -206,6 +220,8 @@ WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL
   AND (COALESCE(cardinality(@types::text[]), 0) = 0 OR d.type = ANY (@types::text[]))
   AND (COALESCE(cardinality(@vendors::text[]), 0) = 0 OR d.vendor = ANY (@vendors::text[]))
   AND (COALESCE(cardinality(@lifecycles::text[]), 0) = 0 OR d.lifecycle = ANY (@lifecycles::text[]))
+  AND (sqlc.narg('eos_from')::date IS NULL OR d.eos_date >= sqlc.narg('eos_from')::date)
+  AND (sqlc.narg('eos_before')::date IS NULL OR (d.eos_date < sqlc.narg('eos_before')::date AND d.lifecycle <> 'retired'))
   AND (COALESCE(cardinality(@roles::text[]), 0) = 0 OR d.role = ANY (@roles::text[]))
   AND (COALESCE(cardinality(@tags::text[]), 0) = 0 OR d.tags && @tags::text[])
   AND d.cluster_id IS NOT NULL
@@ -346,3 +362,11 @@ LEFT JOIN sites s ON s.id = d.site_id
 LEFT JOIN device_clusters c ON c.id = d.cluster_id
 WHERE d.organization_id = @organization_id AND d.id = ANY (@ids::uuid[]) AND d.deleted_at IS NULL
 ORDER BY d.hostname;
+
+-- name: ListDevicesMissingLifecycle :many
+-- Devices in use with an empty end-of-sale or end-of-support date (P2-22: filled from the model library).
+SELECT d.id, d.hostname, d.type, d.model, d.part_number, d.catalog_id, d.eol_date, d.eos_date
+FROM devices d
+WHERE d.organization_id = @organization_id AND d.deleted_at IS NULL AND d.lifecycle <> 'retired'
+  AND (d.eol_date IS NULL OR d.eos_date IS NULL)
+ORDER BY lower(d.hostname);

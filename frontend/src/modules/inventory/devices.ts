@@ -70,7 +70,7 @@ export type DeviceSort =
 
 export interface ListParams {
   q: string
-  /** FilterBar facets: site, type, vendor, lifecycle, role, tag. */
+  /** FilterBar facets: site, type, vendor, lifecycle, role, tag, cluster, support (vendor end-of-support). */
   facets: Record<string, string[]>
   /** Topbar filter: sites of this category and below. */
   categoryId: string | null
@@ -107,6 +107,7 @@ export async function fetchDevicePage(orgId: string, p: ListParams) {
         role: f.role?.length ? (f.role as DeviceRole[]) : undefined,
         tag: f.tag?.length ? f.tag : undefined,
         clusterId: f.cluster?.length ? f.cluster : undefined,
+        support: f.support?.length ? (f.support as ('expired' | 'soon')[]) : undefined,
         sort: p.sort?.id,
         desc: p.sort?.desc || undefined,
         page: p.pageIndex + 1,
@@ -209,6 +210,33 @@ export function useBulkUpdateDevices(orgId: string) {
       fail(r.error, r.response.status, i18n.t('errors.save'))
     },
     onSettled: invalidate,
+  })
+}
+
+export type LifecycleFill = components['schemas']['LifecycleFill']
+
+/**
+ * Empty end-of-sale / end-of-support dates filled from the model library (P2-22): `apply: false` previews, `true`
+ * writes (only empty dates, only devices the caller may edit).
+ */
+export function useFillLifecycle(orgId: string) {
+  const invalidate = useInvalidateDevices(orgId)
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (apply: boolean) => {
+      const r = await api.POST('/orgs/{orgId}/devices/fill-lifecycle', {
+        params: { ...csrfParam, path: { orgId } },
+        body: { apply },
+      })
+      if (r.data) return r.data
+      fail(r.error, r.response.status, i18n.t('errors.save'))
+    },
+    onSuccess: (data) => {
+      if (!data?.applied) return
+      void invalidate()
+      // The dashboard's expiry block counts these dates too.
+      void qc.invalidateQueries({ queryKey: ['orgs', orgId, 'dashboard'] })
+    },
   })
 }
 

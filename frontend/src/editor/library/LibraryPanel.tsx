@@ -303,6 +303,10 @@ function InventoryDevices({
                 model: d.model,
                 siteCode: d.siteCode,
                 managed: d.managed,
+                catalogId: d.catalogId,
+                partNumber: d.partNumber,
+                lifecycle: d.lifecycle,
+                eosDate: d.eosDate,
               },
             }}
             icon={icon(d.type)}

@@ -564,3 +564,34 @@ Quy ước: thêm ADR mới ở cuối; không sửa nội dung ADR cũ, đổi 
   - Ảnh trong NetBox do cộng đồng đóng góp, có thể đã lấy từ hãng. Rủi ro này thấp hơn tự lấy ảnh từ web hãng, nhưng không bằng không.
 - **Để sau:** người dùng tải ảnh riêng cho model / thiết bị (cùng P2-04); sơ đồ tủ rack dùng ảnh mặt trước; chế độ hiển thị "Ảnh thật"
   trên sơ đồ khi phóng to.
+
+### ADR-042 — Ngày ngừng bán / hết hỗ trợ trong thư viện model, tự điền cho thiết bị
+- **Bối cảnh:** P2-22, người dùng duyệt 2026-10-18.
+  - Thiết bị đã có hai trường ngày `eol_date` / `eos_date`, nhưng không ai tự tra được ngày của hãng.
+  - Dashboard đã đếm ngày hết hỗ trợ, nhưng hầu hết thiết bị để trống.
+- **Quyết định:**
+  - **Hai mốc theo thông báo End-of-Life chính thức của hãng:**
+    - *Ngừng bán* (End-of-Sale, ngày cuối còn đặt mua) ghi vào `eol_date`;
+    - *Hết hỗ trợ* (End-of-Support; Cisco gọi là LDoS) ghi vào `eos_date`.
+    - Nhãn trên giao diện đổi thành "Ngừng bán (End-of-Sale)" / "Hết hỗ trợ (End-of-Support)" cho khỏi nhầm.
+  - **Dữ liệu lưu ở `catalog/lifecycle.json`**, tách khỏi dữ liệu cổng vì hãng ra thông báo theo lịch riêng.
+    - Mỗi mục có link thông báo của hãng (https).
+    - Hãng chưa công bố thì để trống, không đoán hay suy ra từ đời máy.
+    - Loader kiểm tra: đúng định dạng YYYY-MM-DD, ngày ngừng bán không sau ngày hết hỗ trợ, id tồn tại.
+  - **Tự điền khi tạo thiết bị**, ở server, nên áp cho mọi đường tạo: form, nhập Excel, nhập .ntb, sơ đồ mẫu.
+    - Chỉ điền ô người dùng để trống.
+    - Lấy theo model thiết bị được tạo từ; nếu không có thì theo model / part number, cùng quy tắc so khớp với giao diện.
+  - **Thiết bị đã có:** nút "Điền ngày hết hỗ trợ" gọi `POST /devices/fill-lifecycle`.
+    - Xem trước rồi mới ghi.
+    - Chỉ ghi ô trống, không bao giờ ghi đè ngày người dùng đã nhập.
+    - Chỉ thiết bị người dùng có quyền sửa; mỗi thiết bị một dòng audit `device.update`.
+  - **Báo cáo:**
+    - danh sách thiết bị lọc `support=expired|soon` (đã hết / hết trong 12 tháng);
+    - dashboard có link sang danh sách đó;
+    - luật kiểm tra sơ đồ "thiết bị đang dùng đã hết hỗ trợ" (Warning, SRS §7).
+- **Lý do:** ngày hết hỗ trợ quyết định khi nào phải thay thiết bị (không còn bản vá bảo mật). Lấy từ nguồn chính thức, có link, thì kiểm chứng được. Không ghi đè thì giữ được thông tin người dùng có (hợp đồng gia hạn, ngày riêng theo SKU vùng).
+- **Đánh đổi:**
+  - Dữ liệu cập nhật theo bản phần mềm.
+  - Một số SKU theo vùng (Cisco -IN, -BR) có ngày khác; người dùng tự sửa.
+  - Huawei, Aruba 2530 chưa có vì chưa tải được nguồn hoặc chưa xác nhận được ngày.
+- **Để sau:** email cảnh báo theo mốc (P2-05); báo cáo Excel thiết bị hết hỗ trợ (P2-11).

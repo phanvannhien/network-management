@@ -1,0 +1,732 @@
+{
+  "entries": [
+    {
+      "id": "cisco-c1000-16p-2g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-16P-2G"
+    },
+    {
+      "id": "cisco-c1000-16t-2g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-16T-2G"
+    },
+    {
+      "id": "cisco-c1000-24fp-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-24FP-4G"
+    },
+    {
+      "id": "cisco-c1000-24p-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-24P-4G"
+    },
+    {
+      "id": "cisco-c1000-24p-4x-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-24P-4X"
+    },
+    {
+      "id": "cisco-c1000-24t-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-24T-4G"
+    },
+    {
+      "id": "cisco-c1000-24t-4x-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-24T-4X"
+    },
+    {
+      "id": "cisco-c1000-48fp-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-48FP-4G"
+    },
+    {
+      "id": "cisco-c1000-48p-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-48P-4G"
+    },
+    {
+      "id": "cisco-c1000-48p-4x-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-48P-4X"
+    },
+    {
+      "id": "cisco-c1000-48t-4g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-48T-4G"
+    },
+    {
+      "id": "cisco-c1000-48t-4x-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-48T-4X"
+    },
+    {
+      "id": "cisco-c1000-8fp-2g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-8FP-2G"
+    },
+    {
+      "id": "cisco-c1000-8p-2g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-8P-E-2G"
+    },
+    {
+      "id": "cisco-c1000-8t-2g-l",
+      "endOfSale": "2025-04-30",
+      "endOfSupport": "2030-04-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-1000-series-switches/catalyst-1000-series-switches-eol.html",
+      "note": "EoL bulletin EOL15390; replacement C1300-8T-E-2G"
+    },
+    {
+      "id": "cisco-c1111-4p",
+      "endOfSale": "2026-07-28",
+      "endOfSupport": "2031-07-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/1000-series-integrated-services-routers-isr/isr-1111-series-ethernet-routers-eol.html",
+      "note": "EoL bulletin EOL15719; replacement C1121-4P"
+    },
+    {
+      "id": "cisco-c1111-8p",
+      "endOfSale": "2026-07-28",
+      "endOfSupport": "2031-07-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/1000-series-integrated-services-routers-isr/isr-1111-series-ethernet-routers-eol.html",
+      "note": "EoL bulletin EOL15719; replacement C1121-8P"
+    },
+    {
+      "id": "cisco-c2911",
+      "endOfSale": "2017-12-09",
+      "endOfSupport": "2022-12-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/eos-eol-notice-c51-737831.html",
+      "note": "EoL bulletin EOL11158; replacement ISR4331/K9"
+    },
+    {
+      "id": "cisco-c2921",
+      "endOfSale": "2017-12-09",
+      "endOfSupport": "2022-12-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/eos-eol-notice-c51-737831.html",
+      "note": "EoL bulletin EOL11158; replacement ISR4331/K9"
+    },
+    {
+      "id": "cisco-c2951",
+      "endOfSale": "2017-12-09",
+      "endOfSupport": "2022-12-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/2900-series-integrated-services-routers-isr/eos-eol-notice-c51-737831.html",
+      "note": "EoL bulletin EOL11158; replacement ISR4351/K9"
+    },
+    {
+      "id": "cisco-c8200-1n-4t",
+      "endOfSale": "2027-07-31",
+      "endOfSupport": "2032-07-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/networking/sdwan-routers/catalyst-8000-edge-platforms/catalyst-c8300-2n2s-4t2x-6t-1n-4t-c8200l-eol.html",
+      "note": "EoL bulletin EOL15955 (announced 2026-07-27); replacement C8235-E-G2"
+    },
+    {
+      "id": "cisco-c8300-1n1s-6t",
+      "endOfSale": "2027-01-31",
+      "endOfSupport": "2032-01-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/networking/sdwan-routers/catalyst-8000-edge-platforms/catalyst-c8500l-8s4x-4t2x-c8300-1n1s-6t-eol.html",
+      "note": "EoL bulletin EOL15950 (announced 2026-07-27); replacement C8375-E-G2"
+    },
+    {
+      "id": "cisco-c8300-2n2s-4t2x",
+      "endOfSale": "2027-07-31",
+      "endOfSupport": "2032-07-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/networking/sdwan-routers/catalyst-8000-edge-platforms/catalyst-c8300-2n2s-4t2x-6t-1n-4t-c8200l-eol.html",
+      "note": "EoL bulletin EOL15955 (announced 2026-07-27); no migration product listed"
+    },
+    {
+      "id": "cisco-cbs250-24p-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-24P-4G"
+    },
+    {
+      "id": "cisco-cbs250-24t-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-24T-4G"
+    },
+    {
+      "id": "cisco-cbs250-24t-4x",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-24T-4X"
+    },
+    {
+      "id": "cisco-cbs250-48p-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-48P-4G"
+    },
+    {
+      "id": "cisco-cbs250-48t-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-48T-4G"
+    },
+    {
+      "id": "cisco-cbs250-8t-e-2g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-250-series-smart-switches/business-cbs250-series-switch-mod-eol.html",
+      "note": "EoL bulletin EOL15388 (-EU/-UK/-NA SKUs); replacement C1200-8T-E-2G"
+    },
+    {
+      "id": "cisco-cbs350-16t-2g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-16T-2G"
+    },
+    {
+      "id": "cisco-cbs350-24fp-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-24FP-4G"
+    },
+    {
+      "id": "cisco-cbs350-24p-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-24P-4G"
+    },
+    {
+      "id": "cisco-cbs350-24t-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-24T-4G"
+    },
+    {
+      "id": "cisco-cbs350-24t-4x",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-24T-4X"
+    },
+    {
+      "id": "cisco-cbs350-48p-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-48P-4G"
+    },
+    {
+      "id": "cisco-cbs350-48t-4g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-48T-4G"
+    },
+    {
+      "id": "cisco-cbs350-48t-4x",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-48T-4X"
+    },
+    {
+      "id": "cisco-cbs350-8p-e-2g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-8P-E-2G"
+    },
+    {
+      "id": "cisco-cbs350-8t-e-2g",
+      "endOfSale": "2024-10-29",
+      "endOfSupport": "2029-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/business-350-series-managed-switches/business-350-series-switches-mod-eol.html",
+      "note": "EoL bulletin EOL15389 (-EU/-UK/-NA SKUs); replacement C1300-8T-E-2G"
+    },
+    {
+      "id": "cisco-isr4221",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8200L-1N-4T (ISR4221-AX/K9 not listed in notice)"
+    },
+    {
+      "id": "cisco-isr4321",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8200-1N-4T"
+    },
+    {
+      "id": "cisco-isr4331",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8200-1N-4T"
+    },
+    {
+      "id": "cisco-isr4351",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8300-2N2S-6T"
+    },
+    {
+      "id": "cisco-isr4431",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8300-1N1S-4T2X or C8300-1N1S-6T"
+    },
+    {
+      "id": "cisco-isr4451-x",
+      "endOfSale": "2023-11-07",
+      "endOfSupport": "2028-11-30",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/routers/4000-series-integrated-services-routers-isr/select-isr4k-series-platform-eol.html",
+      "note": "EoL bulletin EOL14896; replacement C8300-2N2S-4T2X or C8300-2N2S-6T"
+    },
+    {
+      "id": "cisco-meraki-mr36",
+      "endOfSale": "2026-12-31",
+      "endOfSupport": "2031-12-31",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki EOL announced 2026-03-30 (MR36/MR36H/MR44/MR46/MR46E)"
+    },
+    {
+      "id": "cisco-meraki-mr44",
+      "endOfSale": "2026-12-31",
+      "endOfSupport": "2031-12-31",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki EOL announced 2026-03-30 (MR36/MR36H/MR44/MR46/MR46E)"
+    },
+    {
+      "id": "cisco-meraki-ms120-24p",
+      "endOfSale": "2025-03-28",
+      "endOfSupport": "2030-03-28",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki MS120 family EOS announced 2024-03-28; successor MS130"
+    },
+    {
+      "id": "cisco-meraki-ms120-48lp",
+      "endOfSale": "2025-03-28",
+      "endOfSupport": "2030-03-28",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki MS120 family EOS announced 2024-03-28; successor MS130"
+    },
+    {
+      "id": "cisco-meraki-ms120-8",
+      "endOfSale": "2025-03-28",
+      "endOfSupport": "2030-03-28",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki MS120 family EOS announced 2024-03-28; successor MS130"
+    },
+    {
+      "id": "cisco-meraki-ms120-8lp",
+      "endOfSale": "2025-03-28",
+      "endOfSupport": "2030-03-28",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki MS120 family EOS announced 2024-03-28; successor MS130"
+    },
+    {
+      "id": "cisco-meraki-mx64",
+      "endOfSale": "2022-07-26",
+      "endOfSupport": "2027-07-26",
+      "source": "https://documentation.meraki.com/General_Administration/Other_Topics/Meraki_End-of-Life_(EOL)_Products_and_Dates",
+      "note": "Meraki EOL announced 2022-01-26 (MX64-HW, MX64W-HW)"
+    },
+    {
+      "id": "cisco-ws-c2960l-24ps-ll",
+      "endOfSale": "2021-10-31",
+      "endOfSupport": "2026-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-l-series-switches/eos-eol-notice-c51-744433.html",
+      "note": "EoL bulletin EOL13611; replacement C1000-24P-4G-L"
+    },
+    {
+      "id": "cisco-ws-c2960l-24ts-ll",
+      "endOfSale": "2021-10-31",
+      "endOfSupport": "2026-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-l-series-switches/eos-eol-notice-c51-744433.html",
+      "note": "EoL bulletin EOL13611; replacement C1000-24T-4G-L"
+    },
+    {
+      "id": "cisco-ws-c2960l-48ps-ll",
+      "endOfSale": "2021-10-31",
+      "endOfSupport": "2026-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-l-series-switches/eos-eol-notice-c51-744433.html",
+      "note": "EoL bulletin EOL13611; replacement C1000-48P-4G-L"
+    },
+    {
+      "id": "cisco-ws-c2960l-48ts-ll",
+      "endOfSale": "2021-10-31",
+      "endOfSupport": "2026-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-l-series-switches/eos-eol-notice-c51-744433.html",
+      "note": "EoL bulletin EOL13611; replacement C1000-48T-4G-L"
+    },
+    {
+      "id": "cisco-ws-c2960x-24ps-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-24P-4G"
+    },
+    {
+      "id": "cisco-ws-c2960x-24td-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-24T-4X"
+    },
+    {
+      "id": "cisco-ws-c2960x-24ts-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-24T-4G"
+    },
+    {
+      "id": "cisco-ws-c2960x-48fps-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-48P-4G"
+    },
+    {
+      "id": "cisco-ws-c2960x-48td-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-48T-4X"
+    },
+    {
+      "id": "cisco-ws-c2960x-48ts-l",
+      "endOfSale": "2022-10-31",
+      "endOfSupport": "2027-10-31",
+      "source": "https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-2960-x-series-switches/eos-eol-notice-c51-744432.html",
+      "note": "EoL bulletin EOL13603; replacement C9200L-48T-4G"
+    },
+    {
+      "id": "fortinet-fortiap-231f",
+      "endOfSale": "2024-10-24",
+      "endOfSupport": "2029-10-24",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiAP-231F (listed without region suffix) (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortiap-431f",
+      "endOfSale": "2025-08-29",
+      "endOfSupport": "2030-08-29",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiAP-431F (listed without region suffix) (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-100e",
+      "endOfSale": "2021-08-17",
+      "endOfSupport": "2026-08-17",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-100E; support already ended (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-100f",
+      "endOfSale": "2026-04-16",
+      "endOfSupport": "2031-04-16",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-100F (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-101f",
+      "endOfSale": "2026-04-16",
+      "endOfSupport": "2031-04-16",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-101F (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-200e",
+      "endOfSale": "2025-10-13",
+      "endOfSupport": "2030-10-13",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-200E (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-200f",
+      "endOfSale": "2026-03-01",
+      "endOfSupport": "2031-03-01",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-200F (FG-200F-USG differs: 2025-10-13/2030-10-13) (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-201f",
+      "endOfSale": "2026-03-01",
+      "endOfSupport": "2031-03-01",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-201F (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-600f",
+      "endOfSale": "2026-05-01",
+      "endOfSupport": "2031-05-01",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-600F (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-60e",
+      "endOfSale": "2021-12-29",
+      "endOfSupport": "2026-12-29",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-60E (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-60f",
+      "endOfSale": "2027-01-13",
+      "endOfSupport": "2032-01-13",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-60F; EOO announced, future date (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-61f",
+      "endOfSale": "2027-01-13",
+      "endOfSupport": "2032-01-13",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-61F; EOO announced, future date (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortigate-70f",
+      "endOfSale": "2026-05-17",
+      "endOfSupport": "2031-05-17",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiGate-70F (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortiswitch-424e",
+      "endOfSale": "2026-09-24",
+      "endOfSupport": "2031-09-24",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiSwitch-424E (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "fortinet-fortiswitch-424e-poe",
+      "endOfSale": "2026-09-24",
+      "endOfSupport": "2031-09-24",
+      "source": "https://support.fortinet.com/rss/Hardware.xml",
+      "note": "FortiSwitch-424E-POE (Fortinet Product Life Cycle, hardware feed; EOO/EOS)"
+    },
+    {
+      "id": "juniper-ex2300-24p",
+      "endOfSale": "2026-09-30",
+      "endOfSupport": "2031-09-30",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "TSB107683 EX2300 EOL: last order / end of support"
+    },
+    {
+      "id": "juniper-ex2300-24t",
+      "endOfSale": "2026-09-30",
+      "endOfSupport": "2031-09-30",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "TSB107683 EX2300 EOL: last order / end of support"
+    },
+    {
+      "id": "juniper-ex2300-48p",
+      "endOfSale": "2026-09-30",
+      "endOfSupport": "2031-09-30",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "TSB107683 EX2300 EOL: last order / end of support"
+    },
+    {
+      "id": "juniper-ex2300-48t",
+      "endOfSale": "2026-09-30",
+      "endOfSupport": "2031-09-30",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "TSB107683 EX2300 EOL: last order / end of support"
+    },
+    {
+      "id": "juniper-ex2300-c-12p",
+      "endOfSale": "2026-09-30",
+      "endOfSupport": "2031-09-30",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "TSB107683 EX2300 EOL: last order / end of support"
+    },
+    {
+      "id": "juniper-ex4300-48p",
+      "endOfSale": "2024-03-31",
+      "endOfSupport": "2029-03-31",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "EX4300 EOL (announced 2022-06-24): last order / end of support"
+    },
+    {
+      "id": "juniper-ex4300-48t",
+      "endOfSale": "2024-03-31",
+      "endOfSupport": "2029-03-31",
+      "source": "https://support.juniper.net/support/eol/product/ex_series/",
+      "note": "EX4300 EOL (announced 2022-06-24): last order / end of support"
+    },
+    {
+      "id": "juniper-srx1500",
+      "endOfSale": "2026-04-15",
+      "endOfSupport": "2031-04-15",
+      "source": "https://support.juniper.net/support/eol/product/srx_series/",
+      "note": "TSB101240 SRX1500 SYS-JB/JE-AC: last order / end of support"
+    },
+    {
+      "id": "paloalto-pa-220",
+      "endOfSale": "2023-01-31",
+      "endOfSupport": "2028-01-31",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-220 End-of-Sale / End-of-Life (PA-220R has different dates)"
+    },
+    {
+      "id": "paloalto-pa-3220",
+      "endOfSale": "2023-08-31",
+      "endOfSupport": "2028-08-31",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-3220"
+    },
+    {
+      "id": "paloalto-pa-410",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-410; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-415",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-415; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-440",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-440; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-445",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-445; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-450",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-450; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-460",
+      "endOfSale": "2027-03-22",
+      "endOfSupport": "2032-03-21",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-460; announced future End-of-Sale"
+    },
+    {
+      "id": "paloalto-pa-820",
+      "endOfSale": "2024-08-31",
+      "endOfSupport": "2029-08-31",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-820"
+    },
+    {
+      "id": "paloalto-pa-850",
+      "endOfSale": "2024-08-31",
+      "endOfSupport": "2029-08-31",
+      "source": "https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates",
+      "note": "PA-850"
+    },
+    {
+      "id": "sonicwall-tz270",
+      "endOfSale": "2026-06-30",
+      "endOfSupport": "",
+      "source": "https://www.sonicwall.com/support/product-notification/last-time-buy-announcement-sonicwall-tz-270-and-tz-470-firewall-appliance/kA1VN000001Zmij0AC",
+      "note": "Last Day Order; end of support not yet published"
+    },
+    {
+      "id": "sonicwall-tz470",
+      "endOfSale": "2026-06-30",
+      "endOfSupport": "",
+      "source": "https://www.sonicwall.com/support/product-notification/last-time-buy-announcement-sonicwall-tz-270-and-tz-470-firewall-appliance/kA1VN000001Zmij0AC",
+      "note": "Last Day Order; end of support not yet published"
+    },
+    {
+      "id": "sophos-xg-106",
+      "endOfSale": "2022-03-31",
+      "endOfSupport": "2025-03-31",
+      "source": "https://www.sophos.com/en-us/partner-news/lifecycle-extension-for-xg-series-hardware-and-subscriptions",
+      "note": "XG 106 hardware: EoS per Dec-2021 lifecycle extension, EoL 2025-03-31 (retirement calendar KBA-000003353 may show EoS 2021-09-30)"
+    },
+    {
+      "id": "sophos-xg-125",
+      "endOfSale": "2022-03-31",
+      "endOfSupport": "2025-03-31",
+      "source": "https://www.sophos.com/en-us/partner-news/lifecycle-extension-for-xg-series-hardware-and-subscriptions",
+      "note": "XG 125 hardware: EoS per Dec-2021 lifecycle extension, EoL 2025-03-31 (retirement calendar KBA-000003353 may show EoS 2021-09-30)"
+    },
+    {
+      "id": "sophos-xg-135",
+      "endOfSale": "2022-03-31",
+      "endOfSupport": "2025-03-31",
+      "source": "https://www.sophos.com/en-us/partner-news/lifecycle-extension-for-xg-series-hardware-and-subscriptions",
+      "note": "XG 135 hardware: EoS per Dec-2021 lifecycle extension, EoL 2025-03-31 (retirement calendar KBA-000003353 may show EoS 2021-09-30)"
+    },
+    {
+      "id": "sophos-xg-86",
+      "endOfSale": "2022-03-31",
+      "endOfSupport": "2025-03-31",
+      "source": "https://www.sophos.com/en-us/partner-news/lifecycle-extension-for-xg-series-hardware-and-subscriptions",
+      "note": "XG 86 hardware: EoS per Dec-2021 lifecycle extension, EoL 2025-03-31 (retirement calendar KBA-000003353 may show EoS 2021-09-30)"
+    },
+    {
+      "id": "watchguard-firebox-t25",
+      "endOfSale": "2025-12-01",
+      "endOfSupport": "2031-07-01",
+      "source": "https://www.watchguard.com/wgrd-trust-center/end-of-life-policy",
+      "note": "Firebox T25 EOS/EOL (T25-W differs)"
+    },
+    {
+      "id": "watchguard-firebox-t45",
+      "endOfSale": "2025-04-01",
+      "endOfSupport": "2031-07-01",
+      "source": "https://www.watchguard.com/wgrd-trust-center/end-of-life-policy",
+      "note": "Firebox T45 non-PoE EOS/EOL (T45-PoE EOS 2026-04-01)"
+    },
+    {
+      "id": "watchguard-firebox-t85-poe",
+      "endOfSale": "2025-10-01",
+      "endOfSupport": "2031-07-01",
+      "source": "https://www.watchguard.com/wgrd-trust-center/end-of-life-policy",
+      "note": "Firebox T85-PoE EOS/EOL"
+    }
+  ]
+}

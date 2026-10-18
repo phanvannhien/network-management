@@ -1485,6 +1485,24 @@ func (e DeviceSort) Valid() bool {
 	}
 }
 
+// Defines values for ListDevicesParamsSupport.
+const (
+	Expired ListDevicesParamsSupport = "expired"
+	Soon    ListDevicesParamsSupport = "soon"
+)
+
+// Valid indicates whether the value is a known member of the ListDevicesParamsSupport enum.
+func (e ListDevicesParamsSupport) Valid() bool {
+	switch e {
+	case Expired:
+		return true
+	case Soon:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListDevicesParamsSort.
 const (
 	ListDevicesParamsSortCategory    ListDevicesParamsSort = "category"
@@ -1676,6 +1694,18 @@ type CatalogImages struct {
 	Source string `json:"source"`
 }
 
+// CatalogLifecycle Vendor milestones of the model (P2-22), ISO dates, empty when not announced
+type CatalogLifecycle struct {
+	// EndOfSale last day to order
+	EndOfSale string `json:"endOfSale"`
+
+	// EndOfSupport last day of vendor support (Cisco LDoS)
+	EndOfSupport string `json:"endOfSupport"`
+
+	// Source the vendor's end-of-life notice
+	Source string `json:"source"`
+}
+
 // CatalogModel defines model for CatalogModel.
 type CatalogModel struct {
 	Aliases []string `json:"aliases"`
@@ -1683,16 +1713,19 @@ type CatalogModel struct {
 	Id      string   `json:"id"`
 
 	// Images Photos of the model (P2-12); file names for getCatalogImage, empty when there is none
-	Images      CatalogImages `json:"images"`
-	Model       string        `json:"model"`
-	Notes       string        `json:"notes"`
-	PartNumbers []string      `json:"partNumbers"`
-	PortCount   int32         `json:"portCount"`
-	Ports       []PortGroup   `json:"ports"`
-	Source      string        `json:"source"`
-	Type        DeviceType    `json:"type"`
-	UHeight     int32         `json:"uHeight"`
-	Vendor      string        `json:"vendor"`
+	Images CatalogImages `json:"images"`
+
+	// Lifecycle Vendor milestones of the model (P2-22), ISO dates, empty when not announced
+	Lifecycle   CatalogLifecycle `json:"lifecycle"`
+	Model       string           `json:"model"`
+	Notes       string           `json:"notes"`
+	PartNumbers []string         `json:"partNumbers"`
+	PortCount   int32            `json:"portCount"`
+	Ports       []PortGroup      `json:"ports"`
+	Source      string           `json:"source"`
+	Type        DeviceType       `json:"type"`
+	UHeight     int32            `json:"uHeight"`
+	Vendor      string           `json:"vendor"`
 
 	// Verified port layout checked against the vendor datasheet at source
 	Verified bool `json:"verified"`
@@ -3083,6 +3116,18 @@ type IpRangeUpdate struct {
 // IpRole primary / secondary address of an interface; nat / public: a translated or public address (may be shared); vip: a VRRP / HSRP virtual gateway IP, configured on every router of the group (ADR-038)
 type IpRole string
 
+// LifecycleFill defines model for LifecycleFill.
+type LifecycleFill struct {
+	// EolDate end-of-sale date written (null = left as it was)
+	EolDate *openapi_types.Date `json:"eolDate"`
+
+	// EosDate end-of-support date written (null = left as it was)
+	EosDate  *openapi_types.Date `json:"eosDate"`
+	Hostname string              `json:"hostname"`
+	Id       openapi_types.UUID  `json:"id"`
+	Model    string              `json:"model"`
+}
+
 // Link defines model for Link.
 type Link struct {
 	A LinkEnd `json:"a"`
@@ -4104,6 +4149,9 @@ type DeviceSort string
 // DeviceSortDesc defines model for DeviceSortDesc.
 type DeviceSortDesc = bool
 
+// DeviceSupportFilter defines model for DeviceSupportFilter.
+type DeviceSupportFilter = []string
+
 // DeviceTagFilter defines model for DeviceTagFilter.
 type DeviceTagFilter = []string
 
@@ -4407,14 +4455,20 @@ type ListDevicesParams struct {
 	Tag *DeviceTagFilter `form:"tag,omitempty" json:"tag,omitempty"`
 
 	// ClusterId Devices in any of the clusters
-	ClusterId *DeviceClusterFilter   `form:"clusterId,omitempty" json:"clusterId,omitempty"`
-	Sort      *ListDevicesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
-	Desc      *DeviceSortDesc        `form:"desc,omitempty" json:"desc,omitempty"`
+	ClusterId *DeviceClusterFilter `form:"clusterId,omitempty" json:"clusterId,omitempty"`
+
+	// Support Vendor end-of-support (P2-22) — expired before today and / or ending within the next 12 months
+	Support *DeviceSupportFilter   `form:"support,omitempty" json:"support,omitempty"`
+	Sort    *ListDevicesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Desc    *DeviceSortDesc        `form:"desc,omitempty" json:"desc,omitempty"`
 
 	// Page 1-based page number
 	Page     *AuditPageNumber `form:"page,omitempty" json:"page,omitempty"`
 	PageSize *AuditPageSize   `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
+
+// ListDevicesParamsSupport defines parameters for ListDevices.
+type ListDevicesParamsSupport string
 
 // ListDevicesParamsSort defines parameters for ListDevices.
 type ListDevicesParamsSort string
@@ -4436,6 +4490,17 @@ type BulkUpdateDevicesParams struct {
 
 // DeviceDeleteImpactParams defines parameters for DeviceDeleteImpact.
 type DeviceDeleteImpactParams struct {
+	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
+}
+
+// FillDeviceLifecycleJSONBody defines parameters for FillDeviceLifecycle.
+type FillDeviceLifecycleJSONBody struct {
+	// Apply false = preview only
+	Apply bool `json:"apply"`
+}
+
+// FillDeviceLifecycleParams defines parameters for FillDeviceLifecycle.
+type FillDeviceLifecycleParams struct {
 	XCSRFToken CsrfToken `json:"X-CSRF-Token"`
 }
 
@@ -4831,6 +4896,9 @@ type BulkUpdateDevicesJSONRequestBody = DeviceBulkUpdate
 // DeviceDeleteImpactJSONRequestBody defines body for DeviceDeleteImpact for application/json ContentType.
 type DeviceDeleteImpactJSONRequestBody = DeviceIds
 
+// FillDeviceLifecycleJSONRequestBody defines body for FillDeviceLifecycle for application/json ContentType.
+type FillDeviceLifecycleJSONRequestBody FillDeviceLifecycleJSONBody
+
 // UpdateDeviceJSONRequestBody defines body for UpdateDevice for application/json ContentType.
 type UpdateDeviceJSONRequestBody = DeviceUpdate
 
@@ -5106,6 +5174,9 @@ type ServerInterface interface {
 	// DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
 	// (POST /orgs/{orgId}/devices/delete-impact)
 	DeviceDeleteImpact(w http.ResponseWriter, r *http.Request, orgId OrgId, params DeviceDeleteImpactParams)
+	// FillDeviceLifecycle Fill empty end-of-sale / end-of-support dates from the model library (P2-22) — preview, then apply
+	// (POST /orgs/{orgId}/devices/fill-lifecycle)
+	FillDeviceLifecycle(w http.ResponseWriter, r *http.Request, orgId OrgId, params FillDeviceLifecycleParams)
 	// DeleteDevice Soft-delete a device
 	// (DELETE /orgs/{orgId}/devices/{deviceId})
 	DeleteDevice(w http.ResponseWriter, r *http.Request, orgId OrgId, deviceId DeviceId, params DeleteDeviceParams)
@@ -5664,6 +5735,12 @@ func (_ Unimplemented) BulkUpdateDevices(w http.ResponseWriter, r *http.Request,
 // DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
 // (POST /orgs/{orgId}/devices/delete-impact)
 func (_ Unimplemented) DeviceDeleteImpact(w http.ResponseWriter, r *http.Request, orgId OrgId, params DeviceDeleteImpactParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// FillDeviceLifecycle Fill empty end-of-sale / end-of-support dates from the model library (P2-22) — preview, then apply
+// (POST /orgs/{orgId}/devices/fill-lifecycle)
+func (_ Unimplemented) FillDeviceLifecycle(w http.ResponseWriter, r *http.Request, orgId OrgId, params FillDeviceLifecycleParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -8624,6 +8701,19 @@ func (siw *ServerInterfaceWrapper) ListDevices(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// ------------- Optional query parameter "support" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "support"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "support", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "sort" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
@@ -8894,6 +8984,60 @@ func (siw *ServerInterfaceWrapper) DeviceDeleteImpact(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeviceDeleteImpact(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FillDeviceLifecycle operation middleware
+func (siw *ServerInterfaceWrapper) FillDeviceLifecycle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FillDeviceLifecycleParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FillDeviceLifecycle(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -13232,6 +13376,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices", wrapper.CreateDevice)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/orgs/{orgId}/devices/fill-lifecycle", wrapper.FillDeviceLifecycle)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/orgs/{orgId}/devices/bulk-update", wrapper.BulkUpdateDevices)
 	})
 	r.Group(func(r chi.Router) {
@@ -17396,6 +17543,89 @@ func (response DeviceDeleteImpact403JSONResponse) VisitDeviceDeleteImpactRespons
 type DeviceDeleteImpact404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response DeviceDeleteImpact404JSONResponse) VisitDeviceDeleteImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FillDeviceLifecycleRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params FillDeviceLifecycleParams
+	Body   *FillDeviceLifecycleJSONRequestBody
+}
+
+type FillDeviceLifecycleResponseObject interface {
+	VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error
+}
+
+type FillDeviceLifecycle200JSONResponse struct {
+	Applied bool            `json:"applied"`
+	Devices []LifecycleFill `json:"devices"`
+}
+
+func (response FillDeviceLifecycle200JSONResponse) VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FillDeviceLifecycle400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response FillDeviceLifecycle400JSONResponse) VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FillDeviceLifecycle401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response FillDeviceLifecycle401JSONResponse) VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FillDeviceLifecycle403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response FillDeviceLifecycle403JSONResponse) VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FillDeviceLifecycle404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response FillDeviceLifecycle404JSONResponse) VisitFillDeviceLifecycleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -23591,6 +23821,9 @@ type StrictServerInterface interface {
 	// DeviceDeleteImpact What deleting these devices takes along (read only) — shown before deleting from the inventory
 	// (POST /orgs/{orgId}/devices/delete-impact)
 	DeviceDeleteImpact(ctx context.Context, request DeviceDeleteImpactRequestObject) (DeviceDeleteImpactResponseObject, error)
+	// FillDeviceLifecycle Fill empty end-of-sale / end-of-support dates from the model library (P2-22) — preview, then apply
+	// (POST /orgs/{orgId}/devices/fill-lifecycle)
+	FillDeviceLifecycle(ctx context.Context, request FillDeviceLifecycleRequestObject) (FillDeviceLifecycleResponseObject, error)
 	// DeleteDevice Soft-delete a device
 	// (DELETE /orgs/{orgId}/devices/{deviceId})
 	DeleteDevice(ctx context.Context, request DeleteDeviceRequestObject) (DeleteDeviceResponseObject, error)
@@ -25501,6 +25734,40 @@ func (sh *strictHandler) DeviceDeleteImpact(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeviceDeleteImpactResponseObject); ok {
 		if err := validResponse.VisitDeviceDeleteImpactResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FillDeviceLifecycle operation middleware
+func (sh *strictHandler) FillDeviceLifecycle(w http.ResponseWriter, r *http.Request, orgId OrgId, params FillDeviceLifecycleParams) {
+	var request FillDeviceLifecycleRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body FillDeviceLifecycleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FillDeviceLifecycle(ctx, request.(FillDeviceLifecycleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FillDeviceLifecycle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FillDeviceLifecycleResponseObject); ok {
+		if err := validResponse.VisitFillDeviceLifecycleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -539,6 +539,28 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		}
 	}
 	params.SortDesc = p.Desc != nil && *p.Desc
+	if p.Support != nil && len(*p.Support) > 0 {
+		// Vendor end-of-support (P2-22): already past and / or within the next 12 months.
+		expired, soon := false, false
+		for _, v := range *p.Support {
+			switch apigen.ListDevicesParamsSupport(v) {
+			case apigen.Expired:
+				expired = true
+			case apigen.Soon:
+				soon = true
+			default:
+				return bad("Bộ lọc hỗ trợ không hợp lệ")
+			}
+		}
+		today := calendarToday()
+		params.EosBefore = pgtype.Date{Time: today.AddDate(1, 0, 0), Valid: true}
+		if !soon {
+			params.EosBefore = pgtype.Date{Time: today, Valid: true}
+		}
+		if !expired {
+			params.EosFrom = pgtype.Date{Time: today, Valid: true}
+		}
+	}
 
 	rows, err := s.q.ListDevices(ctx, params)
 	if err != nil {
@@ -548,7 +570,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		OrganizationID: params.OrganizationID, Q: params.Q,
 		CategoryFilter: params.CategoryFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
-		ClusterIds: params.ClusterIds,
+		ClusterIds: params.ClusterIds, EosFrom: params.EosFrom, EosBefore: params.EosBefore,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("count devices: %w", err)
@@ -557,7 +579,7 @@ func (s *Server) ListDevices(ctx context.Context, req apigen.ListDevicesRequestO
 		OrganizationID: params.OrganizationID, Q: params.Q,
 		CategoryFilter: params.CategoryFilter, SiteIds: params.SiteIds, Types: params.Types,
 		Vendors: params.Vendors, Lifecycles: params.Lifecycles, Roles: params.Roles, Tags: params.Tags,
-		ClusterIds: params.ClusterIds,
+		ClusterIds: params.ClusterIds, EosFrom: params.EosFrom, EosBefore: params.EosBefore,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("device facets: %w", err)
@@ -745,6 +767,11 @@ func writeDevice(ctx context.Context, q store.Querier, m tenant.Membership, f de
 			}
 			catalogPorts = &store.DeviceTemplate{Ports: raw}
 			catalogID = c.Id
+		}
+		// A new device takes the vendor's end-of-sale / end-of-support dates from the library when none were given
+		// (P2-22): the model it is made from, else the one its model / part number names.
+		if id == nil {
+			f.eol, f.eos = fillDates(f.eol, f.eos, lifecycleFor(catalogID, f.model, f.partNumber, f.typ))
 		}
 		// The management interface must be one of the device's own (ADR-012).
 		var mgmt pgtype.UUID

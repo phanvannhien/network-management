@@ -1,4 +1,6 @@
 import { ChevronDown, ChevronRight, Copy } from 'lucide-react'
+import { formatDate } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -26,6 +28,7 @@ export function SystemTemplates({
 }) {
   const { t } = useTranslation()
   const catalog = useCatalog(orgId)
+  const [today] = useState(() => new Date().toLocaleDateString('sv-SE')) // YYYY-MM-DD, local
   const [q, setQ] = useState('')
   const [vendor, setVendor] = useState('')
   const [open, setOpen] = useState<string | null>(null)
@@ -113,6 +116,20 @@ export function SystemTemplates({
                         · {t('deviceImport.catalogUnverified')}
                       </span>
                     )}
+                    {m.lifecycle.endOfSupport && (
+                      // Vendor milestone (P2-22): red once support has ended.
+                      <span
+                        className={cn(
+                          'ml-1',
+                          m.lifecycle.endOfSupport < today && 'text-status-down',
+                        )}
+                      >
+                        ·{' '}
+                        {t('templates.endOfSupport', {
+                          date: formatDate(m.lifecycle.endOfSupport),
+                        })}
+                      </span>
+                    )}
                   </span>
                 </span>
               </button>
@@ -136,6 +153,22 @@ export function SystemTemplates({
                   ))}
                 </ul>
                 {m.notes && <p className="text-muted-foreground">{m.notes}</p>}
+                {(m.lifecycle.endOfSale || m.lifecycle.endOfSupport) && (
+                  <p>
+                    {m.lifecycle.endOfSale &&
+                      `${t('devices.eolDate')}: ${formatDate(m.lifecycle.endOfSale)} · `}
+                    {m.lifecycle.endOfSupport &&
+                      `${t('devices.eosDate')}: ${formatDate(m.lifecycle.endOfSupport)} · `}
+                    <a
+                      className="text-xs text-primary underline"
+                      href={m.lifecycle.source}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t('templates.lifecycleSource')}
+                    </a>
+                  </p>
+                )}
                 {m.source && (
                   <a
                     className="text-xs text-primary underline"

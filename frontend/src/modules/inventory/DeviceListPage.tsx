@@ -1,5 +1,6 @@
 import type { PaginationState, RowSelectionState, SortingState } from '@tanstack/react-table'
 import {
+  CalendarClock,
   FileDown,
   FileSpreadsheet,
   MoreHorizontal,
@@ -34,6 +35,7 @@ import { daysUntil, formatDate } from '@/lib/format'
 import { atLeast, useOrgAccess, useScope } from '@/modules/sites/access'
 import { useSites } from '@/modules/sites/sites'
 import { BulkEditDialog } from './BulkEditDialog'
+import { FillLifecycleDialog } from './FillLifecycleDialog'
 import { DeviceFormDialog } from './DeviceFormDialog'
 import { EndpointGroupDialog, EndpointGroupsTable } from './EndpointGroups'
 import {
@@ -128,10 +130,10 @@ export function DeviceListPage() {
   const tab = params.get('tab') === 'groups' ? 'groups' : 'devices'
   const [creatingGroup, setCreatingGroup] = useState(false)
 
-  // Links from the dashboard / palette pre-filter the list: ?q=, ?site=, ?type=, ?lifecycle=.
+  // Links from the dashboard / palette pre-filter the list: ?q=, ?site=, ?type=, ?lifecycle=, ?support=.
   const [filter, setFilter] = useState<FilterState>(() => {
     const facets = Object.fromEntries(
-      (['site', 'type', 'lifecycle'] as const)
+      (['site', 'type', 'lifecycle', 'support'] as const)
         .map((k) => [k, params.getAll(k)] as const)
         .filter(([, v]) => v.length > 0),
     )
@@ -142,6 +144,7 @@ export function DeviceListPage() {
   const [selection, setSelection] = useState<RowSelectionState>({})
   const [editing, setEditing] = useState<Device | 'new' | null>(null)
   const [bulkEdit, setBulkEdit] = useState<string[] | null>(null)
+  const [fillingDates, setFillingDates] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Device[] | null>(null)
   const del = useDeleteDevices(orgId)
   const q = useDeferredValue(filter.q)
@@ -221,6 +224,15 @@ export function DeviceListPage() {
         value: v,
         label: t(`devices.lifecycleValues.${v}`),
         count: counts?.lifecycle?.[v] ?? 0,
+      })),
+    },
+    {
+      // Vendor end-of-support (P2-22): from the devices' dates (the library fills them).
+      id: 'support',
+      label: t('devices.support'),
+      options: (['expired', 'soon'] as const).map((v) => ({
+        value: v,
+        label: t(`devices.supportValues.${v}`),
       })),
     },
     {
@@ -443,6 +455,9 @@ export function DeviceListPage() {
               >
                 <Plus aria-hidden /> {t('endpoints.add')}
               </Button>
+              <Button variant="outline" onClick={() => setFillingDates(true)}>
+                <CalendarClock aria-hidden /> {t('lifecycleFill.open')}
+              </Button>
               <Button variant="outline" disabled={exporting} onClick={() => void exportAll()}>
                 <FileDown aria-hidden /> {t('deviceExport.button')}
               </Button>
@@ -565,6 +580,7 @@ export function DeviceListPage() {
           onSaved={(d) => editing === 'new' && navigate(d.id)}
         />
       )}
+      {fillingDates && <FillLifecycleDialog orgId={orgId} onClose={() => setFillingDates(false)} />}
       {bulkEdit && (
         <BulkEditDialog orgId={orgId} ids={bulkEdit} onClose={() => setBulkEdit(null)} />
       )}

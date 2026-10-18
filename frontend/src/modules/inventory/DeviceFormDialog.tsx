@@ -170,10 +170,20 @@ export function DeviceFormDialog({
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value })
   const picked = choices.resolve(f.templateId)
-  /** A template sets the type and size, and the vendor when it is still empty. */
+  /**
+   * A template sets the type and size, and the vendor when it is still empty; a library model also fills empty
+   * end-of-sale / end-of-support dates (P2-22).
+   */
   const applyTemplate = (next: typeof f, tpl: ResolvedTemplate | null): typeof f =>
     tpl
-      ? { ...next, type: tpl.type, uHeight: String(tpl.uHeight), vendor: next.vendor || tpl.vendor }
+      ? {
+          ...next,
+          type: tpl.type,
+          uHeight: String(tpl.uHeight),
+          vendor: next.vendor || tpl.vendor,
+          eolDate: next.eolDate || tpl.endOfSale,
+          eosDate: next.eosDate || tpl.endOfSupport,
+        }
       : next
   const site = sites.data?.find((s) => s.id === f.siteId)
   const locations = useLocations(orgId, f.siteId)

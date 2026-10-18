@@ -23,6 +23,7 @@ const model = (id: string, model: string, front = '', partNumbers: string[] = []
       source: front ? 'https://github.com/netbox-community/x' : '',
       similarTo: '',
     },
+    lifecycle: { endOfSale: '', endOfSupport: '', source: '' },
   }) as CatalogModel
 
 describe('product photos (P2-12)', () => {

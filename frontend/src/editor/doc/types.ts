@@ -58,6 +58,12 @@ export interface DeviceCard {
   managed?: boolean
   /** Created in the editor, not saved yet. */
   draft?: boolean
+  /** Library model and part number (product photo, P2-12). */
+  catalogId?: string
+  partNumber?: string
+  /** active, planned… and the vendor end-of-support date (check "support ended", P2-22). */
+  lifecycle?: Device['lifecycle']
+  eosDate?: string | null
 }
 
 export interface LinkCard {
@@ -140,6 +146,10 @@ export function docFromDetail(d: DiagramDetail): DocState {
       model: x.model,
       siteCode: x.siteCode,
       managed: x.managed,
+      catalogId: x.catalogId,
+      partNumber: x.partNumber,
+      lifecycle: x.lifecycle,
+      eosDate: x.eosDate ?? null,
     }
   const groups: DocState['groups'] = {}
   for (const g of d.endpointGroups) groups[g.id] = groupCard(g)

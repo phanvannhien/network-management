@@ -202,6 +202,8 @@ type Querier interface {
 	ListDevices(ctx context.Context, arg ListDevicesParams) ([]ListDevicesRow, error)
 	// Devices placed on a diagram, with the same visibility as GetDevice.
 	ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsParams) ([]ListDevicesByIDsRow, error)
+	// Devices in use with an empty end-of-sale or end-of-support date (P2-22: filled from the model library).
+	ListDevicesMissingLifecycle(ctx context.Context, organizationID pgtype.UUID) ([]ListDevicesMissingLifecycleRow, error)
 	// Diagrams (P1-13, ADR-015/032). Every query takes organization_id; diagrams belong to the organization.
 	ListDiagrams(ctx context.Context, arg ListDiagramsParams) ([]ListDiagramsRow, error)
 	// Diagrams whose view places any of the given objects, with the ones it places.

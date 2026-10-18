@@ -166,6 +166,10 @@ export function updateDevice(id: string, update: DeviceUpdate): DocCommand {
           siteId: update.siteId,
           model: update.model ?? card.model,
           managed: update.managed ?? card.managed,
+          partNumber: update.partNumber ?? card.partNumber,
+          // Lifecycle and end-of-support drive the "support ended" check (P2-22): follow quick edits.
+          lifecycle: update.lifecycle ?? card.lifecycle,
+          eosDate: update.eosDate !== undefined ? update.eosDate : card.eosDate,
           ...(card.siteId !== update.siteId ? { siteCode: undefined } : {}),
         })
     },

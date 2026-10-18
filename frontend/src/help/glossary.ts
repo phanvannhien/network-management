@@ -127,10 +127,14 @@ export const GLOSSARY: GlossaryEntry[] = [
   e(
     'eol',
     'device',
-    ['EOL / EOS', 'EOL / EOS'],
+    ['Ngừng bán / Hết hỗ trợ (EoL / EoS)', 'End of sale / end of support (EoL / EoS)'],
     [
-      'End-of-Life / End-of-Support: ngày hãng ngừng bán / ngừng hỗ trợ và vá lỗi. Sau EOS nên thay thiết bị.',
-      'End of life / end of support: when the vendor stops selling / supporting and patching it. Replace after EOS.',
+      'Hai mốc hãng công bố trong thông báo End-of-Life. Ngừng bán (End-of-Sale): ngày cuối cùng còn đặt mua được; thiết bị vẫn được hỗ trợ, vá lỗi thêm vài năm. Hết hỗ trợ (End-of-Support, Cisco gọi là LDoS): hãng ngừng vá lỗi bảo mật, ngừng thay thế phần cứng, ngừng hỗ trợ kỹ thuật — thiết bị nên được thay trước ngày này. Thư viện model lưu ngày theo thông báo chính thức của hãng và tự điền cho thiết bị.',
+      "Two milestones a vendor publishes in its end-of-life notice. End of sale: the last day to order; the device is still supported and patched for some years. End of support (Cisco: LDoS): no more security fixes, hardware replacement or technical support — replace the device before this date. The model library keeps the vendor's official dates and fills them in for devices.",
+    ],
+    [
+      'Catalyst 2960-X: ngừng bán 31/10/2022, hết hỗ trợ 31/10/2027.',
+      'Catalyst 2960-X: end of sale 31 Oct 2022, end of support 31 Oct 2027.',
     ],
   ),
   e(

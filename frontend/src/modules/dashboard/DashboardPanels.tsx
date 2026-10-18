@@ -273,6 +273,13 @@ function ExpiringBlock({ base, data }: { base: string; data: Dashboard }) {
           </tbody>
         </table>
       )}
+      {/* Every device whose vendor support has ended or ends within a year (P2-22). */}
+      <Link
+        to={`${base}/devices?support=expired&support=soon`}
+        className="mt-2 inline-block text-sm text-primary hover:underline"
+      >
+        {t('dashboard.supportList')}
+      </Link>
     </Block>
   )
 }

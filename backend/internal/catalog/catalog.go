@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/phanvannhien/networkdiagramdrawer/backend/internal/api/apigen"
 )
@@ -25,10 +26,17 @@ var data embed.FS
 //go:embed images
 var images embed.FS
 
+// Vendor milestones (P2-22): lifecycle.json, one entry per model with an official end-of-sale / end-of-support notice.
+// Kept apart from the port data because notices come out on their own schedule.
+//
+//go:embed lifecycle.json
+var lifecycleJSON []byte
+
 var (
 	once    sync.Once
 	models  []apigen.CatalogModel
 	byID    map[string]int
+	byKey   map[string][]int // norm(model / part number / alias) → models, for Match
 	loadErr error
 )
 
@@ -121,6 +129,7 @@ func load() {
 			}
 			m.PortCount = n
 			m.Images = apigen.CatalogImages{}
+			m.Lifecycle = apigen.CatalogLifecycle{}
 			byID[m.Id] = len(models)
 			models = append(models, m)
 		}
@@ -128,11 +137,22 @@ func load() {
 	if loadErr = attachImages(); loadErr != nil {
 		return
 	}
+	if loadErr = attachLifecycle(); loadErr != nil {
+		return
+	}
 	slices.SortFunc(models, func(a, b apigen.CatalogModel) int {
 		return strings.Compare(strings.ToLower(a.Vendor+" "+a.Model), strings.ToLower(b.Vendor+" "+b.Model))
 	})
+	byKey = map[string][]int{}
 	for i, m := range models {
 		byID[m.Id] = i
+		seen := map[string]bool{}
+		for _, x := range append(append([]string{m.Model}, m.PartNumbers...), m.Aliases...) {
+			if k := norm(x); k != "" && !seen[k] {
+				seen[k] = true
+				byKey[k] = append(byKey[k], i)
+			}
+		}
 	}
 }
 
@@ -184,4 +204,98 @@ func attachImages() error {
 		}
 	}
 	return nil
+}
+
+// attachLifecycle sets each model's vendor milestones; a date that is not ISO, a sale after support or an entry for no
+// model is a data mistake.
+func attachLifecycle() error {
+	var doc struct {
+		Entries []struct {
+			ID           string `json:"id"`
+			EndOfSale    string `json:"endOfSale"`
+			EndOfSupport string `json:"endOfSupport"`
+			Source       string `json:"source"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(lifecycleJSON, &doc); err != nil {
+		return fmt.Errorf("parse lifecycle.json: %w", err)
+	}
+	seen := map[string]bool{}
+	for _, e := range doc.Entries {
+		i, ok := byID[e.ID]
+		switch {
+		case !ok:
+			return fmt.Errorf("lifecycle.json: no catalog model %q", e.ID)
+		case seen[e.ID]:
+			return fmt.Errorf("lifecycle.json: %q twice", e.ID)
+		case e.EndOfSale == "" && e.EndOfSupport == "":
+			return fmt.Errorf("lifecycle.json: %q has no date", e.ID)
+		case !strings.HasPrefix(e.Source, "https://"):
+			return fmt.Errorf("lifecycle.json: %q needs the vendor notice (https)", e.ID)
+		}
+		seen[e.ID] = true
+		for _, d := range []string{e.EndOfSale, e.EndOfSupport} {
+			if _, err := time.Parse(time.DateOnly, d); d != "" && err != nil {
+				return fmt.Errorf("lifecycle.json: %q date %q is not YYYY-MM-DD", e.ID, d)
+			}
+		}
+		if e.EndOfSale != "" && e.EndOfSupport != "" && e.EndOfSale > e.EndOfSupport {
+			return fmt.Errorf("lifecycle.json: %q ends sale after support", e.ID)
+		}
+		models[i].Lifecycle = apigen.CatalogLifecycle{EndOfSale: e.EndOfSale, EndOfSupport: e.EndOfSupport, Source: e.Source}
+	}
+	return nil
+}
+
+// norm keeps ASCII letters and digits, lower case: "C1300-48P-4G" = "c1300 48p 4g". Model numbers are ASCII; the
+// client's matcher also folds accents, which never occur in them.
+func norm(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// Names reports whether a device's model / part number still name catalog model c (an empty model keeps it).
+func Names(c apigen.CatalogModel, model, partNumber string) bool {
+	keys := []string{}
+	for _, k := range []string{norm(model), norm(partNumber)} {
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return true
+	}
+	for _, x := range append(append([]string{c.Model}, c.PartNumbers...), c.Aliases...) {
+		if slices.Contains(keys, norm(x)) {
+			return true
+		}
+	}
+	return false
+}
+
+// Match finds the model a device names by model or part number (exact after norm), preferring one of the device's
+// type; the same rule as the client's matchCatalog.
+func Match(model, partNumber, typ string) (apigen.CatalogModel, bool) {
+	once.Do(load)
+	var hits []int
+	for _, k := range []string{norm(model), norm(partNumber)} {
+		if k != "" {
+			hits = append(hits, byKey[k]...)
+		}
+	}
+	if len(hits) == 0 {
+		return apigen.CatalogModel{}, false
+	}
+	slices.Sort(hits) // catalog order, like the client's filter
+	for _, i := range hits {
+		if string(models[i].Type) == typ {
+			return models[i], true
+		}
+	}
+	return models[hits[0]], true
 }

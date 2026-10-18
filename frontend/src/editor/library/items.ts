@@ -7,6 +7,9 @@ export type DeviceType = components['schemas']['DeviceType']
 
 export type EndpointKind = components['schemas']['EndpointKind']
 
+type DeviceLifecycle = components['schemas']['DeviceLifecycle']
+const LIFECYCLES: DeviceLifecycle[] = ['planned', 'active', 'spare', 'rma', 'retired']
+
 /**
  * Kinds drawn as endpoint groups (ADR-036): one node stands for the alike endpoints of a place (cameras on ports
  * 1–24, the PCs of an office), outside the device list. Servers, NAS, VMs stay devices of the inventory.
@@ -38,6 +41,10 @@ export type LibraryItem =
         model?: string
         siteCode?: string
         managed?: boolean
+        catalogId?: string
+        partNumber?: string
+        lifecycle?: DeviceLifecycle
+        eosDate?: string | null
       }
     }
 
@@ -70,6 +77,12 @@ export function decodeItem(raw: string): LibraryItem | null {
           model: typeof d.model === 'string' ? d.model : undefined,
           siteCode: typeof d.siteCode === 'string' ? d.siteCode : undefined,
           managed: typeof d.managed === 'boolean' ? d.managed : undefined,
+          catalogId: typeof d.catalogId === 'string' ? d.catalogId : undefined,
+          partNumber: typeof d.partNumber === 'string' ? d.partNumber : undefined,
+          lifecycle: LIFECYCLES.includes(d.lifecycle as DeviceLifecycle)
+            ? (d.lifecycle as DeviceLifecycle)
+            : undefined,
+          eosDate: typeof d.eosDate === 'string' ? d.eosDate : undefined,
         },
       }
   } catch {

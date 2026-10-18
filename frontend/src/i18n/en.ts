@@ -248,8 +248,10 @@ export const en: Strings = {
     poNumber: 'PO / invoice no.',
     warranty: 'Warranty end',
     licenseEnd: 'License end',
-    eolDate: 'End of life (vendor)',
+    eolDate: 'End of sale (vendor)',
     eosDate: 'End of support (vendor)',
+    support: 'Vendor support',
+    supportValues: { expired: 'Support ended', soon: 'Support ends within 12 months' },
     warrantyExpired: 'expired {{date}}',
     groupIdentity: 'Identity',
     groupPlace: 'Placement',
@@ -1319,6 +1321,8 @@ export const en: Strings = {
     badge: '{{kind}} ×{{count}}',
   },
   templates: {
+    endOfSupport: 'support ends {{date}}',
+    lifecycleSource: 'Vendor notice',
     systemGuide:
       '{{count}} common models shipped with the software, with the vendor\'s ports. When a device is created or imported with that model / part number it gets these ports — nothing to do here. If a model differs in reality, "Copy to edit" makes an own template.',
     ownGuide:
@@ -1679,6 +1683,7 @@ export const en: Strings = {
     },
     byType: 'Devices by type',
     expiring: 'Expiring (90 days)',
+    supportList: 'All devices whose vendor support has ended or ends soon →',
     expiringGuide:
       'Warranty end and vendor end-of-support (EOS) dates past or within 90 days; retired devices are left out.',
     noExpiring: 'Nothing expiring.',
@@ -2023,6 +2028,19 @@ export const en: Strings = {
     label: 'Filter by category',
     all: 'Whole organization',
   },
+  lifecycleFill: {
+    open: 'Fill support dates',
+    title: 'Fill end-of-sale / end-of-support dates from the model library',
+    intro:
+      "Devices in use with an empty date take the vendor's official dates from the model library. Dates you typed stay as they are.",
+    loading: 'Looking for devices…',
+    none: 'No device needs dates: they have them already, or the vendor has not announced any for their model.',
+    note: 'Only devices you may edit are listed. Every change is recorded in the audit log.',
+    apply: 'Fill {{count}} devices',
+    apply_one: 'Fill {{count}} device',
+    done: 'Dates filled for {{count}} devices',
+    done_one: 'Dates filled for {{count}} device',
+  },
   photos: {
     view: 'View photo',
     viewFor: 'View photo of {{name}}',
@@ -2280,6 +2298,8 @@ export const en: Strings = {
     },
     which: { network: 'the network address', broadcast: 'the broadcast address' },
     rules: {
+      'end-of-support':
+        '{{host}}: vendor support ended on {{date}} (no more security fixes) — plan a replacement',
       'duplicate-ip': '{{host}}: IP {{value}} also used by {{other}} {{otherIface}}',
       'duplicate-hostname': 'Hostname {{value}} is used by another device ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} also on {{other}}',

@@ -1038,6 +1038,7 @@ paths:
         - $ref: '#/components/parameters/DeviceRoleFilter'
         - $ref: '#/components/parameters/DeviceTagFilter'
         - $ref: '#/components/parameters/DeviceClusterFilter'
+        - $ref: '#/components/parameters/DeviceSupportFilter'
         - $ref: '#/components/parameters/DeviceSort'
         - $ref: '#/components/parameters/DeviceSortDesc'
         - $ref: '#/components/parameters/AuditPageNumber'
@@ -1083,6 +1084,50 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+
+  /orgs/{orgId}/devices/fill-lifecycle:
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+    post:
+      operationId: fillDeviceLifecycle
+      summary: Fill empty end-of-sale / end-of-support dates from the model library (P2-22) — preview, then apply
+      description: Only empty dates are written, never a date someone typed. Devices the caller may not edit are left out.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [apply]
+              properties:
+                apply:
+                  type: boolean
+                  description: false = preview only
+      responses:
+        '200':
+          description: The devices that get (or got) dates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [devices, applied]
+                properties:
+                  applied:
+                    type: boolean
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LifecycleFill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /orgs/{orgId}/devices/bulk-update:
     parameters:
@@ -3386,6 +3431,16 @@ components:
         items:
           type: string
 
+    DeviceSupportFilter:
+      name: support
+      in: query
+      description: Vendor end-of-support (P2-22) — expired before today and / or ending within the next 12 months
+      schema:
+        type: array
+        maxItems: 2
+        items:
+          type: string
+          enum: [expired, soon]
     DeviceClusterFilter:
       name: clusterId
       in: query
@@ -5767,7 +5822,7 @@ components:
 
     CatalogModel:
       type: object
-      required: [id, vendor, family, model, partNumbers, aliases, type, uHeight, ports, portCount, verified, source, notes, images]
+      required: [id, vendor, family, model, partNumbers, aliases, type, uHeight, ports, portCount, verified, source, notes, images, lifecycle]
       properties:
         id:
           type: string
@@ -5806,6 +5861,43 @@ components:
           type: string
         images:
           $ref: '#/components/schemas/CatalogImages'
+        lifecycle:
+          $ref: '#/components/schemas/CatalogLifecycle'
+
+    CatalogLifecycle:
+      type: object
+      description: Vendor milestones of the model (P2-22), ISO dates, empty when not announced
+      required: [endOfSale, endOfSupport, source]
+      properties:
+        endOfSale:
+          type: string
+          description: last day to order
+        endOfSupport:
+          type: string
+          description: last day of vendor support (Cisco LDoS)
+        source:
+          type: string
+          description: the vendor's end-of-life notice
+
+    LifecycleFill:
+      type: object
+      required: [id, hostname, model, eolDate, eosDate]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+        model:
+          type: string
+        eolDate:
+          type: [string, 'null']
+          format: date
+          description: end-of-sale date written (null = left as it was)
+        eosDate:
+          type: [string, 'null']
+          format: date
+          description: end-of-support date written (null = left as it was)
 
     CatalogImages:
       type: object

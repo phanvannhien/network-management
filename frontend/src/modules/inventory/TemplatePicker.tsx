@@ -29,6 +29,9 @@ export interface ResolvedTemplate {
   ports: PortGroup[]
   portCount: number
   verified: boolean
+  /** Vendor milestones from the model library (P2-22), ISO dates; empty for organization templates. */
+  endOfSale: string
+  endOfSupport: string
 }
 
 const fromOrg = (t: DeviceTemplate): ResolvedTemplate => ({
@@ -43,6 +46,8 @@ const fromOrg = (t: DeviceTemplate): ResolvedTemplate => ({
   ports: t.ports,
   portCount: t.portCount,
   verified: true,
+  endOfSale: '',
+  endOfSupport: '',
 })
 
 const fromSystem = (c: CatalogModel): ResolvedTemplate => ({
@@ -57,6 +62,8 @@ const fromSystem = (c: CatalogModel): ResolvedTemplate => ({
   ports: c.ports,
   portCount: c.portCount,
   verified: c.verified,
+  endOfSale: c.lifecycle.endOfSale,
+  endOfSupport: c.lifecycle.endOfSupport,
 })
 
 export function useTemplateChoices(orgId: string, enabled = true) {

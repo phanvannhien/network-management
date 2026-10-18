@@ -68,9 +68,26 @@ function input(over: Partial<CheckInput> = {}): CheckInput {
       { id: 'n2', refKind: 'device', refId: D2, x: 400, y: 0 },
     ],
     devices: {
-      [D1]: { hostname: 'SW01', type: 'switch', siteId: SITE, draft: false, clusterKind: '' },
-      [D2]: { hostname: 'SW02', type: 'switch', siteId: SITE, draft: false, clusterKind: '' },
+      [D1]: {
+        hostname: 'SW01',
+        type: 'switch',
+        siteId: SITE,
+        draft: false,
+        clusterKind: '',
+        lifecycle: 'active',
+        eosDate: '',
+      },
+      [D2]: {
+        hostname: 'SW02',
+        type: 'switch',
+        siteId: SITE,
+        draft: false,
+        clusterKind: '',
+        lifecycle: 'active',
+        eosDate: '',
+      },
     },
+    today: '2026-10-18',
     frames: [],
     edgeOf: { L1: 'e1' },
     links: [cable('L1', 'p1', 'p2')],
@@ -341,7 +358,15 @@ describe('runChecks', () => {
       nodes: [...input().nodes, { id: 'n3', refKind: 'device', refId: 'd3', x: 0, y: 500 }],
       devices: {
         ...input().devices,
-        d3: { hostname: 'AP01', type: 'access_point', siteId: SITE, draft: false, clusterKind: '' },
+        d3: {
+          hostname: 'AP01',
+          type: 'access_point',
+          siteId: SITE,
+          draft: false,
+          clusterKind: '',
+          lifecycle: 'active',
+          eosDate: '',
+        },
       },
       links: [cable('L1', 'p1', null)],
       ctx: ctx({
@@ -491,5 +516,23 @@ describe('address helpers', () => {
       which: 'broadcast',
       cidr: '27.72.96.40/30',
     })
+  })
+
+  it('a device in use whose vendor support has ended is a warning (P2-22)', () => {
+    const devices = (eos: string, lifecycle = 'active') => ({
+      ...input().devices,
+      [D1]: { ...input().devices[D1]!, eosDate: eos, lifecycle },
+    })
+    const rule = (i: CheckInput) => runChecks(i).filter((p) => p.rule === 'end-of-support')
+    expect(rule(input({ devices: devices('2026-10-17') }))).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        target: { kind: 'node', id: 'n1' },
+        params: { host: 'SW01', date: '2026-10-17' },
+      }),
+    ])
+    expect(rule(input({ devices: devices('2026-10-18') }))).toEqual([]) // the last day still counts
+    expect(rule(input({ devices: devices('2020-01-01', 'spare') }))).toEqual([])
+    expect(rule(input({ devices: devices('') }))).toEqual([])
   })
 })

@@ -245,8 +245,10 @@ export const vi = {
     poNumber: 'Số PO / hóa đơn',
     warranty: 'Hết bảo hành',
     licenseEnd: 'Hết license',
-    eolDate: 'End-of-Life (hãng)',
-    eosDate: 'End-of-Support (hãng)',
+    eolDate: 'Ngừng bán (End-of-Sale)',
+    eosDate: 'Hết hỗ trợ (End-of-Support)',
+    support: 'Hỗ trợ của hãng',
+    supportValues: { expired: 'Đã hết hỗ trợ', soon: 'Hết hỗ trợ trong 12 tháng' },
     warrantyExpired: 'đã hết {{date}}',
     groupIdentity: 'Nhận dạng',
     groupPlace: 'Vị trí',
@@ -1310,6 +1312,8 @@ export const vi = {
     badge: '{{kind}} ×{{count}}',
   },
   templates: {
+    endOfSupport: 'hết hỗ trợ {{date}}',
+    lifecycleSource: 'Thông báo của hãng',
     systemGuide:
       '{{count}} model phổ biến đi kèm phần mềm, có đủ cổng đúng tên của hãng. Khi tạo hoặc nhập thiết bị, gõ đúng model / part number là thiết bị tự có các cổng này — không cần làm gì ở đây. Model khác thực tế thì "Sao chép để sửa" thành template riêng.',
     ownGuide:
@@ -1671,6 +1675,7 @@ export const vi = {
     },
     byType: 'Thiết bị theo loại',
     expiring: 'Sắp hết hạn (90 ngày)',
+    supportList: 'Xem mọi thiết bị đã hết hoặc sắp hết hỗ trợ của hãng →',
     expiringGuide:
       'Ngày hết bảo hành và ngày hãng ngừng hỗ trợ (EOS) đã qua hoặc trong 90 ngày tới; thiết bị đã thanh lý không tính.',
     noExpiring: 'Không có gì sắp hết hạn.',
@@ -2009,6 +2014,19 @@ export const vi = {
     label: 'Lọc theo danh mục',
     all: 'Toàn tổ chức',
   },
+  lifecycleFill: {
+    open: 'Điền ngày hết hỗ trợ',
+    title: 'Điền ngày ngừng bán / hết hỗ trợ từ thư viện model',
+    intro:
+      'Thiết bị đang dùng mà còn trống ngày sẽ lấy ngày theo thông báo chính thức của hãng trong thư viện model. Ngày bạn đã nhập được giữ nguyên.',
+    loading: 'Đang tìm thiết bị…',
+    none: 'Không có thiết bị nào cần điền: thiết bị đã có ngày, hoặc hãng chưa công bố ngày cho model đó.',
+    note: 'Chỉ liệt kê thiết bị bạn có quyền sửa. Mỗi thay đổi được ghi vào nhật ký.',
+    apply: 'Điền {{count}} thiết bị',
+    apply_one: 'Điền {{count}} thiết bị',
+    done: 'Đã điền ngày cho {{count}} thiết bị',
+    done_one: 'Đã điền ngày cho {{count}} thiết bị',
+  },
   photos: {
     view: 'Xem ảnh thật',
     viewFor: 'Xem ảnh thật của {{name}}',
@@ -2264,6 +2282,8 @@ export const vi = {
     },
     which: { network: 'địa chỉ mạng', broadcast: 'địa chỉ broadcast' },
     rules: {
+      'end-of-support':
+        '{{host}}: hãng đã ngừng hỗ trợ từ {{date}} (không còn bản vá bảo mật) — nên lên kế hoạch thay',
       'duplicate-ip': '{{host}}: IP {{value}} trùng với {{other}} {{otherIface}}',
       'duplicate-hostname': 'Hostname {{value}} trùng với một thiết bị khác ({{other}})',
       'duplicate-serial': '{{host}}: serial {{value}} trùng với {{other}}',

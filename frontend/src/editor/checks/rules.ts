@@ -35,8 +35,18 @@ export interface CheckInput {
   nodes: { id: string; refKind: string; refId: string; x: number; y: number }[]
   devices: Record<
     string,
-    { hostname: string; type: string; siteId: string; draft: boolean; clusterKind: string }
+    {
+      hostname: string
+      type: string
+      siteId: string
+      draft: boolean
+      clusterKind: string
+      lifecycle: string
+      eosDate: string
+    }
   >
+  /** Today, YYYY-MM-DD (local), for date rules; given by the caller so the worker stays pure. */
+  today: string
   frames: {
     siteId: string
     locationId: string | null
@@ -56,7 +66,11 @@ const NODE_W = 144
 const NODE_H = 80
 
 /** The plain input of the checks: the server context with the editor's unsaved changes applied. */
-export function buildCheckInput(doc: DocState, ctx: ValidationContext): CheckInput {
+export function buildCheckInput(
+  doc: DocState,
+  ctx: ValidationContext,
+  today = new Date().toLocaleDateString('sv-SE'),
+): CheckInput {
   const deleted = new Set(doc.deletedLinks)
   const goneDevices = new Set(doc.deletedDevices)
   const links = new Map<string, CheckLink>()
@@ -109,6 +123,8 @@ export function buildCheckInput(doc: DocState, ctx: ValidationContext): CheckInp
       siteId: d.siteId,
       draft: d.draft === true,
       clusterKind: d.clusterKind ?? '',
+      lifecycle: d.lifecycle ?? '',
+      eosDate: d.eosDate ?? '',
     }
   return {
     nodes: doc.view.nodes.map((n) => ({
@@ -119,6 +135,7 @@ export function buildCheckInput(doc: DocState, ctx: ValidationContext): CheckInp
       y: n.y,
     })),
     devices,
+    today,
     frames: doc.view.annotations
       .filter((a) => a.kind === 'zone' && a.siteId)
       .map((a) => ({
@@ -306,6 +323,19 @@ export function runChecks(input: CheckInput): Problem[] {
       { host: host(c.deviceId), value: c.value, other: c.other, otherIface: c.otherInterface },
       `${c.deviceId}:${c.value}:${c.other}`,
     )
+
+  // A device in use whose vendor support has ended (SRS §7, P2-22): no more security fixes — plan its replacement.
+  for (const n of input.nodes) {
+    const d = input.devices[n.refId]
+    if (d && d.lifecycle === 'active' && d.eosDate && d.eosDate < input.today)
+      push(
+        'end-of-support',
+        'warning',
+        { kind: 'node', id: n.id },
+        { host: d.hostname, date: d.eosDate },
+        n.refId,
+      )
+  }
 
   // Pending devices: a hostname already on this diagram.
   const names = new Map<string, string>()

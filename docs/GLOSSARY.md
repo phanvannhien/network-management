@@ -18,7 +18,7 @@ Nhóm theo thứ tự hay gặp khi nhập liệu.
 | **Part Number** | Mã sản phẩm của hãng (đặt hàng, tra EOL) | `FG-100F`, `C9200-24P-E` | Thiết bị → Part number |
 | **Firmware / OS** | Phần mềm chạy trên thiết bị | `FortiOS 7.4.5`, `IOS-XE 17.9` | Thiết bị → Firmware |
 | **Rack, U** | Tủ đựng thiết bị; 1U = 4,45 cm chiều cao. Thiết bị chiếm từ U thấp nhất trở lên | Firewall 1U ở U40, server 2U ở U10–U11 | Thiết bị → Rack, Vị trí U, Chiều cao |
-| **EOL / EOS** | End-of-Life / End-of-Support: ngày hãng ngừng bán / ngừng hỗ trợ | Hãng ngừng vá lỗi sau EOS | Thiết bị → Mua sắm & hỗ trợ |
+| **Ngừng bán / Hết hỗ trợ (EoL / EoS)** | Hai mốc trong thông báo End-of-Life của hãng: *ngừng bán* (End-of-Sale) là ngày cuối còn đặt mua; *hết hỗ trợ* (End-of-Support, Cisco gọi là LDoS) là ngày hãng ngừng vá lỗi bảo mật, ngừng thay phần cứng | Catalyst 2960-X: ngừng bán 31/10/2022, hết hỗ trợ 31/10/2027 — phải thay trước ngày hết hỗ trợ | Thiết bị → Mua sắm & hỗ trợ; thư viện model tự điền (P2-22) |
 | **Managed / Bên ngoài** | Thiết bị của mình quản lý hay của bên khác đặt tại site | Modem của ISP là "bên ngoài" | Thiết bị → Quản lý |
 
 ## 2. Cổng (interface)

@@ -29,8 +29,10 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
   AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($9::date IS NULL OR d.eos_date >= $9::date)
+  AND ($10::date IS NULL OR (d.eos_date < $10::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.role = ANY ($11::text[]))
+  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.tags && $12::text[])
 `
 
 type CountDevicesParams struct {
@@ -42,6 +44,8 @@ type CountDevicesParams struct {
 	Types          []string
 	Vendors        []string
 	Lifecycles     []string
+	EosFrom        pgtype.Date
+	EosBefore      pgtype.Date
 	Roles          []string
 	Tags           []string
 }
@@ -56,6 +60,8 @@ func (q *Queries) CountDevices(ctx context.Context, arg CountDevicesParams) (int
 		arg.Types,
 		arg.Vendors,
 		arg.Lifecycles,
+		arg.EosFrom,
+		arg.EosBefore,
 		arg.Roles,
 		arg.Tags,
 	)
@@ -360,8 +366,10 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'type'::text AS facet, d.type AS value, count(*)::bigint AS n
@@ -376,11 +384,13 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'vendor'::text AS facet, d.vendor AS value, count(*)::bigint AS n
@@ -395,11 +405,13 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'lifecycle'::text AS facet, d.lifecycle AS value, count(*)::bigint AS n
@@ -414,11 +426,11 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'role'::text AS facet, d.role AS value, count(*)::bigint AS n
@@ -433,11 +445,13 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
 GROUP BY 2
 UNION ALL
 SELECT 'tag'::text AS facet, t.tag AS value, count(*)::bigint AS n
@@ -453,11 +467,13 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($3::uuid[]), 0) = 0 OR d.cluster_id = ANY ($3::uuid[]))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
 GROUP BY 2
 UNION ALL
 SELECT 'cluster'::text AS facet, d.cluster_id::text AS value, count(*)::bigint AS n
@@ -471,12 +487,14 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
        OR EXISTS (SELECT 1 FROM device_clusters cq WHERE cq.id = d.cluster_id AND host(cq.mgmt_ip) LIKE $2 || '%'))
   AND ($4::uuid IS NULL
        OR s.category_id IN (SELECT category_subtree($4::uuid)))
-  AND (COALESCE(cardinality($10::uuid[]), 0) = 0 OR d.site_id = ANY ($10::uuid[]))
+  AND (COALESCE(cardinality($12::uuid[]), 0) = 0 OR d.site_id = ANY ($12::uuid[]))
   AND (COALESCE(cardinality($5::text[]), 0) = 0 OR d.type = ANY ($5::text[]))
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.vendor = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.lifecycle = ANY ($7::text[]))
-  AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.role = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.tags && $9::text[])
+  AND ($8::date IS NULL OR d.eos_date >= $8::date)
+  AND ($9::date IS NULL OR (d.eos_date < $9::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.role = ANY ($10::text[]))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.tags && $11::text[])
   AND d.cluster_id IS NOT NULL
 GROUP BY 2
 `
@@ -489,6 +507,8 @@ type DeviceFacetCountsParams struct {
 	Types          []string
 	Vendors        []string
 	Lifecycles     []string
+	EosFrom        pgtype.Date
+	EosBefore      pgtype.Date
 	Roles          []string
 	Tags           []string
 	SiteIds        []pgtype.UUID
@@ -510,6 +530,8 @@ func (q *Queries) DeviceFacetCounts(ctx context.Context, arg DeviceFacetCountsPa
 		arg.Types,
 		arg.Vendors,
 		arg.Lifecycles,
+		arg.EosFrom,
+		arg.EosBefore,
 		arg.Roles,
 		arg.Tags,
 		arg.SiteIds,
@@ -811,30 +833,32 @@ WHERE d.organization_id = $1 AND d.deleted_at IS NULL
   AND (COALESCE(cardinality($6::text[]), 0) = 0 OR d.type = ANY ($6::text[]))
   AND (COALESCE(cardinality($7::text[]), 0) = 0 OR d.vendor = ANY ($7::text[]))
   AND (COALESCE(cardinality($8::text[]), 0) = 0 OR d.lifecycle = ANY ($8::text[]))
-  AND (COALESCE(cardinality($9::text[]), 0) = 0 OR d.role = ANY ($9::text[]))
-  AND (COALESCE(cardinality($10::text[]), 0) = 0 OR d.tags && $10::text[])
+  AND ($9::date IS NULL OR d.eos_date >= $9::date)
+  AND ($10::date IS NULL OR (d.eos_date < $10::date AND d.lifecycle <> 'retired'))
+  AND (COALESCE(cardinality($11::text[]), 0) = 0 OR d.role = ANY ($11::text[]))
+  AND (COALESCE(cardinality($12::text[]), 0) = 0 OR d.tags && $12::text[])
 ORDER BY
-  CASE WHEN NOT $11::boolean THEN
-    CASE $12::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+  CASE WHEN NOT $13::boolean THEN
+    CASE $14::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
       WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END ASC NULLS LAST,
-  CASE WHEN $11::boolean THEN
-    CASE $12::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
+  CASE WHEN $13::boolean THEN
+    CASE $14::text WHEN 'type' THEN d.type WHEN 'vendor' THEN lower(d.vendor) WHEN 'model' THEN lower(d.model)
       WHEN 'site' THEN s.code WHEN 'lifecycle' THEN d.lifecycle WHEN 'serial' THEN lower(d.serial_number)
       WHEN 'category' THEN category_path(s.category_id) ELSE NULL END END DESC NULLS LAST,
-  CASE WHEN $12::text = 'warranty_end' AND NOT $11::boolean THEN d.warranty_end END ASC NULLS LAST,
-  CASE WHEN $12::text = 'warranty_end' AND $11::boolean THEN d.warranty_end END DESC NULLS LAST,
-  CASE WHEN $12::text = 'mgmt_ip' AND NOT $11::boolean THEN
+  CASE WHEN $14::text = 'warranty_end' AND NOT $13::boolean THEN d.warranty_end END ASC NULLS LAST,
+  CASE WHEN $14::text = 'warranty_end' AND $13::boolean THEN d.warranty_end END DESC NULLS LAST,
+  CASE WHEN $14::text = 'mgmt_ip' AND NOT $13::boolean THEN
     COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
               ORDER BY family(ip.address) LIMIT 1),
              (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END ASC NULLS LAST,
-  CASE WHEN $12::text = 'mgmt_ip' AND $11::boolean THEN
+  CASE WHEN $14::text = 'mgmt_ip' AND $13::boolean THEN
     COALESCE((SELECT ip.address FROM ip_addresses ip WHERE ip.interface_id = d.mgmt_interface_id AND ip.role = 'primary'
               ORDER BY family(ip.address) LIMIT 1),
              (SELECT cs.mgmt_ip FROM device_clusters cs WHERE cs.id = d.cluster_id)) END DESC NULLS LAST,
-  CASE WHEN $12::text = 'hostname' AND $11::boolean THEN lower(d.hostname) END DESC,
+  CASE WHEN $14::text = 'hostname' AND $13::boolean THEN lower(d.hostname) END DESC,
   lower(d.hostname), d.id
-LIMIT $14 OFFSET $13
+LIMIT $16 OFFSET $15
 `
 
 type ListDevicesParams struct {
@@ -846,6 +870,8 @@ type ListDevicesParams struct {
 	Types          []string
 	Vendors        []string
 	Lifecycles     []string
+	EosFrom        pgtype.Date
+	EosBefore      pgtype.Date
 	Roles          []string
 	Tags           []string
 	SortDesc       bool
@@ -918,6 +944,8 @@ func (q *Queries) ListDevices(ctx context.Context, arg ListDevicesParams) ([]Lis
 		arg.Types,
 		arg.Vendors,
 		arg.Lifecycles,
+		arg.EosFrom,
+		arg.EosBefore,
 		arg.Roles,
 		arg.Tags,
 		arg.SortDesc,
@@ -1128,6 +1156,55 @@ func (q *Queries) ListDevicesByIDs(ctx context.Context, arg ListDevicesByIDsPara
 			&i.ClusterName,
 			&i.ClusterKind,
 			&i.MgmtIp,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDevicesMissingLifecycle = `-- name: ListDevicesMissingLifecycle :many
+SELECT d.id, d.hostname, d.type, d.model, d.part_number, d.catalog_id, d.eol_date, d.eos_date
+FROM devices d
+WHERE d.organization_id = $1 AND d.deleted_at IS NULL AND d.lifecycle <> 'retired'
+  AND (d.eol_date IS NULL OR d.eos_date IS NULL)
+ORDER BY lower(d.hostname)
+`
+
+type ListDevicesMissingLifecycleRow struct {
+	ID         pgtype.UUID
+	Hostname   string
+	Type       string
+	Model      string
+	PartNumber string
+	CatalogID  string
+	EolDate    pgtype.Date
+	EosDate    pgtype.Date
+}
+
+// Devices in use with an empty end-of-sale or end-of-support date (P2-22: filled from the model library).
+func (q *Queries) ListDevicesMissingLifecycle(ctx context.Context, organizationID pgtype.UUID) ([]ListDevicesMissingLifecycleRow, error) {
+	rows, err := q.db.Query(ctx, listDevicesMissingLifecycle, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDevicesMissingLifecycleRow
+	for rows.Next() {
+		var i ListDevicesMissingLifecycleRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Hostname,
+			&i.Type,
+			&i.Model,
+			&i.PartNumber,
+			&i.CatalogID,
+			&i.EolDate,
+			&i.EosDate,
 		); err != nil {
 			return nil, err
 		}

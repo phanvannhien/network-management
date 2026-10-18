@@ -98,8 +98,7 @@ func (s *Server) GetDashboard(ctx context.Context, req apigen.GetDashboardReques
 	}
 
 	// Dates are calendar days where the server runs (set TZ for the organization's country).
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	today := calendarToday()
 	expiring, err := s.q.DashboardExpiring(ctx, store.DashboardExpiringParams{
 		OrganizationID: org, CategoryFilter: cat,
 		Today: pgtype.Date{Time: today, Valid: true}, Until: pgtype.Date{Time: today.AddDate(0, 0, expiringDays), Valid: true},

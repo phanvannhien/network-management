@@ -5,6 +5,51 @@ Khi cần bàn bạc trên claude.ai, dán mục mới nhất (hoặc cả file)
 
 ---
 
+## 2026-10-18 — P2-22 Ngày ngừng bán / hết hỗ trợ trong thư viện model (ADR-042)
+- Đã làm:
+  - **Dữ liệu:**
+    - Hai agent nghiên cứu tìm ngày theo thông báo EoL chính thức của hãng, có link nguồn. Có ngày cho **104 model**:
+      - Cisco / Meraki: 62 (Catalyst 1000, CBS250/350, 2960-X/L, ISR 4000/2900, C1111, C8200/8300, MX64, MS120, MR36/44);
+      - Fortinet: 15 (tao đối chiếu lại với feed lifecycle chính thức của Fortinet: FortiGate 100F ngừng nhận đơn 16/04/2026, 60F ngừng 13/01/2027);
+      - Palo Alto 10, Juniper 8, WatchGuard 3, SonicWall 2, Sophos 4.
+    - Model hãng chưa công bố thì để trống.
+    - Dữ liệu lưu ở `catalog/lifecycle.json`; loader kiểm tra định dạng ngày, thứ tự hai mốc và link.
+  - **Tự điền:**
+    - thiết bị mới (form, Excel, .ntb, sơ đồ mẫu) lấy ngày cho ô còn trống;
+    - form điền sẵn khi chọn model;
+    - nút **"Điền ngày hết hỗ trợ"** ở danh sách thiết bị: xem trước → điền; chỉ ô trống, chỉ thiết bị có quyền sửa, có audit.
+  - **Báo cáo:**
+    - bộ lọc "Hỗ trợ của hãng" (đã hết / hết trong 12 tháng, không tính thiết bị đã thanh lý);
+    - dashboard có link sang danh sách đó;
+    - luật kiểm tra sơ đồ "thiết bị đang dùng đã hết hỗ trợ" (Warning);
+    - danh sách template hệ thống hiện ngày và link thông báo của hãng.
+  - Đổi nhãn thành "Ngừng bán (End-of-Sale)" / "Hết hỗ trợ (End-of-Support)" và cập nhật bảng thuật ngữ.
+  - Agent rà code đã chỉ ra, và đã sửa:
+    - lúc điền có thể ghi đè ngày vừa được người khác nhập, và báo "đã điền" khi bị đụng độ phiên bản;
+    - thiết bị đổi model vẫn lấy ngày của model cũ;
+    - trên sơ đồ, card không cập nhật vòng đời / ngày sau khi sửa nhanh hoặc khi thả thiết bị từ thư viện;
+    - dashboard và danh sách lọc lệch nhau về thiết bị đã thanh lý;
+    - lỗi `gofmt`.
+- Test / cách kiểm tra:
+  - `lifecycle_test.go`:
+    - tạo từ model / theo tên model, giữ ngày đã nhập;
+    - điền: xem trước, áp dụng, người chỉ có quyền xem, audit, không ghi đè, thiết bị đổi model, chặn đọc chéo tổ chức;
+    - bộ lọc đã hết / sắp hết / cả hai / bỏ qua thiết bị đã thanh lý / giá trị lạ.
+  - Unit test cho luật kiểm tra sơ đồ.
+  - Trên trình duyệt:
+    - xem trước liệt kê FortiGate 60F → điền 38 thiết bị;
+    - lọc ra 3 router Cisco 2911/2921/2951 đã hết hỗ trợ từ 2022;
+    - form gõ C1000-24P-4G-L → điền sẵn 30/04/2025 – 30/04/2030.
+  - `make check` pass.
+- Còn dở / lỗi đã biết:
+  - Huawei và Aruba 2530 chưa có ngày.
+  - SKU Cisco theo vùng (-IN, -BR) có thể khác ngày.
+  - Nguồn Fortinet là feed chung, không phải trang riêng từng model.
+  - Ô trống trong file nhập luôn được điền từ thư viện, chưa có cách đánh dấu "cố ý để trống".
+- Câu hỏi cho người dùng: không.
+- Đề xuất quyết định cần chốt: không.
+- Task tiếp theo đề xuất: P2-08 (nhiều trang / lớp L1-L2-L3) hoặc P2-04 → P2-05 (nhà cung cấp, hợp đồng, email cảnh báo hết hạn).
+
 ## 2026-10-18 — P2-12 bổ sung: ảnh model tương tự (C1300-48P-4G)
 - Người dùng báo: switch C1300-48P-4G ở site DAS không có ảnh. Nguyên nhân là NetBox không có ảnh của model này.
 - Đã làm:
